@@ -126,6 +126,23 @@ const Index: React.FC = () => {
     showToast("Asset deleted", "success");
   };
 
+  const handleDeleteMultiple = (ids: string[]) => {
+    pushSnapshot();
+    setGeneratedAssets(prev => prev.filter(a => !ids.includes(a.id)));
+    showToast(`${ids.length} assets deleted`, "success");
+  };
+
+  const handleDuplicateAsset = (asset: GeneratedAsset) => {
+    pushSnapshot();
+    setGeneratedAssets(prev => [...prev, {
+      ...asset,
+      id: uuidv4(),
+      title: `${asset.title} (Copy)`,
+      isFavorite: false,
+    }]);
+    showToast("Asset duplicated", "success");
+  };
+
   const handleViewAsset = (asset: GeneratedAsset) => {
     setViewingAsset(asset);
   };
@@ -360,8 +377,10 @@ const Index: React.FC = () => {
               onView={handleViewAsset}
               onEdit={handleEditAsset}
               onDelete={handleDeleteAsset}
+              onDeleteMultiple={handleDeleteMultiple}
               onToggleFavorite={handleToggleFavorite}
               onRegenerate={handleRegenerateAsset}
+              onDuplicate={handleDuplicateAsset}
               onMoveToFolder={(assetId, folderId) => {
                 pushSnapshot();
                 setGeneratedAssets(prev => prev.map(a =>
