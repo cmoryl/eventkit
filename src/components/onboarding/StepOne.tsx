@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { EventDetails, LogoAsset } from '../../types';
+import type { EventDetails, LogoAsset, EventType } from '../../types';
+import EventTypeSelector from './EventTypeSelector';
+import { Users, DollarSign, Hash, Shirt } from 'lucide-react';
 
 interface StepOneProps {
   eventDetails: EventDetails;
@@ -55,6 +57,14 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
           placeholder="e.g., Tech Summit 2025"
           className="input-field text-lg"
           autoFocus
+        />
+      </div>
+
+      {/* Event Type Selector */}
+      <div className="pt-2">
+        <EventTypeSelector
+          selectedType={eventDetails.eventType}
+          onSelect={(type) => setEventDetails(prev => ({ ...prev, eventType: type }))}
         />
       </div>
 
@@ -184,6 +194,69 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                 value={eventDetails.email}
                 onChange={handleChange}
                 placeholder="contact@event.com"
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          {/* Event-Specific Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                Expected Attendees
+              </label>
+              <input
+                type="number"
+                name="expectedAttendees"
+                value={eventDetails.expectedAttendees || ''}
+                onChange={(e) => setEventDetails(prev => ({ ...prev, expectedAttendees: parseInt(e.target.value) || undefined }))}
+                placeholder="250"
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                Budget
+              </label>
+              <input
+                type="number"
+                name="budget"
+                value={eventDetails.budget || ''}
+                onChange={(e) => setEventDetails(prev => ({ ...prev, budget: parseFloat(e.target.value) || undefined }))}
+                placeholder="50000"
+                className="input-field"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <Hash className="w-4 h-4 text-muted-foreground" />
+                Event Hashtag
+              </label>
+              <input
+                type="text"
+                name="hashtag"
+                value={eventDetails.hashtag || ''}
+                onChange={(e) => setEventDetails(prev => ({ ...prev, hashtag: e.target.value }))}
+                placeholder="#TechSummit2025"
+                className="input-field"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <Shirt className="w-4 h-4 text-muted-foreground" />
+                Dress Code
+              </label>
+              <input
+                type="text"
+                name="dresscode"
+                value={eventDetails.dresscode || ''}
+                onChange={(e) => setEventDetails(prev => ({ ...prev, dresscode: e.target.value }))}
+                placeholder="Business Casual"
                 className="input-field"
               />
             </div>

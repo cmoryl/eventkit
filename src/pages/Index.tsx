@@ -17,6 +17,8 @@ import PresentationEditorModal from '../components/PresentationEditorModal';
 import { AuthModal } from '../components/auth/AuthModal';
 import { VideoTeaserModal } from '../components/VideoTeaserModal';
 import { AIImageEditModal } from '../components/AIImageEditModal';
+import EventDashboard from '../components/EventDashboard';
+import AdvancedExportModal from '../components/AdvancedExportModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
@@ -60,6 +62,8 @@ const Index: React.FC = () => {
   const [aiEditingAsset, setAiEditingAsset] = useState<GeneratedAsset | null>(null);
   const [isGeneratingGuide, setIsGeneratingGuide] = useState(false);
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
+  const [showEventDashboard, setShowEventDashboard] = useState(false);
+  const [showAdvancedExport, setShowAdvancedExport] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => setToastState({ message, type });
 
@@ -370,6 +374,24 @@ const Index: React.FC = () => {
     showToast('Video teaser added to assets', 'success');
   };
 
+  // Handle advanced export
+  const handleAdvancedExport = async (options: {
+    format: string;
+    quality: number;
+    scale: number;
+    selectedAssets: string[];
+  }) => {
+    // Export selected assets with options
+    const selectedAssets = generatedAssets.filter(a => options.selectedAssets.includes(a.id));
+    try {
+      await downloadAllAssets(selectedAssets, eventDetails.name);
+      showToast(`Exported ${selectedAssets.length} assets`, 'success');
+    } catch (e) {
+      console.error('Export failed:', e);
+      showToast('Export failed', 'error');
+    }
+  };
+
   const getEditorModal = () => {
     if (!editingAsset) return null;
 
@@ -466,6 +488,8 @@ const Index: React.FC = () => {
             onOpenAuth={() => setShowAuthModal(true)}
             onSaveToCloud={handleSaveToCloud}
             isSavingToCloud={isSavingToCloud}
+            onOpenDashboard={() => setShowEventDashboard(true)}
+            onOpenAdvancedExport={() => setShowAdvancedExport(true)}
           />
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
@@ -586,6 +610,23 @@ const Index: React.FC = () => {
           onImageEdited={handleAIImageEdited}
         />
       )}
+
+      {/* Event Dashboard */}
+      {showEventDashboard && (
+        <EventDashboard
+          eventDetails={eventDetails}
+          onClose={() => setShowEventDashboard(false)}
+        />
+      )}
+
+      {/* Advanced Export Modal */}
+      <AdvancedExportModal
+        open={showAdvancedExport}
+        onOpenChange={setShowAdvancedExport}
+        assets={generatedAssets}
+        eventName={eventDetails.name}
+        onExport={handleAdvancedExport}
+      />
 
       {toastState && <Toast message={toastState.message} type={toastState.type} onClose={() => setToastState(null)} />}
     </div>

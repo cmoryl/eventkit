@@ -59,6 +59,40 @@ export enum AssetType {
   GlassDoubleDoor = 'GLASS_DOUBLE_DOOR',
   MainStageBackdrop = 'MAIN_STAGE_BACKDROP',
   VideoTeaser = 'VIDEO_TEASER',
+  // New hyper-realistic event assets
+  SeatingChart = 'SEATING_CHART',
+  VendorContract = 'VENDOR_CONTRACT',
+  BudgetSheet = 'BUDGET_SHEET',
+  InvitationCard = 'INVITATION_CARD',
+  RSVPCard = 'RSVP_CARD',
+  ProgramBooklet = 'PROGRAM_BOOKLET',
+  PlaceCard = 'PLACE_CARD',
+  TableNumber = 'TABLE_NUMBER',
+  CertificateAward = 'CERTIFICATE_AWARD',
+  PressRelease = 'PRESS_RELEASE',
+  MediaKit = 'MEDIA_KIT',
+  SponsorPackage = 'SPONSOR_PACKAGE',
+  VIPBadge = 'VIP_BADGE',
+  ParkingPass = 'PARKING_PASS',
+  TicketDesign = 'TICKET_DESIGN',
+  WristbandDesign = 'WRISTBAND_DESIGN',
+  TableTent = 'TABLE_TENT',
+  CoasterDesign = 'COASTER_DESIGN',
+  NapkinDesign = 'NAPKIN_DESIGN',
+  PhotoBoothProps = 'PHOTO_BOOTH_PROPS',
+  PhotoBoothFrame = 'PHOTO_BOOTH_FRAME',
+  CateringLabel = 'CATERING_LABEL',
+  DietaryCard = 'DIETARY_CARD',
+  EventChecklist = 'EVENT_CHECKLIST',
+  EmergencyGuide = 'EMERGENCY_GUIDE',
+  LinkedInBanner = 'LINKEDIN_BANNER',
+  TwitterHeader = 'TWITTER_HEADER',
+  YouTubeThumbnail = 'YOUTUBE_THUMBNAIL',
+  PodcastCover = 'PODCAST_COVER',
+  AnimatedLogo = 'ANIMATED_LOGO',
+  CountdownTimer = 'COUNTDOWN_TIMER',
+  VenueTour3D = 'VENUE_TOUR_3D',
+  ARMarker = 'AR_MARKER',
 }
 
 export interface LogoAsset {
@@ -207,13 +241,77 @@ export interface AssetFolder {
   name: string;
 }
 
+export type EventType = 
+  | 'conference'
+  | 'wedding'
+  | 'corporate'
+  | 'festival'
+  | 'gala'
+  | 'tradeshow'
+  | 'workshop'
+  | 'concert'
+  | 'sports'
+  | 'fundraiser'
+  | 'graduation'
+  | 'product_launch'
+  | 'networking'
+  | 'award_ceremony'
+  | 'other';
+
+export interface BudgetItem {
+  id: string;
+  category: string;
+  description: string;
+  estimatedCost: number;
+  actualCost?: number;
+  vendor?: string;
+  status: 'pending' | 'approved' | 'paid';
+}
+
+export interface VendorInfo {
+  id: string;
+  name: string;
+  category: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  cost?: number;
+  status: 'contacted' | 'quoted' | 'booked' | 'confirmed';
+  notes?: string;
+}
+
+export interface GuestInfo {
+  id: string;
+  name: string;
+  email?: string;
+  company?: string;
+  tableNumber?: number;
+  mealPreference?: string;
+  dietaryRestrictions?: string[];
+  rsvpStatus: 'pending' | 'confirmed' | 'declined';
+  vipStatus: boolean;
+  plusOne?: boolean;
+}
+
+export interface TimelineItem {
+  id: string;
+  time: string;
+  title: string;
+  description?: string;
+  location?: string;
+  responsible?: string;
+  duration?: number;
+}
+
 export interface EventDetails {
   name: string;
   description: string;
   date: string;
+  endDate?: string;
   location: string;
   website: string;
   email: string;
+  phone?: string;
   incorporateLocationStyle: boolean;
   qrCodeUrl?: string;
   qrCodeColor?: string;
@@ -222,6 +320,24 @@ export interface EventDetails {
   venueName?: string;
   venueAddress?: string;
   venuePlaceId?: string;
+  // New fields for hyper-realistic events
+  eventType?: EventType;
+  expectedAttendees?: number;
+  budget?: number;
+  theme?: string;
+  hashtag?: string;
+  sponsors?: string[];
+  hosts?: string[];
+  timezone?: string;
+  dresscode?: string;
+  ticketPrice?: number;
+  registrationUrl?: string;
+  socialHandles?: {
+    instagram?: string;
+    twitter?: string;
+    linkedin?: string;
+    facebook?: string;
+  };
 }
 
 export interface VenueSearchResult {
