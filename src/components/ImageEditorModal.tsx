@@ -782,6 +782,7 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
                         imageUrl={currentImage}
                         eventName={eventDetails?.name || 'Event'}
                         assetTitle={asset.title}
+                        eventDetails={eventDetails}
                         onExport={(format, resolution, options) => {
                           // For non-PDF formats, do a simple download
                           const link = document.createElement('a');

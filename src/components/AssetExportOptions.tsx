@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { AssetType } from '../types';
+import { AssetType, EventDetails } from '../types';
 import { ASSET_CONFIGS } from '../config/assetConfig';
-import { 
+import {
   Download, 
   FileImage, 
   FileText, 
@@ -46,6 +46,7 @@ interface AssetExportOptionsProps {
   imageUrl?: string;
   eventName?: string;
   assetTitle?: string;
+  eventDetails?: EventDetails | null;
   onExport: (format: string, resolution: string, options: ExportOptions) => void;
   isExporting?: boolean;
 }
@@ -107,6 +108,7 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
   imageUrl,
   eventName = 'Event',
   assetTitle = 'Asset',
+  eventDetails,
   onExport,
   isExporting = false
 }) => {
@@ -233,6 +235,7 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
           assetType={assetType}
           selectedVendor={selectedVendor}
           onSelectVendor={setSelectedVendor}
+          eventDetails={eventDetails}
         />
       )}
 
