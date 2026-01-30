@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AssetType, EventDetails } from '../types';
 import { ASSET_CONFIGS } from '../config/assetConfig';
-import {
+import { 
   Download, 
   FileImage, 
   FileText, 
@@ -13,7 +13,9 @@ import {
   ChevronDown,
   Check,
   AlertTriangle,
-  Store
+  Store,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { 
   getRecommendedExportSettings,
@@ -22,6 +24,7 @@ import {
 import { printDimensionsMap } from '../utils';
 import VendorSelector from './VendorSelector';
 import { VendorTemplate } from '../config/printVendorTemplates';
+import BleedSafeZoneOverlay from './BleedSafeZoneOverlay';
 
 interface ExportFormat {
   id: string;
@@ -118,6 +121,8 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localExporting, setLocalExporting] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<VendorTemplate | null>(null);
+  const [showBleedPreview, setShowBleedPreview] = useState(false);
+  const [showSafeZonePreview, setShowSafeZonePreview] = useState(false);
   const [options, setOptions] = useState<ExportOptions>({
     includeBleed: true,
     includeTrimMarks: true,
@@ -229,6 +234,74 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Image Preview with Bleed/Safe Zone Overlay */}
+      {imageUrl && isPrintAsset && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Eye className="w-4 h-4 text-primary" />
+              Print Preview
+            </label>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setShowBleedPreview(!showBleedPreview)}
+                className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                  showBleedPreview 
+                    ? 'bg-cyan-500 text-white' 
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
+                title="Toggle bleed area preview"
+              >
+                {showBleedPreview ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                Bleed
+              </button>
+              <button
+                onClick={() => setShowSafeZonePreview(!showSafeZonePreview)}
+                className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium transition-all ${
+                  showSafeZonePreview 
+                    ? 'bg-fuchsia-500 text-white' 
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                }`}
+                title="Toggle safe zone preview"
+              >
+                Safe
+              </button>
+            </div>
+          </div>
+          
+          <div className="relative rounded-lg overflow-hidden border border-border bg-muted/20">
+            <img 
+              src={imageUrl} 
+              alt="Asset preview" 
+              className="w-full max-h-48 object-contain"
+            />
+            <BleedSafeZoneOverlay
+              assetType={assetType}
+              showBleed={showBleedPreview}
+              showSafeZone={showSafeZonePreview}
+            />
+            
+            {/* Legend */}
+            {(showBleedPreview || showSafeZonePreview) && (
+              <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm rounded-lg p-2 text-[9px] space-y-1">
+                {showBleedPreview && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 bg-cyan-500/50 border border-cyan-500 border-dashed rounded-sm" />
+                    <span className="text-white">Bleed (trimmed)</span>
+                  </div>
+                )}
+                {showSafeZonePreview && (
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 border-2 border-fuchsia-500 border-dashed rounded-sm" />
+                    <span className="text-white">Safe Zone</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Vendor Selector - Only for print assets */}
       {isPrintAsset && (
         <VendorSelector

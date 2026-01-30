@@ -8,7 +8,9 @@ import AssetSpecificFields from './AssetSpecificFields';
 import PrintSpecPanel from './PrintSpecPanel';
 import ProductMockupPreview from './ProductMockupPreview';
 import AssetExportOptions from './AssetExportOptions';
+import BleedSafeZoneOverlay from './BleedSafeZoneOverlay';
 import { fileToBase64 } from '../utils';
+import { printDimensionsMap } from '../utils';
 import { 
   Type, 
   Crop, 
@@ -29,7 +31,9 @@ import {
   Circle,
   Minus,
   Printer,
-  Package
+  Package,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 interface ImageEditorModalProps {
@@ -92,6 +96,11 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
     const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
     const [backImagePreview, setBackImagePreview] = useState<string | null>(null);
     const [overlayImage, setOverlayImage] = useState<string | null>(null);
+    
+    // Print preview states
+    const [showBleedOverlay, setShowBleedOverlay] = useState(false);
+    const [showSafeZoneOverlay, setShowSafeZoneOverlay] = useState(false);
+    const isPrintAsset = !!printDimensionsMap[asset.type];
     
     // Masking states
     const [isMaskingMode, setIsMaskingMode] = useState(false);
@@ -447,15 +456,27 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
                   <SkeletonLoader className="w-full h-full" />
                 ) : (
                   <>
-                    <img 
-                      src={currentImage} 
-                      alt="Asset Preview" 
-                      className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-lg transition-all duration-300"
-                      style={{ 
-                        filter: getFilterStyle(),
-                        transform: getTransformStyle()
-                      }}
-                    />
+                    <div className="relative max-w-full max-h-[60vh]">
+                      <img 
+                        src={currentImage} 
+                        alt="Asset Preview" 
+                        className="max-w-full max-h-[60vh] object-contain rounded-lg shadow-lg transition-all duration-300"
+                        style={{ 
+                          filter: getFilterStyle(),
+                          transform: getTransformStyle()
+                        }}
+                      />
+                      
+                      {/* Bleed/Safe Zone Overlay */}
+                      {isPrintAsset && (showBleedOverlay || showSafeZoneOverlay) && (
+                        <BleedSafeZoneOverlay
+                          assetType={asset.type}
+                          showBleed={showBleedOverlay}
+                          showSafeZone={showSafeZoneOverlay}
+                          className="rounded-lg"
+                        />
+                      )}
+                    </div>
                     
                     {/* Text overlays preview */}
                     {textOverlays.map(overlay => (
@@ -487,8 +508,62 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
                       />
                     )}
                     
+                    {/* Print Preview Toggle Buttons */}
+                    {isPrintAsset && !isMaskingMode && (
+                      <div className="absolute bottom-3 left-3 flex gap-1 z-20">
+                        <button
+                          onClick={() => setShowBleedOverlay(!showBleedOverlay)}
+                          className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all shadow-md ${
+                            showBleedOverlay 
+                              ? 'bg-cyan-500 text-white' 
+                              : 'bg-black/60 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/80'
+                          }`}
+                          title="Toggle bleed area preview"
+                        >
+                          {showBleedOverlay ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                          Bleed
+                        </button>
+                        <button
+                          onClick={() => setShowSafeZoneOverlay(!showSafeZoneOverlay)}
+                          className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium transition-all shadow-md ${
+                            showSafeZoneOverlay 
+                              ? 'bg-fuchsia-500 text-white' 
+                              : 'bg-black/60 backdrop-blur-sm text-white/80 hover:text-white hover:bg-black/80'
+                          }`}
+                          title="Toggle safe zone preview"
+                        >
+                          <Layers className="w-3 h-3" />
+                          Safe
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Legend when overlays are active */}
+                    {isPrintAsset && (showBleedOverlay || showSafeZoneOverlay) && (
+                      <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm rounded-lg p-2 text-[9px] space-y-1 z-20">
+                        {showBleedOverlay && (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 bg-cyan-500/50 border border-cyan-500 border-dashed rounded-sm" />
+                            <span className="text-white">Bleed (will be trimmed)</span>
+                          </div>
+                        )}
+                        {showSafeZoneOverlay && (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 border-2 border-fuchsia-500 border-dashed rounded-sm" />
+                            <span className="text-white">Safe Zone (keep text here)</span>
+                          </div>
+                        )}
+                        {showBleedOverlay && (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 border border-white rounded-sm" />
+                            <span className="text-white">Trim Line (final size)</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     {!isMaskingMode && (
-                      <button onClick={() => setIsViewingLarge(true)} className="absolute top-3 right-3 p-2 rounded-full bg-secondary/80 hover:bg-secondary transition-all" title="View larger">
+                      <button onClick={() => setIsViewingLarge(true)} className="absolute top-3 right-3 p-2 rounded-full bg-secondary/80 hover:bg-secondary transition-all z-20" title="View larger">
                         <ZoomIn className="w-5 h-5 text-foreground" />
                       </button>
                     )}
