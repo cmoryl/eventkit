@@ -2,6 +2,12 @@ import { AssetType } from '../types';
 import type { EventDetails, ColorInfo } from '../types';
 import { getAssetConfig } from '../config/assetConfig';
 import { renderAsset } from './canvasRenderer';
+import { 
+  generateSlogans as aiGenerateSlogans, 
+  generateMarketingCopy as aiGenerateMarketingCopy,
+  generateRunOfShow as aiGenerateRunOfShow,
+  generateAssetImage
+} from './geminiService';
 
 // Design tokens for consistent generation
 const BRAND_GRADIENTS = [
@@ -448,13 +454,37 @@ export const generatePlaceholderContent = async (
       return generateColorPalette(eventDetails.name, Date.now());
       
     case AssetType.Slogans:
-      return generateSlogans(eventDetails);
+      // Use AI-powered slogan generation
+      try {
+        return await aiGenerateSlogans(eventDetails.name, eventDetails.description || '', 8);
+      } catch {
+        return generateSlogans(eventDetails);
+      }
       
     case AssetType.MarketingCopy:
-      return generateMarketingCopy(eventDetails);
+      // Use AI-powered marketing copy
+      try {
+        return await aiGenerateMarketingCopy(
+          eventDetails.name,
+          eventDetails.description || '',
+          eventDetails.date || '',
+          eventDetails.location || ''
+        );
+      } catch {
+        return generateMarketingCopy(eventDetails);
+      }
       
     case AssetType.RunOfShow:
-      return generateRunOfShow(eventDetails);
+      // Use AI-powered run of show
+      try {
+        return await aiGenerateRunOfShow(
+          eventDetails.name,
+          eventDetails.date || '',
+          eventDetails.description || ''
+        );
+      } catch {
+        return generateRunOfShow(eventDetails);
+      }
       
     case AssetType.AgendaHighlights:
       return generateAgendaHighlights(eventDetails);
