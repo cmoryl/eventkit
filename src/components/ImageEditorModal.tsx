@@ -5,6 +5,9 @@ import { editImageContent } from '../services/geminiService';
 import Spinner from './Spinner';
 import SkeletonLoader from './SkeletonLoader';
 import AssetSpecificFields from './AssetSpecificFields';
+import PrintSpecPanel from './PrintSpecPanel';
+import ProductMockupPreview from './ProductMockupPreview';
+import AssetExportOptions from './AssetExportOptions';
 import { fileToBase64 } from '../utils';
 import { 
   Type, 
@@ -24,7 +27,9 @@ import {
   Move,
   Square,
   Circle,
-  Minus
+  Minus,
+  Printer,
+  Package
 } from 'lucide-react';
 
 interface ImageEditorModalProps {
@@ -98,7 +103,8 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
     
     // New editor states
     const [activeTool, setActiveTool] = useState<EditorTool>('select');
-    const [activeTab, setActiveTab] = useState<'adjust' | 'filters' | 'text' | 'ai'>('ai');
+    const [activeTab, setActiveTab] = useState<'adjust' | 'filters' | 'text' | 'ai' | 'export'>('ai');
+    const [showMockup, setShowMockup] = useState(false);
     
     // Adjustments
     const [brightness, setBrightness] = useState(100);
@@ -510,6 +516,9 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
                   <button onClick={() => setActiveTab('adjust')} className={tabBtnClass(activeTab === 'adjust')}>Adjust</button>
                   <button onClick={() => setActiveTab('filters')} className={tabBtnClass(activeTab === 'filters')}>Filters</button>
                   <button onClick={() => setActiveTab('text')} className={tabBtnClass(activeTab === 'text')}>Text</button>
+                  <button onClick={() => setActiveTab('export')} className={tabBtnClass(activeTab === 'export')}>
+                    <Printer className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
 
@@ -736,6 +745,50 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
                         Flatten Text to Image
                       </button>
                     )}
+                  </>
+                )}
+
+                {/* Export Tab */}
+                {activeTab === 'export' && (
+                  <>
+                    {/* Print Specifications */}
+                    <PrintSpecPanel assetType={asset.type} />
+
+                    {/* Product Mockup Preview */}
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => setShowMockup(!showMockup)}
+                        className="w-full flex items-center justify-between text-sm font-medium text-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Package className="w-4 h-4 text-primary" />
+                          Product Mockup
+                        </span>
+                        <span className="text-xs text-muted-foreground">{showMockup ? 'Hide' : 'Show'}</span>
+                      </button>
+                      {showMockup && (
+                        <ProductMockupPreview 
+                          assetType={asset.type} 
+                          imageUrl={currentImage}
+                          className="mt-2"
+                        />
+                      )}
+                    </div>
+
+                    {/* Export Options */}
+                    <div className="pt-3 border-t border-border">
+                      <AssetExportOptions
+                        assetType={asset.type}
+                        onExport={(format, resolution, options) => {
+                          console.log('Exporting:', { format, resolution, options });
+                          // Future: Implement actual export with specs
+                          const link = document.createElement('a');
+                          link.download = `${asset.title.replace(/\s+/g, '-').toLowerCase()}.${format}`;
+                          link.href = currentImage;
+                          link.click();
+                        }}
+                      />
+                    </div>
                   </>
                 )}
               </div>
