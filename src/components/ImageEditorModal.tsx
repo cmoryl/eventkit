@@ -4,6 +4,7 @@ import { AssetType } from '../types';
 import { editImageContent } from '../services/geminiService';
 import Spinner from './Spinner';
 import SkeletonLoader from './SkeletonLoader';
+import AssetSpecificFields from './AssetSpecificFields';
 import { fileToBase64 } from '../utils';
 import { 
   Type, 
@@ -532,14 +533,12 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
                       />
                     </div>
 
-                    {asset.type === AssetType.NameTag && (
-                      <div className="space-y-2 pt-3 border-t border-border">
-                        <h4 className="text-sm font-medium text-foreground">Badge Content</h4>
-                        <input type="text" name="name" value={customContent.name || ''} onChange={handleCustomContentChange} placeholder="Attendee Name" className={inputClass} />
-                        <input type="text" name="title" value={customContent.title || ''} onChange={handleCustomContentChange} placeholder="Job Title" className={inputClass} />
-                        <input type="text" name="company" value={customContent.company || ''} onChange={handleCustomContentChange} placeholder="Company" className={inputClass} />
-                      </div>
-                    )}
+                    <AssetSpecificFields
+                      assetType={asset.type}
+                      customContent={customContent}
+                      onChange={handleCustomContentChange}
+                      inputClassName={inputClass}
+                    />
 
                     <div className="pt-3 border-t border-border">
                       <label className="text-sm font-medium text-foreground mb-2 block">Overlay Image</label>
