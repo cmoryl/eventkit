@@ -20,7 +20,8 @@ import {
   Filter,
   LayoutGrid,
   List,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import AssetDownloadModal from './AssetDownloadModal';
 
@@ -31,9 +32,10 @@ interface AssetGridProps {
   onEdit: (asset: GeneratedAsset) => void;
   onDelete: (id: string) => void;
   onToggleFavorite: (asset: GeneratedAsset) => void;
+  onRegenerate?: (asset: GeneratedAsset) => void;
 }
 
-const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit, onDelete, onToggleFavorite }) => {
+const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit, onDelete, onToggleFavorite, onRegenerate }) => {
   const [activeCategory, setActiveCategory] = useState<AssetCategory | 'all' | 'favorites'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
-import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset } from '../types';
+import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerationParams } from '../types';
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
 import StudioHeader from '../components/studio/StudioHeader';
 import AssetGrid from '../components/studio/AssetGrid';
@@ -10,11 +10,13 @@ import ImageEditorModal from '../components/ImageEditorModal';
 import PaletteEditorModal from '../components/PaletteEditorModal';
 import TextEditorModal from '../components/TextEditorModal';
 import TextListEditorModal from '../components/TextListEditorModal';
+import QRCodeGeneratorModal from '../components/QRCodeGeneratorModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
 import { fileToBase64, downloadAllAssets } from '../utils';
-import { ASSET_CONFIGS, getAssetConfig } from '../config/assetConfig';
+import { getAssetConfig } from '../config/assetConfig';
+import { generateBrandStyleGuide } from '../services/brandGuideGenerator';
 
 const ensureProtocol = (url: string) => url && !url.match(/^[a-zA-Z]+:\/\//) ? `https://${url}` : url;
 
@@ -39,6 +41,8 @@ const Index: React.FC = () => {
   // Modal states
   const [editingAsset, setEditingAsset] = useState<GeneratedAsset | null>(null);
   const [viewingAsset, setViewingAsset] = useState<GeneratedAsset | null>(null);
+  const [showQRGenerator, setShowQRGenerator] = useState(false);
+  const [isGeneratingGuide, setIsGeneratingGuide] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type });
 
@@ -176,6 +180,63 @@ const Index: React.FC = () => {
     }
   };
 
+  const handleExportBrandGuide = async () => {
+    setIsGeneratingGuide(true);
+    try {
+      const slogansAsset = generatedAssets.find(a => a.type === AssetType.Slogans);
+      const slogans = Array.isArray(slogansAsset?.content) 
+        ? (slogansAsset.content as string[])
+        : [];
+      
+      const logoAsset = generatedAssets.find(a => a.type === AssetType.Logo);
+      const logoDataUrl = typeof logoAsset?.content === 'string' ? logoAsset.content : undefined;
+
+      await generateBrandStyleGuide({
+        eventDetails,
+        colorPalette,
+        slogans,
+        logoDataUrl,
+        assets: generatedAssets,
+      });
+      showToast("Brand Style Guide exported", "success");
+    } catch (e) {
+      console.error("Brand guide export failed:", e);
+      showToast("Export failed", "error");
+    } finally {
+      setIsGeneratingGuide(false);
+    }
+  };
+
+  const handleQRCodeGenerated = (dataUrl: string, params: QRCodeGenerationParams) => {
+    pushSnapshot();
+    setGeneratedAssets(prev => [...prev, {
+      id: uuidv4(),
+      type: AssetType.QRCode,
+      title: 'QR Code',
+      content: dataUrl,
+      isLoading: false,
+      generationParams: params,
+    }]);
+    setShowQRGenerator(false);
+    showToast("QR Code added to assets", "success");
+  };
+
+  const handleAddMoreAssets = () => {
+    setView('onboarding');
+  };
+
+  const handleRegenerateAsset = async (asset: GeneratedAsset) => {
+    pushSnapshot();
+    // Mark asset as loading
+    setGeneratedAssets(prev => prev.map(a => 
+      a.id === asset.id ? { ...a, isLoading: true } : a
+    ));
+    
+    // Regenerate
+    await generateAssets([{ ...asset, isLoading: true }], styleDescription);
+    showToast(`${asset.title} regenerated`, "success");
+  };
+
   const getEditorModal = () => {
     if (!editingAsset) return null;
 
@@ -244,7 +305,11 @@ const Index: React.FC = () => {
             onBackToSetup={() => setView('onboarding')}
             onDownloadAll={handleDownloadAll}
             onSave={handleSaveProject}
+            onExportBrandGuide={handleExportBrandGuide}
+            onOpenQRGenerator={() => setShowQRGenerator(true)}
+            onAddMoreAssets={handleAddMoreAssets}
             isExporting={isExporting}
+            isGeneratingGuide={isGeneratingGuide}
           />
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
@@ -275,6 +340,7 @@ const Index: React.FC = () => {
               onEdit={handleEditAsset}
               onDelete={handleDeleteAsset}
               onToggleFavorite={handleToggleFavorite}
+              onRegenerate={handleRegenerateAsset}
             />
           </main>
         </>
@@ -314,6 +380,16 @@ const Index: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* QR Code Generator Modal */}
+      <QRCodeGeneratorModal
+        isOpen={showQRGenerator}
+        onClose={() => setShowQRGenerator(false)}
+        onGenerate={handleQRCodeGenerated}
+        eventDetails={eventDetails}
+        colorPalette={colorPalette}
+        logoDataUrl={logos[0] ? logos[0].url : undefined}
+      />
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
