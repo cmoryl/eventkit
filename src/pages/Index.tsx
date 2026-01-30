@@ -5,6 +5,8 @@ import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerati
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
 import StudioHeader from '../components/studio/StudioHeader';
 import AssetGrid from '../components/studio/AssetGrid';
+import AssetPreviewModal from '../components/studio/AssetPreviewModal';
+import AssetDownloadModal from '../components/studio/AssetDownloadModal';
 import Toast from '../components/Toast';
 import ImageEditorModal from '../components/ImageEditorModal';
 import PaletteEditorModal from '../components/PaletteEditorModal';
@@ -42,6 +44,7 @@ const Index: React.FC = () => {
   // Modal states
   const [editingAsset, setEditingAsset] = useState<GeneratedAsset | null>(null);
   const [viewingAsset, setViewingAsset] = useState<GeneratedAsset | null>(null);
+  const [downloadingAsset, setDownloadingAsset] = useState<GeneratedAsset | null>(null);
   const [showQRGenerator, setShowQRGenerator] = useState(false);
   const [isGeneratingGuide, setIsGeneratingGuide] = useState(false);
 
@@ -401,36 +404,29 @@ const Index: React.FC = () => {
       {/* Editor Modals */}
       {getEditorModal()}
 
-      {/* View Asset Modal */}
+      {/* View Asset Modal with Zoom/Pan */}
       {viewingAsset && (
-        <div
-          className="fixed inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
-          onClick={() => setViewingAsset(null)}
-        >
-          <div className="max-w-4xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
-            {typeof viewingAsset.content === 'string' && viewingAsset.content.startsWith('data:image') ? (
-              <img src={viewingAsset.content} alt={viewingAsset.title} className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl" />
-            ) : (
-              <div className="glass-card p-8 max-w-2xl">
-                <h2 className="text-xl font-bold text-foreground mb-4">{viewingAsset.title}</h2>
-                {Array.isArray(viewingAsset.content) ? (
-                  <ul className="space-y-2">
-                    {(viewingAsset.content as string[]).map((item, i) => (
-                      <li key={i} className="text-foreground">{typeof item === 'string' ? item : JSON.stringify(item)}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-muted-foreground whitespace-pre-wrap">{String(viewingAsset.content)}</p>
-                )}
-              </div>
-            )}
-          </div>
-          <button onClick={() => setViewingAsset(null)} className="absolute top-4 right-4 btn-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        <AssetPreviewModal
+          asset={viewingAsset}
+          onClose={() => setViewingAsset(null)}
+          onEdit={(asset) => {
+            setViewingAsset(null);
+            setEditingAsset(asset);
+          }}
+          onDownload={(asset) => {
+            setViewingAsset(null);
+            setDownloadingAsset(asset);
+          }}
+        />
+      )}
+
+      {/* Download Modal */}
+      {downloadingAsset && (
+        <AssetDownloadModal
+          asset={downloadingAsset}
+          eventName={eventDetails.name}
+          onClose={() => setDownloadingAsset(null)}
+        />
       )}
 
       {/* QR Code Generator Modal */}
