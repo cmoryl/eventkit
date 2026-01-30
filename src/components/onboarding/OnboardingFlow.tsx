@@ -46,17 +46,34 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-6rem)] flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-2xl animate-fade-in">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-semibold text-foreground tracking-tight">Event Design Kit</h1>
+          <p className="text-muted-foreground mt-1">Create beautiful branded assets in minutes</p>
+        </div>
+
         {/* Progress indicator */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className={`step-indicator ${step >= 1 ? 'active' : 'pending'}`}>1</div>
-          <div className={`h-0.5 w-12 rounded-full transition-colors ${step >= 2 ? 'bg-primary' : 'bg-border'}`} />
+          <div className={`step-indicator ${step >= 1 ? 'active' : 'pending'}`}>
+            {step > 1 ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : '1'}
+          </div>
+          <div className={`h-0.5 w-16 rounded-full transition-all duration-500 ${step >= 2 ? 'bg-primary' : 'bg-border'}`} />
           <div className={`step-indicator ${step >= 2 ? 'active' : 'pending'}`}>2</div>
         </div>
 
         {/* Step content */}
-        <div className="glass-card p-8">
+        <div className="glass-card p-8 shadow-xl">
           {step === 1 && (
             <StepOne
               eventDetails={eventDetails}
@@ -76,13 +93,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-border/50">
             <button
               onClick={handleBack}
               disabled={step === 1}
-              className="btn-ghost disabled:opacity-30 disabled:cursor-not-allowed"
+              className="btn-ghost disabled:opacity-30 disabled:cursor-not-allowed group"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               Back
@@ -91,19 +108,19 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             <button
               onClick={handleNext}
               disabled={step === 1 ? !isStep1Valid : !isStep2Valid}
-              className="btn-primary"
+              className="btn-primary group"
             >
               {step === 2 ? (
                 <>
                   Generate Assets
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 ml-1 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </>
               ) : (
                 <>
                   Continue
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </>
@@ -114,7 +131,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
 
         {/* Helper text */}
         <p className="text-center text-sm text-muted-foreground mt-6">
-          {step === 1 ? "Tell us about your event to get started" : "Choose what assets to create for your event"}
+          {step === 1 ? "Enter your event details to get started" : "Select assets to include in your design kit"}
         </p>
       </div>
     </div>

@@ -244,8 +244,8 @@ const Index: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen text-foreground font-sans">
-      <div className="animated-bg" />
+    <div className="min-h-screen text-foreground font-sans depth-orbs">
+      <div className="soft-bg" />
       
       {view === 'onboarding' && (
         <OnboardingFlow onComplete={handleOnboardingComplete} />
