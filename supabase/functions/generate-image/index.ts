@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface GenerateImageRequest {
@@ -28,7 +28,7 @@ const ASSET_PROMPTS: Record<string, string> = {
   SWAG_BAG: "Create a tote bag design with a simple, iconic graphic that works at various sizes. Bold and recognizable.",
   STICKER_SHEET: "Design a collection of 4-6 sticker designs with varied shapes, icons, and text elements. Fun and collectible.",
   THANK_YOU_NOTE: "Create an elegant thank you card design with subtle patterns and warm, professional styling. Heartfelt and genuine.",
-  WIFI_SIGN: "Design a clean WiFi information sign with clear typography and network icon. Easy to read from distance.",
+  WIFI_SIGN: "Create a modern WiFi information sign design. Include a large WiFi icon, space for network name and password text. Clean white background with accent colors. Easy to read from distance. Professional signage style.",
   HAT: "Create a simple embroidery-ready logo design suitable for cap/hat placement. Clean lines, limited colors.",
   WATER_BOTTLE: "Design a wrap-around water bottle label with brand elements. Sleek and modern.",
   MENU: "Create an elegant menu card design with clear sections and professional typography. Easy to read.",
@@ -40,6 +40,77 @@ const ASSET_PROMPTS: Record<string, string> = {
   REGISTRATION_COUNTER: "Design registration desk backdrop. Welcoming, branded, professional.",
   BACK_WALL: "Create event backdrop wall design. Photo-ready, branded, impactful.",
 };
+
+async function generateImageWithRetry(
+  apiKey: string,
+  prompt: string,
+  assetType: string,
+  maxRetries = 2
+): Promise<string> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        console.log(`Retry attempt ${attempt} for ${assetType}`);
+        // Add small delay between retries
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image",
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          modalities: ["image", "text"],
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error("RATE_LIMIT");
+        }
+        if (response.status === 402) {
+          throw new Error("PAYMENT_REQUIRED");
+        }
+        const errorText = await response.text();
+        console.error(`AI gateway error (attempt ${attempt}):`, response.status, errorText);
+        throw new Error(`AI gateway error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+      if (imageUrl) {
+        return imageUrl;
+      }
+
+      // No image in response - log details and retry
+      console.warn(`No image in response for ${assetType} (attempt ${attempt}). Response:`, 
+        JSON.stringify(data.choices?.[0]?.message || {}).substring(0, 500));
+      lastError = new Error("No image in AI response");
+      
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      // Don't retry on rate limit or payment errors
+      if (lastError.message === "RATE_LIMIT" || lastError.message === "PAYMENT_REQUIRED") {
+        throw lastError;
+      }
+    }
+  }
+
+  throw lastError || new Error("Failed to generate image after retries");
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -61,60 +132,19 @@ serve(async (req) => {
       ? `Use this color palette: ${colorPalette.join(', ')}.` 
       : '';
 
-    const fullPrompt = `${basePrompt}
+    const fullPrompt = `Generate an image: ${basePrompt}
 
 Event: "${eventName}"
 ${eventDescription ? `Theme: ${eventDescription}` : ''}
 ${styleDescription ? `Style: ${styleDescription}` : ''}
 ${colorContext}
 
-Create a high-quality, professional design. Ultra high resolution. Modern, clean aesthetic. No text unless specified. Suitable for print and digital use.`;
+Create a high-quality, professional design. Ultra high resolution. Modern, clean aesthetic. Suitable for print and digital use.`;
 
     console.log(`Generating image for ${assetType}: ${eventName}`);
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image",
-        messages: [
-          {
-            role: "user",
-            content: fullPrompt,
-          },
-        ],
-        modalities: ["image", "text"],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-
-    if (!imageUrl) {
-      throw new Error("No image generated");
-    }
-
+    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType);
+    
     console.log(`Successfully generated image for ${assetType}`);
 
     return new Response(
@@ -124,6 +154,21 @@ Create a high-quality, professional design. Ultra high resolution. Modern, clean
   } catch (error) {
     console.error("generate-image error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    
+    if (errorMessage === "RATE_LIMIT") {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    if (errorMessage === "PAYMENT_REQUIRED") {
+      return new Response(
+        JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
