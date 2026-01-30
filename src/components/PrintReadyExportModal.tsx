@@ -4,7 +4,10 @@ import {
   requiresDesignExtraction, 
   getPrintReadySpec, 
   getPrintMethodLabel,
+  getExtractionTypeLabel,
   getIsolatedDesignPrompt,
+  isEnvironmentalAsset,
+  isLargeFormatAsset,
   PRINT_READY_SPECS
 } from '../config/printReadyConfig';
 import { printDimensionsMap } from '../utils';
@@ -23,7 +26,10 @@ import {
   Sparkles,
   FileCheck,
   Eye,
-  Layers
+  Layers,
+  Building2,
+  LayoutGrid,
+  Maximize2
 } from 'lucide-react';
 
 interface PrintReadyExportModalProps {
@@ -49,9 +55,29 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const needsExtraction = requiresDesignExtraction(asset.type);
+  const isEnvironmental = isEnvironmentalAsset(asset.type);
+  const isLargeFormat = isLargeFormatAsset(asset.type);
   const spec = getPrintReadySpec(asset.type);
   const dims = printDimensionsMap[asset.type];
   const currentImage = typeof asset.content === 'string' ? asset.content : '';
+
+  // Get appropriate icon based on asset category
+  const getCategoryIcon = () => {
+    if (isEnvironmental) return <Building2 className="w-5 h-5 text-primary" />;
+    if (isLargeFormat) return <Maximize2 className="w-5 h-5 text-primary" />;
+    return <Printer className="w-5 h-5 text-primary" />;
+  };
+
+  // Get category-specific description
+  const getCategoryDescription = () => {
+    if (isEnvironmental) {
+      return 'This is a 3D environmental mockup. You need flat panel graphics for production.';
+    }
+    if (isLargeFormat) {
+      return 'Large format signage requires high-resolution flat artwork for printing.';
+    }
+    return 'The current image shows a product mockup. For printing, you need the isolated design graphic.';
+  };
 
   if (!isOpen) return null;
 
@@ -125,7 +151,7 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-primary/10">
-                <Printer className="w-5 h-5 text-primary" />
+                {getCategoryIcon()}
               </div>
               <div>
                 <h2 className="text-lg font-bold text-foreground">Print-Ready Export</h2>
@@ -163,7 +189,13 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
                       {spec.isolatedDimensions && (
                         <p className="flex items-center gap-1.5">
                           <Scissors className="w-3.5 h-3.5" />
-                          {spec.isolatedDimensions.width}" × {spec.isolatedDimensions.height}"
+                          {spec.isolatedDimensions.width}{spec.isolatedDimensions.unit === 'ft' ? 'ft' : '"'} × {spec.isolatedDimensions.height}{spec.isolatedDimensions.unit === 'ft' ? 'ft' : '"'}
+                        </p>
+                      )}
+                      {spec.extractionType && (
+                        <p className="flex items-center gap-1.5">
+                          <LayoutGrid className="w-3.5 h-3.5" />
+                          {getExtractionTypeLabel(spec.extractionType)}
                         </p>
                       )}
                       {spec.colorLimit && (
@@ -194,10 +226,20 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
                     {/* Info about mockup vs design */}
                     <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
                       <div className="flex items-start gap-2">
-                        <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        {isEnvironmental ? (
+                          <Building2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        ) : isLargeFormat ? (
+                          <Maximize2 className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        ) : (
+                          <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        )}
                         <div className="text-xs text-muted-foreground">
-                          <p className="font-medium text-foreground mb-1">Mockup vs Print File</p>
-                          <p>The current image shows a product mockup. For printing, you need the <strong>isolated design graphic</strong> without the product visible.</p>
+                          <p className="font-medium text-foreground mb-1">
+                            {isEnvironmental ? '3D Mockup → Flat Panels' : 
+                             isLargeFormat ? 'Large Format Print File' : 
+                             'Mockup vs Print File'}
+                          </p>
+                          <p>{getCategoryDescription()}</p>
                         </div>
                       </div>
                     </div>
@@ -209,16 +251,29 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
                     >
                       <div className="flex items-start gap-3">
                         <div className="p-2 rounded-lg bg-primary/20">
-                          <Sparkles className="w-5 h-5 text-primary" />
+                          {isEnvironmental ? (
+                            <LayoutGrid className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Sparkles className="w-5 h-5 text-primary" />
+                          )}
                         </div>
                         <div className="flex-1">
                           <h5 className="font-medium text-foreground flex items-center gap-2">
-                            Generate Print-Ready Design
+                            {isEnvironmental ? 'Extract Panel Graphics' : 
+                             isLargeFormat ? 'Generate Print-Ready Artwork' :
+                             'Generate Print-Ready Design'}
                             <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded">Recommended</span>
                           </h5>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            AI will create an isolated design file optimized for {getPrintMethodLabel(spec?.printMethod)}
+                            {isEnvironmental ? 
+                              `AI will extract flat panel graphics for ${getPrintMethodLabel(spec?.printMethod)}` :
+                              `AI will create isolated artwork optimized for ${getPrintMethodLabel(spec?.printMethod)}`}
                           </p>
+                          {spec?.extractionType === 'multi_panel' && (
+                            <p className="text-[10px] text-primary mt-1">
+                              ⚡ Will generate labeled panels ready for production
+                            </p>
+                          )}
                         </div>
                       </div>
                     </button>

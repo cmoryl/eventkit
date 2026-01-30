@@ -15,6 +15,7 @@ interface GenerateImageRequest {
 }
 
 const ASSET_PROMPTS: Record<string, string> = {
+  // Standard mockup/preview generation
   SOCIAL_POST: "Create a modern social media post design with bold typography and clean layout. Square format (1:1). Professional event branding with clear hierarchy.",
   BANNER: "Design a professional event banner with gradient background, geometric elements, and clean typography layout. Wide format (16:9). Impactful and memorable.",
   NAME_TAG: "Create an elegant event name badge design with a subtle pattern background and clear space for name text. Portrait format. Professional and welcoming.",
@@ -37,16 +38,69 @@ const ASSET_PROMPTS: Record<string, string> = {
   OUTDOOR_SIGNAGE: "Create weather-resistant outdoor signage design. High contrast, durable aesthetic.",
   DOOR_SIGNAGE: "Design door signage with room info and branding. Clear wayfinding.",
   EASEL_SIGNAGE: "Create standing easel sign design. Welcome message and event info.",
-  REGISTRATION_COUNTER: "Design registration desk backdrop. Welcoming, branded, professional.",
+  REGISTRATION_COUNTER: "Design a hyper-realistic 3D render of a branded registration desk in a modern convention center. Show the complete counter setup with branded front panels, signage, and welcoming atmosphere.",
+  WELCOME_COUNTER: "Design a hyper-realistic 3D render of a welcome/information desk with branded graphics and professional staff area.",
+  TECHNOLOGY_COUNTER: "Design a hyper-realistic 3D render of a tech support/charging station with branded panels and device charging areas.",
   BACK_WALL: "Create event backdrop wall design. Photo-ready, branded, impactful.",
+  MAIN_STAGE_BACKDROP: "Design a stunning main stage backdrop with dramatic branding, lighting effects, and professional event production quality.",
+  KIOSK: "Design a hyper-realistic 3D render of an interactive branded kiosk with touchscreen, header signage, and side panels. Modern trade show style.",
+  STAIRS: "Design a hyper-realistic 3D render of branded stair risers with repeating graphics. Show stairs in a venue setting.",
+  GLASS_DOOR: "Design a hyper-realistic 3D render of branded glass door vinyl graphics. Show the branding on glass entrance doors.",
+  GLASS_ROTATING_DOOR: "Design a hyper-realistic 3D render of branded revolving door panels. Show vinyl graphics on rotating door sections.",
+  GLASS_DOUBLE_DOOR: "Design a hyper-realistic 3D render of branded double glass doors with vinyl graphics spanning both panels.",
+  STAND_UP_PILLAR_BANNER: "Design a freestanding pillar banner/column wrap for trade shows. Professional branded graphics.",
+  FEATHER_FLAG: "Design a feather flag/sail flag for outdoor events. Vibrant branded graphics.",
+  TEARDROP_FLAG: "Design a teardrop-shaped promotional flag. Bold event branding.",
+  LOCATION_SIGNAGE: "Design wayfinding and directional signage with arrows and clear typography.",
+  ROOM_SIGNAGE: "Design room identification signage with session info and branding.",
+  WRISTBAND_DESIGN: "Design an event wristband with branded pattern. Colorful and distinctive.",
+  COASTER_DESIGN: "Design a round coaster with event branding. Subtle and professional.",
+  NAPKIN_DESIGN: "Design a cocktail napkin with simple logo/branding. Elegant and minimal.",
   
-  // Isolated design variants for print-ready extraction
+  // ============================================
+  // ISOLATED DESIGN VARIANTS FOR PRINT EXTRACTION
+  // ============================================
+  
+  // Apparel isolated designs
   TSHIRT_ISOLATED: "Generate ONLY the isolated design graphic on a transparent background. Do NOT show any t-shirt or clothing. Just the artwork/logo/graphic that will be printed. Suitable for screen printing with clean edges. 12x16 inch design area.",
   TSHIRT_BACK_ISOLATED: "Generate ONLY the isolated back design graphic on a transparent background. Do NOT show any t-shirt. Just the artwork with event name, date, sponsors. Clean edges for screen printing. 12x14 inch design area.",
+  TSHIRT_SLEEVE_ISOLATED: "Generate ONLY the isolated small sleeve logo on a transparent background. Simple design, max 2 colors. 3x3 inch design area. No clothing visible.",
   HAT_ISOLATED: "Generate ONLY the isolated embroidery-ready logo on a transparent background. Do NOT show any hat or cap. Just the logo with clean lines, no gradients, suitable for embroidery stitching. Max 6 colors. 4x2.5 inch design area.",
   SWAG_BAG_ISOLATED: "Generate ONLY the isolated tote bag graphic on a transparent background. Do NOT show any bag. Just the artwork/logo that will be printed. Bold, simple design. Max 3 colors for screen printing. 10x10 inch design area.",
   WATER_BOTTLE_ISOLATED: "Generate ONLY the isolated water bottle label design. Rectangular wrap-around format, 8x3 inches. Clean design without showing any bottle. Ready for vinyl printing.",
   LANYARD_ISOLATED: "Generate ONLY the isolated repeating pattern for lanyard printing. Slim vertical format 1x6 inches. Pattern should tile seamlessly. Do NOT show any lanyard or strap.",
+  WRISTBAND_DESIGN_ISOLATED: "Generate ONLY the isolated wristband pattern design. 10x1 inch strip format. Continuous design for wrap-around printing. No wristband visible.",
+  COASTER_DESIGN_ISOLATED: "Generate ONLY the isolated round coaster design on transparent background. 4x4 inch circular format. No coaster or table visible.",
+  NAPKIN_DESIGN_ISOLATED: "Generate ONLY the isolated napkin logo/design on transparent background. Simple, 1-2 colors. 5x5 inch design area. No napkin visible.",
+  
+  // Environmental/booth isolated panel designs
+  KIOSK_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for kiosk panels. Show as labeled sections: 1) Header panel (48x12 inches), 2) Left side panel (24x72 inches), 3) Right side panel (24x72 inches). Clean flat artwork on solid background. NO 3D kiosk structure.",
+  REGISTRATION_COUNTER_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for registration counter. Show as labeled sections: 1) Front panel (8ft x 3.5ft), 2) Top graphic strip if branded. Clean flat artwork on solid background. NO 3D counter structure.",
+  WELCOME_COUNTER_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for welcome desk. Show as labeled sections: 1) Front face graphic (6ft x 3ft), 2) Header/topper panel. Clean flat artwork on solid background. NO 3D counter visible.",
+  TECHNOLOGY_COUNTER_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for tech counter. Show front panel artwork (6ft x 3ft) and any accent graphics. Clean flat design. NO 3D structure.",
+  REGISTRATION_BACK_WALL_ISOLATED: "Generate FLAT PRINT-READY ARTWORK for registration backdrop. Full 20ft x 10ft design. Solid background with event branding. NO 3D room or people visible.",
+  BACK_WALL_ISOLATED: "Generate FLAT PRINT-READY ARTWORK for booth backdrop. Full 10ft x 8ft design. Complete artwork for fabric printing. NO 3D booth visible.",
+  MAIN_STAGE_BACKDROP_ISOLATED: "Generate FLAT PRINT-READY ARTWORK for main stage backdrop. Full 40ft x 20ft design at digital resolution. NO stage, lights, or 3D elements visible.",
+  STAIRS_ISOLATED: "Generate FLAT PRINT-READY stair riser graphic. Single riser design, 4ft wide x 8 inches tall. Pattern tile for repeating on multiple risers. NO 3D stairs visible.",
+  GLASS_DOOR_ISOLATED: "Generate FLAT PRINT-READY vinyl graphics for glass door. 36x84 inch design with transparent areas indicated. NO door or glass visible.",
+  GLASS_ROTATING_DOOR_ISOLATED: "Generate FLAT PRINT-READY vinyl graphics for rotating door panels. Show 3-4 individual panel designs (30x80 inches each). NO door mechanism visible.",
+  GLASS_DOUBLE_DOOR_ISOLATED: "Generate FLAT PRINT-READY vinyl graphics for double doors. Full 72x84 inch design spanning both panels. Include center gap indication. NO doors visible.",
+  
+  // Large format signage isolated
+  BANNER_ISOLATED: "Generate FLAT PRINT-READY banner design. Full 33x81 inch retractable banner artwork. Include 1 inch bleed. Complete design with no banner stand visible.",
+  STAND_UP_PILLAR_BANNER_ISOLATED: "Generate FLAT PRINT-READY pillar wrap design. Full 3ft x 7ft unrolled flat artwork. NO pillar structure visible.",
+  FEATHER_FLAG_ISOLATED: "Generate FLAT PRINT-READY feather flag design. Curved feather shape template, 2ft x 8ft. Include seam allowance. NO flag pole visible.",
+  TEARDROP_FLAG_ISOLATED: "Generate FLAT PRINT-READY teardrop flag design. Teardrop shape template, 2.5ft x 7ft. Include seam allowance. NO flag pole visible.",
+  HANGING_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY hanging sign design. 4ft x 3ft design with grommet positions marked. Double-sided layout. NO ceiling or mounting visible.",
+  OUTDOOR_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY outdoor sign design. 4ft x 6ft weather-resistant design. Include mounting holes positions. High contrast colors.",
+  EVENT_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY event sign design. 24x36 inch poster format. Include bleed area. NO easel or mounting visible.",
+  EASEL_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY easel sign design. 22x28 inch format. Complete artwork with no easel visible.",
+  
+  // Location signage isolated
+  LOCATION_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY wayfinding sign design. 18x24 inch format. Include directional arrows placeholder. Clean, high-contrast design.",
+  ROOM_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY room sign design. 11x17 inch format. Include placeholders for session title, time, speaker. Clean design.",
+  DOOR_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY door sign design. 8x10 inch format. Include room number/name area. Professional wayfinding design.",
+  WIFI_SIGN_ISOLATED: "Generate FLAT PRINT-READY WiFi sign design. 8.5x11 inch format. Include large WiFi icon and text areas for network/password. Clean design.",
 };
 
 async function generateImageWithRetry(
