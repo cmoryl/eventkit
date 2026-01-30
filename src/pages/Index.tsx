@@ -14,16 +14,24 @@ import TextEditorModal from '../components/TextEditorModal';
 import TextListEditorModal from '../components/TextListEditorModal';
 import QRCodeGeneratorModal from '../components/QRCodeGeneratorModal';
 import PresentationEditorModal from '../components/PresentationEditorModal';
+import { AuthModal } from '../components/auth/AuthModal';
+import { VideoTeaserModal } from '../components/VideoTeaserModal';
+import { AIImageEditModal } from '../components/AIImageEditModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
+import { useAuth } from '../hooks/useAuth';
 import { fileToBase64, downloadAllAssets } from '../utils';
 import { getAssetConfig } from '../config/assetConfig';
 import { generateBrandStyleGuide } from '../services/brandGuideGenerator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const ensureProtocol = (url: string) => url && !url.match(/^[a-zA-Z]+:\/\//) ? `https://${url}` : url;
 
 const Index: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
+  
   const [view, setView] = useState<'onboarding' | 'studio'>('onboarding');
   const [eventDetails, setEventDetails] = useState<EventDetails>({
     name: '',
@@ -39,16 +47,21 @@ const Index: React.FC = () => {
   const [folders, setFolders] = useState<{ id: string; name: string }[]>([]);
   const [styleDescription, setStyleDescription] = useState('');
   const [colorPalette, setColorPalette] = useState<ColorInfo[]>([]);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [toastState, setToastState] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Modal states
   const [editingAsset, setEditingAsset] = useState<GeneratedAsset | null>(null);
   const [viewingAsset, setViewingAsset] = useState<GeneratedAsset | null>(null);
   const [downloadingAsset, setDownloadingAsset] = useState<GeneratedAsset | null>(null);
   const [showQRGenerator, setShowQRGenerator] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showAIImageEdit, setShowAIImageEdit] = useState(false);
+  const [aiEditingAsset, setAiEditingAsset] = useState<GeneratedAsset | null>(null);
   const [isGeneratingGuide, setIsGeneratingGuide] = useState(false);
+  const [isSavingToCloud, setIsSavingToCloud] = useState(false);
 
-  const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type });
+  const showToast = (message: string, type: 'success' | 'error') => setToastState({ message, type });
 
   const { pushSnapshot, undo, redo, canUndo, canRedo } = useProjectHistory({
     eventDetails, generatedAssets, logos, styleDescription, colorPalette, folders
@@ -257,6 +270,105 @@ const Index: React.FC = () => {
     await generateAssets([{ ...asset, isLoading: true }], styleDescription);
     showToast(`${asset.title} regenerated`, "success");
   };
+  // Save project to cloud
+  const handleSaveToCloud = async () => {
+    if (!isAuthenticated || !user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    setIsSavingToCloud(true);
+    try {
+      // Prepare asset data (without large base64 images in JSONB to avoid db bloat)
+      const assetSummary = generatedAssets.map(a => ({
+        id: a.id,
+        type: a.type,
+        title: a.title,
+        isLoading: a.isLoading,
+        isFavorite: a.isFavorite,
+        folderId: a.folderId,
+        // Store content reference, not full base64
+        hasContent: !!a.content,
+        contentType: typeof a.content,
+      }));
+
+      // Check if user already has a project
+      const { data: existingProject } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const projectData = {
+        user_id: user.id,
+        name: eventDetails.name || 'Untitled Project',
+        description: eventDetails.description || null,
+        event_details: JSON.parse(JSON.stringify(eventDetails)),
+        color_palette: JSON.parse(JSON.stringify(colorPalette)),
+        folders: JSON.parse(JSON.stringify(folders)),
+        generated_assets: JSON.parse(JSON.stringify(assetSummary)),
+      };
+
+      let error;
+      if (existingProject) {
+        // Update existing project - omit user_id for update
+        const { user_id, ...updateData } = projectData;
+        const result = await supabase
+          .from('projects')
+          .update(updateData)
+          .eq('id', existingProject.id);
+        error = result.error;
+      } else {
+        // Insert new project
+        const result = await supabase
+          .from('projects')
+          .insert([projectData]);
+        error = result.error;
+      }
+
+      if (error) throw error;
+
+      toast.success('Project saved to cloud!');
+      showToast('Project saved to cloud!', 'success');
+    } catch (error) {
+      console.error('Cloud save error:', error);
+      toast.error('Failed to save to cloud');
+      showToast('Failed to save to cloud', 'error');
+    } finally {
+      setIsSavingToCloud(false);
+    }
+  };
+
+  // Handle AI image editing
+  const handleOpenAIImageEdit = (asset: GeneratedAsset) => {
+    setAiEditingAsset(asset);
+    setShowAIImageEdit(true);
+  };
+
+  const handleAIImageEdited = (newImageUrl: string) => {
+    if (aiEditingAsset) {
+      pushSnapshot();
+      setGeneratedAssets(prev => prev.map(a =>
+        a.id === aiEditingAsset.id ? { ...a, content: newImageUrl } : a
+      ));
+      showToast('Image updated with AI edits', 'success');
+    }
+    setShowAIImageEdit(false);
+    setAiEditingAsset(null);
+  };
+
+  // Handle video teaser generation
+  const handleVideoGenerated = (thumbnailUrl: string) => {
+    pushSnapshot();
+    setGeneratedAssets(prev => [...prev, {
+      id: uuidv4(),
+      type: AssetType.VideoTeaser,
+      title: 'Video Teaser',
+      content: thumbnailUrl,
+      isLoading: false,
+    }]);
+    showToast('Video teaser added to assets', 'success');
+  };
 
   const getEditorModal = () => {
     if (!editingAsset) return null;
@@ -342,6 +454,7 @@ const Index: React.FC = () => {
             onLoad={handleLoadProject}
             onExportBrandGuide={handleExportBrandGuide}
             onOpenQRGenerator={() => setShowQRGenerator(true)}
+            onOpenVideoGenerator={() => setShowVideoModal(true)}
             onAddMoreAssets={handleAddMoreAssets}
             onUndo={undo}
             onRedo={redo}
@@ -350,6 +463,9 @@ const Index: React.FC = () => {
             isExporting={isExporting}
             isGeneratingGuide={isGeneratingGuide}
             isLoadingProject={isLoadingProject}
+            onOpenAuth={() => setShowAuthModal(true)}
+            onSaveToCloud={handleSaveToCloud}
+            isSavingToCloud={isSavingToCloud}
           />
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
@@ -439,7 +555,39 @@ const Index: React.FC = () => {
         logoDataUrl={logos[0] ? logos[0].url : undefined}
       />
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* Auth Modal */}
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        onAuthSuccess={() => {
+          showToast('Welcome! You can now save projects to the cloud.', 'success');
+        }}
+      />
+
+      {/* Video Teaser Modal */}
+      <VideoTeaserModal
+        open={showVideoModal}
+        onOpenChange={setShowVideoModal}
+        eventName={eventDetails.name}
+        eventDescription={eventDetails.description}
+        onVideoGenerated={handleVideoGenerated}
+      />
+
+      {/* AI Image Edit Modal */}
+      {aiEditingAsset && typeof aiEditingAsset.content === 'string' && (
+        <AIImageEditModal
+          open={showAIImageEdit}
+          onOpenChange={(open) => {
+            setShowAIImageEdit(open);
+            if (!open) setAiEditingAsset(null);
+          }}
+          imageUrl={aiEditingAsset.content}
+          eventName={eventDetails.name}
+          onImageEdited={handleAIImageEdited}
+        />
+      )}
+
+      {toastState && <Toast message={toastState.message} type={toastState.type} onClose={() => setToastState(null)} />}
     </div>
   );
 };

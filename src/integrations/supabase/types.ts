@@ -14,7 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      project_assets: {
+        Row: {
+          asset_type: string
+          content: string | null
+          created_at: string
+          folder_id: string | null
+          id: string
+          is_favorite: boolean | null
+          metadata: Json | null
+          project_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          asset_type: string
+          content?: string | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          metadata?: Json | null
+          project_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          asset_type?: string
+          content?: string | null
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          is_favorite?: boolean | null
+          metadata?: Json | null
+          project_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_assets_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projects: {
+        Row: {
+          color_palette: Json | null
+          created_at: string
+          description: string | null
+          event_details: Json
+          folders: Json | null
+          generated_assets: Json | null
+          id: string
+          is_favorite: boolean | null
+          logos: Json | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color_palette?: Json | null
+          created_at?: string
+          description?: string | null
+          event_details?: Json
+          folders?: Json | null
+          generated_assets?: Json | null
+          id?: string
+          is_favorite?: boolean | null
+          logos?: Json | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color_palette?: Json | null
+          created_at?: string
+          description?: string | null
+          event_details?: Json
+          folders?: Json | null
+          generated_assets?: Json | null
+          id?: string
+          is_favorite?: boolean | null
+          logos?: Json | null
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
