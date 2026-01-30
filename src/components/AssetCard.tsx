@@ -22,6 +22,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
   onEdit,
   onDelete,
   onToggleFavorite,
+  onMoveToFolder
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -172,7 +173,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
           </div>
         </div>
 
-        <div className="flex gap-2 justify-center">
+        <div className="flex gap-2 justify-center flex-wrap">
           <button onClick={(e) => { e.stopPropagation(); onView(asset); }} className="p-2.5 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors" title="View">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -184,6 +185,13 @@ const AssetCard: React.FC<AssetCardProps> = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
+          {onMoveToFolder && (
+            <button onClick={(e) => { e.stopPropagation(); onMoveToFolder(asset); }} className="p-2.5 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors" title="Move to Folder">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </button>
+          )}
           <button onClick={handleDownload} disabled={isDownloading} className="p-2.5 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50" title="Download">
             {isDownloading ? <Spinner className="h-4 w-4" /> : (
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
