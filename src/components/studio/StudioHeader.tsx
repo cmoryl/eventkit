@@ -1,4 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { 
+  ArrowLeft, 
+  Save, 
+  Download, 
+  FileText, 
+  QrCode, 
+  Plus, 
+  MoreHorizontal,
+  Loader2
+} from 'lucide-react';
 
 interface StudioHeaderProps {
   eventName: string;
@@ -6,7 +16,11 @@ interface StudioHeaderProps {
   onBackToSetup: () => void;
   onDownloadAll: () => void;
   onSave: () => void;
+  onExportBrandGuide: () => void;
+  onOpenQRGenerator: () => void;
+  onAddMoreAssets: () => void;
   isExporting?: boolean;
+  isGeneratingGuide?: boolean;
 }
 
 const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -15,8 +29,14 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onBackToSetup,
   onDownloadAll,
   onSave,
+  onExportBrandGuide,
+  onOpenQRGenerator,
+  onAddMoreAssets,
   isExporting,
+  isGeneratingGuide,
 }) => {
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 frosted-panel border-b border-border/50">
       <div className="container mx-auto px-6 py-4">
@@ -27,9 +47,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               onClick={onBackToSetup}
               className="btn-ghost group"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ArrowLeft className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-0.5" />
               Setup
             </button>
             <div className="h-8 w-px bg-border/60" />
@@ -42,26 +60,105 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Quick Actions */}
+            <button
+              onClick={onAddMoreAssets}
+              className="btn-ghost hidden sm:flex items-center gap-2"
+              title="Add more assets"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden md:inline">Add Assets</span>
+            </button>
+
+            <button
+              onClick={onOpenQRGenerator}
+              className="btn-ghost hidden sm:flex items-center gap-2"
+              title="Generate QR Code"
+            >
+              <QrCode className="w-4 h-4" />
+              <span className="hidden md:inline">QR Code</span>
+            </button>
+
+            <div className="h-6 w-px bg-border/60 hidden sm:block" />
+
+            {/* More Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className="btn-ghost p-2"
+                title="More options"
+              >
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+
+              {showMoreMenu && (
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowMoreMenu(false)} 
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-xl z-50 py-2 animate-scale-in">
+                    <button
+                      onClick={() => { onExportBrandGuide(); setShowMoreMenu(false); }}
+                      disabled={isGeneratingGuide}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                    >
+                      {isGeneratingGuide ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <FileText className="w-4 h-4 text-primary" />
+                      )}
+                      Export Brand Style Guide
+                    </button>
+                    <button
+                      onClick={() => { onOpenQRGenerator(); setShowMoreMenu(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors sm:hidden"
+                    >
+                      <QrCode className="w-4 h-4 text-primary" />
+                      Generate QR Code
+                    </button>
+                    <button
+                      onClick={() => { onAddMoreAssets(); setShowMoreMenu(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors sm:hidden"
+                    >
+                      <Plus className="w-4 h-4 text-primary" />
+                      Add More Assets
+                    </button>
+                    <div className="h-px bg-border my-2" />
+                    <button
+                      onClick={() => { onSave(); setShowMoreMenu(false); }}
+                      disabled={isExporting}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                    >
+                      <Save className="w-4 h-4 text-muted-foreground" />
+                      Save Project
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Primary Actions */}
             <button
               onClick={onSave}
               disabled={isExporting}
-              className="btn-secondary group"
+              className="btn-secondary hidden sm:flex items-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-              </svg>
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
               Save
             </button>
             <button
               onClick={onDownloadAll}
               disabled={assetCount === 0}
-              className="btn-primary group"
+              className="btn-primary flex items-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2 transition-transform group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Download All
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Download All</span>
             </button>
           </div>
         </div>

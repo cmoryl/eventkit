@@ -84,7 +84,7 @@ export interface QRCodeGenerationParams {
   backgroundColor: string;
   margin: number;
   errorCorrectionLevel: 'L' | 'M' | 'Q' | 'H';
-  dotsType: 'squares' | 'dots' | 'rounded' | 'classy' | 'classy-rounded' | 'extra-rounded';
+  dotsType: 'square' | 'dots' | 'rounded' | 'classy' | 'classy-rounded' | 'extra-rounded';
   cornersSquareType: 'square' | 'extra-rounded' | 'dot';
   cornersDotType: 'square' | 'dot';
   logoImage?: string;
