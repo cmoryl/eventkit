@@ -12,6 +12,9 @@ import {
 } from '../config/printReadyConfig';
 import { printDimensionsMap } from '../utils';
 import { supabase } from '../integrations/supabase/client';
+import { usePrintTemplates } from '../hooks/usePrintTemplates';
+import { PrintTemplate } from '../types/printTemplate';
+import TemplateImportModal from './TemplateImportModal';
 import {
   Printer,
   FileImage,
@@ -29,7 +32,10 @@ import {
   Layers,
   Building2,
   LayoutGrid,
-  Maximize2
+  Maximize2,
+  FileUp,
+  Library,
+  Star
 } from 'lucide-react';
 
 interface PrintReadyExportModalProps {
@@ -53,6 +59,13 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
   const [extractedDesign, setExtractedDesign] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTemplateImport, setShowTemplateImport] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<PrintTemplate | null>(null);
+
+  // Fetch user's saved templates
+  const { templates, isLoading: templatesLoading, refetch: refetchTemplates } = usePrintTemplates({
+    assetType: asset.type,
+  });
 
   const needsExtraction = requiresDesignExtraction(asset.type);
   const isEnvironmental = isEnvironmentalAsset(asset.type);
@@ -60,6 +73,28 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
   const spec = getPrintReadySpec(asset.type);
   const dims = printDimensionsMap[asset.type];
   const currentImage = typeof asset.content === 'string' ? asset.content : '';
+
+  // Use template specs if selected, otherwise use default specs
+  const activeSpecs = selectedTemplate ? {
+    width: selectedTemplate.widthInches,
+    height: selectedTemplate.heightInches,
+    bleed: selectedTemplate.bleedInches,
+    safeZone: selectedTemplate.safeZoneInches,
+    resolution: selectedTemplate.resolutionDpi,
+    colorMode: selectedTemplate.colorMode,
+  } : spec?.isolatedDimensions ? {
+    width: spec.isolatedDimensions.width,
+    height: spec.isolatedDimensions.height,
+    bleed: 0.125,
+    safeZone: 0.25,
+    resolution: 300,
+    colorMode: 'CMYK',
+  } : null;
+
+  const handleTemplateImported = (template: PrintTemplate) => {
+    setSelectedTemplate(template);
+    refetchTemplates();
+  };
 
   // Get appropriate icon based on asset category
   const getCategoryIcon = () => {
@@ -329,25 +364,99 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
                 )}
               </div>
 
+              {/* Template Library Section */}
+              <div className="border-t border-border pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    <Library className="w-4 h-4" />
+                    Vendor Templates
+                  </h4>
+                  <button
+                    onClick={() => setShowTemplateImport(true)}
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    <FileUp className="w-3 h-3" />
+                    Import Template
+                  </button>
+                </div>
+
+                {/* Selected Template */}
+                {selectedTemplate && (
+                  <div className="mb-3 p-3 bg-primary/10 border border-primary/30 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-foreground">{selectedTemplate.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {selectedTemplate.widthInches}" × {selectedTemplate.heightInches}" • {selectedTemplate.resolutionDpi} DPI • {selectedTemplate.colorMode}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedTemplate(null)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Template List */}
+                {templates.length > 0 && !selectedTemplate && (
+                  <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                    {templates.slice(0, 4).map((template) => (
+                      <button
+                        key={template.id}
+                        onClick={() => setSelectedTemplate(template)}
+                        className="p-2 bg-secondary/30 hover:bg-secondary/50 border border-border rounded-lg text-left transition-all"
+                      >
+                        <div className="flex items-center gap-1 mb-0.5">
+                          {template.isFavorite && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
+                          <span className="text-xs font-medium text-foreground truncate">{template.name}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          {template.widthInches}" × {template.heightInches}"
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {templates.length === 0 && !templatesLoading && (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    No saved templates. Import a vendor template for exact specs.
+                  </p>
+                )}
+              </div>
+
               {/* Print specifications */}
-              {spec && (
+              {(spec || activeSpecs) && (
                 <div className="p-3 bg-secondary/30 rounded-lg">
                   <h5 className="text-xs font-medium text-foreground mb-2 flex items-center gap-1.5">
                     <FileCheck className="w-3.5 h-3.5" />
-                    Print Specifications
+                    {selectedTemplate ? 'Template Specifications' : 'Print Specifications'}
                   </h5>
                   <div className="grid grid-cols-2 gap-2 text-[10px]">
                     <div>
                       <span className="text-muted-foreground">Method:</span>
-                      <span className="ml-1 text-foreground">{getPrintMethodLabel(spec.printMethod)}</span>
+                      <span className="ml-1 text-foreground">{getPrintMethodLabel(spec?.printMethod)}</span>
                     </div>
-                    {spec.isolatedDimensions && (
-                      <div>
-                        <span className="text-muted-foreground">Size:</span>
-                        <span className="ml-1 text-foreground">{spec.isolatedDimensions.width}" × {spec.isolatedDimensions.height}"</span>
-                      </div>
+                    {activeSpecs && (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground">Size:</span>
+                          <span className="ml-1 text-foreground">{activeSpecs.width}" × {activeSpecs.height}"</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Bleed:</span>
+                          <span className="ml-1 text-foreground">{activeSpecs.bleed}"</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Resolution:</span>
+                          <span className="ml-1 text-foreground">{activeSpecs.resolution} DPI</span>
+                        </div>
+                      </>
                     )}
-                    {spec.colorLimit && (
+                    {spec?.colorLimit && (
                       <div>
                         <span className="text-muted-foreground">Colors:</span>
                         <span className="ml-1 text-foreground">Max {spec.colorLimit}</span>
@@ -355,10 +464,10 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
                     )}
                     <div>
                       <span className="text-muted-foreground">Background:</span>
-                      <span className="ml-1 text-foreground">{spec.requiresTransparency ? 'Transparent' : 'Solid'}</span>
+                      <span className="ml-1 text-foreground">{spec?.requiresTransparency ? 'Transparent' : 'Solid'}</span>
                     </div>
                   </div>
-                  {spec.notes && (
+                  {spec?.notes && (
                     <p className="mt-2 text-[10px] text-muted-foreground italic">{spec.notes}</p>
                   )}
                 </div>
@@ -469,6 +578,14 @@ const PrintReadyExportModal: React.FC<PrintReadyExportModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Template Import Modal */}
+      <TemplateImportModal
+        isOpen={showTemplateImport}
+        onClose={() => setShowTemplateImport(false)}
+        onTemplateImported={handleTemplateImported}
+        assetType={asset.type}
+      />
     </div>
   );
 };

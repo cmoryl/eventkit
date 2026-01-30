@@ -14,6 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      print_templates: {
+        Row: {
+          asset_type: string | null
+          bleed_inches: number | null
+          color_mode: string | null
+          created_at: string
+          description: string | null
+          file_path: string
+          has_die_lines: boolean | null
+          has_fold_lines: boolean | null
+          has_perforation: boolean | null
+          height_inches: number | null
+          id: string
+          is_favorite: boolean | null
+          name: string
+          project_id: string | null
+          resolution_dpi: number | null
+          safe_zone_inches: number | null
+          source_vendor: string | null
+          specs: Json
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+          width_inches: number | null
+        }
+        Insert: {
+          asset_type?: string | null
+          bleed_inches?: number | null
+          color_mode?: string | null
+          created_at?: string
+          description?: string | null
+          file_path: string
+          has_die_lines?: boolean | null
+          has_fold_lines?: boolean | null
+          has_perforation?: boolean | null
+          height_inches?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          name: string
+          project_id?: string | null
+          resolution_dpi?: number | null
+          safe_zone_inches?: number | null
+          source_vendor?: string | null
+          specs?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+          width_inches?: number | null
+        }
+        Update: {
+          asset_type?: string | null
+          bleed_inches?: number | null
+          color_mode?: string | null
+          created_at?: string
+          description?: string | null
+          file_path?: string
+          has_die_lines?: boolean | null
+          has_fold_lines?: boolean | null
+          has_perforation?: boolean | null
+          height_inches?: number | null
+          id?: string
+          is_favorite?: boolean | null
+          name?: string
+          project_id?: string | null
+          resolution_dpi?: number | null
+          safe_zone_inches?: number | null
+          source_vendor?: string | null
+          specs?: Json
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+          width_inches?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_templates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
