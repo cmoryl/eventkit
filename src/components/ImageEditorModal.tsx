@@ -9,8 +9,10 @@ import PrintSpecPanel from './PrintSpecPanel';
 import ProductMockupPreview from './ProductMockupPreview';
 import AssetExportOptions from './AssetExportOptions';
 import BleedSafeZoneOverlay from './BleedSafeZoneOverlay';
+import PrintReadyExportModal from './PrintReadyExportModal';
 import { fileToBase64 } from '../utils';
 import { printDimensionsMap } from '../utils';
+import { requiresDesignExtraction } from '../config/printReadyConfig';
 import { 
   Type, 
   Crop, 
@@ -100,7 +102,9 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
     // Print preview states
     const [showBleedOverlay, setShowBleedOverlay] = useState(false);
     const [showSafeZoneOverlay, setShowSafeZoneOverlay] = useState(false);
+    const [showPrintReadyModal, setShowPrintReadyModal] = useState(false);
     const isPrintAsset = !!printDimensionsMap[asset.type];
+    const needsDesignExtraction = requiresDesignExtraction(asset.type);
     
     // Masking states
     const [isMaskingMode, setIsMaskingMode] = useState(false);
@@ -875,8 +879,25 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
 
           {/* Footer */}
           <footer className="p-4 border-t border-border flex justify-between items-center bg-secondary/20">
-            <div className="text-xs text-muted-foreground">
-              {history.length > 0 && `${history.length} edit${history.length > 1 ? 's' : ''} in history`}
+            <div className="flex items-center gap-3">
+              <div className="text-xs text-muted-foreground">
+                {history.length > 0 && `${history.length} edit${history.length > 1 ? 's' : ''} in history`}
+              </div>
+              
+              {/* Print Ready Button - Prominent for print assets */}
+              {isPrintAsset && (
+                <button
+                  onClick={() => setShowPrintReadyModal(true)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    needsDesignExtraction
+                      ? 'bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md hover:shadow-lg'
+                      : 'bg-primary/10 text-primary hover:bg-primary/20'
+                  }`}
+                >
+                  <Printer className="w-4 h-4" />
+                  {needsDesignExtraction ? 'Get Print-Ready File' : 'Print Export'}
+                </button>
+              )}
             </div>
             <div className="flex gap-3">
               <button onClick={onClose} className="btn-secondary">Cancel</button>
@@ -897,6 +918,15 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
               )}
             </div>
           </footer>
+
+          {/* Print Ready Export Modal */}
+          <PrintReadyExportModal
+            isOpen={showPrintReadyModal}
+            onClose={() => setShowPrintReadyModal(false)}
+            asset={asset}
+            eventDetails={eventDetails}
+            colorPalette={colorPalette}
+          />
 
           {/* Large view modal */}
           {isViewingLarge && !isMaskingMode && (

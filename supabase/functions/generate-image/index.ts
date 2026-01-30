@@ -39,6 +39,14 @@ const ASSET_PROMPTS: Record<string, string> = {
   EASEL_SIGNAGE: "Create standing easel sign design. Welcome message and event info.",
   REGISTRATION_COUNTER: "Design registration desk backdrop. Welcoming, branded, professional.",
   BACK_WALL: "Create event backdrop wall design. Photo-ready, branded, impactful.",
+  
+  // Isolated design variants for print-ready extraction
+  TSHIRT_ISOLATED: "Generate ONLY the isolated design graphic on a transparent background. Do NOT show any t-shirt or clothing. Just the artwork/logo/graphic that will be printed. Suitable for screen printing with clean edges. 12x16 inch design area.",
+  TSHIRT_BACK_ISOLATED: "Generate ONLY the isolated back design graphic on a transparent background. Do NOT show any t-shirt. Just the artwork with event name, date, sponsors. Clean edges for screen printing. 12x14 inch design area.",
+  HAT_ISOLATED: "Generate ONLY the isolated embroidery-ready logo on a transparent background. Do NOT show any hat or cap. Just the logo with clean lines, no gradients, suitable for embroidery stitching. Max 6 colors. 4x2.5 inch design area.",
+  SWAG_BAG_ISOLATED: "Generate ONLY the isolated tote bag graphic on a transparent background. Do NOT show any bag. Just the artwork/logo that will be printed. Bold, simple design. Max 3 colors for screen printing. 10x10 inch design area.",
+  WATER_BOTTLE_ISOLATED: "Generate ONLY the isolated water bottle label design. Rectangular wrap-around format, 8x3 inches. Clean design without showing any bottle. Ready for vinyl printing.",
+  LANYARD_ISOLATED: "Generate ONLY the isolated repeating pattern for lanyard printing. Slim vertical format 1x6 inches. Pattern should tile seamlessly. Do NOT show any lanyard or strap.",
 };
 
 async function generateImageWithRetry(
