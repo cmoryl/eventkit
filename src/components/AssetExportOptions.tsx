@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AssetType } from '../types';
 import { ASSET_CONFIGS } from '../config/assetConfig';
 import { 
@@ -12,16 +12,16 @@ import {
   Smartphone,
   ChevronDown,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Store
 } from 'lucide-react';
 import { 
   getRecommendedExportSettings,
-  rgbToCmyk,
-  hexToRgb,
-  formatCmyk,
   downloadProfessionalPdf
 } from '../services/printService';
 import { printDimensionsMap } from '../utils';
+import VendorSelector from './VendorSelector';
+import { VendorTemplate } from '../config/printVendorTemplates';
 
 interface ExportFormat {
   id: string;
@@ -115,6 +115,7 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
   const [selectedResolution, setSelectedResolution] = useState<string>('300dpi');
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [localExporting, setLocalExporting] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<VendorTemplate | null>(null);
   const [options, setOptions] = useState<ExportOptions>({
     includeBleed: true,
     includeTrimMarks: true,
@@ -129,6 +130,22 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
   const isPrintAsset = !!config?.printSpec || !!printDimensionsMap[assetType];
   const recommendedSettings = getRecommendedExportSettings(assetType);
   const dims = printDimensionsMap[assetType];
+
+  // Update options when vendor is selected
+  useEffect(() => {
+    if (selectedVendor) {
+      setOptions(prev => ({
+        ...prev,
+        includeBleed: selectedVendor.specs.bleed > 0,
+        includeTrimMarks: selectedVendor.specs.requiresTrimMarks,
+        colorProfile: selectedVendor.specs.colorMode === 'CMYK' ? 'CMYK' : 'sRGB',
+        dpi: selectedVendor.specs.dpi,
+        showSafeZone: selectedVendor.specs.safeZone > 0,
+        safeZone: selectedVendor.specs.safeZone
+      }));
+      setSelectedFormat(selectedVendor.specs.fileFormats[0]);
+    }
+  }, [selectedVendor]);
 
   const handlePresetSelect = (presetId: string) => {
     setSelectedPreset(presetId);
@@ -173,18 +190,25 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
   };
 
   const handleExport = async () => {
+    // Determine bleed based on vendor or defaults
+    const getBleedAmount = () => {
+      if (!options.includeBleed) return 0;
+      if (selectedVendor) return selectedVendor.specs.bleed;
+      return dims && (dims.w > 24 || dims.h > 24) ? 0.5 : 0.125;
+    };
+
     // For PDF with print settings, use the professional PDF export
     if (selectedFormat === 'pdf' && isPrintAsset && imageUrl) {
       setLocalExporting(true);
       try {
         await downloadProfessionalPdf(imageUrl, assetType, assetTitle, eventName, {
           paperSize: 'custom',
-          bleed: options.includeBleed ? (dims && (dims.w > 24 || dims.h > 24) ? 0.5 : 0.125) : 0,
+          bleed: getBleedAmount(),
           showTrimMarks: options.includeTrimMarks,
           colorMode: options.colorProfile === 'CMYK' ? 'CMYK' : 'RGB',
           showSafeZone: options.showSafeZone,
-          safeZone: options.safeZone,
-          dpi: options.dpi,
+          safeZone: selectedVendor?.specs.safeZone ?? options.safeZone,
+          dpi: selectedVendor?.specs.dpi ?? options.dpi,
           includeJobTicket: true,
           showBleedArea: true
         });
@@ -203,8 +227,17 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Print Asset Info */}
-      {isPrintAsset && dims && (
+      {/* Vendor Selector - Only for print assets */}
+      {isPrintAsset && (
+        <VendorSelector
+          assetType={assetType}
+          selectedVendor={selectedVendor}
+          onSelectVendor={setSelectedVendor}
+        />
+      )}
+
+      {/* Print Asset Info - Only show if no vendor selected */}
+      {isPrintAsset && dims && !selectedVendor && (
         <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
             <Printer className="w-4 h-4 text-primary" />
@@ -216,11 +249,11 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
               <span>Trim Size</span>
             </div>
             <div>
-              <span className="block text-foreground font-medium">{recommendedSettings.dpi} DPI</span>
+              <span className="block text-foreground font-medium">{selectedVendor?.specs.dpi || recommendedSettings.dpi} DPI</span>
               <span>Resolution</span>
             </div>
             <div>
-              <span className="block text-foreground font-medium">{recommendedSettings.colorMode}</span>
+              <span className="block text-foreground font-medium">{selectedVendor?.specs.colorMode || recommendedSettings.colorMode}</span>
               <span>Color Mode</span>
             </div>
           </div>
@@ -432,10 +465,24 @@ const AssetExportOptions: React.FC<AssetExportOptionsProps> = ({
           <>
             <Download className="w-4 h-4" />
             Export {selectedFormat.toUpperCase()}
-            {selectedFormat === 'pdf' && isPrintAsset && ' (Print-Ready)'}
+            {selectedFormat === 'pdf' && isPrintAsset && !selectedVendor && ' (Print-Ready)'}
+            {selectedVendor && ` for ${selectedVendor.name}`}
           </>
         )}
       </button>
+
+      {/* Vendor Upload Link */}
+      {selectedVendor?.uploadUrl && (
+        <a
+          href={selectedVendor.uploadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center justify-center gap-2 py-2 text-xs text-primary hover:text-primary/80 transition-colors"
+        >
+          <Store className="w-3.5 h-3.5" />
+          After export, upload to {selectedVendor.name} →
+        </a>
+      )}
     </div>
   );
 };
