@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import type { GeneratedAsset, ColorInfo } from '../../types';
+import type { GeneratedAsset, ColorInfo, AssetFolder } from '../../types';
 import { AssetType } from '../../types';
 import { 
   ASSET_CONFIGS, 
@@ -21,30 +21,55 @@ import {
   LayoutGrid,
   List,
   Download,
-  RefreshCw
+  RefreshCw,
+  FolderOpen,
+  Plus
 } from 'lucide-react';
 import AssetDownloadModal from './AssetDownloadModal';
+import FolderTabs from '../FolderTabs';
+import MoveToFolderModal from '../MoveToFolderModal';
 
 interface AssetGridProps {
   assets: GeneratedAsset[];
   eventName: string;
+  folders?: AssetFolder[];
   onView: (asset: GeneratedAsset) => void;
   onEdit: (asset: GeneratedAsset) => void;
   onDelete: (id: string) => void;
   onToggleFavorite: (asset: GeneratedAsset) => void;
   onRegenerate?: (asset: GeneratedAsset) => void;
+  onMoveToFolder?: (assetId: string, folderId?: string) => void;
+  onCreateFolder?: (name: string) => void;
 }
 
-const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit, onDelete, onToggleFavorite, onRegenerate }) => {
+const AssetGrid: React.FC<AssetGridProps> = ({ 
+  assets, 
+  eventName, 
+  folders = [],
+  onView, 
+  onEdit, 
+  onDelete, 
+  onToggleFavorite, 
+  onRegenerate,
+  onMoveToFolder,
+  onCreateFolder
+}) => {
   const [activeCategory, setActiveCategory] = useState<AssetCategory | 'all' | 'favorites'>('all');
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [downloadingAsset, setDownloadingAsset] = useState<GeneratedAsset | null>(null);
+  const [movingAsset, setMovingAsset] = useState<GeneratedAsset | null>(null);
 
   const categories = Object.entries(ASSET_CATEGORIES) as [AssetCategory, typeof ASSET_CATEGORIES[AssetCategory]][];
 
   const filteredAssets = useMemo(() => {
     let filtered = assets;
+
+    // Filter by folder first
+    if (activeFolderId) {
+      filtered = filtered.filter(a => a.folderId === activeFolderId);
+    }
 
     // Filter by category
     if (activeCategory === 'favorites') {
@@ -63,7 +88,11 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit
     }
 
     return filtered;
-  }, [assets, activeCategory, searchQuery]);
+  }, [assets, activeCategory, activeFolderId, searchQuery]);
+
+  const getFolderCount = (folderId: string) => {
+    return assets.filter(a => a.folderId === folderId).length;
+  };
 
   const getCategoryCount = (category: AssetCategory | 'all' | 'favorites') => {
     if (category === 'all') return assets.length;
@@ -186,6 +215,28 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit
 
   return (
     <div className="space-y-6">
+      {/* Folder Tabs */}
+      {folders.length > 0 && (
+        <FolderTabs
+          folders={folders}
+          activeView={activeFolderId || 'all'}
+          onSelectView={(viewId) => {
+            if (viewId === 'all' || viewId === 'favorites') {
+              setActiveFolderId(null);
+              if (viewId === 'favorites') setActiveCategory('favorites');
+              else setActiveCategory('all');
+            } else {
+              setActiveFolderId(viewId);
+              setActiveCategory('all');
+            }
+          }}
+          onCreateFolder={() => {
+            const name = prompt('Enter folder name:');
+            if (name && onCreateFolder) onCreateFolder(name);
+          }}
+        />
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         {/* Search */}
@@ -200,8 +251,20 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit
           />
         </div>
 
-        {/* View Toggle */}
+        {/* View Toggle + Create Folder */}
         <div className="flex items-center gap-2">
+          {onCreateFolder && folders.length === 0 && (
+            <button
+              onClick={() => {
+                const name = prompt('Enter folder name:');
+                if (name) onCreateFolder(name);
+              }}
+              className="btn-secondary text-sm px-3 py-2"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              New Folder
+            </button>
+          )}
           <div className="flex rounded-lg border border-border overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
@@ -334,6 +397,15 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit
                     >
                       <Download className="w-4 h-4" />
                     </button>
+                    {onMoveToFolder && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setMovingAsset(asset); }}
+                        className="w-9 h-9 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 flex items-center justify-center text-purple-600 transition-all hover:scale-110 shadow-md"
+                        title="Move to Folder"
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }}
                       className="w-9 h-9 rounded-xl bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center text-destructive transition-all hover:scale-110 shadow-md"
@@ -482,6 +554,20 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit
           asset={downloadingAsset}
           eventName={eventName}
           onClose={() => setDownloadingAsset(null)}
+        />
+      )}
+
+      {/* Move to Folder Modal */}
+      {movingAsset && onMoveToFolder && onCreateFolder && (
+        <MoveToFolderModal
+          isOpen={!!movingAsset}
+          onClose={() => setMovingAsset(null)}
+          folders={folders}
+          onMove={(folderId) => {
+            onMoveToFolder(movingAsset.id, folderId);
+            setMovingAsset(null);
+          }}
+          onCreateFolder={onCreateFolder}
         />
       )}
     </div>
