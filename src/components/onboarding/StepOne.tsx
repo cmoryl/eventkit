@@ -37,9 +37,9 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Event Details</h2>
-        <p className="text-muted-foreground">Enter your event information to personalize your design kit</p>
+      <div className="text-center mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-1">Event Details</h2>
+        <p className="text-sm text-muted-foreground">Tell us about your event</p>
       </div>
 
       {/* Event Name - Primary field */}
@@ -61,19 +61,19 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
       {/* Logo Upload */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Event Logo <span className="text-muted-foreground font-normal">(optional)</span>
+          Event Logo <span className="text-muted-foreground font-normal text-xs">(optional)</span>
         </label>
         
         {logos.length > 0 ? (
           <div className="flex flex-wrap gap-3 mb-3">
             {logos.map(logo => (
               <div key={logo.id} className="relative group">
-                <div className="w-20 h-20 rounded-xl bg-secondary/50 border border-border overflow-hidden flex items-center justify-center">
+                <div className="w-20 h-20 rounded-xl bg-secondary/50 border border-border overflow-hidden flex items-center justify-center shadow-sm">
                   <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain" />
                 </div>
                 <button
                   onClick={() => removeLogo(logo.id)}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -83,7 +83,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
             ))}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-20 h-20 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+              className="w-20 h-20 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-all"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -93,13 +93,17 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
         ) : (
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full py-8 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="w-full py-10 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 flex flex-col items-center justify-center gap-3 text-muted-foreground hover:text-foreground transition-all group"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span className="text-sm font-medium">Upload logo</span>
-            <span className="text-xs text-muted-foreground">PNG, JPG, or SVG</span>
+            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <span className="block text-sm font-medium">Upload your logo</span>
+              <span className="text-xs text-muted-foreground">PNG, JPG, or SVG</span>
+            </div>
           </button>
         )}
         <input
@@ -113,15 +117,17 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
       </div>
 
       {/* Optional Details - Collapsible */}
-      <details className="group">
-        <summary className="flex items-center gap-2 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-          Add more details (optional)
+      <details className="group pt-2">
+        <summary className="flex items-center gap-2 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors py-2">
+          <div className="w-6 h-6 rounded-lg bg-secondary flex items-center justify-center group-open:bg-primary/10 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform group-open:rotate-90 group-open:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+          Add more details
         </summary>
         
-        <div className="mt-4 space-y-4 animate-fade-in">
+        <div className="mt-4 space-y-4 animate-fade-in pl-8">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Description</label>
             <textarea
