@@ -110,11 +110,20 @@ const Index: React.FC = () => {
   }, [generatedAssets, activeView]);
 
   return (
-    <div className="bg-transparent min-h-screen text-white font-sans relative">
-      <div className="animated-background"></div>
+    <div className="min-h-screen text-foreground font-sans relative">
+      <div className="animated-background" />
       <div className="relative z-10">
         <AppHeader
-          onNewProject={() => { if (confirm("Start new project?")) { pushSnapshot(); setView('setup'); setStep(1); setGeneratedAssets([]); setLogos([]); } }}
+          onNewProject={() => { 
+            if (confirm("Start new project? Any unsaved changes will be lost.")) { 
+              pushSnapshot(); 
+              setView('setup'); 
+              setStep(1); 
+              setGeneratedAssets([]); 
+              setLogos([]); 
+              setEventDetails({ name: '', description: '', date: '', location: '', website: '', email: '', incorporateLocationStyle: false });
+            } 
+          }}
           onLoadProject={handleLoadProject}
           onSaveProject={handleSaveProject}
           isSaveDisabled={view === 'setup'}
@@ -125,8 +134,15 @@ const Index: React.FC = () => {
           canUndo={canUndo}
           canRedo={canRedo}
         />
-        <main className="pt-24 pb-12">
-          {(isLoading || isLoadingProject) && <GenerationLoader current={generationProgress.current} total={generationProgress.total} assets={generatedAssets} />}
+        
+        <main className="pt-24 pb-16">
+          {(isLoading || isLoadingProject) && (
+            <GenerationLoader 
+              current={generationProgress.current} 
+              total={generationProgress.total} 
+              assets={generatedAssets} 
+            />
+          )}
           
           {view === 'setup' && (
             <LogoUploader
@@ -152,19 +168,35 @@ const Index: React.FC = () => {
           
           {view === 'dashboard' && !isLoading && (
             <div className="container mx-auto px-4 animate-fade-in">
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-foreground mb-2">{eventDetails.name || 'Your Event'}</h1>
+                <p className="text-muted-foreground">Design Kit Dashboard</p>
+              </div>
+              
               <FolderTabs
                 folders={folders}
                 activeView={activeView}
                 onSelectView={setActiveView}
-                onCreateFolder={() => { const n = prompt("Folder name"); if (n) setFolders(p => [...p, { id: uuidv4(), name: n }]); }}
+                onCreateFolder={() => { 
+                  const n = prompt("Enter folder name"); 
+                  if (n?.trim()) setFolders(p => [...p, { id: uuidv4(), name: n.trim() }]); 
+                }}
               />
+              
               {filteredAssets.length === 0 ? (
-                <div className="text-center py-20 bg-white/5 rounded-lg">
-                  <p className="text-gray-400 mb-4">No assets yet</p>
-                  <button onClick={() => setView('setup')} className="btn-primary">Create Assets</button>
+                <div className="text-center py-24 bg-card/30 rounded-2xl border border-border">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-secondary flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  </div>
+                  <p className="text-muted-foreground mb-6">No assets in this view</p>
+                  <button onClick={() => setView('setup')} className="btn-primary">
+                    Create Assets
+                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5">
                   {filteredAssets.map(a => (
                     <AssetCard
                       key={a.id}
@@ -184,6 +216,7 @@ const Index: React.FC = () => {
             </div>
           )}
         </main>
+        
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>
     </div>

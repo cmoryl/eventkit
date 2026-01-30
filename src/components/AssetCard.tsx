@@ -21,10 +21,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
   onView,
   onEdit,
   onDelete,
-  onGeneratePhotorealisticShot,
-  onGenerateVariation,
   onToggleFavorite,
-  onMoveToFolder
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -76,10 +73,10 @@ const AssetCard: React.FC<AssetCardProps> = ({
     if (asset.type === AssetType.Palette && Array.isArray(asset.content)) {
       const colors = asset.content as ColorInfo[];
       return (
-        <div className="w-full h-full flex flex-col" style={{ minHeight: '120px' }}>
+        <div className="w-full h-full flex flex-col" style={{ minHeight: '140px' }}>
           {colors.map((color, i) => (
-            <div key={i} className="flex-1 flex items-center justify-center" style={{ backgroundColor: color.hex }}>
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-black/30 text-white">{color.hex}</span>
+            <div key={i} className="flex-1 flex items-center justify-center transition-transform hover:scale-105" style={{ backgroundColor: color.hex }}>
+              <span className="text-xs font-mono px-2 py-0.5 rounded bg-black/40 text-white backdrop-blur-sm">{color.hex}</span>
             </div>
           ))}
         </div>
@@ -89,11 +86,11 @@ const AssetCard: React.FC<AssetCardProps> = ({
     if (asset.type === AssetType.Slogans && Array.isArray(asset.content)) {
       const slogans = asset.content as string[];
       return (
-        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-fuchsia-900/50 to-purple-900/50" style={{ minHeight: '120px' }}>
+        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-primary/20 to-accent/20" style={{ minHeight: '140px' }}>
           {slogans.slice(0, 3).map((s, i) => (
-            <p key={i} className="text-white text-sm mb-2 truncate">"{s}"</p>
+            <p key={i} className="text-foreground text-sm mb-2 truncate italic">"{s}"</p>
           ))}
-          {slogans.length > 3 && <p className="text-gray-400 text-xs">+{slogans.length - 3} more</p>}
+          {slogans.length > 3 && <p className="text-muted-foreground text-xs">+{slogans.length - 3} more</p>}
         </div>
       );
     }
@@ -101,9 +98,9 @@ const AssetCard: React.FC<AssetCardProps> = ({
     if (asset.type === AssetType.Presentation) {
       const pres = asset.content as PresentationData;
       return (
-        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-blue-900/50 to-indigo-900/50" style={{ minHeight: '120px' }}>
-          <p className="text-white font-bold mb-2">{pres.title}</p>
-          <p className="text-gray-300 text-sm">{pres.slides?.length || 0} slides</p>
+        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-secondary to-muted" style={{ minHeight: '140px' }}>
+          <p className="text-foreground font-bold mb-2 truncate">{pres.title}</p>
+          <p className="text-muted-foreground text-sm">{pres.slides?.length || 0} slides</p>
         </div>
       );
     }
@@ -134,34 +131,38 @@ const AssetCard: React.FC<AssetCardProps> = ({
 
     if (typeof asset.content === 'string') {
       return (
-        <div className="w-full h-full p-4 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900" style={{ minHeight: '120px' }}>
-          <p className="text-gray-300 text-sm text-center line-clamp-4">{asset.content.substring(0, 200)}...</p>
+        <div className="w-full h-full p-4 flex items-center justify-center bg-gradient-to-br from-card to-secondary" style={{ minHeight: '140px' }}>
+          <p className="text-muted-foreground text-sm text-center line-clamp-4">{asset.content.substring(0, 200)}...</p>
         </div>
       );
     }
 
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-800" style={{ minHeight: '120px' }}>
-        <span className="text-gray-500">No preview</span>
+      <div className="w-full h-full flex items-center justify-center bg-secondary" style={{ minHeight: '140px' }}>
+        <span className="text-muted-foreground">No preview</span>
       </div>
     );
   };
 
   return (
-    <div className="group relative card-style overflow-hidden transition-all hover:border-fuchsia-500/50 hover:shadow-lg hover:shadow-fuchsia-500/10 animate-fade-in-fast">
+    <div className="group relative card-style overflow-hidden transition-all hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-1 animate-fade-in-fast">
       <div className="cursor-pointer" onClick={() => onView(asset)}>
         {renderContent()}
       </div>
 
       {/* Overlay Controls */}
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-4">
         <div className="flex justify-between items-start">
-          <span className="text-xs bg-black/50 px-2 py-1 rounded text-white truncate max-w-[70%]">{asset.title}</span>
-          <div className="flex gap-1">
+          <span className="text-xs bg-secondary px-2.5 py-1 rounded-full text-foreground font-medium truncate max-w-[70%]">{asset.title}</span>
+          <div className="flex gap-1.5">
             {onToggleFavorite && (
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleFavorite(asset); }}
-                className={`p-1.5 rounded-full transition-colors ${asset.isFavorite ? 'bg-pink-500 text-white' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                className={`p-2 rounded-full transition-all ${
+                  asset.isFavorite 
+                    ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/30' 
+                    : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+                }`}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
@@ -172,26 +173,26 @@ const AssetCard: React.FC<AssetCardProps> = ({
         </div>
 
         <div className="flex gap-2 justify-center">
-          <button onClick={(e) => { e.stopPropagation(); onView(asset); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors" title="View">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={(e) => { e.stopPropagation(); onView(asset); }} className="p-2.5 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors" title="View">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onEdit(asset); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors" title="Edit">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={(e) => { e.stopPropagation(); onEdit(asset); }} className="p-2.5 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors" title="Edit">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </button>
-          <button onClick={handleDownload} disabled={isDownloading} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50" title="Download">
+          <button onClick={handleDownload} disabled={isDownloading} className="p-2.5 bg-secondary rounded-lg hover:bg-secondary/80 transition-colors disabled:opacity-50" title="Download">
             {isDownloading ? <Spinner className="h-4 w-4" /> : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             )}
           </button>
-          <button onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/40 transition-colors text-red-400" title="Delete">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }} className="p-2.5 bg-destructive/20 rounded-lg hover:bg-destructive/40 transition-colors" title="Delete">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
@@ -202,7 +203,7 @@ const AssetCard: React.FC<AssetCardProps> = ({
       {asset.backContent && (
         <button
           onClick={(e) => { e.stopPropagation(); setIsFlipped(!isFlipped); }}
-          className="absolute bottom-2 right-2 p-1.5 bg-black/50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute bottom-3 right-3 p-2 bg-secondary/80 backdrop-blur-sm rounded-full text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
           title="Flip"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -8,9 +8,11 @@ interface SkeletonLoaderProps {
 const SkeletonLoader: React.FC<SkeletonLoaderProps> = ({ style, className = '' }) => {
   return (
     <div
-      className={`bg-white/10 rounded-lg animate-pulse ${className}`}
+      className={`bg-secondary/50 rounded-lg animate-pulse ${className}`}
       style={style}
-    ></div>
+    >
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+    </div>
   );
 };
 
