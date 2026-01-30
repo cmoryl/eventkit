@@ -458,3 +458,34 @@ export const generatePrintReadyPdf = async (
 
   doc.save(`${sanitizeFileName(eventName)}_${sanitizeFileName(assetTitle)}_PRINT.pdf`);
 };
+
+export const downloadAllAssets = async (assets: { id: string; type: AssetType; title: string; content: string | string[] | any }[], eventName: string) => {
+  const JSZip = (await import('jszip')).default;
+  const zip = new JSZip();
+  const folder = zip.folder(sanitizeFileName(eventName) || 'event-assets');
+
+  if (!folder) throw new Error('Could not create zip folder');
+
+  for (const asset of assets) {
+    if (typeof asset.content === 'string' && asset.content.startsWith('data:image')) {
+      const base64Data = asset.content.split(',')[1];
+      const ext = asset.content.includes('image/png') ? 'png' : 'jpg';
+      folder.file(`${sanitizeFileName(asset.title)}.${ext}`, base64Data, { base64: true });
+    } else if (Array.isArray(asset.content)) {
+      const text = asset.content.map((item, i) => 
+        typeof item === 'string' ? `${i + 1}. ${item}` : JSON.stringify(item, null, 2)
+      ).join('\n\n');
+      folder.file(`${sanitizeFileName(asset.title)}.txt`, text);
+    } else if (typeof asset.content === 'string') {
+      folder.file(`${sanitizeFileName(asset.title)}.txt`, asset.content);
+    }
+  }
+
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${sanitizeFileName(eventName) || 'event-assets'}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
