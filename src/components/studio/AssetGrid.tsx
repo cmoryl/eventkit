@@ -28,11 +28,13 @@ import {
   Square,
   Copy,
   X,
-  Keyboard
+  Keyboard,
+  Sparkles
 } from 'lucide-react';
 import AssetDownloadModal from './AssetDownloadModal';
 import FolderTabs from '../FolderTabs';
 import MoveToFolderModal from '../MoveToFolderModal';
+import { supportsAIGeneration } from '../../services/geminiService';
 
 interface AssetGridProps {
   assets: GeneratedAsset[];
@@ -559,10 +561,18 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                       {onRegenerate && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onRegenerate(asset); }}
-                          className="w-9 h-9 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 flex items-center justify-center text-blue-600 transition-all hover:scale-110 shadow-md"
-                          title="Regenerate"
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-110 shadow-md relative ${
+                            supportsAIGeneration(asset.type) 
+                              ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-600'
+                              : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-600'
+                          }`}
+                          title={supportsAIGeneration(asset.type) ? 'Regenerate with AI' : 'Regenerate'}
                         >
-                          <RefreshCw className="w-4 h-4" />
+                          {supportsAIGeneration(asset.type) ? (
+                            <Sparkles className="w-4 h-4" />
+                          ) : (
+                            <RefreshCw className="w-4 h-4" />
+                          )}
                         </button>
                       )}
                       <button
