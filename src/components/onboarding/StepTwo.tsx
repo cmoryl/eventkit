@@ -1,181 +1,246 @@
-import React from 'react';
-import { AssetType } from '../../types';
+import React, { useState, useRef } from 'react';
+import { EventDetails } from '../../types';
+import { Upload, Image, Palette, Sparkles, X, MapPin, Building2 } from 'lucide-react';
 
 interface StepTwoProps {
-  selectedAssets: Set<AssetType>;
-  setSelectedAssets: React.Dispatch<React.SetStateAction<Set<AssetType>>>;
   styleDescription: string;
   setStyleDescription: React.Dispatch<React.SetStateAction<string>>;
+  vibeImage: File | null;
+  setVibeImage: React.Dispatch<React.SetStateAction<File | null>>;
+  masterPattern: File | null;
+  setMasterPattern: React.Dispatch<React.SetStateAction<File | null>>;
+  eventDetails: EventDetails;
 }
 
-const assetCategories = [
-  {
-    name: 'Essentials',
-    description: 'Core branding elements',
-    icon: '✨',
-    assets: [
-      { type: AssetType.Palette, label: 'Color Palette', icon: '🎨' },
-      { type: AssetType.Slogans, label: 'Slogans', icon: '💬' },
-      { type: AssetType.MarketingCopy, label: 'Marketing Copy', icon: '📝' },
-    ],
-  },
-  {
-    name: 'Social Media',
-    description: 'Digital marketing assets',
-    icon: '📱',
-    assets: [
-      { type: AssetType.SocialPost, label: 'Social Post', icon: '📱' },
-      { type: AssetType.SocialStory, label: 'Story', icon: '📲' },
-      { type: AssetType.EmailHeader, label: 'Email Header', icon: '✉️' },
-    ],
-  },
-  {
-    name: 'Print & Signage',
-    description: 'Physical event materials',
-    icon: '🖼️',
-    assets: [
-      { type: AssetType.Banner, label: 'Banner', icon: '🏷️' },
-      { type: AssetType.NameTag, label: 'Name Tag', icon: '📛' },
-      { type: AssetType.EventSignage, label: 'Signage', icon: '🪧' },
-      { type: AssetType.WifiSign, label: 'Wi-Fi Sign', icon: '📶' },
-    ],
-  },
-  {
-    name: 'Merchandise',
-    description: 'Branded swag items',
-    icon: '👕',
-    assets: [
-      { type: AssetType.Tshirt, label: 'T-Shirt', icon: '👕' },
-      { type: AssetType.Lanyard, label: 'Lanyard', icon: '🎫' },
-      { type: AssetType.SwagBag, label: 'Swag Bag', icon: '👜' },
-    ],
-  },
-  {
-    name: 'Planning',
-    description: 'Event organization',
-    icon: '📋',
-    assets: [
-      { type: AssetType.RunOfShow, label: 'Run of Show', icon: '📋' },
-      { type: AssetType.AgendaHighlights, label: 'Agenda', icon: '📅' },
-    ],
-  },
+const STYLE_PRESETS = [
+  { id: 'modern', label: 'Modern & Minimal', description: 'Clean lines, white space, geometric shapes' },
+  { id: 'bold', label: 'Bold & Vibrant', description: 'High contrast, saturated colors, dynamic layouts' },
+  { id: 'elegant', label: 'Elegant & Luxurious', description: 'Gold accents, serif fonts, refined details' },
+  { id: 'tech', label: 'Tech & Futuristic', description: 'Gradients, neon accents, digital aesthetics' },
+  { id: 'organic', label: 'Organic & Natural', description: 'Earth tones, flowing shapes, sustainable feel' },
+  { id: 'playful', label: 'Playful & Creative', description: 'Bright colors, fun patterns, hand-drawn elements' },
 ];
 
 const StepTwo: React.FC<StepTwoProps> = ({
-  selectedAssets,
-  setSelectedAssets,
   styleDescription,
   setStyleDescription,
+  vibeImage,
+  setVibeImage,
+  masterPattern,
+  setMasterPattern,
+  eventDetails,
 }) => {
-  const toggleAsset = (type: AssetType) => {
-    setSelectedAssets(prev => {
-      const next = new Set(prev);
-      if (next.has(type)) {
-        next.delete(type);
-      } else {
-        next.add(type);
-      }
-      return next;
-    });
+  const [vibePreview, setVibePreview] = useState<string | null>(null);
+  const [patternPreview, setPatternPreview] = useState<string | null>(null);
+  const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
+  const vibeInputRef = useRef<HTMLInputElement>(null);
+  const patternInputRef = useRef<HTMLInputElement>(null);
+
+  const handleVibeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVibeImage(file);
+      const reader = new FileReader();
+      reader.onload = () => setVibePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
   };
 
-  const selectAll = () => {
-    const allAssets = assetCategories.flatMap(c => c.assets.map(a => a.type));
-    setSelectedAssets(new Set(allAssets));
+  const handlePatternUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setMasterPattern(file);
+      const reader = new FileReader();
+      reader.onload = () => setPatternPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
   };
 
-  const clearAll = () => {
-    setSelectedAssets(new Set());
+  const togglePreset = (id: string) => {
+    const newPresets = new Set(selectedPresets);
+    if (newPresets.has(id)) {
+      newPresets.delete(id);
+    } else {
+      newPresets.add(id);
+    }
+    setSelectedPresets(newPresets);
+    
+    // Update style description based on selected presets
+    const descriptions = STYLE_PRESETS
+      .filter(p => newPresets.has(p.id))
+      .map(p => p.description)
+      .join('. ');
+    
+    if (descriptions) {
+      setStyleDescription(prev => {
+        const customPart = prev.split(' | Custom: ')[1] || '';
+        return descriptions + (customPart ? ` | Custom: ${customPart}` : '');
+      });
+    }
+  };
+
+  const clearVibeImage = () => {
+    setVibeImage(null);
+    setVibePreview(null);
+    if (vibeInputRef.current) vibeInputRef.current.value = '';
+  };
+
+  const clearPattern = () => {
+    setMasterPattern(null);
+    setPatternPreview(null);
+    if (patternInputRef.current) patternInputRef.current.value = '';
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-foreground mb-1">Choose Your Assets</h2>
-        <p className="text-sm text-muted-foreground">Select what to include in your design kit</p>
+        <h2 className="text-xl font-semibold text-foreground mb-1">Define Your Style</h2>
+        <p className="text-sm text-muted-foreground">Help AI understand your brand's visual language</p>
       </div>
 
-      {/* Quick actions */}
-      <div className="flex items-center justify-between py-2 px-4 rounded-xl bg-secondary/50">
-        <span className="text-sm font-medium text-foreground">
-          {selectedAssets.size} asset{selectedAssets.size !== 1 ? 's' : ''} selected
-        </span>
-        <div className="flex gap-3">
-          <button onClick={selectAll} className="text-sm text-primary hover:text-primary/80 font-medium transition-colors">
-            Select all
-          </button>
-          <span className="text-border">|</span>
-          <button onClick={clearAll} className="text-sm text-muted-foreground hover:text-foreground font-medium transition-colors">
-            Clear
-          </button>
+      {/* Style Presets */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          Quick Style Presets
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {STYLE_PRESETS.map((preset) => (
+            <button
+              key={preset.id}
+              onClick={() => togglePreset(preset.id)}
+              className={`p-3 rounded-xl border-2 text-left transition-all ${
+                selectedPresets.has(preset.id)
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/40'
+              }`}
+            >
+              <span className="text-sm font-medium text-foreground">{preset.label}</span>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{preset.description}</p>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Asset categories */}
-      <div className="space-y-3 max-h-[35vh] overflow-y-auto custom-scrollbar pr-2">
-        {assetCategories.map(category => (
-          <div key={category.name} className="category-card">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <span className="text-lg">{category.icon}</span>
-                <div>
-                  <h3 className="font-medium text-foreground">{category.name}</h3>
-                  <p className="text-xs text-muted-foreground">{category.description}</p>
-                </div>
-              </div>
+      {/* Image Uploads Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Vibe Image */}
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+            <Image className="w-4 h-4 text-primary" />
+            Vibe Reference Image
+            <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+          </label>
+          <input
+            ref={vibeInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleVibeUpload}
+            className="hidden"
+            id="vibe-upload"
+          />
+          {vibePreview ? (
+            <div className="relative rounded-xl overflow-hidden border border-border aspect-video bg-secondary/20">
+              <img src={vibePreview} alt="Vibe reference" className="w-full h-full object-cover" />
               <button
-                onClick={() => {
-                  const categoryTypes = category.assets.map(a => a.type);
-                  const allSelected = categoryTypes.every(t => selectedAssets.has(t));
-                  setSelectedAssets(prev => {
-                    const next = new Set(prev);
-                    categoryTypes.forEach(t => {
-                      if (allSelected) next.delete(t);
-                      else next.add(t);
-                    });
-                    return next;
-                  });
-                }}
-                className="text-xs text-primary hover:text-primary/80 font-medium px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors"
+                onClick={clearVibeImage}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/90 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors shadow-md"
               >
-                {category.assets.every(a => selectedAssets.has(a.type)) ? 'Deselect' : 'Select all'}
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {category.assets.map(asset => (
-                <button
-                  key={asset.type}
-                  onClick={() => toggleAsset(asset.type)}
-                  className={`asset-chip ${selectedAssets.has(asset.type) ? 'selected' : ''}`}
-                >
-                  <span className="text-sm">{asset.icon}</span>
-                  <span>{asset.label}</span>
-                  {selectedAssets.has(asset.type) && (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-              ))}
+          ) : (
+            <label
+              htmlFor="vibe-upload"
+              className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors bg-secondary/20 aspect-video"
+            >
+              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+              <span className="text-sm text-muted-foreground text-center">
+                Upload an image that captures your desired aesthetic
+              </span>
+            </label>
+          )}
+        </div>
+
+        {/* Master Pattern */}
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+            <Palette className="w-4 h-4 text-primary" />
+            Master Pattern
+            <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+          </label>
+          <input
+            ref={patternInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handlePatternUpload}
+            className="hidden"
+            id="pattern-upload"
+          />
+          {patternPreview ? (
+            <div className="relative rounded-xl overflow-hidden border border-border aspect-video bg-secondary/20">
+              <img src={patternPreview} alt="Master pattern" className="w-full h-full object-cover" />
+              <button
+                onClick={clearPattern}
+                className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/90 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-background transition-colors shadow-md"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-          </div>
-        ))}
+          ) : (
+            <label
+              htmlFor="pattern-upload"
+              className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-border hover:border-primary/50 cursor-pointer transition-colors bg-secondary/20 aspect-video"
+            >
+              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+              <span className="text-sm text-muted-foreground text-center">
+                Upload a pattern to use across assets
+              </span>
+            </label>
+          )}
+        </div>
       </div>
 
-      {/* Style description */}
-      <div className="pt-4 border-t border-border/50">
+      {/* Venue Intelligence hint */}
+      {eventDetails.location && (
+        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <Building2 className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <h4 className="text-sm font-medium text-foreground">Venue Intelligence Enabled</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              AI will research "{eventDetails.location}" to inform floor plans and location-specific designs.
+            </p>
+          </div>
+          <div className="flex items-center gap-1 text-xs text-primary">
+            <MapPin className="w-3 h-3" />
+            Active
+          </div>
+        </div>
+      )}
+
+      {/* Custom Style Description */}
+      <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Style Notes <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+          Additional Style Notes
         </label>
         <textarea
           value={styleDescription}
           onChange={e => setStyleDescription(e.target.value)}
-          placeholder="e.g., Modern and minimalist, use blue tones, tech-focused..."
-          rows={2}
+          placeholder="e.g., Use blue and silver tones, avoid red, include subtle geometric patterns, maintain professional corporate feel..."
+          rows={3}
           className="input-field resize-none"
         />
         <p className="text-xs text-muted-foreground mt-2">
-          Describe the visual style you want for your assets
+          Be specific about colors, patterns, typography preferences, and any elements to avoid
+        </p>
+      </div>
+
+      {/* AI Safety Notes */}
+      <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">AI Safety:</span> Text won't overlap logos • Clear space maintained • Brand colors prioritized • Print specifications enforced
         </p>
       </div>
     </div>

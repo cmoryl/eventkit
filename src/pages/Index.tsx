@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
 import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset } from '../types';
@@ -14,24 +14,7 @@ import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
 import { fileToBase64, downloadAllAssets } from '../utils';
-
-const assetGenerators = [
-  { type: AssetType.Palette, title: 'Color Palette' },
-  { type: AssetType.Slogans, title: 'Event Slogans' },
-  { type: AssetType.SocialPost, title: 'Social Media Post' },
-  { type: AssetType.SocialStory, title: 'Social Story' },
-  { type: AssetType.NameTag, title: 'Name Tag' },
-  { type: AssetType.Banner, title: 'Event Banner' },
-  { type: AssetType.EventSignage, title: 'Event Signage' },
-  { type: AssetType.EmailHeader, title: 'Email Header' },
-  { type: AssetType.Tshirt, title: 'T-shirt' },
-  { type: AssetType.Lanyard, title: 'Lanyard' },
-  { type: AssetType.SwagBag, title: 'Swag Bag' },
-  { type: AssetType.WifiSign, title: 'Wi-Fi Sign' },
-  { type: AssetType.MarketingCopy, title: 'Marketing Copy' },
-  { type: AssetType.RunOfShow, title: 'Run of Show' },
-  { type: AssetType.AgendaHighlights, title: 'Agenda Highlights' },
-];
+import { ASSET_CONFIGS, getAssetConfig } from '../config/assetConfig';
 
 const ensureProtocol = (url: string) => url && !url.match(/^[a-zA-Z]+:\/\//) ? `https://${url}` : url;
 
@@ -92,6 +75,8 @@ const Index: React.FC = () => {
     logos: LogoAsset[];
     selectedAssets: Set<AssetType>;
     styleDescription: string;
+    vibeImage: File | null;
+    masterPattern: File | null;
   }) => {
     pushSnapshot();
     setEventDetails(data.eventDetails);
@@ -114,13 +99,13 @@ const Index: React.FC = () => {
       });
     }
 
-    // Add selected assets (loading)
+    // Add selected assets (loading) using asset config
     data.selectedAssets.forEach(type => {
-      const gen = assetGenerators.find(g => g.type === type);
+      const config = getAssetConfig(type);
       newAssets.push({
         id: uuidv4(),
         type,
-        title: gen?.title || 'Asset',
+        title: config?.title || 'Asset',
         content: '',
         isLoading: true,
       });
