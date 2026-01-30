@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Save, 
@@ -7,7 +7,10 @@ import {
   QrCode, 
   Plus, 
   MoreHorizontal,
-  Loader2
+  Loader2,
+  Undo2,
+  Redo2,
+  Upload
 } from 'lucide-react';
 
 interface StudioHeaderProps {
@@ -16,11 +19,17 @@ interface StudioHeaderProps {
   onBackToSetup: () => void;
   onDownloadAll: () => void;
   onSave: () => void;
+  onLoad: (file: File) => void;
   onExportBrandGuide: () => void;
   onOpenQRGenerator: () => void;
   onAddMoreAssets: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
   isExporting?: boolean;
   isGeneratingGuide?: boolean;
+  isLoadingProject?: boolean;
 }
 
 const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -29,13 +38,44 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onBackToSetup,
   onDownloadAll,
   onSave,
+  onLoad,
   onExportBrandGuide,
   onOpenQRGenerator,
   onAddMoreAssets,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
   isExporting,
   isGeneratingGuide,
+  isLoadingProject,
 }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey && onUndo && canUndo) {
+        e.preventDefault();
+        onUndo();
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z')) && onRedo && canRedo) {
+        e.preventDefault();
+        onRedo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onUndo, onRedo, canUndo, canRedo]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      onLoad(file);
+      e.target.value = '';
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 frosted-panel border-b border-border/50">
@@ -61,6 +101,37 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2">
+            {/* Hidden file input for loading projects */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".zip"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {/* Undo/Redo */}
+            {(onUndo || onRedo) && (
+              <div className="hidden sm:flex items-center gap-1 mr-2">
+                <button
+                  onClick={onUndo}
+                  disabled={!canUndo}
+                  className="btn-ghost p-2 disabled:opacity-30"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <Undo2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={onRedo}
+                  disabled={!canRedo}
+                  className="btn-ghost p-2 disabled:opacity-30"
+                  title="Redo (Ctrl+Y)"
+                >
+                  <Redo2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {/* Quick Actions */}
             <button
               onClick={onAddMoreAssets}
@@ -126,6 +197,18 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
                       Add More Assets
                     </button>
                     <div className="h-px bg-border my-2" />
+                    <button
+                      onClick={() => { fileInputRef.current?.click(); setShowMoreMenu(false); }}
+                      disabled={isLoadingProject}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+                    >
+                      {isLoadingProject ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                      )}
+                      Load Project
+                    </button>
                     <button
                       onClick={() => { onSave(); setShowMoreMenu(false); }}
                       disabled={isExporting}

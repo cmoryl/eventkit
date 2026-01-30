@@ -318,6 +318,15 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit
                     >
                       <Pencil className="w-4 h-4" />
                     </button>
+                    {onRegenerate && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onRegenerate(asset); }}
+                        className="w-9 h-9 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 flex items-center justify-center text-blue-600 transition-all hover:scale-110 shadow-md"
+                        title="Regenerate"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
                       className="w-9 h-9 rounded-xl bg-green-500/10 hover:bg-green-500/20 flex items-center justify-center text-green-600 transition-all hover:scale-110 shadow-md"
@@ -419,6 +428,15 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit
                   >
                     <Pencil className="w-4 h-4 text-muted-foreground" />
                   </button>
+                  {onRegenerate && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onRegenerate(asset); }}
+                      className="p-2 rounded-lg hover:bg-blue-500/10 transition-colors"
+                      title="Regenerate"
+                    >
+                      <RefreshCw className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
+                    </button>
+                  )}
                   <button
                     onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
                     className="p-2 rounded-lg hover:bg-green-500/10 transition-colors"
