@@ -19,6 +19,7 @@ import { VideoTeaserModal } from '../components/VideoTeaserModal';
 import { AIImageEditModal } from '../components/AIImageEditModal';
 import EventDashboard from '../components/EventDashboard';
 import AdvancedExportModal from '../components/AdvancedExportModal';
+import BatchPrintExportModal from '../components/BatchPrintExportModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
@@ -64,6 +65,7 @@ const Index: React.FC = () => {
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [showEventDashboard, setShowEventDashboard] = useState(false);
   const [showAdvancedExport, setShowAdvancedExport] = useState(false);
+  const [showBatchPrintExport, setShowBatchPrintExport] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => setToastState({ message, type });
 
@@ -490,6 +492,7 @@ const Index: React.FC = () => {
             isSavingToCloud={isSavingToCloud}
             onOpenDashboard={() => setShowEventDashboard(true)}
             onOpenAdvancedExport={() => setShowAdvancedExport(true)}
+            onOpenBatchPrintExport={() => setShowBatchPrintExport(true)}
           />
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
@@ -626,6 +629,15 @@ const Index: React.FC = () => {
         assets={generatedAssets}
         eventName={eventDetails.name}
         onExport={handleAdvancedExport}
+      />
+
+      {/* Batch Print Export Modal */}
+      <BatchPrintExportModal
+        isOpen={showBatchPrintExport}
+        onClose={() => setShowBatchPrintExport(false)}
+        assets={generatedAssets}
+        eventDetails={eventDetails}
+        colorPalette={colorPalette.map(c => c.hex)}
       />
 
       {toastState && <Toast message={toastState.message} type={toastState.type} onClose={() => setToastState(null)} />}

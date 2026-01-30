@@ -19,6 +19,8 @@ import {
   CloudOff,
   LayoutDashboard,
   Settings2,
+  Package,
+  Printer,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -45,6 +47,7 @@ interface StudioHeaderProps {
   isSavingToCloud?: boolean;
   onOpenDashboard?: () => void;
   onOpenAdvancedExport?: () => void;
+  onOpenBatchPrintExport?: () => void;
 }
 
 const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -70,6 +73,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   isSavingToCloud,
   onOpenDashboard,
   onOpenAdvancedExport,
+  onOpenBatchPrintExport,
 }) => {
   const { user, isAuthenticated, signOut } = useAuth();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -247,6 +251,15 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
                       >
                         <Settings2 className="w-4 h-4 text-primary" />
                         Advanced Export
+                      </button>
+                    )}
+                    {onOpenBatchPrintExport && (
+                      <button
+                        onClick={() => { onOpenBatchPrintExport(); setShowMoreMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Package className="w-4 h-4 text-primary" />
+                        Batch Print Export
                       </button>
                     )}
                     {onOpenDashboard && (
