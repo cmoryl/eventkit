@@ -387,76 +387,20 @@ export const generatePrintReadyPdf = async (
   assetType: AssetType,
   assetTitle: string,
   eventName: string,
-  options: PdfExportOptions
+  options: PdfExportOptions & { colorMode?: 'CMYK' | 'RGB'; showSafeZone?: boolean; safeZone?: number; dpi?: number }
 ) => {
-  if (typeof jsPDF !== 'function') {
-    console.error("jsPDF library not loaded correctly.");
-    return;
-  }
-
-  const doc = new jsPDF({
-    orientation: 'p',
-    unit: 'pt',
-    format: options.paperSize === 'custom' ? 'letter' : options.paperSize
+  // Import the professional print service
+  const { downloadProfessionalPdf } = await import('./services/printService');
+  
+  await downloadProfessionalPdf(imageBase64, assetType, assetTitle, eventName, {
+    ...options,
+    colorMode: options.colorMode || 'CMYK',
+    showSafeZone: options.showSafeZone ?? true,
+    safeZone: options.safeZone ?? 0.125,
+    dpi: options.dpi ?? 300,
+    includeJobTicket: true,
+    showBleedArea: true
   });
-
-  const PPI = 72;
-  const BLEED_PTS = options.bleed * PPI;
-  const TRIM_LEN = 15;
-  const TRIM_OFFSET = 5;
-
-  const assetDims = printDimensionsMap[assetType];
-  if (!assetDims) {
-    console.error("Dimensions not found for asset type");
-    return;
-  }
-
-  const targetW = assetDims.w * PPI;
-  const targetH = assetDims.h * PPI;
-
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-
-  const centerX = pageWidth / 2;
-  const centerY = pageHeight / 2;
-
-  const startX = centerX - (targetW / 2);
-  const startY = centerY - (targetH / 2);
-
-  const drawW = targetW + (BLEED_PTS * 2);
-  const drawH = targetH + (BLEED_PTS * 2);
-  const drawX = startX - BLEED_PTS;
-  const drawY = startY - BLEED_PTS;
-
-  try {
-    doc.addImage(imageBase64, 'PNG', drawX, drawY, drawW, drawH);
-  } catch (e) {
-    console.warn("Could not add image directly, rendering placeholder text", e);
-    doc.text("Image Error", drawX + 10, drawY + 20);
-  }
-
-  if (options.showTrimMarks) {
-    doc.setLineWidth(0.5);
-    doc.setDrawColor(0, 0, 0);
-
-    doc.line(startX, startY - TRIM_OFFSET, startX, startY - TRIM_OFFSET - TRIM_LEN);
-    doc.line(startX - TRIM_OFFSET, startY, startX - TRIM_OFFSET - TRIM_LEN, startY);
-
-    doc.line(startX + targetW, startY - TRIM_OFFSET, startX + targetW, startY - TRIM_OFFSET - TRIM_LEN);
-    doc.line(startX + targetW + TRIM_OFFSET, startY, startX + targetW + TRIM_OFFSET + TRIM_LEN, startY);
-
-    doc.line(startX, startY + targetH + TRIM_OFFSET, startX, startY + targetH + TRIM_OFFSET + TRIM_LEN);
-    doc.line(startX - TRIM_OFFSET, startY + targetH, startX - TRIM_OFFSET - TRIM_LEN, startY + targetH);
-
-    doc.line(startX + targetW, startY + targetH + TRIM_OFFSET, startX + targetW, startY + targetH + TRIM_OFFSET + TRIM_LEN);
-    doc.line(startX + targetW + TRIM_OFFSET, startY + targetH, startX + targetW + TRIM_OFFSET + TRIM_LEN, startY + targetH);
-  }
-
-  doc.setFontSize(8);
-  doc.setTextColor(150);
-  doc.text(`${eventName} - ${assetTitle} - ${new Date().toLocaleDateString()}`, 20, pageHeight - 20);
-
-  doc.save(`${sanitizeFileName(eventName)}_${sanitizeFileName(assetTitle)}_PRINT.pdf`);
 };
 
 export const downloadAllAssets = async (assets: { id: string; type: AssetType; title: string; content: string | string[] | any }[], eventName: string) => {
