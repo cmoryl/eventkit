@@ -10,8 +10,15 @@ import {
   Loader2,
   Undo2,
   Redo2,
-  Upload
+  Upload,
+  Video,
+  LogIn,
+  LogOut,
+  User,
+  Cloud,
+  CloudOff
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface StudioHeaderProps {
   eventName: string;
@@ -22,6 +29,7 @@ interface StudioHeaderProps {
   onLoad: (file: File) => void;
   onExportBrandGuide: () => void;
   onOpenQRGenerator: () => void;
+  onOpenVideoGenerator?: () => void;
   onAddMoreAssets: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -30,6 +38,9 @@ interface StudioHeaderProps {
   isExporting?: boolean;
   isGeneratingGuide?: boolean;
   isLoadingProject?: boolean;
+  onOpenAuth?: () => void;
+  onSaveToCloud?: () => void;
+  isSavingToCloud?: boolean;
 }
 
 const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -41,6 +52,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onLoad,
   onExportBrandGuide,
   onOpenQRGenerator,
+  onOpenVideoGenerator,
   onAddMoreAssets,
   onUndo,
   onRedo,
@@ -49,7 +61,11 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   isExporting,
   isGeneratingGuide,
   isLoadingProject,
+  onOpenAuth,
+  onSaveToCloud,
+  isSavingToCloud,
 }) => {
+  const { user, isAuthenticated, signOut } = useAuth();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -151,6 +167,17 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               <span className="hidden md:inline">QR Code</span>
             </button>
 
+            {onOpenVideoGenerator && (
+              <button
+                onClick={onOpenVideoGenerator}
+                className="btn-ghost hidden sm:flex items-center gap-2"
+                title="Generate Video Teaser"
+              >
+                <Video className="w-4 h-4" />
+                <span className="hidden md:inline">Video</span>
+              </button>
+            )}
+
             <div className="h-6 w-px bg-border/60 hidden sm:block" />
 
             {/* More Menu */}
@@ -221,6 +248,49 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
                 </>
               )}
             </div>
+
+            {/* Cloud Save */}
+            {isAuthenticated && onSaveToCloud && (
+              <button
+                onClick={onSaveToCloud}
+                disabled={isSavingToCloud}
+                className="btn-ghost hidden sm:flex items-center gap-2"
+                title="Save to Cloud"
+              >
+                {isSavingToCloud ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Cloud className="w-4 h-4 text-primary" />
+                )}
+                <span className="hidden md:inline">Cloud</span>
+              </button>
+            )}
+
+            {/* Auth Button */}
+            {isAuthenticated ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <span className="text-sm text-muted-foreground truncate max-w-[100px]">
+                  {user?.email?.split('@')[0]}
+                </span>
+                <button
+                  onClick={signOut}
+                  className="btn-ghost p-2"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : onOpenAuth && (
+              <button
+                onClick={onOpenAuth}
+                className="btn-ghost hidden sm:flex items-center gap-2"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden md:inline">Sign In</span>
+              </button>
+            )}
+
+            <div className="h-6 w-px bg-border/60 hidden sm:block" />
 
             {/* Primary Actions */}
             <button
