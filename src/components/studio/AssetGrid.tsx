@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import type { GeneratedAsset, ColorInfo, AssetFolder } from '../../types';
 import { AssetType } from '../../types';
 import { 
@@ -23,7 +23,12 @@ import {
   Download,
   RefreshCw,
   FolderOpen,
-  Plus
+  Plus,
+  CheckSquare,
+  Square,
+  Copy,
+  X,
+  Keyboard
 } from 'lucide-react';
 import AssetDownloadModal from './AssetDownloadModal';
 import FolderTabs from '../FolderTabs';
@@ -36,10 +41,12 @@ interface AssetGridProps {
   onView: (asset: GeneratedAsset) => void;
   onEdit: (asset: GeneratedAsset) => void;
   onDelete: (id: string) => void;
+  onDeleteMultiple?: (ids: string[]) => void;
   onToggleFavorite: (asset: GeneratedAsset) => void;
   onRegenerate?: (asset: GeneratedAsset) => void;
   onMoveToFolder?: (assetId: string, folderId?: string) => void;
   onCreateFolder?: (name: string) => void;
+  onDuplicate?: (asset: GeneratedAsset) => void;
 }
 
 const AssetGrid: React.FC<AssetGridProps> = ({ 
@@ -48,11 +55,13 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   folders = [],
   onView, 
   onEdit, 
-  onDelete, 
+  onDelete,
+  onDeleteMultiple,
   onToggleFavorite, 
   onRegenerate,
   onMoveToFolder,
-  onCreateFolder
+  onCreateFolder,
+  onDuplicate
 }) => {
   const [activeCategory, setActiveCategory] = useState<AssetCategory | 'all' | 'favorites'>('all');
   const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
@@ -60,6 +69,11 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [downloadingAsset, setDownloadingAsset] = useState<GeneratedAsset | null>(null);
   const [movingAsset, setMovingAsset] = useState<GeneratedAsset | null>(null);
+  
+  // Batch selection state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
 
   const categories = Object.entries(ASSET_CATEGORIES) as [AssetCategory, typeof ASSET_CATEGORIES[AssetCategory]][];
 
@@ -89,6 +103,92 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 
     return filtered;
   }, [assets, activeCategory, activeFolderId, searchQuery]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to exit selection mode
+      if (e.key === 'Escape' && isSelectionMode) {
+        setIsSelectionMode(false);
+        setSelectedIds(new Set());
+      }
+      // Ctrl+A to select all visible
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a' && isSelectionMode) {
+        e.preventDefault();
+        setSelectedIds(new Set(filteredAssets.map(a => a.id)));
+      }
+      // ? to show keyboard shortcuts
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
+        setShowKeyboardShortcuts(prev => !prev);
+      }
+      // Delete selected
+      if ((e.key === 'Delete' || e.key === 'Backspace') && isSelectionMode && selectedIds.size > 0 && onDeleteMultiple) {
+        e.preventDefault();
+        if (confirm(`Delete ${selectedIds.size} selected assets?`)) {
+          onDeleteMultiple(Array.from(selectedIds));
+          setSelectedIds(new Set());
+          setIsSelectionMode(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSelectionMode, selectedIds, filteredAssets, onDeleteMultiple]);
+
+  const toggleSelection = useCallback((assetId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(assetId)) {
+        next.delete(assetId);
+      } else {
+        next.add(assetId);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredAssets.map(a => a.id)));
+  }, [filteredAssets]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleBatchDelete = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    if (confirm(`Delete ${selectedIds.size} selected assets?`)) {
+      if (onDeleteMultiple) {
+        onDeleteMultiple(Array.from(selectedIds));
+      } else {
+        selectedIds.forEach(id => onDelete(id));
+      }
+      setSelectedIds(new Set());
+      setIsSelectionMode(false);
+    }
+  }, [selectedIds, onDelete, onDeleteMultiple]);
+
+  const handleBatchFavorite = useCallback(() => {
+    selectedIds.forEach(id => {
+      const asset = assets.find(a => a.id === id);
+      if (asset) onToggleFavorite(asset);
+    });
+  }, [selectedIds, assets, onToggleFavorite]);
+
+  const handleBatchDownload = useCallback(async () => {
+    const selectedAssets = assets.filter(a => selectedIds.has(a.id));
+    for (const asset of selectedAssets) {
+      if (typeof asset.content === 'string' && asset.content.startsWith('data:image')) {
+        const link = document.createElement('a');
+        link.href = asset.content;
+        link.download = `${asset.title.replace(/\s+/g, '_')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        await new Promise(r => setTimeout(r, 100)); // Small delay between downloads
+      }
+    }
+  }, [selectedIds, assets]);
 
   const getFolderCount = (folderId: string) => {
     return assets.filter(a => a.folderId === folderId).length;
@@ -237,6 +337,37 @@ const AssetGrid: React.FC<AssetGridProps> = ({
         />
       )}
 
+      {/* Batch Selection Toolbar */}
+      {isSelectionMode && (
+        <div className="flex items-center gap-3 p-4 glass-card animate-fade-in">
+          <button onClick={clearSelection} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Cancel selection">
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={selectAll} className="btn-secondary text-sm px-3 py-1.5">
+              <CheckSquare className="w-4 h-4 mr-1" />
+              Select All
+            </button>
+            <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
+          </div>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            <button onClick={handleBatchFavorite} disabled={selectedIds.size === 0} className="btn-secondary text-sm px-3 py-1.5 disabled:opacity-50" title="Toggle favorite">
+              <Star className="w-4 h-4 mr-1" />
+              Favorite
+            </button>
+            <button onClick={handleBatchDownload} disabled={selectedIds.size === 0} className="btn-secondary text-sm px-3 py-1.5 disabled:opacity-50" title="Download all selected">
+              <Download className="w-4 h-4 mr-1" />
+              Download
+            </button>
+            <button onClick={handleBatchDelete} disabled={selectedIds.size === 0} className="btn-secondary text-sm px-3 py-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50" title="Delete selected">
+              <Trash2 className="w-4 h-4 mr-1" />
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         {/* Search */}
@@ -251,8 +382,25 @@ const AssetGrid: React.FC<AssetGridProps> = ({
           />
         </div>
 
-        {/* View Toggle + Create Folder */}
+        {/* View Toggle + Selection Mode + Create Folder */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              setIsSelectionMode(!isSelectionMode);
+              if (isSelectionMode) setSelectedIds(new Set());
+            }}
+            className={`p-2 rounded-lg transition-colors ${isSelectionMode ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+            title="Toggle selection mode"
+          >
+            <CheckSquare className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowKeyboardShortcuts(true)}
+            className="p-2 rounded-lg bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Keyboard shortcuts (?)"
+          >
+            <Keyboard className="w-4 h-4" />
+          </button>
           {onCreateFolder && folders.length === 0 && (
             <button
               onClick={() => {
@@ -354,67 +502,94 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       {/* Grid View */}
       {viewMode === 'grid' && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 stagger-children">
-          {filteredAssets.map((asset) => (
-            <div
-              key={asset.id}
-              className="glass-card-hover group cursor-pointer overflow-hidden rounded-2xl"
-              onClick={() => !asset.isLoading && onView(asset)}
-            >
-              {/* Preview */}
-              <div className="aspect-square overflow-hidden relative bg-secondary/20">
-                {getAssetPreview(asset)}
-                
-                {/* Hover overlay */}
-                {!asset.isLoading && (
-                  <div className="absolute inset-0 bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2">
+          {filteredAssets.map((asset) => {
+            const isSelected = selectedIds.has(asset.id);
+            return (
+              <div
+                key={asset.id}
+                className={`glass-card-hover group cursor-pointer overflow-hidden rounded-2xl transition-all ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                onClick={() => {
+                  if (isSelectionMode) {
+                    toggleSelection(asset.id);
+                  } else if (!asset.isLoading) {
+                    onView(asset);
+                  }
+                }}
+              >
+                {/* Preview */}
+                <div className="aspect-square overflow-hidden relative bg-secondary/20">
+                  {getAssetPreview(asset)}
+                  
+                  {/* Selection checkbox */}
+                  {isSelectionMode && !asset.isLoading && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); onView(asset); }}
-                      className="w-9 h-9 rounded-xl bg-secondary/80 hover:bg-secondary flex items-center justify-center text-foreground transition-all hover:scale-110 shadow-md"
-                      title="View"
+                      onClick={(e) => { e.stopPropagation(); toggleSelection(asset.id); }}
+                      className={`absolute top-3 left-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all z-10 ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-muted-foreground hover:bg-white'}`}
                     >
-                      <Eye className="w-4 h-4" />
+                      {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
-                      className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-all hover:scale-110 shadow-md"
-                      title="Edit"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    {onRegenerate && (
+                  )}
+                  
+                  {/* Hover overlay - only when not in selection mode */}
+                  {!asset.isLoading && !isSelectionMode && (
+                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2 flex-wrap p-2">
                       <button
-                        onClick={(e) => { e.stopPropagation(); onRegenerate(asset); }}
-                        className="w-9 h-9 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 flex items-center justify-center text-blue-600 transition-all hover:scale-110 shadow-md"
-                        title="Regenerate"
+                        onClick={(e) => { e.stopPropagation(); onView(asset); }}
+                        className="w-9 h-9 rounded-xl bg-secondary/80 hover:bg-secondary flex items-center justify-center text-foreground transition-all hover:scale-110 shadow-md"
+                        title="View"
                       >
-                        <RefreshCw className="w-4 h-4" />
+                        <Eye className="w-4 h-4" />
                       </button>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
-                      className="w-9 h-9 rounded-xl bg-green-500/10 hover:bg-green-500/20 flex items-center justify-center text-green-600 transition-all hover:scale-110 shadow-md"
-                      title="Download"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                    {onMoveToFolder && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); setMovingAsset(asset); }}
-                        className="w-9 h-9 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 flex items-center justify-center text-purple-600 transition-all hover:scale-110 shadow-md"
-                        title="Move to Folder"
+                        onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
+                        className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-all hover:scale-110 shadow-md"
+                        title="Edit"
                       >
-                        <FolderOpen className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" />
                       </button>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }}
-                      className="w-9 h-9 rounded-xl bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center text-destructive transition-all hover:scale-110 shadow-md"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+                      {onDuplicate && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onDuplicate(asset); }}
+                          className="w-9 h-9 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 flex items-center justify-center text-violet-600 transition-all hover:scale-110 shadow-md"
+                          title="Duplicate"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      )}
+                      {onRegenerate && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onRegenerate(asset); }}
+                          className="w-9 h-9 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 flex items-center justify-center text-blue-600 transition-all hover:scale-110 shadow-md"
+                          title="Regenerate"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
+                        className="w-9 h-9 rounded-xl bg-green-500/10 hover:bg-green-500/20 flex items-center justify-center text-green-600 transition-all hover:scale-110 shadow-md"
+                        title="Download"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                      {onMoveToFolder && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setMovingAsset(asset); }}
+                          className="w-9 h-9 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 flex items-center justify-center text-purple-600 transition-all hover:scale-110 shadow-md"
+                          title="Move to Folder"
+                        >
+                          <FolderOpen className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }}
+                        className="w-9 h-9 rounded-xl bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center text-destructive transition-all hover:scale-110 shadow-md"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
 
                 {/* Favorite badge */}
                 {asset.isFavorite && (
@@ -447,7 +622,8 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                 </button>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
 
@@ -569,6 +745,53 @@ const AssetGrid: React.FC<AssetGridProps> = ({
           }}
           onCreateFolder={onCreateFolder}
         />
+      )}
+
+      {/* Keyboard Shortcuts Modal */}
+      {showKeyboardShortcuts && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in" onClick={() => setShowKeyboardShortcuts(false)}>
+          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md animate-scale-in" onClick={e => e.stopPropagation()}>
+            <header className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Keyboard className="w-5 h-5" />
+                Keyboard Shortcuts
+              </h2>
+              <button onClick={() => setShowKeyboardShortcuts(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </header>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-foreground">Toggle keyboard shortcuts</span>
+                <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">?</kbd>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-foreground">Exit selection mode</span>
+                <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">Esc</kbd>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-foreground">Select all (in selection mode)</span>
+                <div className="flex gap-1">
+                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">⌘</kbd>
+                  <span className="text-muted-foreground">+</span>
+                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">A</kbd>
+                </div>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-foreground">Delete selected</span>
+                <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">Delete</kbd>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-sm text-foreground">Undo (in editors)</span>
+                <div className="flex gap-1">
+                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">⌘</kbd>
+                  <span className="text-muted-foreground">+</span>
+                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">Z</kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
