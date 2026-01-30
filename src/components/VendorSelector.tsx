@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AssetType } from '../types';
+import { AssetType, EventDetails } from '../types';
 import { 
   PRINT_VENDORS, 
   getVendorsForAsset, 
@@ -15,13 +15,16 @@ import {
   Check,
   ChevronDown,
   Info,
-  AlertCircle
+  AlertCircle,
+  Navigation
 } from 'lucide-react';
+import LocalVendorFinder from './LocalVendorFinder';
 
 interface VendorSelectorProps {
   assetType: AssetType;
   selectedVendor: VendorTemplate | null;
   onSelectVendor: (vendor: VendorTemplate | null) => void;
+  eventDetails?: EventDetails | null;
 }
 
 const categoryIcons: Record<VendorTemplate['category'], React.ElementType> = {
@@ -41,10 +44,12 @@ const categoryLabels: Record<VendorTemplate['category'], string> = {
 const VendorSelector: React.FC<VendorSelectorProps> = ({
   assetType,
   selectedVendor,
-  onSelectVendor
+  onSelectVendor,
+  eventDetails
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSpecs, setShowSpecs] = useState(false);
+  const [activeTab, setActiveTab] = useState<'templates' | 'local'>('templates');
   
   const compatibleVendors = getVendorsForAsset(assetType);
   
@@ -210,7 +215,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
           )}
 
           {/* Change Vendor Button */}
-          <button
+        <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="mt-2 w-full text-xs text-muted-foreground hover:text-foreground py-1"
           >
@@ -218,18 +223,75 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
           </button>
         </div>
       ) : (
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full p-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors flex items-center justify-center gap-2"
-        >
-          <Printer className="w-4 h-4" />
-          Select a print vendor for optimized export settings
-        </button>
+        <div className="space-y-2">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full p-3 border border-dashed border-border rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-muted-foreground transition-colors flex items-center justify-center gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            Select a print vendor for optimized export settings
+          </button>
+          
+          {/* Quick Find Local */}
+          {eventDetails?.location && (
+            <button
+              onClick={() => {
+                setIsExpanded(true);
+                setActiveTab('local');
+              }}
+              className="w-full p-2 bg-primary/5 border border-primary/20 rounded-lg text-xs text-primary hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
+            >
+              <Navigation className="w-3.5 h-3.5" />
+              Find print shops near {eventDetails.venueName || 'event location'}
+            </button>
+          )}
+        </div>
       )}
 
-      {/* Vendor List */}
+      {/* Vendor Selection Panel */}
       {isExpanded && (
-        <div className="space-y-3 p-3 bg-secondary/20 rounded-xl border border-border max-h-80 overflow-y-auto">
+        <div className="space-y-3 p-3 bg-secondary/20 rounded-xl border border-border">
+          {/* Tab Selector */}
+          <div className="flex gap-1 p-1 bg-background/50 rounded-lg">
+            <button
+              onClick={() => setActiveTab('templates')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+                activeTab === 'templates'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              Vendor Templates
+            </button>
+            <button
+              onClick={() => setActiveTab('local')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-colors ${
+                activeTab === 'local'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Navigation className="w-3.5 h-3.5" />
+              Find Local
+            </button>
+          </div>
+
+          {/* Local Vendor Finder Tab */}
+          {activeTab === 'local' && (
+            <LocalVendorFinder
+              eventDetails={eventDetails || null}
+              onSelectVendor={(vendor) => {
+                onSelectVendor(vendor);
+                setIsExpanded(false);
+              }}
+              selectedVendorId={selectedVendor?.id}
+            />
+          )}
+
+          {/* Template Vendors Tab */}
+          {activeTab === 'templates' && (
+            <div className="max-h-60 overflow-y-auto space-y-3">
           {compatibleVendors.length === 0 ? (
             <div className="text-center py-4 text-sm text-muted-foreground">
               <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -278,6 +340,8 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
                 </div>
               );
             })
+          )}
+            </div>
           )}
         </div>
       )}
