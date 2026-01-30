@@ -356,11 +356,24 @@ const Index: React.FC = () => {
             <AssetGrid
               assets={generatedAssets}
               eventName={eventDetails.name}
+              folders={folders}
               onView={handleViewAsset}
               onEdit={handleEditAsset}
               onDelete={handleDeleteAsset}
               onToggleFavorite={handleToggleFavorite}
               onRegenerate={handleRegenerateAsset}
+              onMoveToFolder={(assetId, folderId) => {
+                pushSnapshot();
+                setGeneratedAssets(prev => prev.map(a =>
+                  a.id === assetId ? { ...a, folderId } : a
+                ));
+                showToast("Asset moved", "success");
+              }}
+              onCreateFolder={(name) => {
+                pushSnapshot();
+                setFolders(prev => [...prev, { id: `folder-${Date.now()}`, name }]);
+                showToast(`Folder "${name}" created`, "success");
+              }}
             />
           </main>
         </>
