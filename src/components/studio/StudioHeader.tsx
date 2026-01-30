@@ -16,7 +16,9 @@ import {
   LogOut,
   User,
   Cloud,
-  CloudOff
+  CloudOff,
+  LayoutDashboard,
+  Settings2,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -41,6 +43,8 @@ interface StudioHeaderProps {
   onOpenAuth?: () => void;
   onSaveToCloud?: () => void;
   isSavingToCloud?: boolean;
+  onOpenDashboard?: () => void;
+  onOpenAdvancedExport?: () => void;
 }
 
 const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -64,6 +68,8 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onOpenAuth,
   onSaveToCloud,
   isSavingToCloud,
+  onOpenDashboard,
+  onOpenAdvancedExport,
 }) => {
   const { user, isAuthenticated, signOut } = useAuth();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -178,6 +184,17 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               </button>
             )}
 
+            {onOpenDashboard && (
+              <button
+                onClick={onOpenDashboard}
+                className="btn-ghost hidden sm:flex items-center gap-2"
+                title="Event Dashboard"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span className="hidden md:inline">Dashboard</span>
+              </button>
+            )}
+
             <div className="h-6 w-px bg-border/60 hidden sm:block" />
 
             {/* More Menu */}
@@ -223,6 +240,24 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
                       <Plus className="w-4 h-4 text-primary" />
                       Add More Assets
                     </button>
+                    {onOpenAdvancedExport && (
+                      <button
+                        onClick={() => { onOpenAdvancedExport(); setShowMoreMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Settings2 className="w-4 h-4 text-primary" />
+                        Advanced Export
+                      </button>
+                    )}
+                    {onOpenDashboard && (
+                      <button
+                        onClick={() => { onOpenDashboard(); setShowMoreMenu(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors sm:hidden"
+                      >
+                        <LayoutDashboard className="w-4 h-4 text-primary" />
+                        Event Dashboard
+                      </button>
+                    )}
                     <div className="h-px bg-border my-2" />
                     <button
                       onClick={() => { fileInputRef.current?.click(); setShowMoreMenu(false); }}
