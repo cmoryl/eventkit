@@ -10,7 +10,9 @@ import {
   Printer, 
   X,
   Check,
-  Loader2
+  Loader2,
+  Globe,
+  Code
 } from 'lucide-react';
 
 interface AssetDownloadModalProps {
@@ -63,6 +65,27 @@ const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventNam
     img.src = asset.content as string;
   };
 
+  const handleDownloadWebp = () => {
+    if (!isImage) return;
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0);
+        const link = document.createElement('a');
+        link.download = `${sanitizeFileName(eventName)}_${sanitizeFileName(asset.title)}.webp`;
+        link.href = canvas.toDataURL('image/webp', 0.92);
+        link.click();
+        setExportSuccess('WEBP');
+        setTimeout(() => setExportSuccess(null), 2000);
+      }
+    };
+    img.src = asset.content as string;
+  };
+
   const handleDownloadPdf = async () => {
     if (!isImage || !isPrintable) return;
     setIsExporting(true);
@@ -91,7 +114,6 @@ const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventNam
       const arr = asset.content as (string | ColorInfo)[];
       content = arr.map((item, i) => {
         if (typeof item === 'string') return `${i + 1}. ${item}`;
-        // ColorInfo
         const c = item as ColorInfo;
         return `${c.name}: ${c.hex} | ${c.rgb} | ${c.cmyk} | ${c.pantone}`;
       }).join('\n');
@@ -108,6 +130,34 @@ const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventNam
     setTimeout(() => setExportSuccess(null), 2000);
   };
 
+  const handleDownloadCSS = () => {
+    if (asset.type !== AssetType.Palette || !isArray) return;
+    const colors = asset.content as ColorInfo[];
+    const cssVars = colors.map((c, i) => `  --color-${i + 1}: ${c.hex};`).join('\n');
+    const tailwindColors = colors.map((c, i) => `  '${c.name.toLowerCase().replace(/\s+/g, '-')}': '${c.hex}',`).join('\n');
+    
+    const css = `:root {
+${cssVars}
+}
+
+/* Tailwind Config */
+/*
+colors: {
+${tailwindColors}
+}
+*/`;
+    
+    const blob = new Blob([css], { type: 'text/css' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${sanitizeFileName(eventName)}_palette.css`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    setExportSuccess('CSS');
+    setTimeout(() => setExportSuccess(null), 2000);
+  };
+
   const handleDownloadMarkdown = () => {
     if (!isText) return;
     const blob = new Blob([asset.content as string], { type: 'text/markdown' });
@@ -120,6 +170,8 @@ const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventNam
     setExportSuccess('MD');
     setTimeout(() => setExportSuccess(null), 2000);
   };
+
+  const isPalette = asset.type === AssetType.Palette;
 
   return (
     <div 
@@ -182,6 +234,24 @@ const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventNam
                   <Check className="w-5 h-5 text-green-500" />
                 ) : (
                   <Download className="w-5 h-5 text-muted-foreground group-hover:text-orange-500 transition-colors" />
+                )}
+              </button>
+
+              <button
+                onClick={handleDownloadWebp}
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+                  <Globe className="w-5 h-5 text-green-500" />
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-medium text-foreground">WebP Image</p>
+                  <p className="text-xs text-muted-foreground">Modern format, best compression</p>
+                </div>
+                {exportSuccess === 'WEBP' ? (
+                  <Check className="w-5 h-5 text-green-500" />
+                ) : (
+                  <Download className="w-5 h-5 text-muted-foreground group-hover:text-green-500 transition-colors" />
                 )}
               </button>
 
@@ -253,6 +323,26 @@ const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventNam
                     <Check className="w-5 h-5 text-green-500" />
                   ) : (
                     <Download className="w-5 h-5 text-muted-foreground group-hover:text-purple-500 transition-colors" />
+                  )}
+                </button>
+              )}
+
+              {isPalette && (
+                <button
+                  onClick={handleDownloadCSS}
+                  className="w-full flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/10 flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
+                    <Code className="w-5 h-5 text-cyan-500" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-medium text-foreground">CSS Variables</p>
+                    <p className="text-xs text-muted-foreground">Ready for web development</p>
+                  </div>
+                  {exportSuccess === 'CSS' ? (
+                    <Check className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <Download className="w-5 h-5 text-muted-foreground group-hover:text-cyan-500 transition-colors" />
                   )}
                 </button>
               )}
