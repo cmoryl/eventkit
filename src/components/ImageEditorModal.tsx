@@ -81,7 +81,7 @@ const FILTER_PRESETS: { name: FilterPreset; label: string; css: string }[] = [
 ];
 
 const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
-  ({ asset, onClose, onOverwrite, onSaveAsNew, colorPalette }, ref) => {
+  ({ asset, onClose, onOverwrite, onSaveAsNew, eventDetails, colorPalette }, ref) => {
     // Core states
     const [regenerationPrompt, setRegenerationPrompt] = useState('');
     const [customContent, setCustomContent] = useState<Record<string, string>>({});
@@ -779,9 +779,11 @@ const ImageEditorModal = forwardRef<HTMLDivElement, ImageEditorModalProps>(
                     <div className="pt-3 border-t border-border">
                       <AssetExportOptions
                         assetType={asset.type}
+                        imageUrl={currentImage}
+                        eventName={eventDetails?.name || 'Event'}
+                        assetTitle={asset.title}
                         onExport={(format, resolution, options) => {
-                          console.log('Exporting:', { format, resolution, options });
-                          // Future: Implement actual export with specs
+                          // For non-PDF formats, do a simple download
                           const link = document.createElement('a');
                           link.download = `${asset.title.replace(/\s+/g, '-').toLowerCase()}.${format}`;
                           link.href = currentImage;
