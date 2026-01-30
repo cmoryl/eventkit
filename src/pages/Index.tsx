@@ -8,10 +8,16 @@ import GenerationLoader from '../components/GenerationLoader';
 import AssetCard from '../components/AssetCard';
 import FolderTabs from '../components/FolderTabs';
 import Toast from '../components/Toast';
+import ImageEditorModal from '../components/ImageEditorModal';
+import PaletteEditorModal from '../components/PaletteEditorModal';
+import TextEditorModal from '../components/TextEditorModal';
+import TextListEditorModal from '../components/TextListEditorModal';
+import MoveToFolderModal from '../components/MoveToFolderModal';
+import PdfExportModal from '../components/PdfExportModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
-import { fileToBase64 } from '../utils';
+import { fileToBase64, generatePrintReadyPdf, isPrintable } from '../utils';
 
 const assetGenerators = [
   { type: AssetType.Palette, title: 'Color Palette' },
@@ -44,6 +50,12 @@ const Index: React.FC = () => {
   const [styleDescription, setStyleDescription] = useState('');
   const [colorPalette, setColorPalette] = useState<ColorInfo[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Modal states
+  const [editingAsset, setEditingAsset] = useState<GeneratedAsset | null>(null);
+  const [viewingAsset, setViewingAsset] = useState<GeneratedAsset | null>(null);
+  const [moveToFolderAsset, setMoveToFolderAsset] = useState<GeneratedAsset | null>(null);
+  const [pdfExportAsset, setPdfExportAsset] = useState<GeneratedAsset | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error') => setToast({ message, type });
 
@@ -85,7 +97,6 @@ const Index: React.FC = () => {
       newAssets.push({ id: uuidv4(), type, title: gen?.title || 'Asset', content: '', isLoading: true });
     });
 
-    // Add logos as assets
     if (logos.length > 0) {
       for (const logo of logos) {
         const b64 = await fileToBase64(logo.file);
@@ -101,6 +112,137 @@ const Index: React.FC = () => {
     pushSnapshot();
     setGeneratedAssets(prev => prev.filter(a => a.id !== id));
     showToast("Deleted (Undo available)", "success");
+  };
+
+  const handleViewAsset = (asset: GeneratedAsset) => {
+    setViewingAsset(asset);
+  };
+
+  const handleEditAsset = (asset: GeneratedAsset) => {
+    setEditingAsset(asset);
+  };
+
+  const handleOverwriteAsset = (assetId: string, newContent: string | string[] | ColorInfo[], params?: Record<string, unknown>) => {
+    pushSnapshot();
+    setGeneratedAssets(prev => prev.map(a => {
+      if (a.id === assetId) {
+        const updated = { ...a, content: newContent };
+        if (params?.backContent) updated.backContent = params.backContent as string;
+        return updated;
+      }
+      return a;
+    }));
+    setEditingAsset(null);
+    showToast("Asset updated", "success");
+  };
+
+  const handleSaveAsNewAsset = (assetId: string, newContent: string | string[] | ColorInfo[]) => {
+    pushSnapshot();
+    const original = generatedAssets.find(a => a.id === assetId);
+    if (original) {
+      const newAsset: GeneratedAsset = {
+        ...original,
+        id: uuidv4(),
+        title: `${original.title} (Copy)`,
+        content: newContent,
+        isLoading: false
+      };
+      setGeneratedAssets(prev => [...prev, newAsset]);
+    }
+    setEditingAsset(null);
+    showToast("Saved as new asset", "success");
+  };
+
+  const handleMoveToFolder = (folderId?: string) => {
+    if (!moveToFolderAsset) return;
+    pushSnapshot();
+    setGeneratedAssets(prev => prev.map(a => 
+      a.id === moveToFolderAsset.id ? { ...a, folderId } : a
+    ));
+    setMoveToFolderAsset(null);
+    showToast(folderId ? "Moved to folder" : "Removed from folder", "success");
+  };
+
+  const handleCreateFolder = (name: string) => {
+    const newFolder = { id: uuidv4(), name };
+    setFolders(prev => [...prev, newFolder]);
+    if (moveToFolderAsset) {
+      handleMoveToFolder(newFolder.id);
+    }
+  };
+
+  const handlePdfExport = async (options: { paperSize: string; bleed: number; showTrimMarks: boolean }) => {
+    if (!pdfExportAsset || typeof pdfExportAsset.content !== 'string') return;
+    try {
+      await generatePrintReadyPdf(
+        pdfExportAsset.content,
+        pdfExportAsset.type,
+        pdfExportAsset.title,
+        eventDetails.name,
+        options
+      );
+      showToast("PDF exported successfully", "success");
+    } catch (e) {
+      console.error("PDF export failed:", e);
+      showToast("PDF export failed", "error");
+    }
+    setPdfExportAsset(null);
+  };
+
+  const getEditorModal = () => {
+    if (!editingAsset) return null;
+
+    // Palette editor
+    if (editingAsset.type === AssetType.Palette && Array.isArray(editingAsset.content)) {
+      return (
+        <PaletteEditorModal
+          asset={editingAsset}
+          onClose={() => setEditingAsset(null)}
+          onOverwrite={(id, content) => handleOverwriteAsset(id, content)}
+          onSaveAsNew={(id, content) => handleSaveAsNewAsset(id, content)}
+        />
+      );
+    }
+
+    // Slogans / text list editor
+    if (editingAsset.type === AssetType.Slogans && Array.isArray(editingAsset.content)) {
+      return (
+        <TextListEditorModal
+          asset={editingAsset}
+          onClose={() => setEditingAsset(null)}
+          onOverwrite={(id, content) => handleOverwriteAsset(id, content)}
+          onSaveAsNew={(id, content) => handleSaveAsNewAsset(id, content)}
+        />
+      );
+    }
+
+    // Text content editor (Marketing Copy, Run of Show)
+    if ((editingAsset.type === AssetType.MarketingCopy || editingAsset.type === AssetType.RunOfShow) && typeof editingAsset.content === 'string') {
+      return (
+        <TextEditorModal
+          asset={editingAsset}
+          onClose={() => setEditingAsset(null)}
+          onOverwrite={(id, content) => handleOverwriteAsset(id, content)}
+          onSaveAsNew={(id, content) => handleSaveAsNewAsset(id, content)}
+        />
+      );
+    }
+
+    // Image editor for everything else
+    if (typeof editingAsset.content === 'string' && editingAsset.content.startsWith('data:image')) {
+      return (
+        <ImageEditorModal
+          asset={editingAsset}
+          onClose={() => setEditingAsset(null)}
+          onOverwrite={handleOverwriteAsset}
+          onSaveAsNew={(id, content) => handleSaveAsNewAsset(id, content)}
+          eventDetails={eventDetails}
+          colorPalette={colorPalette.map(c => c.hex)}
+        />
+      );
+    }
+
+    return null;
   };
 
   const filteredAssets = useMemo(() => {
@@ -201,14 +343,15 @@ const Index: React.FC = () => {
                     <AssetCard
                       key={a.id}
                       asset={a}
-                      onView={() => {}}
-                      onEdit={() => {}}
+                      onView={handleViewAsset}
+                      onEdit={handleEditAsset}
                       onDelete={handleDeleteAsset}
-                      onGeneratePhotorealisticShot={() => {}}
+                      onGeneratePhotorealisticShot={() => showToast("Photorealistic shots coming soon!", "success")}
                       onToggleFavorite={(asset) => {
                         pushSnapshot();
                         setGeneratedAssets(p => p.map(x => x.id === asset.id ? { ...x, isFavorite: !x.isFavorite } : x));
                       }}
+                      onMoveToFolder={(asset) => setMoveToFolderAsset(asset)}
                     />
                   ))}
                 </div>
@@ -216,6 +359,57 @@ const Index: React.FC = () => {
             </div>
           )}
         </main>
+
+        {/* Editor Modals */}
+        {getEditorModal()}
+
+        {/* Move to Folder Modal */}
+        <MoveToFolderModal
+          isOpen={!!moveToFolderAsset}
+          onClose={() => setMoveToFolderAsset(null)}
+          folders={folders}
+          onMove={handleMoveToFolder}
+          onCreateFolder={handleCreateFolder}
+        />
+
+        {/* PDF Export Modal */}
+        {pdfExportAsset && (
+          <PdfExportModal
+            isOpen={!!pdfExportAsset}
+            onClose={() => setPdfExportAsset(null)}
+            onExport={handlePdfExport}
+            asset={pdfExportAsset}
+          />
+        )}
+
+        {/* View Asset Modal (simple lightbox) */}
+        {viewingAsset && (
+          <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in" onClick={() => setViewingAsset(null)}>
+            <div className="max-w-4xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+              {typeof viewingAsset.content === 'string' && viewingAsset.content.startsWith('data:image') ? (
+                <img src={viewingAsset.content} alt={viewingAsset.title} className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl" />
+              ) : (
+                <div className="bg-card p-8 rounded-xl max-w-2xl">
+                  <h2 className="text-xl font-bold text-foreground mb-4">{viewingAsset.title}</h2>
+                  {Array.isArray(viewingAsset.content) ? (
+                    <ul className="space-y-2">
+                      {(viewingAsset.content as string[]).map((item, i) => (
+                        <li key={i} className="text-foreground">{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-muted-foreground whitespace-pre-wrap">{String(viewingAsset.content)}</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <button onClick={() => setViewingAsset(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
         
         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </div>
