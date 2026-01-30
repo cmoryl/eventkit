@@ -519,34 +519,88 @@ NOTES:
 
 // Generate AI image for an asset
 export const generateAssetImage = async (
-  assetType: AssetType,
+  assetType: AssetType | string,
   eventName: string,
   eventDescription: string,
   styleDescription: string,
-  colorPalette: string[]
+  colorPalette: string[],
+  logoBase64?: string
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
   try {
+    const assetTypeStr = typeof assetType === 'string' ? assetType : String(assetType);
+    
     const { data, error } = await supabase.functions.invoke('generate-image', {
       body: {
-        assetType,
+        assetType: assetTypeStr,
         eventName,
         eventDescription,
         styleDescription,
         colorPalette,
+        logoBase64,
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      // Handle rate limits gracefully
+      if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+        console.warn('AI image generation rate limited, falling back to canvas');
+        return null;
+      }
+      throw error;
+    }
+    
     if (data?.imageUrl) {
       return data.imageUrl;
+    }
+    
+    if (data?.error) {
+      console.warn('AI image generation returned error:', data.error);
+      return null;
     }
   } catch (e) {
     console.warn('AI image generation failed:', e);
   }
 
   return null;
+};
+
+// Regenerate an existing asset with AI
+export const regenerateAssetWithAI = async (
+  assetType: AssetType | string,
+  eventName: string,
+  eventDescription: string,
+  colorPalette: string[],
+  customPrompt?: string,
+  logoBase64?: string
+): Promise<string | null> => {
+  const styleDescription = customPrompt || 'Modern, professional design with clean aesthetics';
+  return generateAssetImage(assetType, eventName, eventDescription, styleDescription, colorPalette, logoBase64);
+};
+
+// Check if an asset type supports AI image generation
+export const supportsAIGeneration = (assetType: AssetType): boolean => {
+  const supportedTypes: AssetType[] = [
+    AssetType.SocialPost,
+    AssetType.Banner,
+    AssetType.NameTag,
+    AssetType.EmailHeader,
+    AssetType.SocialStory,
+    AssetType.EventSignage,
+    AssetType.Tshirt,
+    AssetType.TshirtBack,
+    AssetType.Lanyard,
+    AssetType.SwagBag,
+    AssetType.StickerSheet,
+    AssetType.ThankYouNote,
+    AssetType.WifiSign,
+    AssetType.Hat,
+    AssetType.WaterBottle,
+    AssetType.Menu,
+    AssetType.Folder,
+  ];
+  return supportedTypes.includes(assetType);
 };
 
 // Extract dominant colors from an image

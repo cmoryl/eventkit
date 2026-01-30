@@ -266,7 +266,26 @@ const generateImageAsset = async (
   colorPalette: ColorInfo[] = [],
   logoDataUrl?: string
 ): Promise<string> => {
-  // Try to use the advanced canvas renderer first
+  // Try AI image generation first for supported types
+  try {
+    const aiImage = await generateAssetImage(
+      type,
+      eventDetails.name,
+      eventDetails.description || '',
+      `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`,
+      colorPalette.map(c => c.hex),
+      logoDataUrl
+    );
+    
+    if (aiImage) {
+      console.log(`AI generated image for ${type}`);
+      return aiImage;
+    }
+  } catch (e) {
+    console.warn('AI image generation failed, using canvas renderer:', e);
+  }
+  
+  // Fallback to advanced canvas renderer
   try {
     const result = await renderAsset(type, {
       eventDetails,
