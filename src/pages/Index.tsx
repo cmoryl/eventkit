@@ -270,6 +270,7 @@ const Index: React.FC = () => {
 
             <AssetGrid
               assets={generatedAssets}
+              eventName={eventDetails.name}
               onView={handleViewAsset}
               onEdit={handleEditAsset}
               onDelete={handleDeleteAsset}

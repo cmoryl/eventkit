@@ -19,21 +19,25 @@ import {
   Search,
   Filter,
   LayoutGrid,
-  List
+  List,
+  Download
 } from 'lucide-react';
+import AssetDownloadModal from './AssetDownloadModal';
 
 interface AssetGridProps {
   assets: GeneratedAsset[];
+  eventName: string;
   onView: (asset: GeneratedAsset) => void;
   onEdit: (asset: GeneratedAsset) => void;
   onDelete: (id: string) => void;
   onToggleFavorite: (asset: GeneratedAsset) => void;
 }
 
-const AssetGrid: React.FC<AssetGridProps> = ({ assets, onView, onEdit, onDelete, onToggleFavorite }) => {
+const AssetGrid: React.FC<AssetGridProps> = ({ assets, eventName, onView, onEdit, onDelete, onToggleFavorite }) => {
   const [activeCategory, setActiveCategory] = useState<AssetCategory | 'all' | 'favorites'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [downloadingAsset, setDownloadingAsset] = useState<GeneratedAsset | null>(null);
 
   const categories = Object.entries(ASSET_CATEGORIES) as [AssetCategory, typeof ASSET_CATEGORIES[AssetCategory]][];
 
@@ -297,27 +301,34 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, onView, onEdit, onDelete,
                 
                 {/* Hover overlay */}
                 {!asset.isLoading && (
-                  <div className="absolute inset-0 bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-3">
+                  <div className="absolute inset-0 bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2">
                     <button
                       onClick={(e) => { e.stopPropagation(); onView(asset); }}
-                      className="w-10 h-10 rounded-xl bg-secondary/80 hover:bg-secondary flex items-center justify-center text-foreground transition-all hover:scale-110 shadow-md"
+                      className="w-9 h-9 rounded-xl bg-secondary/80 hover:bg-secondary flex items-center justify-center text-foreground transition-all hover:scale-110 shadow-md"
                       title="View"
                     >
-                      <Eye className="w-5 h-5" />
+                      <Eye className="w-4 h-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
-                      className="w-10 h-10 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-all hover:scale-110 shadow-md"
+                      className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-all hover:scale-110 shadow-md"
                       title="Edit"
                     >
-                      <Pencil className="w-5 h-5" />
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
+                      className="w-9 h-9 rounded-xl bg-green-500/10 hover:bg-green-500/20 flex items-center justify-center text-green-600 transition-all hover:scale-110 shadow-md"
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }}
-                      className="w-10 h-10 rounded-xl bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center text-destructive transition-all hover:scale-110 shadow-md"
+                      className="w-9 h-9 rounded-xl bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center text-destructive transition-all hover:scale-110 shadow-md"
                       title="Delete"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 )}
@@ -398,14 +409,20 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, onView, onEdit, onDelete,
                   <div className="mt-1">{getAssetBadge(asset)}</div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
                     className="p-2 rounded-lg hover:bg-secondary transition-colors"
                     title="Edit"
                   >
                     <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
+                    className="p-2 rounded-lg hover:bg-green-500/10 transition-colors"
+                    title="Download"
+                  >
+                    <Download className="w-4 h-4 text-muted-foreground hover:text-green-600" />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onToggleFavorite(asset); }}
@@ -437,6 +454,15 @@ const AssetGrid: React.FC<AssetGridProps> = ({ assets, onView, onEdit, onDelete,
             Try adjusting your search or category filter
           </p>
         </div>
+      )}
+
+      {/* Download Modal */}
+      {downloadingAsset && (
+        <AssetDownloadModal
+          asset={downloadingAsset}
+          eventName={eventName}
+          onClose={() => setDownloadingAsset(null)}
+        />
       )}
     </div>
   );
