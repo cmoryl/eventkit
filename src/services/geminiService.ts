@@ -196,6 +196,27 @@ export const getColorDetails = async (hex: string): Promise<ColorInfo> => {
 
 // Text refinement with smart transformations
 export const refineText = async (text: string, instruction: string): Promise<string> => {
+  if (USE_AI_GENERATION) {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-asset', {
+        body: {
+          type: 'refine_text',
+          eventName: '',
+          text,
+          instruction,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.result && typeof data.result === 'string') {
+        return data.result;
+      }
+    } catch (e) {
+      console.warn('AI text refinement failed, using fallback:', e);
+    }
+  }
+
+  // Fallback to local transformations
   await new Promise(resolve => setTimeout(resolve, 500));
 
   const lowerInstruction = instruction.toLowerCase();
