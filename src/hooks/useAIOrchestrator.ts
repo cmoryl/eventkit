@@ -32,18 +32,22 @@ export const useAIOrchestrator = ({
 
   const generateAssets = async (assetsToGenerate: GeneratedAsset[], currentStyleDesc: string, paletteOverride?: ColorInfo[]) => {
     setIsLoading(true);
-    const primaryLogo = logos.length > 0 ? logos[0].file : null;
+    const primaryLogoUrl = logos.length > 0 ? logos[0].url : undefined;
 
     try {
       let completedCount = 0;
       const total = assetsToGenerate.filter(a => a.isLoading).length;
       setGenerationProgress({ current: 0, total });
 
+      // Get or generate color palette first
+      let currentPalette = paletteOverride || colorPalette;
+
       // Generate Palette first if included
       const paletteAsset = assetsToGenerate.find(a => a.type === AssetType.Palette && a.isLoading);
       if (paletteAsset) {
-        const paletteContent = await generatePlaceholderContent(AssetType.Palette, eventDetails) as ColorInfo[];
+        const paletteContent = await generatePlaceholderContent(AssetType.Palette, eventDetails, [], primaryLogoUrl) as ColorInfo[];
         setColorPalette(paletteContent);
+        currentPalette = paletteContent;
         setGeneratedAssets(prev => prev.map(a =>
           a.id === paletteAsset.id ? { ...a, content: paletteContent, isLoading: false } : a
         ));
@@ -51,10 +55,15 @@ export const useAIOrchestrator = ({
         setGenerationProgress({ current: completedCount, total });
       }
 
-      // Generate other assets
+      // Generate other assets with color palette and logo
       for (const asset of assetsToGenerate.filter(a => a.isLoading && a.type !== AssetType.Palette)) {
         try {
-          const content = await generatePlaceholderContent(asset.type, eventDetails);
+          const content = await generatePlaceholderContent(
+            asset.type,
+            eventDetails,
+            currentPalette,
+            primaryLogoUrl
+          );
           setGeneratedAssets(prev => prev.map(a =>
             a.id === asset.id ? { ...a, content, isLoading: false } : a
           ));
