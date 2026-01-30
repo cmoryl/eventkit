@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
-import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerationParams } from '../types';
+import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerationParams, PresentationData } from '../types';
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
 import StudioHeader from '../components/studio/StudioHeader';
 import AssetGrid from '../components/studio/AssetGrid';
@@ -11,6 +11,7 @@ import PaletteEditorModal from '../components/PaletteEditorModal';
 import TextEditorModal from '../components/TextEditorModal';
 import TextListEditorModal from '../components/TextListEditorModal';
 import QRCodeGeneratorModal from '../components/QRCodeGeneratorModal';
+import PresentationEditorModal from '../components/PresentationEditorModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
@@ -133,7 +134,7 @@ const Index: React.FC = () => {
     setEditingAsset(asset);
   };
 
-  const handleOverwriteAsset = (assetId: string, newContent: string | string[] | ColorInfo[], params?: Record<string, unknown>) => {
+  const handleOverwriteAsset = (assetId: string, newContent: string | string[] | ColorInfo[] | PresentationData, params?: Record<string, unknown>) => {
     pushSnapshot();
     setGeneratedAssets(prev => prev.map(a => {
       if (a.id === assetId) {
@@ -147,7 +148,7 @@ const Index: React.FC = () => {
     showToast("Asset updated", "success");
   };
 
-  const handleSaveAsNewAsset = (assetId: string, newContent: string | string[] | ColorInfo[]) => {
+  const handleSaveAsNewAsset = (assetId: string, newContent: string | string[] | ColorInfo[] | PresentationData) => {
     pushSnapshot();
     const original = generatedAssets.find(a => a.id === assetId);
     if (original) {
@@ -262,6 +263,19 @@ const Index: React.FC = () => {
       );
     }
 
+    if (editingAsset.type === AssetType.Presentation) {
+      return (
+        <PresentationEditorModal
+          asset={editingAsset}
+          onClose={() => setEditingAsset(null)}
+          onOverwrite={(id, content) => handleOverwriteAsset(id, content)}
+          onSaveAsNew={(id, content) => handleSaveAsNewAsset(id, content)}
+          eventName={eventDetails.name}
+          colorPalette={colorPalette.map(c => c.hex)}
+        />
+      );
+    }
+
     if ((editingAsset.type === AssetType.MarketingCopy || editingAsset.type === AssetType.RunOfShow) && typeof editingAsset.content === 'string') {
       return (
         <TextEditorModal
@@ -305,11 +319,17 @@ const Index: React.FC = () => {
             onBackToSetup={() => setView('onboarding')}
             onDownloadAll={handleDownloadAll}
             onSave={handleSaveProject}
+            onLoad={handleLoadProject}
             onExportBrandGuide={handleExportBrandGuide}
             onOpenQRGenerator={() => setShowQRGenerator(true)}
             onAddMoreAssets={handleAddMoreAssets}
+            onUndo={undo}
+            onRedo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
             isExporting={isExporting}
             isGeneratingGuide={isGeneratingGuide}
+            isLoadingProject={isLoadingProject}
           />
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
