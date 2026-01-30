@@ -1,6 +1,7 @@
 import { AssetType } from '../types';
 import type { EventDetails, ColorInfo } from '../types';
 import { getAssetConfig } from '../config/assetConfig';
+import { renderAsset } from './canvasRenderer';
 
 // Design tokens for consistent generation
 const BRAND_GRADIENTS = [
@@ -256,8 +257,22 @@ ${eventDetails.website || 'Website coming soon'}`;
 const generateImageAsset = async (
   type: AssetType,
   eventDetails: EventDetails,
-  colorPalette: ColorInfo[] = []
+  colorPalette: ColorInfo[] = [],
+  logoDataUrl?: string
 ): Promise<string> => {
+  // Try to use the advanced canvas renderer first
+  try {
+    const result = await renderAsset(type, {
+      eventDetails,
+      colorPalette,
+      logoDataUrl,
+    });
+    return result;
+  } catch (e) {
+    console.warn('Advanced renderer failed, falling back to basic:', e);
+  }
+
+  // Fallback to basic renderer
   const config = getAssetConfig(type);
   const width = config?.pixelWidth || (config?.printSpec ? Math.round(config.printSpec.widthInches * config.printSpec.dpi) : 800);
   const height = config?.pixelHeight || (config?.printSpec ? Math.round(config.printSpec.heightInches * config.printSpec.dpi) : 600);
@@ -422,7 +437,8 @@ const generateImageAsset = async (
 export const generatePlaceholderContent = async (
   type: AssetType,
   eventDetails: EventDetails,
-  colorPalette: ColorInfo[] = []
+  colorPalette: ColorInfo[] = [],
+  logoDataUrl?: string
 ): Promise<string | string[] | ColorInfo[]> => {
   // Simulate AI delay
   await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
@@ -473,7 +489,7 @@ Use the Color Palette asset for complete color specifications including CMYK for
 - Consistent color grading aligned with brand palette`;
 
     default:
-      return generateImageAsset(type, eventDetails, colorPalette);
+      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl);
   }
 };
 
