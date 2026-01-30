@@ -2,8 +2,10 @@
 // Provides text refinement, color analysis, and image editing capabilities
 import type { ColorInfo, GeneratedAsset } from '../types';
 import { AssetType } from '../types';
+import { supabase } from '@/integrations/supabase/client';
 
-// Color name database for accurate naming
+// Flag to determine if we should use AI or fallback to local generation
+const USE_AI_GENERATION = true;
 const COLOR_NAMES: Record<string, string> = {
   '#FF0000': 'Red',
   '#FF6B6B': 'Light Coral',
@@ -268,6 +270,27 @@ export const generateSlogans = async (
   eventDescription: string,
   count: number = 5
 ): Promise<string[]> => {
+  if (USE_AI_GENERATION) {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-asset', {
+        body: {
+          type: 'slogans',
+          eventName,
+          eventDescription,
+          count,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.result && Array.isArray(data.result)) {
+        return data.result;
+      }
+    } catch (e) {
+      console.warn('AI slogan generation failed, using fallback:', e);
+    }
+  }
+
+  // Fallback to local generation
   await new Promise(resolve => setTimeout(resolve, 800));
 
   const words = eventName.split(/\s+/).filter(w => w.length > 2);
@@ -291,7 +314,6 @@ export const generateSlogans = async (
     `Unlock Your ${keyword} Potential`,
   ];
 
-  // Shuffle and take requested count
   const shuffled = templates.sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 };
@@ -337,6 +359,28 @@ export const generateMarketingCopy = async (
   eventDate: string,
   eventLocation: string
 ): Promise<string> => {
+  if (USE_AI_GENERATION) {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-asset', {
+        body: {
+          type: 'marketing_copy',
+          eventName,
+          eventDescription,
+          eventDate,
+          eventLocation,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.result && typeof data.result === 'string') {
+        return data.result;
+      }
+    } catch (e) {
+      console.warn('AI marketing copy generation failed, using fallback:', e);
+    }
+  }
+
+  // Fallback to local generation
   await new Promise(resolve => setTimeout(resolve, 600));
 
   const formattedDate = eventDate ? new Date(eventDate).toLocaleDateString('en-US', {
@@ -376,6 +420,27 @@ export const generateRunOfShow = async (
   eventDate: string,
   eventDescription: string
 ): Promise<string> => {
+  if (USE_AI_GENERATION) {
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-asset', {
+        body: {
+          type: 'run_of_show',
+          eventName,
+          eventDate,
+          eventDescription,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.result && typeof data.result === 'string') {
+        return data.result;
+      }
+    } catch (e) {
+      console.warn('AI run of show generation failed, using fallback:', e);
+    }
+  }
+
+  // Fallback to local generation
   await new Promise(resolve => setTimeout(resolve, 600));
 
   const formattedDate = eventDate ? new Date(eventDate).toLocaleDateString('en-US', {
@@ -429,6 +494,38 @@ NOTES:
 • All times are approximate
 • Staff should arrive 30 min before their assigned time
 • Emergency contact: [TBD]`;
+};
+
+// Generate AI image for an asset
+export const generateAssetImage = async (
+  assetType: AssetType,
+  eventName: string,
+  eventDescription: string,
+  styleDescription: string,
+  colorPalette: string[]
+): Promise<string | null> => {
+  if (!USE_AI_GENERATION) return null;
+
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-image', {
+      body: {
+        assetType,
+        eventName,
+        eventDescription,
+        styleDescription,
+        colorPalette,
+      },
+    });
+
+    if (error) throw error;
+    if (data?.imageUrl) {
+      return data.imageUrl;
+    }
+  } catch (e) {
+    console.warn('AI image generation failed:', e);
+  }
+
+  return null;
 };
 
 // Extract dominant colors from an image
