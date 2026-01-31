@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import type { GeneratedAsset } from '../types';
-import { Sparkles, Check, Loader2 } from 'lucide-react';
+import type { LearnedInsight } from '@/services/aiBrain/types';
+import { Sparkles, Check, Loader2, Brain } from 'lucide-react';
+import LearnedInsightsDisplay from './LearnedInsightsDisplay';
 
 interface GenerationLoaderProps {
   current: number;
   total: number;
   assets?: GeneratedAsset[];
+  insights?: LearnedInsight[];
 }
 
 const GENERATION_TIPS = [
@@ -18,7 +21,7 @@ const GENERATION_TIPS = [
   "Download all assets as a ZIP file when you're done"
 ];
 
-const GenerationLoader: React.FC<GenerationLoaderProps> = ({ current, total, assets }) => {
+const GenerationLoader: React.FC<GenerationLoaderProps> = ({ current, total, assets, insights }) => {
   const [tipIndex, setTipIndex] = useState(0);
   const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
   const circumference = 2 * Math.PI * 90;
@@ -91,6 +94,16 @@ const GenerationLoader: React.FC<GenerationLoaderProps> = ({ current, total, ass
         <p className="text-muted-foreground">
           {current} of {total} assets completed
         </p>
+
+        {/* AI Learning indicator */}
+        {insights && insights.length > 0 && (
+          <div className="mt-4 flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 animate-fade-in">
+            <Brain className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-sm text-primary font-medium">
+              Applying {insights.length} learned preference{insights.length !== 1 ? 's' : ''} to your designs
+            </span>
+          </div>
+        )}
 
         {/* Animated tip */}
         <div className="mt-6 h-12 flex items-center">
