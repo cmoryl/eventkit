@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AssetType } from '../../types';
 import { AssetConfig } from '../../config/assetConfig';
 import * as LucideIcons from 'lucide-react';
@@ -8,9 +9,10 @@ interface AssetCardProps {
   asset: AssetConfig;
   isSelected: boolean;
   onToggle: () => void;
+  index?: number;
 }
 
-const AssetCard: React.FC<AssetCardProps> = ({ asset, isSelected, onToggle }) => {
+const AssetCard: React.FC<AssetCardProps> = ({ asset, isSelected, onToggle, index = 0 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const getIcon = (iconName: string, className?: string) => {
@@ -39,58 +41,90 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, isSelected, onToggle }) =>
   };
 
   return (
-    <button
+    <motion.button
       onClick={onToggle}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "group relative w-full p-3 rounded-xl border-2 transition-all duration-300 text-left overflow-hidden",
+        "group relative w-full p-3 rounded-xl border-2 transition-colors text-left overflow-hidden",
         isSelected
-          ? "border-primary bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-lg shadow-primary/10 scale-[1.02]"
-          : "border-border/50 hover:border-primary/50 hover:bg-gradient-to-br hover:from-secondary/80 hover:to-secondary/30 hover:shadow-md"
+          ? "border-primary bg-gradient-to-br from-primary/10 via-primary/5 to-transparent"
+          : "border-border/50 hover:border-primary/50 hover:bg-gradient-to-br hover:from-secondary/80 hover:to-secondary/30"
       )}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ 
+        delay: index * 0.02,
+        type: "spring",
+        stiffness: 300,
+        damping: 25
+      }}
+      whileHover={{ y: -2, scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      layout
     >
       {/* Animated background glow on hover */}
-      <div className={cn(
-        "absolute inset-0 opacity-0 transition-opacity duration-500 pointer-events-none",
-        isHovered && !isSelected && "opacity-100"
-      )}>
+      <motion.div
+        className={cn(
+          "absolute inset-0 pointer-events-none",
+          !isSelected && "opacity-0"
+        )}
+        animate={{ opacity: isHovered && !isSelected ? 0.5 : isSelected ? 0.3 : 0 }}
+      >
         <div className={cn(
-          "absolute -inset-1 bg-gradient-to-r blur-xl opacity-20",
+          "absolute -inset-1 bg-gradient-to-r blur-xl",
           getCategoryGradient()
         )} />
-      </div>
+      </motion.div>
 
       {/* Selection ring animation */}
-      {isSelected && (
-        <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
-          <div className={cn(
-            "absolute inset-[-2px] bg-gradient-to-r animate-[spin_3s_linear_infinite] opacity-20",
-            getCategoryGradient()
-          )} />
-          <div className="absolute inset-[1px] bg-background rounded-[10px]" />
-        </div>
-      )}
+      <AnimatePresence>
+        {isSelected && (
+          <motion.div 
+            className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div 
+              className={cn("absolute inset-[-2px] bg-gradient-to-r", getCategoryGradient())}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+              style={{ opacity: 0.2 }}
+            />
+            <div className="absolute inset-[1px] bg-background rounded-[10px]" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Content */}
       <div className="relative flex items-center gap-3">
         {/* Icon with gradient background */}
-        <div className={cn(
-          "relative flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300",
-          isSelected
-            ? `bg-gradient-to-br ${getCategoryGradient()} text-white shadow-lg`
-            : "bg-gradient-to-br from-secondary to-muted text-muted-foreground group-hover:from-secondary group-hover:to-secondary/50"
-        )}>
+        <motion.div 
+          className={cn(
+            "relative flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+            isSelected
+              ? `bg-gradient-to-br ${getCategoryGradient()} text-white shadow-lg`
+              : "bg-gradient-to-br from-secondary to-muted text-muted-foreground group-hover:from-secondary group-hover:to-secondary/50"
+          )}
+          animate={isSelected ? { scale: [1, 1.1, 1] } : {}}
+          transition={{ duration: 0.3 }}
+        >
           {getIcon(asset.icon, "w-5 h-5")}
           
           {/* Pulse effect when selected */}
-          {isSelected && (
-            <div className={cn(
-              "absolute inset-0 rounded-lg bg-gradient-to-br animate-ping opacity-30",
-              getCategoryGradient()
-            )} style={{ animationDuration: '2s' }} />
-          )}
-        </div>
+          <AnimatePresence>
+            {isSelected && (
+              <motion.div 
+                className={cn("absolute inset-0 rounded-lg bg-gradient-to-br", getCategoryGradient())}
+                initial={{ scale: 1, opacity: 0.5 }}
+                animate={{ scale: 1.5, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+              />
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Text content */}
         <div className="flex-1 min-w-0">
@@ -136,48 +170,66 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, isSelected, onToggle }) =>
         </div>
 
         {/* Checkbox with animation */}
-        <div className={cn(
-          "flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300",
-          isSelected
-            ? "border-primary bg-primary scale-110"
-            : "border-muted-foreground/30 group-hover:border-primary/50 group-hover:scale-105"
-        )}>
-          <LucideIcons.Check className={cn(
-            "w-3.5 h-3.5 transition-all duration-200",
+        <motion.div 
+          className={cn(
+            "flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors",
             isSelected
-              ? "text-primary-foreground scale-100 opacity-100"
-              : "scale-50 opacity-0"
-          )} />
-        </div>
+              ? "border-primary bg-primary"
+              : "border-muted-foreground/30 group-hover:border-primary/50"
+          )}
+          animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
+          transition={{ duration: 0.2 }}
+        >
+          <AnimatePresence>
+            {isSelected && (
+              <motion.div
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                exit={{ scale: 0, rotate: 180 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              >
+                <LucideIcons.Check className="w-3.5 h-3.5 text-primary-foreground" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       {/* Preview tooltip on hover */}
-      {isHovered && (
-        <div className="absolute left-0 right-0 -bottom-1 translate-y-full z-50 pointer-events-none animate-fade-in">
-          <div className="mx-2 mt-2 p-2.5 rounded-lg bg-popover border border-border shadow-xl">
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {asset.description}
-            </p>
-            {asset.printSpec && (
-              <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <LucideIcons.Maximize2 className="w-2.5 h-2.5" />
-                  {asset.printSpec.dpi} DPI
-                </span>
-                <span className="flex items-center gap-1">
-                  <LucideIcons.Droplets className="w-2.5 h-2.5" />
-                  {asset.printSpec.bleedInches}" bleed
-                </span>
-                <span className="flex items-center gap-1">
-                  <LucideIcons.Palette className="w-2.5 h-2.5" />
-                  {asset.printSpec.colorMode}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </button>
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div 
+            className="absolute left-0 right-0 -bottom-1 translate-y-full z-50 pointer-events-none"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className="mx-2 mt-2 p-2.5 rounded-lg bg-popover border border-border shadow-xl">
+              <p className="text-xs text-muted-foreground line-clamp-2">
+                {asset.description}
+              </p>
+              {asset.printSpec && (
+                <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <LucideIcons.Maximize2 className="w-2.5 h-2.5" />
+                    {asset.printSpec.dpi} DPI
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <LucideIcons.Droplets className="w-2.5 h-2.5" />
+                    {asset.printSpec.bleedInches}" bleed
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <LucideIcons.Palette className="w-2.5 h-2.5" />
+                    {asset.printSpec.colorMode}
+                  </span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.button>
   );
 };
 
