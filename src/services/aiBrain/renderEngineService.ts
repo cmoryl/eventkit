@@ -8,9 +8,9 @@ import type { TablesInsert, Json } from '@/integrations/supabase/types';
 const PROVIDER_INFO: Record<RenderProvider, { name: string; description: string; requiresKey: boolean; models: string[] }> = {
   lovable: {
     name: 'Lovable AI',
-    description: 'Built-in AI powered by Google Gemini. No API key required.',
+    description: 'Built-in AI powered by Google Gemini. Fast (Nano Banana) or high-quality (Pro) modes.',
     requiresKey: false,
-    models: ['gemini-2.5-flash-image', 'gemini-3-pro-image-preview'],
+    models: ['gemini-2.5-flash-image (Fast)', 'gemini-3-pro-image-preview (Quality)'],
   },
   openai: {
     name: 'OpenAI DALL-E',
