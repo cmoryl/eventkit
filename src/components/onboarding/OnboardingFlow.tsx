@@ -7,6 +7,7 @@ import StepOne from './StepOne';
 import StepTwo from './StepTwo';
 import StepThree from './StepThree';
 import { Sparkles, Palette, Layers, ChevronLeft, ChevronRight, Zap, ArrowRight } from 'lucide-react';
+import FAQSection from '../FAQSection';
 import { cn } from '@/lib/utils';
 import { AnimatedGradientBg } from '../animations/GlowingOrb';
 import { MagneticButton } from '../animations/InteractiveCard';
@@ -391,6 +392,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
             </motion.span>
           </AnimatePresence>
         </motion.p>
+
+        {/* FAQ Section - Only show on step 1 */}
+        {step === 1 && (
+          <FAQSection 
+            className="mt-16" 
+            showCategories={true}
+            showSearch={true}
+          />
+        )}
       </motion.div>
     </div>
   );
