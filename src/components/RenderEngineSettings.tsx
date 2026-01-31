@@ -1,0 +1,342 @@
+// Render Engine Settings Modal
+// Allows users to configure and manage AI render engines
+
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { 
+  Cpu, 
+  Key, 
+  Plus, 
+  Trash2, 
+  Star, 
+  CheckCircle, 
+  AlertCircle,
+  Loader2,
+  Sparkles,
+  Zap
+} from 'lucide-react';
+import type { RenderEngine, RenderProvider } from '@/services/aiBrain/types';
+import {
+  getAllProviders,
+  getUserRenderEngines,
+  addRenderEngine,
+  deleteRenderEngine,
+  setDefaultRenderEngine,
+  testRenderEngine,
+} from '@/services/aiBrain/renderEngineService';
+
+interface RenderEngineSettingsProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userId: string;
+}
+
+export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngineSettingsProps) {
+  const [engines, setEngines] = useState<RenderEngine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [testing, setTesting] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  
+  // New engine form
+  const [newProvider, setNewProvider] = useState<RenderProvider>('openai');
+  const [newName, setNewName] = useState('');
+  const [newApiKey, setNewApiKey] = useState('');
+
+  const providers = getAllProviders();
+
+  useEffect(() => {
+    if (open && userId) {
+      loadEngines();
+    }
+  }, [open, userId]);
+
+  const loadEngines = async () => {
+    setLoading(true);
+    try {
+      const userEngines = await getUserRenderEngines(userId);
+      setEngines(userEngines);
+    } catch (error) {
+      console.error('Failed to load engines:', error);
+    }
+    setLoading(false);
+  };
+
+  const handleAddEngine = async () => {
+    if (!newName.trim()) {
+      toast.error('Please enter a name for the engine');
+      return;
+    }
+
+    const provider = providers.find(p => p.id === newProvider);
+    if (provider?.requiresKey && !newApiKey.trim()) {
+      toast.error('This provider requires an API key');
+      return;
+    }
+
+    setAdding(true);
+    try {
+      const engine = await addRenderEngine(
+        userId,
+        newProvider,
+        newName,
+        newApiKey || undefined
+      );
+      
+      if (engine) {
+        setEngines([...engines, engine]);
+        setNewName('');
+        setNewApiKey('');
+        toast.success('Render engine added!');
+      } else {
+        toast.error('Failed to add engine');
+      }
+    } catch (error) {
+      toast.error('Error adding engine');
+    }
+    setAdding(false);
+  };
+
+  const handleTestEngine = async (engine: RenderEngine) => {
+    setTesting(engine.id);
+    try {
+      const result = await testRenderEngine(engine);
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error('Test failed');
+    }
+    setTesting(null);
+  };
+
+  const handleSetDefault = async (engineId: string) => {
+    try {
+      await setDefaultRenderEngine(userId, engineId);
+      setEngines(engines.map(e => ({
+        ...e,
+        isDefault: e.id === engineId,
+      })));
+      toast.success('Default engine updated');
+    } catch (error) {
+      toast.error('Failed to update default');
+    }
+  };
+
+  const handleDeleteEngine = async (engineId: string) => {
+    try {
+      await deleteRenderEngine(engineId);
+      setEngines(engines.filter(e => e.id !== engineId));
+      toast.success('Engine removed');
+    } catch (error) {
+      toast.error('Failed to remove engine');
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Cpu className="h-5 w-5 text-primary" />
+            Render Engine Settings
+          </DialogTitle>
+          <DialogDescription>
+            Configure AI image generation providers. Add your own API keys to use different engines.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs defaultValue="engines" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="engines">My Engines</TabsTrigger>
+            <TabsTrigger value="add">Add Engine</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="engines" className="space-y-4 mt-4">
+            {/* Default Lovable Engine */}
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Lovable AI</CardTitle>
+                    <Badge variant="secondary" className="text-xs">Built-in</Badge>
+                  </div>
+                  <Badge variant="default" className="bg-primary">
+                    <Star className="h-3 w-3 mr-1" />
+                    Default
+                  </Badge>
+                </div>
+                <CardDescription className="text-sm">
+                  Powered by Google Gemini. No API key required.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* User's Custom Engines */}
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : engines.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Cpu className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>No custom engines configured</p>
+                <p className="text-sm">Add your own API keys to use different providers</p>
+              </div>
+            ) : (
+              engines.map((engine) => (
+                <Card key={engine.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-muted-foreground" />
+                        <CardTitle className="text-base">{engine.displayName}</CardTitle>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {engine.provider}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {engine.isDefault && (
+                          <Badge variant="default" className="bg-primary">
+                            <Star className="h-3 w-3 mr-1" />
+                            Default
+                          </Badge>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleTestEngine(engine)}
+                          disabled={testing === engine.id}
+                        >
+                          {testing === engine.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4" />
+                          )}
+                        </Button>
+                        {!engine.isDefault && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetDefault(engine.id)}
+                          >
+                            <Star className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteEngine(engine.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription className="text-sm flex items-center gap-2">
+                      <Key className="h-3 w-3" />
+                      API Key configured
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="add" className="space-y-4 mt-4">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Provider</Label>
+                <Select value={newProvider} onValueChange={(v) => setNewProvider(v as RenderProvider)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providers.filter(p => p.id !== 'lovable').map((provider) => (
+                      <SelectItem key={provider.id} value={provider.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{provider.name}</span>
+                          {provider.requiresKey && (
+                            <Key className="h-3 w-3 text-muted-foreground" />
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  {providers.find(p => p.id === newProvider)?.description}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input
+                  placeholder="e.g., My DALL-E Engine"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+              </div>
+
+              {providers.find(p => p.id === newProvider)?.requiresKey && (
+                <div className="space-y-2">
+                  <Label>API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="Enter your API key"
+                    value={newApiKey}
+                    onChange={(e) => setNewApiKey(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Your API key is stored securely
+                  </p>
+                </div>
+              )}
+
+              <Button 
+                onClick={handleAddEngine} 
+                className="w-full"
+                disabled={adding}
+              >
+                {adding ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-2" />
+                )}
+                Add Render Engine
+              </Button>
+            </div>
+
+            {/* Available Models */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Available Models</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {providers.find(p => p.id === newProvider)?.models.map((model) => (
+                    <Badge key={model} variant="outline" className="text-xs">
+                      {model}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}

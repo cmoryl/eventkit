@@ -13,12 +13,15 @@ import {
 import type { GeneratedAsset, ColorInfo, PresentationData } from '../../types';
 import { AssetType } from '../../types';
 import { isImageContent, getImageSrc, isSvgContent } from '../../utils/svgUtils';
+import { AIFeedback } from '../AIFeedback';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AssetPreviewModalProps {
   asset: GeneratedAsset;
   onClose: () => void;
   onEdit?: (asset: GeneratedAsset) => void;
   onDownload?: (asset: GeneratedAsset) => void;
+  generationId?: string | null;
 }
 
 const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
@@ -26,7 +29,9 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
   onClose,
   onEdit,
   onDownload,
+  generationId,
 }) => {
+  const { user } = useAuth();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -355,11 +360,22 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
 
       {/* Footer hints */}
       {isImageAsset && (
-        <div className="p-3 bg-card/50 border-t border-border flex items-center justify-center gap-6 text-xs text-muted-foreground">
-          <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">+</kbd> / <kbd className="px-1.5 py-0.5 bg-secondary rounded">-</kbd> Zoom</span>
-          <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">0</kbd> Reset</span>
-          <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">Ctrl</kbd> + Scroll to zoom</span>
-          <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">Esc</kbd> Close</span>
+        <div className="p-3 bg-card/50 border-t border-border flex items-center justify-between">
+          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+            <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">+</kbd> / <kbd className="px-1.5 py-0.5 bg-secondary rounded">-</kbd> Zoom</span>
+            <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">0</kbd> Reset</span>
+            <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">Ctrl</kbd> + Scroll to zoom</span>
+            <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">Esc</kbd> Close</span>
+          </div>
+          
+          {/* AI Feedback */}
+          {user?.id && (
+            <AIFeedback
+              generationId={generationId || null}
+              userId={user.id}
+              compact
+            />
+          )}
         </div>
       )}
     </div>
