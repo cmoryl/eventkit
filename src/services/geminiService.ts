@@ -3,6 +3,12 @@
 import type { ColorInfo, GeneratedAsset, ImageAnalysis } from '../types';
 import { AssetType } from '../types';
 import { supabase } from '@/integrations/supabase/client';
+import { 
+  getCachedAnalysis, 
+  cacheAnalysis, 
+  getCachedPalette, 
+  cachePalette 
+} from './generationOptimizer';
 
 // Flag to determine if we should use AI or fallback to local generation
 const USE_AI_GENERATION = true;
@@ -517,7 +523,7 @@ NOTES:
 • Emergency contact: [TBD]`;
 };
 
-// Generate AI image for an asset
+// Generate AI image for an asset - OPTIMIZED to use cached analysis and pass to backend
 export const generateAssetImage = async (
   assetType: AssetType | string,
   eventName: string,
@@ -529,12 +535,22 @@ export const generateAssetImage = async (
   incorporateLocationStyle?: boolean,
   vibeImageBase64?: string,
   masterPatternBase64?: string,
-  venueImageBase64?: string
+  venueImageBase64?: string,
+  preComputedAnalysis?: ImageAnalysis | null // New: pass pre-computed analysis to avoid extra AI call
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
   try {
     const assetTypeStr = typeof assetType === 'string' ? assetType : String(assetType);
+    
+    // OPTIMIZATION: Check for cached analysis if we have a vibe image
+    let imageAnalysis = preComputedAnalysis;
+    if (!imageAnalysis && vibeImageBase64) {
+      imageAnalysis = getCachedAnalysis(vibeImageBase64);
+      if (imageAnalysis) {
+        console.log('Using cached image analysis for generation');
+      }
+    }
     
     const { data, error } = await supabase.functions.invoke('generate-image', {
       body: {
@@ -549,6 +565,7 @@ export const generateAssetImage = async (
         vibeImageBase64,
         masterPatternBase64,
         venueImageBase64,
+        imageAnalysis, // Pass analysis to avoid inline re-analysis
       },
     });
 
@@ -672,13 +689,22 @@ export const extractColorsFromImage = async (imageDataUrl: string): Promise<Colo
   });
 };
 
-// Generate color palette using AI - optionally from a reference image
+// Generate color palette using AI - OPTIMIZED with caching
 export const generateAIPalette = async (
   eventName: string,
   eventDescription?: string,
   styleDescription?: string,
   referenceImageBase64?: string
 ): Promise<ColorInfo[]> => {
+  // OPTIMIZATION: Check cache first for reference image palettes
+  if (referenceImageBase64) {
+    const cachedPalette = getCachedPalette(referenceImageBase64);
+    if (cachedPalette) {
+      console.log('Using cached palette from reference image');
+      return cachedPalette;
+    }
+  }
+
   if (USE_AI_GENERATION) {
     try {
       console.log('Generating AI palette', { 
@@ -723,7 +749,14 @@ export const generateAIPalette = async (
         console.log('AI extracted colors:', hexColors);
         // Convert hex codes to full ColorInfo objects
         const colorPromises = hexColors.slice(0, 5).map(hex => getColorDetails(hex));
-        return await Promise.all(colorPromises);
+        const palette = await Promise.all(colorPromises);
+        
+        // OPTIMIZATION: Cache palette for reference images
+        if (referenceImageBase64) {
+          cachePalette(referenceImageBase64, palette);
+        }
+        
+        return palette;
       }
     } catch (e) {
       console.warn('AI palette generation failed, using fallback:', e);
@@ -736,7 +769,7 @@ export const generateAIPalette = async (
   return await Promise.all(colorPromises);
 };
 
-// Comprehensive image analysis for reference images
+// Comprehensive image analysis for reference images - OPTIMIZED with caching
 export const analyzeReferenceImage = async (
   imageBase64: string,
   eventName?: string,
@@ -745,6 +778,13 @@ export const analyzeReferenceImage = async (
   if (!USE_AI_GENERATION) {
     console.log('AI generation disabled, skipping image analysis');
     return null;
+  }
+
+  // OPTIMIZATION: Check cache first - analysis doesn't change for same image
+  const cachedAnalysis = getCachedAnalysis(imageBase64);
+  if (cachedAnalysis) {
+    console.log('Using cached image analysis - saving AI call');
+    return cachedAnalysis;
   }
 
   try {
@@ -766,6 +806,10 @@ export const analyzeReferenceImage = async (
         mood: data.analysis.mood,
         confidence: data.analysis.analysisConfidence
       });
+      
+      // OPTIMIZATION: Cache the analysis for future use
+      cacheAnalysis(imageBase64, data.analysis);
+      
       return data.analysis as ImageAnalysis;
     }
 
