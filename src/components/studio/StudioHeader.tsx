@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface StudioHeaderProps {
   eventName: string;
@@ -159,6 +160,9 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               onChange={handleFileChange}
               className="hidden"
             />
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Undo/Redo */}
             {(onUndo || onRedo) && (
