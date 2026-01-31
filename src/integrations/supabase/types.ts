@@ -14,6 +14,145 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_feedback: {
+        Row: {
+          created_at: string
+          edits_made: Json | null
+          feedback_text: string | null
+          feedback_type: string | null
+          generation_id: string | null
+          id: string
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          edits_made?: Json | null
+          feedback_text?: string | null
+          feedback_type?: string | null
+          generation_id?: string | null
+          id?: string
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          edits_made?: Json | null
+          feedback_text?: string | null
+          feedback_type?: string | null
+          generation_id?: string | null
+          id?: string
+          rating?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_feedback_generation_id_fkey"
+            columns: ["generation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_generations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_generations: {
+        Row: {
+          asset_type: string
+          color_palette: Json | null
+          created_at: string
+          cultural_context: string | null
+          generation_time_ms: number | null
+          id: string
+          location: string | null
+          project_id: string | null
+          prompt_used: string
+          render_engine: string | null
+          result_image_url: string | null
+          style_description: string | null
+          user_id: string
+        }
+        Insert: {
+          asset_type: string
+          color_palette?: Json | null
+          created_at?: string
+          cultural_context?: string | null
+          generation_time_ms?: number | null
+          id?: string
+          location?: string | null
+          project_id?: string | null
+          prompt_used: string
+          render_engine?: string | null
+          result_image_url?: string | null
+          style_description?: string | null
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          color_palette?: Json | null
+          created_at?: string
+          cultural_context?: string | null
+          generation_time_ms?: number | null
+          id?: string
+          location?: string | null
+          project_id?: string | null
+          prompt_used?: string
+          render_engine?: string | null
+          result_image_url?: string | null
+          style_description?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_generations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_knowledge: {
+        Row: {
+          category: string | null
+          confidence_score: number | null
+          created_at: string
+          id: string
+          key: string
+          knowledge_type: string
+          success_rate: number | null
+          updated_at: string
+          usage_count: number | null
+          user_id: string | null
+          value: Json
+        }
+        Insert: {
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          key: string
+          knowledge_type: string
+          success_rate?: number | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string | null
+          value: Json
+        }
+        Update: {
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          key?: string
+          knowledge_type?: string
+          success_rate?: number | null
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       print_templates: {
         Row: {
           asset_type: string | null
@@ -211,6 +350,87 @@ export type Database = {
           is_favorite?: boolean | null
           logos?: Json | null
           name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      prompt_templates: {
+        Row: {
+          asset_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_system: boolean | null
+          prompt_template: string
+          success_rate: number | null
+          template_name: string
+          updated_at: string
+          usage_count: number | null
+          variables: Json | null
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_system?: boolean | null
+          prompt_template: string
+          success_rate?: number | null
+          template_name: string
+          updated_at?: string
+          usage_count?: number | null
+          variables?: Json | null
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_system?: boolean | null
+          prompt_template?: string
+          success_rate?: number | null
+          template_name?: string
+          updated_at?: string
+          usage_count?: number | null
+          variables?: Json | null
+        }
+        Relationships: []
+      }
+      render_engines: {
+        Row: {
+          api_key_encrypted: string | null
+          config: Json | null
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_encrypted?: string | null
+          config?: Json | null
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_encrypted?: string | null
+          config?: Json | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          provider?: string
           updated_at?: string
           user_id?: string
         }

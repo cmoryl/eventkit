@@ -21,10 +21,13 @@ import {
   Package,
   Sparkles,
   ChevronDown,
+  Cpu,
+  Brain,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '../ThemeToggle';
+import { RenderEngineSettings } from '../RenderEngineSettings';
 
 interface StudioHeaderProps {
   eventName: string;
@@ -50,6 +53,7 @@ interface StudioHeaderProps {
   onOpenDashboard?: () => void;
   onOpenAdvancedExport?: () => void;
   onOpenBatchPrintExport?: () => void;
+  onOpenRenderEngineSettings?: () => void;
 }
 
 const StudioHeader: React.FC<StudioHeaderProps> = ({
@@ -76,9 +80,11 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onOpenDashboard,
   onOpenAdvancedExport,
   onOpenBatchPrintExport,
+  onOpenRenderEngineSettings,
 }) => {
   const { user, isAuthenticated, signOut } = useAuth();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showRenderSettings, setShowRenderSettings] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts for undo/redo
@@ -106,6 +112,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   };
 
   return (
+    <>
     <motion.header 
       className="sticky top-0 z-30 border-b border-border/30 bg-background/80 backdrop-blur-xl"
       initial={{ y: -100, opacity: 0 }}
@@ -322,6 +329,13 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
                         />
                       )}
                       
+                      <MenuItem
+                        icon={Brain}
+                        label="AI Render Engines"
+                        onClick={() => { setShowRenderSettings(true); setShowMoreMenu(false); }}
+                        gradient="from-emerald-500 to-teal-500"
+                      />
+                      
                       <div className="h-px bg-border my-2 mx-3" />
                       
                       <MenuItem
@@ -423,6 +437,14 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
         </div>
       </div>
     </motion.header>
+    
+    {/* Render Engine Settings Modal */}
+    <RenderEngineSettings
+      open={showRenderSettings}
+      onOpenChange={setShowRenderSettings}
+      userId={user?.id || ''}
+    />
+    </>
   );
 };
 
