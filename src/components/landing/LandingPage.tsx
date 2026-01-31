@@ -1,6 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { 
+  Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2,
+  Tag, Ticket, Monitor, ShoppingBag, Image, FileText
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -40,6 +43,52 @@ const steps = [
 const assetTypes = [
   'Banners', 'Signage', 'Name Tags', 'Lanyards', 'T-Shirts', 'Social Media',
   'Email Headers', 'Presentations', 'Flyers', 'Posters', 'Business Cards', 'QR Codes'
+];
+
+// Mockup assets for showcase
+const mockupAssets = [
+  { 
+    type: 'Banner', 
+    icon: Image, 
+    gradient: 'from-violet-500 to-purple-600',
+    title: 'Event Banner',
+    size: 'large'
+  },
+  { 
+    type: 'Badge', 
+    icon: Tag, 
+    gradient: 'from-cyan-500 to-blue-600',
+    title: 'VIP Badge',
+    size: 'small'
+  },
+  { 
+    type: 'Ticket', 
+    icon: Ticket, 
+    gradient: 'from-orange-500 to-red-600',
+    title: 'Event Ticket',
+    size: 'medium'
+  },
+  { 
+    type: 'Social', 
+    icon: Monitor, 
+    gradient: 'from-pink-500 to-rose-600',
+    title: 'Social Post',
+    size: 'medium'
+  },
+  { 
+    type: 'Merch', 
+    icon: ShoppingBag, 
+    gradient: 'from-emerald-500 to-teal-600',
+    title: 'T-Shirt Design',
+    size: 'small'
+  },
+  { 
+    type: 'Flyer', 
+    icon: FileText, 
+    gradient: 'from-amber-500 to-yellow-600',
+    title: 'Event Flyer',
+    size: 'large'
+  },
 ];
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
@@ -155,6 +204,129 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </span>
               ))}
             </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Asset Showcase Section */}
+      <section className="py-24 px-6 bg-gradient-to-b from-background via-muted/20 to-background overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">See What You Can Create</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              From digital banners to print-ready merchandise, generate everything your event needs.
+            </p>
+          </motion.div>
+
+          {/* Floating Mockup Grid */}
+          <div className="relative h-[500px] sm:h-[600px]">
+            {/* Center showcase card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-80 z-20"
+            >
+              <div className="relative rounded-2xl bg-gradient-to-br from-primary to-accent p-[2px] shadow-2xl shadow-primary/30">
+                <div className="rounded-2xl bg-card p-4">
+                  <div className="aspect-[4/3] rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4 overflow-hidden">
+                    <motion.div
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                      className="text-center"
+                    >
+                      <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                        <Sparkles className="w-8 h-8 text-primary-foreground" />
+                      </div>
+                      <p className="text-sm font-medium text-foreground">Tech Summit 2026</p>
+                      <p className="text-xs text-muted-foreground">Event Banner</p>
+                    </motion.div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Hero Banner</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary">1920×1080</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Floating asset cards */}
+            {mockupAssets.map((asset, i) => {
+              const positions = [
+                { x: '5%', y: '10%', rotate: -12 },
+                { x: '75%', y: '5%', rotate: 8 },
+                { x: '0%', y: '60%', rotate: -8 },
+                { x: '80%', y: '55%', rotate: 15 },
+                { x: '15%', y: '80%', rotate: 5 },
+                { x: '70%', y: '85%', rotate: -10 },
+              ];
+              const pos = positions[i];
+              const sizeClasses = {
+                small: 'w-28 sm:w-32',
+                medium: 'w-32 sm:w-40',
+                large: 'w-36 sm:w-44',
+              };
+              
+              return (
+                <motion.div
+                  key={asset.type}
+                  initial={{ opacity: 0, scale: 0.5, rotate: pos.rotate }}
+                  whileInView={{ opacity: 1, scale: 1, rotate: pos.rotate }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.3 + i * 0.1, type: 'spring', stiffness: 100 }}
+                  whileHover={{ scale: 1.1, rotate: 0, zIndex: 30 }}
+                  className={`absolute ${sizeClasses[asset.size as keyof typeof sizeClasses]} cursor-pointer z-10`}
+                  style={{ left: pos.x, top: pos.y }}
+                >
+                  <div className="rounded-xl bg-card/90 backdrop-blur-sm border border-border p-3 shadow-lg hover:shadow-xl hover:border-primary/50 transition-all duration-300">
+                    <div className={`aspect-square rounded-lg bg-gradient-to-br ${asset.gradient} flex items-center justify-center mb-2`}>
+                      <asset.icon className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    </div>
+                    <p className="text-xs font-medium truncate">{asset.title}</p>
+                    <p className="text-[10px] text-muted-foreground">{asset.type}</p>
+                  </div>
+                </motion.div>
+              );
+            })}
+
+            {/* Decorative elements */}
+            <motion.div
+              className="absolute left-1/4 top-1/3 w-32 h-32 rounded-full bg-primary/10 blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 5, repeat: Infinity }}
+            />
+            <motion.div
+              className="absolute right-1/4 bottom-1/3 w-40 h-40 rounded-full bg-accent/10 blur-3xl"
+              animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
+              transition={{ duration: 6, repeat: Infinity }}
+            />
+          </div>
+
+          {/* Stats row */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 mt-12"
+          >
+            <div className="text-center">
+              <p className="text-4xl font-bold text-primary">100+</p>
+              <p className="text-sm text-muted-foreground">Asset Types</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-bold text-primary">Print-Ready</p>
+              <p className="text-sm text-muted-foreground">High Resolution</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-bold text-primary">&lt;1 min</p>
+              <p className="text-sm text-muted-foreground">Generation Time</p>
+            </div>
           </motion.div>
         </div>
       </section>
