@@ -16,9 +16,26 @@ interface GenerateImageRequest {
   incorporateLocationStyle?: boolean;
   vibeImageBase64?: string;
   masterPatternBase64?: string;
-  venueImageBase64?: string; // NEW: User's actual venue photo for realistic compositing
-  renderMode?: 'design' | 'mockup' | 'hyperrealistic'; // NEW: Control realism level
+  venueImageBase64?: string; // User's actual venue photo for realistic compositing
+  renderMode?: 'design' | 'mockup' | 'hyperrealistic'; // Control realism level
+  isPrintAsset?: boolean; // Flag for print-optimized generation
+  printDPI?: number; // Target DPI for print (300+ recommended)
 }
+
+// Print asset categories for automatic detection
+const PRINT_ASSET_TYPES = new Set([
+  'NAME_TAG', 'NAME_TAG_BACK', 'MENU', 'FOLDER', 'STICKER_SHEET', 
+  'THANK_YOU_NOTE', 'BANNER', 'EVENT_SIGNAGE', 'EASEL_SIGNAGE',
+  'DOOR_SIGNAGE', 'ROOM_SIGNAGE', 'LOCATION_SIGNAGE', 'WIFI_SIGN',
+  'HANGING_SIGNAGE', 'OUTDOOR_SIGNAGE', 'TSHIRT', 'TSHIRT_BACK',
+  'TSHIRT_SLEEVE', 'HAT', 'SWAG_BAG', 'WATER_BOTTLE', 'LANYARD',
+  'STAND_UP_PILLAR_BANNER', 'FEATHER_FLAG', 'TEARDROP_FLAG',
+  'BACK_WALL', 'MAIN_STAGE_BACKDROP', 'REGISTRATION_COUNTER',
+  'WELCOME_COUNTER', 'TECHNOLOGY_COUNTER', 'KIOSK', 'STAIRS',
+  'GLASS_DOOR', 'GLASS_DOUBLE_DOOR', 'GLASS_ROTATING_DOOR',
+  'STEP_AND_REPEAT', 'WRISTBAND_DESIGN', 'COASTER_DESIGN', 
+  'NAPKIN_DESIGN', 'REGISTRATION_BACK_WALL'
+]);
 
 // Location cultural contexts for enhanced locality awareness
 const LOCATION_CULTURAL_CONTEXTS: Record<string, string> = {
@@ -419,6 +436,39 @@ PHOTOREALISTIC RENDERING - CRITICAL:
 - Make viewers believe this is a real photograph, not a render`
       : '';
 
+    // Determine if this is a print asset (either explicitly flagged or auto-detected)
+    const isPrint = body.isPrintAsset ?? PRINT_ASSET_TYPES.has(assetType);
+    const targetDPI = body.printDPI || (isPrint ? 300 : 150);
+
+    // Build print-specific requirements for maximum quality output
+    const printRequirements = isPrint ? `
+PRINT PRODUCTION REQUIREMENTS - CRITICAL:
+This asset is destined for professional print production. You MUST ensure:
+
+COLOR & FIDELITY:
+- Use CMYK-safe colors only - avoid neon/fluorescent colors that won't print accurately
+- Prefer rich, saturated colors that reproduce well in print
+- No RGB-only colors like pure blue (#0000FF) - these shift dramatically in print
+- Use appropriate contrast for print reproduction (screens appear brighter than print)
+
+RESOLUTION & CLARITY:
+- Generate at maximum possible resolution (${targetDPI}+ DPI equivalent quality)
+- All text must be crisp, sharp, and anti-aliased for clean print edges
+- Fine details must be clear enough to survive print production
+- Avoid compression artifacts or noise - clean, professional output
+
+LAYOUT FOR PRINT:
+- Keep critical content (text, logos) away from edges (safe zone)
+- Extend backgrounds fully to edges for bleed area trimming
+- Text should be large enough to read at print size
+- High contrast between text and backgrounds
+
+PROFESSIONAL PRINT AESTHETIC:
+- Think like a print production designer
+- Textures and gradients should be smooth, not banded
+- Solid colors should be perfectly solid
+- This will be produced by professional print vendors` : '';
+
     const fullPrompt = `Generate an image: ${basePrompt}
 
 Event: "${eventName}"
@@ -431,17 +481,19 @@ ${vibeInstructions}
 ${patternInstructions}
 ${venueInstructions}
 ${realismRequirements}
+${printRequirements}
 
 REQUIREMENTS:
 - Create a high-quality, professional design
-- Ultra high resolution
+- Ultra high resolution - maximum quality output
 - Modern, polished aesthetic
-- Suitable for both print and digital use
-- Ensure text is readable and well-positioned
+${isPrint ? '- PRINT-OPTIMIZED: CMYK-safe colors, crisp text, production-ready quality' : '- Suitable for digital display'}
+- Ensure text is razor-sharp and perfectly legible
 - Maintain visual hierarchy with the event name prominent
-- ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN`;
+- ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN
+${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}`;
 
-    console.log(`Generating image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''} [mode: ${renderMode}]${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue]' : ''}`);
+    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue]' : ''}`);
 
     // Collect all reference images in order
     const referenceImages: string[] = [];
@@ -452,7 +504,7 @@ REQUIREMENTS:
 
     const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages);
     
-    console.log(`Successfully generated ${renderMode} image for ${assetType}`);
+    console.log(`Successfully generated ${isPrint ? 'PRINT-READY' : renderMode} image for ${assetType}`);
 
     return new Response(
       JSON.stringify({ success: true, imageUrl }),
