@@ -676,6 +676,7 @@ const Index: React.FC = () => {
         eventDetails={eventDetails}
         colorPalette={colorPalette}
         styleDescription={styleDescription}
+        generatedAssets={generatedAssets}
       />
 
       {toastState && <Toast message={toastState.message} type={toastState.type} onClose={() => setToastState(null)} />}

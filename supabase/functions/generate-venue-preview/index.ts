@@ -5,15 +5,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface SpecificAsset {
+  title: string;
+  type: string;
+  imageUrl: string;
+  placement: 'signage' | 'banner' | 'counter' | 'environmental' | 'digital' | 'auto';
+}
+
 interface VenuePreviewRequest {
   venueFrameBase64: string; // Key frame from venue walkthrough
   eventName: string;
   eventDescription?: string;
-  brandElements: {
+  brandElements?: {
     type: 'signage' | 'banner' | 'counter' | 'environmental' | 'digital';
     description: string;
     colorPalette?: string[];
   }[];
+  specificAssets?: SpecificAsset[];
   styleDescription?: string;
   duration?: 5 | 10;
 }
@@ -30,6 +38,7 @@ serve(async (req) => {
       eventName, 
       eventDescription,
       brandElements,
+      specificAssets,
       styleDescription,
       duration = 5
     } = body;
@@ -49,15 +58,48 @@ serve(async (req) => {
       );
     }
 
-    // Build descriptive prompt for branded venue visualization
-    const brandElementsList = brandElements.map(el => {
-      const colorInfo = el.colorPalette?.length 
-        ? ` using ${el.colorPalette.slice(0, 3).join(', ')} color scheme`
-        : '';
-      return `- ${el.type}: ${el.description}${colorInfo}`;
-    }).join('\n');
+    // Build prompt based on whether we have specific assets or generic elements
+    let prompt: string;
 
-    const prompt = `Transform this venue into a professionally branded event space for "${eventName}".
+    if (specificAssets && specificAssets.length > 0) {
+      // Build prompt for specific generated assets
+      const assetDescriptions = specificAssets.map(asset => {
+        const placementHint = asset.placement === 'auto' 
+          ? 'in the most appropriate location' 
+          : `as ${asset.placement} element`;
+        return `- "${asset.title}" (${asset.type.replace(/_/g, ' ').toLowerCase()}) - place ${placementHint}`;
+      }).join('\n');
+
+      prompt = `Transform this venue into a professionally branded event space for "${eventName}" by placing SPECIFIC event assets into the scene.
+
+EVENT: ${eventName}
+${eventDescription ? `DESCRIPTION: ${eventDescription}` : ''}
+${styleDescription ? `STYLE: ${styleDescription}` : ''}
+
+PLACE THESE SPECIFIC ASSETS INTO THE VENUE:
+${assetDescriptions}
+
+CRITICAL REQUIREMENTS:
+- Each asset listed above is a REAL design that must be visible and recognizable in the final image
+- Place banners and signage on walls, stands, or appropriate surfaces
+- Place counter graphics on registration desks or kiosks
+- Environmental graphics should wrap pillars, floors, or walls
+- Digital assets should appear on screens or digital displays
+- Maintain perspective and scale appropriate to the venue
+- Apply realistic lighting and shadows to make assets look naturally placed
+- The designs should be clearly visible and readable
+- Keep the original venue architecture intact
+- Make it feel like a real, professionally set up event space`;
+    } else if (brandElements && brandElements.length > 0) {
+      // Build prompt for generic brand elements (original behavior)
+      const brandElementsList = brandElements.map(el => {
+        const colorInfo = el.colorPalette?.length 
+          ? ` using ${el.colorPalette.slice(0, 3).join(', ')} color scheme`
+          : '';
+        return `- ${el.type}: ${el.description}${colorInfo}`;
+      }).join('\n');
+
+      prompt = `Transform this venue into a professionally branded event space for "${eventName}".
 
 EVENT: ${eventName}
 ${eventDescription ? `DESCRIPTION: ${eventDescription}` : ''}
@@ -76,9 +118,40 @@ REQUIREMENTS:
 - Subtle camera movement showing the branded space
 - Photorealistic quality with proper lighting and shadows
 - Make it feel like a real, high-end corporate/professional event`;
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Either brandElements or specificAssets must be provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log('Generating branded venue preview video...');
     console.log('Prompt:', prompt.substring(0, 200) + '...');
+
+    // Build the message content with venue frame and optionally specific asset images
+    const messageContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
+      { type: "text", text: prompt },
+      {
+        type: "image_url",
+        image_url: {
+          url: venueFrameBase64.startsWith('data:') 
+            ? venueFrameBase64 
+            : `data:image/jpeg;base64,${venueFrameBase64}`
+        }
+      }
+    ];
+
+    // Add specific asset images if provided
+    if (specificAssets && specificAssets.length > 0) {
+      for (const asset of specificAssets.slice(0, 4)) { // Limit to 4 assets for context window
+        if (asset.imageUrl) {
+          messageContent.push({
+            type: "image_url",
+            image_url: { url: asset.imageUrl }
+          });
+        }
+      }
+    }
 
     // First, generate a branded image using image model
     const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -92,17 +165,7 @@ REQUIREMENTS:
         messages: [
           {
             role: "user",
-            content: [
-              { type: "text", text: prompt },
-              {
-                type: "image_url",
-                image_url: {
-                  url: venueFrameBase64.startsWith('data:') 
-                    ? venueFrameBase64 
-                    : `data:image/jpeg;base64,${venueFrameBase64}`
-                }
-              }
-            ]
+            content: messageContent
           }
         ],
         modalities: ["image", "text"]
