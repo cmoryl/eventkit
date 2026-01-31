@@ -49,7 +49,7 @@ serve(async (req) => {
 
     switch (provider) {
       case 'lovable':
-        imageUrl = await generateWithLovable(prompt, context);
+        imageUrl = await generateWithLovable(prompt, context, config);
         break;
       case 'openai':
         imageUrl = await generateWithOpenAI(apiKey!, prompt, config);
@@ -86,22 +86,33 @@ serve(async (req) => {
   }
 });
 
-// Generate using Lovable AI (built-in)
+// Generate using Lovable AI (built-in) - Powered by Google Gemini image models
 async function generateWithLovable(
   prompt: string,
-  context?: GenerateRequest['context']
+  context?: GenerateRequest['context'],
+  config?: Record<string, unknown>
 ): Promise<string | null> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
 
+  // Support model selection: nano banana (fast) or pro (higher quality)
+  const modelChoice = (config?.model as string) || "google/gemini-2.5-flash-image";
+  const validModels = [
+    "google/gemini-2.5-flash-image",     // Nano Banana - fast, good quality
+    "google/gemini-3-pro-image-preview"   // Pro - slower, higher quality
+  ];
+  const model = validModels.includes(modelChoice) ? modelChoice : "google/gemini-2.5-flash-image";
+
+  console.log(`Using Lovable AI model: ${model}`);
+
   const messages: Array<{ role: string; content: unknown }> = [
     { role: "user", content: prompt }
   ];
 
   // Add reference images if provided
-  if (context?.logoBase64 || context?.vibeImageBase64) {
+  if (context?.logoBase64 || context?.vibeImageBase64 || context?.masterPatternBase64) {
     const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
       { type: "text", text: prompt }
     ];
@@ -111,6 +122,9 @@ async function generateWithLovable(
     }
     if (context.vibeImageBase64) {
       content.push({ type: "image_url", image_url: { url: context.vibeImageBase64 } });
+    }
+    if (context.masterPatternBase64) {
+      content.push({ type: "image_url", image_url: { url: context.masterPatternBase64 } });
     }
     
     messages[0].content = content;
@@ -123,7 +137,7 @@ async function generateWithLovable(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image",
+      model,
       messages,
       modalities: ["image", "text"],
     }),
@@ -132,6 +146,13 @@ async function generateWithLovable(
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Lovable AI error:", response.status, errorText);
+    
+    if (response.status === 429) {
+      throw new Error("Rate limit exceeded. Please try again in a moment.");
+    }
+    if (response.status === 402) {
+      throw new Error("AI credits exhausted. Please add credits to continue.");
+    }
     throw new Error(`Lovable AI error: ${response.status}`);
   }
 
