@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import type { GeneratedAsset } from '../types';
 import type { LearnedInsight } from '@/services/aiBrain/types';
-import { Sparkles, Check, Loader2, Brain } from 'lucide-react';
+import type { GenerationProgressInfo } from '@/hooks/useAIOrchestrator';
+import { Sparkles, Check, Loader2, Brain, Clock, Zap, Activity } from 'lucide-react';
 import LearnedInsightsDisplay from './LearnedInsightsDisplay';
 
 interface GenerationLoaderProps {
-  current: number;
-  total: number;
+  progress: GenerationProgressInfo;
   assets?: GeneratedAsset[];
   insights?: LearnedInsight[];
 }
@@ -21,11 +21,41 @@ const GENERATION_TIPS = [
   "Download all assets as a ZIP file when you're done"
 ];
 
-const GenerationLoader: React.FC<GenerationLoaderProps> = ({ current, total, assets, insights }) => {
+const formatTime = (seconds: number): string => {
+  if (seconds <= 0) return 'Almost done...';
+  if (seconds < 60) return `~${seconds}s remaining`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `~${mins}m ${secs}s remaining`;
+};
+
+const getPhaseLabel = (phase: GenerationProgressInfo['phase']): string => {
+  switch (phase) {
+    case 'preparing': return 'Preparing assets...';
+    case 'analyzing': return 'Analyzing reference images...';
+    case 'generating': return 'Generating designs...';
+    case 'complete': return 'Generation complete!';
+    default: return 'Processing...';
+  }
+};
+
+const GenerationLoader: React.FC<GenerationLoaderProps> = ({ progress, assets, insights }) => {
   const [tipIndex, setTipIndex] = useState(0);
-  const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  
+  const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
   const circumference = 2 * Math.PI * 90;
   const offset = circumference - (percentage / 100) * circumference;
+
+  // Track elapsed time
+  useEffect(() => {
+    if (progress.startTime > 0) {
+      const interval = setInterval(() => {
+        setElapsedSeconds(Math.floor((Date.now() - progress.startTime) / 1000));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [progress.startTime]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,6 +63,16 @@ const GenerationLoader: React.FC<GenerationLoaderProps> = ({ current, total, ass
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Calculate efficiency metrics
+  const efficiency = useMemo(() => {
+    if (progress.completedAICalls === 0 || elapsedSeconds === 0) return null;
+    const avgSecondsPerCall = elapsedSeconds / progress.completedAICalls;
+    return {
+      avgTimePerCall: avgSecondsPerCall.toFixed(1),
+      callsPerMinute: (60 / avgSecondsPerCall).toFixed(1)
+    };
+  }, [progress.completedAICalls, elapsedSeconds]);
 
   return (
     <div className="fixed inset-0 bg-background/98 backdrop-blur-2xl flex flex-col items-center justify-center z-[100] animate-fade-in p-8">
@@ -90,10 +130,47 @@ const GenerationLoader: React.FC<GenerationLoaderProps> = ({ current, total, ass
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-foreground mb-2">Generating your design kit</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{getPhaseLabel(progress.phase)}</h2>
         <p className="text-muted-foreground">
-          {current} of {total} assets completed
+          {progress.current} of {progress.total} assets completed
         </p>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-6 mt-4">
+          {/* Time remaining */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
+              {formatTime(progress.estimatedSecondsRemaining)}
+            </span>
+          </div>
+
+          {/* AI Calls */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+            <Zap className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">
+              {progress.completedAICalls}/{progress.estimatedAICalls} AI calls
+            </span>
+          </div>
+
+          {/* Efficiency (after first call) */}
+          {efficiency && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+              <Activity className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium text-foreground">
+                {efficiency.avgTimePerCall}s/asset
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Current asset being generated */}
+        {progress.currentAssetName && (
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground animate-fade-in">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            <span>Generating: {progress.currentAssetName}</span>
+          </div>
+        )}
 
         {/* AI Learning indicator */}
         {insights && insights.length > 0 && (

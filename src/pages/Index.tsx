@@ -8,6 +8,7 @@ import StudioHeader from '../components/studio/StudioHeader';
 import AssetGrid from '../components/studio/AssetGrid';
 import AssetPreviewModal from '../components/studio/AssetPreviewModal';
 import AssetDownloadModal from '../components/studio/AssetDownloadModal';
+import GenerationLoader from '../components/GenerationLoader';
 import Toast from '../components/Toast';
 import ImageEditorModal from '../components/ImageEditorModal';
 import PaletteEditorModal from '../components/PaletteEditorModal';
@@ -525,29 +526,11 @@ const Index: React.FC = () => {
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
             {isLoading && (
-              <div className="mb-8 p-4 glass-card">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  <div className="flex-1">
-                    <p className="font-medium text-foreground">Generating assets...</p>
-                    <p className="text-sm text-muted-foreground">
-                      {generationProgress.current} of {generationProgress.total} complete
-                    </p>
-                    {insights && insights.length > 0 && (
-                      <p className="text-xs text-primary mt-1 flex items-center gap-1.5">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                        Applying {insights.length} learned preference{insights.length !== 1 ? 's' : ''}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 h-2 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${generationProgress.total > 0 ? (generationProgress.current / generationProgress.total) * 100 : 0}%` }}
-                  />
-                </div>
-              </div>
+              <GenerationLoader
+                progress={generationProgress}
+                assets={generatedAssets}
+                insights={insights}
+              />
             )}
 
             <AssetGrid
