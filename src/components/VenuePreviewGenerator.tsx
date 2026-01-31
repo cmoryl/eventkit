@@ -1,14 +1,17 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Video, Download, X, Sparkles, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { Video, Download, X, Sparkles, CheckCircle2, Plus, Trash2, Image as ImageIcon, Layers } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import type { VenueVideoAnalysis, ColorInfo, EventDetails } from '@/types';
+import { AssetType } from '@/types';
+import type { VenueVideoAnalysis, ColorInfo, EventDetails, GeneratedAsset } from '@/types';
 
 interface VenuePreviewGeneratorProps {
   isOpen: boolean;
@@ -17,6 +20,7 @@ interface VenuePreviewGeneratorProps {
   eventDetails: EventDetails;
   colorPalette: ColorInfo[];
   styleDescription?: string;
+  generatedAssets?: GeneratedAsset[];
 }
 
 type BrandElementType = 'signage' | 'banner' | 'counter' | 'environmental' | 'digital';
@@ -29,6 +33,14 @@ interface BrandElement {
   checked: boolean;
 }
 
+interface SelectedAsset {
+  id: string;
+  type: AssetType;
+  title: string;
+  imageUrl: string;
+  placement: 'signage' | 'banner' | 'counter' | 'environmental' | 'digital' | 'auto';
+}
+
 interface GeneratedPreview {
   frameIndex: number;
   type: 'video' | 'image';
@@ -39,6 +51,20 @@ interface GeneratedPreview {
 }
 
 type GenerationStage = 'selecting' | 'generating' | 'complete' | 'error';
+type AssetSelectionMode = 'generic' | 'specific';
+
+// Asset types that can be placed in venues (use string values to match asset.type)
+const VENUE_PLACEABLE_TYPES: string[] = [
+  AssetType.Banner, AssetType.EventSignage, AssetType.HangingSignage, AssetType.OutdoorSignage, 
+  AssetType.DoorSignage, AssetType.EaselSignage, AssetType.LocationSignage, AssetType.RoomSignage, 
+  AssetType.StandUpPillarBanner, AssetType.FeatherFlag, AssetType.TeardropFlag, AssetType.BackWall, 
+  AssetType.RegistrationCounter, AssetType.WelcomeCounter, AssetType.RegistrationBackWall, 
+  AssetType.TechnologyCounter, AssetType.Kiosk, AssetType.StepAndRepeat, AssetType.DigitalSignageLoop, 
+  AssetType.AFrameSign, AssetType.WindowCling, AssetType.FloorDecal, AssetType.ElevatorWrap,
+  AssetType.EscalatorGraphics, AssetType.ColumnWrap, AssetType.CeilingHanger, AssetType.VIPLoungeSignage,
+  AssetType.MainStageBackdrop, AssetType.TableTent, AssetType.WifiSign, AssetType.GlassDoor, 
+  AssetType.GlassDoubleDoor
+];
 
 export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
   isOpen,
@@ -47,12 +73,15 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
   eventDetails,
   colorPalette,
   styleDescription,
+  generatedAssets = [],
 }) => {
   const [stage, setStage] = useState<GenerationStage>('selecting');
   const [selectedFrames, setSelectedFrames] = useState<number[]>([0]);
   const [previews, setPreviews] = useState<GeneratedPreview[]>([]);
   const [currentGenerating, setCurrentGenerating] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [assetMode, setAssetMode] = useState<AssetSelectionMode>('specific');
+  const [selectedAssets, setSelectedAssets] = useState<SelectedAsset[]>([]);
   
   const [brandElements, setBrandElements] = useState<BrandElement[]>([
     { type: 'signage', label: 'Signage & Banners', description: 'Welcome signs, directional signage, and retractable banners', icon: '🪧', checked: true },
@@ -63,6 +92,15 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
 
   const keyFrames = venueVideoAnalysis?.keyFrames || [];
   const hasFrames = keyFrames.length > 0;
+
+  // Filter assets that can be placed in venues and have image content
+  const placeableAssets = useMemo(() => {
+    return generatedAssets.filter(asset => 
+      VENUE_PLACEABLE_TYPES.includes(asset.type as AssetType) &&
+      typeof asset.content === 'string' &&
+      (asset.content.startsWith('data:image') || asset.content.startsWith('http'))
+    );
+  }, [generatedAssets]);
 
   const toggleElement = (type: BrandElementType) => {
     setBrandElements(prev => prev.map(el => 
@@ -79,6 +117,40 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
     });
   };
 
+  const getPlacementForAssetType = (type: AssetType): SelectedAsset['placement'] => {
+    if (['BANNER', 'STAND_UP_PILLAR_BANNER', 'FEATHER_FLAG', 'TEARDROP_FLAG', 'BACK_WALL', 'STEP_AND_REPEAT', 'MAIN_STAGE_BACKDROP'].includes(type)) {
+      return 'banner';
+    }
+    if (['REGISTRATION_COUNTER', 'WELCOME_COUNTER', 'TECHNOLOGY_COUNTER', 'KIOSK'].includes(type)) {
+      return 'counter';
+    }
+    if (['FLOOR_DECAL', 'ELEVATOR_WRAP', 'ESCALATOR_GRAPHICS', 'COLUMN_WRAP', 'CEILING_HANGER', 'WINDOW_CLING'].includes(type)) {
+      return 'environmental';
+    }
+    if (['DIGITAL_SIGNAGE_LOOP'].includes(type)) {
+      return 'digital';
+    }
+    return 'signage';
+  };
+
+  const toggleAssetSelection = (asset: GeneratedAsset) => {
+    setSelectedAssets(prev => {
+      const exists = prev.find(a => a.id === asset.id);
+      if (exists) {
+        return prev.filter(a => a.id !== asset.id);
+      }
+      return [...prev, {
+        id: asset.id,
+        type: asset.type as AssetType,
+        title: asset.title,
+        imageUrl: asset.content as string,
+        placement: getPlacementForAssetType(asset.type as AssetType),
+      }];
+    });
+  };
+
+  const isAssetSelected = (assetId: string) => selectedAssets.some(a => a.id === assetId);
+
   const selectAllFrames = () => {
     setSelectedFrames(keyFrames.slice(0, 8).map((_, i) => i));
   };
@@ -88,7 +160,6 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
   };
 
   const generatePreviewForFrame = async (frameIndex: number): Promise<GeneratedPreview> => {
-    const selectedElements = brandElements.filter(el => el.checked);
     const frameData = keyFrames[frameIndex]?.imageData;
     
     if (!frameData) {
@@ -96,19 +167,35 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
     }
 
     try {
+      // Build request based on asset mode
+      const requestBody: Record<string, unknown> = {
+        venueFrameBase64: frameData,
+        eventName: eventDetails.name,
+        eventDescription: eventDetails.description,
+        styleDescription,
+        duration: 5,
+      };
+
+      if (assetMode === 'specific' && selectedAssets.length > 0) {
+        // Use specific generated assets
+        requestBody.specificAssets = selectedAssets.map(asset => ({
+          title: asset.title,
+          type: asset.type,
+          imageUrl: asset.imageUrl,
+          placement: asset.placement,
+        }));
+      } else {
+        // Use generic brand elements
+        const selectedElements = brandElements.filter(el => el.checked);
+        requestBody.brandElements = selectedElements.map(el => ({
+          type: el.type,
+          description: el.description,
+          colorPalette: colorPalette.map(c => c.hex),
+        }));
+      }
+
       const { data, error: fnError } = await supabase.functions.invoke('generate-venue-preview', {
-        body: {
-          venueFrameBase64: frameData,
-          eventName: eventDetails.name,
-          eventDescription: eventDetails.description,
-          brandElements: selectedElements.map(el => ({
-            type: el.type,
-            description: el.description,
-            colorPalette: colorPalette.map(c => c.hex),
-          })),
-          styleDescription,
-          duration: 5,
-        },
+        body: requestBody,
       });
 
       if (fnError) throw fnError;
@@ -138,8 +225,12 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
   const handleGenerate = useCallback(async () => {
     if (!hasFrames || selectedFrames.length === 0) return;
 
-    const selectedElements = brandElements.filter(el => el.checked);
-    if (selectedElements.length === 0) return;
+    // Check if we have something to composite
+    const hasGenericElements = brandElements.some(el => el.checked);
+    const hasSpecificAssets = selectedAssets.length > 0;
+    
+    if (assetMode === 'generic' && !hasGenericElements) return;
+    if (assetMode === 'specific' && !hasSpecificAssets) return;
 
     setStage('generating');
     setError(null);
@@ -171,7 +262,7 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
     }
 
     setStage('complete');
-  }, [hasFrames, selectedFrames, brandElements, keyFrames, eventDetails, colorPalette, styleDescription]);
+  }, [hasFrames, selectedFrames, brandElements, selectedAssets, assetMode, keyFrames, eventDetails, colorPalette, styleDescription]);
 
   const handleDownload = useCallback((preview: GeneratedPreview) => {
     if (!preview.url) return;
@@ -196,6 +287,7 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
     setPreviews([]);
     setCurrentGenerating(0);
     setError(null);
+    setSelectedAssets([]);
   };
 
   const handleRemovePreview = (frameIndex: number) => {
@@ -207,6 +299,10 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
   const progress = stage === 'generating' 
     ? ((currentGenerating + 1) / totalCount) * 100 
     : completedCount === totalCount ? 100 : 0;
+
+  const canGenerate = assetMode === 'specific' 
+    ? selectedAssets.length > 0 && selectedFrames.length > 0
+    : brandElements.some(el => el.checked) && selectedFrames.length > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
@@ -282,41 +378,119 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
                 </div>
               </div>
 
-              {/* Brand Elements Selection */}
-              <div>
-                <label className="text-sm font-medium mb-3 block">Branding Elements to Add</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {brandElements.map((element) => (
-                    <label 
-                      key={element.type}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer",
-                        element.checked 
-                          ? "border-violet-500/50 bg-violet-500/5" 
-                          : "border-border hover:border-violet-500/30"
-                      )}
-                    >
-                      <Checkbox 
-                        checked={element.checked}
-                        onCheckedChange={() => toggleElement(element.type)}
-                      />
-                      <span className="text-lg">{element.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium block truncate">{element.label}</span>
+              {/* Asset Selection Mode */}
+              <Tabs value={assetMode} onValueChange={(v) => setAssetMode(v as AssetSelectionMode)}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="specific" className="flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4" />
+                    Your Assets
+                    {placeableAssets.length > 0 && (
+                      <Badge variant="secondary" className="ml-1 text-xs">{placeableAssets.length}</Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="generic" className="flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    Generic Elements
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="specific" className="mt-4">
+                  {placeableAssets.length === 0 ? (
+                    <div className="p-6 bg-muted/30 rounded-xl text-center">
+                      <ImageIcon className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        No generated assets available. Generate some banners, signage, or counters first!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">
+                          Select Assets to Place ({selectedAssets.length} selected)
+                        </label>
+                        {selectedAssets.length > 0 && (
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedAssets([])}>
+                            Clear
+                          </Button>
+                        )}
                       </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
+                      <ScrollArea className="h-[200px] rounded-lg border p-2">
+                        <div className="grid grid-cols-3 gap-2">
+                          {placeableAssets.map((asset) => (
+                            <button
+                              key={asset.id}
+                              onClick={() => toggleAssetSelection(asset)}
+                              className={cn(
+                                "relative aspect-square rounded-lg overflow-hidden border-2 transition-all",
+                                isAssetSelected(asset.id)
+                                  ? "border-violet-500 ring-2 ring-violet-500/30"
+                                  : "border-transparent hover:border-violet-500/50"
+                              )}
+                            >
+                              <img
+                                src={asset.content as string}
+                                alt={asset.title}
+                                className="w-full h-full object-cover"
+                              />
+                              {isAssetSelected(asset.id) && (
+                                <div className="absolute inset-0 bg-violet-500/20 flex items-center justify-center">
+                                  <CheckCircle2 className="w-6 h-6 text-violet-500" />
+                                </div>
+                              )}
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-1 py-0.5">
+                                <p className="text-[9px] text-white truncate">{asset.title}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                      {selectedAssets.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          Selected: {selectedAssets.map(a => a.title).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="generic" className="mt-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium block">Generic Branding Elements</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {brandElements.map((element) => (
+                        <label 
+                          key={element.type}
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer",
+                            element.checked 
+                              ? "border-violet-500/50 bg-violet-500/5" 
+                              : "border-border hover:border-violet-500/30"
+                          )}
+                        >
+                          <Checkbox 
+                            checked={element.checked}
+                            onCheckedChange={() => toggleElement(element.type)}
+                          />
+                          <span className="text-lg">{element.icon}</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-sm font-medium block truncate">{element.label}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               {/* Generate Button */}
               <Button 
                 onClick={handleGenerate}
-                disabled={!brandElements.some(el => el.checked) || selectedFrames.length === 0}
+                disabled={!canGenerate}
                 className="w-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                Generate {selectedFrames.length} Preview{selectedFrames.length > 1 ? 's' : ''}
+                Generate {selectedFrames.length} Preview{selectedFrames.length > 1 ? 's' : ''} 
+                {assetMode === 'specific' && selectedAssets.length > 0 && ` with ${selectedAssets.length} Asset${selectedAssets.length > 1 ? 's' : ''}`}
               </Button>
             </>
           )}
