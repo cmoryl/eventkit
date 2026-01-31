@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AssetType } from '../types';
-import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset } from '../types';
+import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, VenueVideoAnalysis } from '../types';
 import { generatePlaceholderContent } from '../services/assetGenerator';
 import { fileToBase64 } from '../utils';
 
@@ -36,7 +36,8 @@ export const useAIOrchestrator = ({
     paletteOverride?: ColorInfo[],
     vibeImageFile?: File | null,
     masterPatternFile?: File | null,
-    venueImageFile?: File | null
+    venueImageFile?: File | null,
+    venueVideoAnalysisData?: VenueVideoAnalysis | null
   ) => {
     setIsLoading(true);
     
@@ -86,6 +87,23 @@ export const useAIOrchestrator = ({
       } catch (e) {
         console.warn('Failed to convert venue image to base64:', e);
       }
+    }
+
+    // Use best frame from video analysis if available and no venue image
+    if (!venueImageBase64 && venueVideoAnalysisData?.keyFrames?.length) {
+      venueImageBase64 = venueVideoAnalysisData.keyFrames[0].imageData;
+      console.log('Using key frame from venue video analysis for compositing');
+    }
+
+    // Log venue video analysis data for spatial awareness
+    if (venueVideoAnalysisData?.success) {
+      console.log('Venue video analysis available:', {
+        areas: venueVideoAnalysisData.areas.length,
+        keyFrames: venueVideoAnalysisData.keyFrames.length,
+        recommendations: venueVideoAnalysisData.assetRecommendations.length,
+        venueType: venueVideoAnalysisData.overallAssessment.venueType,
+        estimatedArea: venueVideoAnalysisData.overallAssessment.totalEstimatedArea,
+      });
     }
 
     try {
