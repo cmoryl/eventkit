@@ -20,6 +20,7 @@ import { AIImageEditModal } from '../components/AIImageEditModal';
 import EventDashboard from '../components/EventDashboard';
 import AdvancedExportModal from '../components/AdvancedExportModal';
 import BatchPrintExportModal from '../components/BatchPrintExportModal';
+import VenuePreviewGenerator from '../components/VenuePreviewGenerator';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
@@ -71,6 +72,7 @@ const Index: React.FC = () => {
   const [showEventDashboard, setShowEventDashboard] = useState(false);
   const [showAdvancedExport, setShowAdvancedExport] = useState(false);
   const [showBatchPrintExport, setShowBatchPrintExport] = useState(false);
+  const [showVenuePreview, setShowVenuePreview] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => setToastState({ message, type });
 
@@ -498,6 +500,7 @@ const Index: React.FC = () => {
             onExportBrandGuide={handleExportBrandGuide}
             onOpenQRGenerator={() => setShowQRGenerator(true)}
             onOpenVideoGenerator={() => setShowVideoModal(true)}
+            onOpenVenuePreview={venueVideoAnalysis ? () => setShowVenuePreview(true) : undefined}
             onAddMoreAssets={handleAddMoreAssets}
             onUndo={undo}
             onRedo={redo}
@@ -663,6 +666,16 @@ const Index: React.FC = () => {
         assets={generatedAssets}
         eventDetails={eventDetails}
         colorPalette={colorPalette.map(c => c.hex)}
+      />
+
+      {/* Venue Preview Generator */}
+      <VenuePreviewGenerator
+        isOpen={showVenuePreview}
+        onClose={() => setShowVenuePreview(false)}
+        venueVideoAnalysis={venueVideoAnalysis}
+        eventDetails={eventDetails}
+        colorPalette={colorPalette}
+        styleDescription={styleDescription}
       />
 
       {toastState && <Toast message={toastState.message} type={toastState.type} onClose={() => setToastState(null)} />}
