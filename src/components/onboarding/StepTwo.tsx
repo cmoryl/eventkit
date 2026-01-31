@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EventDetails } from '../../types';
-import { Upload, Image, Palette, Sparkles, X, MapPin, Building2, Check } from 'lucide-react';
+import { Upload, Image, Palette, Sparkles, X, MapPin, Building2, Check, Camera } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StepTwoProps {
@@ -11,6 +11,8 @@ interface StepTwoProps {
   setVibeImage: React.Dispatch<React.SetStateAction<File | null>>;
   masterPattern: File | null;
   setMasterPattern: React.Dispatch<React.SetStateAction<File | null>>;
+  venueImage: File | null;
+  setVenueImage: React.Dispatch<React.SetStateAction<File | null>>;
   eventDetails: EventDetails;
 }
 
@@ -30,13 +32,17 @@ const StepTwo: React.FC<StepTwoProps> = ({
   setVibeImage,
   masterPattern,
   setMasterPattern,
+  venueImage,
+  setVenueImage,
   eventDetails,
 }) => {
   const [vibePreview, setVibePreview] = useState<string | null>(null);
   const [patternPreview, setPatternPreview] = useState<string | null>(null);
+  const [venuePreview, setVenuePreview] = useState<string | null>(null);
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
   const vibeInputRef = useRef<HTMLInputElement>(null);
   const patternInputRef = useRef<HTMLInputElement>(null);
+  const venueInputRef = useRef<HTMLInputElement>(null);
 
   const handleVibeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,6 +53,22 @@ const StepTwo: React.FC<StepTwoProps> = ({
       reader.readAsDataURL(file);
     }
   };
+
+  const handleVenueUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setVenueImage(file);
+      const reader = new FileReader();
+      reader.onload = () => setVenuePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const clearVenueImage = () => {
+    setVenueImage(null);
+    setVenuePreview(null);
+    if (venueInputRef.current) venueInputRef.current.value = '';
+  }
 
   const handlePatternUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

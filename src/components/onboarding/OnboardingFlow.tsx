@@ -21,6 +21,7 @@ interface OnboardingFlowProps {
     styleDescription: string;
     vibeImage: File | null;
     masterPattern: File | null;
+    venueImage: File | null;
   }) => void;
 }
 
@@ -100,6 +101,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const [styleDescription, setStyleDescription] = useState('');
   const [vibeImage, setVibeImage] = useState<File | null>(null);
   const [masterPattern, setMasterPattern] = useState<File | null>(null);
+  const [venueImage, setVenueImage] = useState<File | null>(null);
 
   const isStep1Valid = eventDetails.name.trim().length > 0;
   const isStep2Valid = true;
@@ -119,6 +121,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         styleDescription,
         vibeImage,
         masterPattern,
+        venueImage,
       });
     }
   };
@@ -281,6 +284,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                       setVibeImage={setVibeImage}
                       masterPattern={masterPattern}
                       setMasterPattern={setMasterPattern}
+                      venueImage={venueImage}
+                      setVenueImage={setVenueImage}
                       eventDetails={eventDetails}
                     />
                   )}

@@ -16,6 +16,8 @@ interface GenerateImageRequest {
   incorporateLocationStyle?: boolean;
   vibeImageBase64?: string;
   masterPatternBase64?: string;
+  venueImageBase64?: string; // NEW: User's actual venue photo for realistic compositing
+  renderMode?: 'design' | 'mockup' | 'hyperrealistic'; // NEW: Control realism level
 }
 
 // Location cultural contexts for enhanced locality awareness
@@ -109,6 +111,49 @@ function getLocationCulturalContext(location: string): string {
   
   return '';
 }
+
+// Hyper-realistic environment contexts for different asset types
+const HYPERREALISTIC_CONTEXTS: Record<string, string> = {
+  // Apparel - on real models/mannequins
+  TSHIRT: "Photorealistic product photography of a premium t-shirt worn by an attractive model in a professional studio setting. Dramatic lighting, shallow depth of field. The t-shirt features",
+  TSHIRT_BACK: "Photorealistic product shot showing the back of a premium t-shirt on a model. Professional studio lighting, fashion photography quality. The back design shows",
+  HAT: "Photorealistic product photography of a high-quality baseball cap/dad hat on a model or floating in a professional studio setting. Clean background, perfect lighting. The cap features",
+  
+  // Merchandise - in real environments
+  SWAG_BAG: "Photorealistic product photography of a premium canvas tote bag held by a hand or styled on a rustic wooden table with lifestyle props. The tote bag design shows",
+  WATER_BOTTLE: "Photorealistic product photography of a sleek stainless steel water bottle with condensation droplets, on a modern desk or gym setting. The bottle wrap design features",
+  LANYARD: "Photorealistic product photography of a premium lanyard with badge holder worn around someone's neck at a professional conference. Shallow depth of field. The lanyard shows",
+  
+  // Signage - in venue environments
+  BANNER: "Photorealistic 3D render of a professional retractable banner stand in a modern conference center lobby. Realistic lighting, reflective floor. The banner displays",
+  EVENT_SIGNAGE: "Photorealistic 3D render of professional event signage mounted on a modern exhibition wall. Other event elements visible in background. The sign shows",
+  HANGING_SIGNAGE: "Photorealistic 3D render of overhead hanging banners in a large convention hall with dramatic lighting from above. The banners display",
+  OUTDOOR_SIGNAGE: "Photorealistic 3D render of outdoor event signage on a sunny day outside a modern venue entrance. The sign shows",
+  FEATHER_FLAG: "Photorealistic 3D render of a feather flag on a windy day outside an event venue with grass and blue sky. The flag displays",
+  TEARDROP_FLAG: "Photorealistic 3D render of teardrop promotional flags flanking a venue entrance. The flags show",
+  
+  // Counters & Structures - in realistic venues
+  REGISTRATION_COUNTER: "Photorealistic 3D render of a modern branded registration desk in a sleek convention center. Staff area visible, attendees approaching. The counter branding shows",
+  WELCOME_COUNTER: "Photorealistic 3D render of an elegant welcome/information desk in a luxury hotel lobby with marble floors. The desk displays",
+  TECHNOLOGY_COUNTER: "Photorealistic 3D render of a modern tech support station with device charging, in a contemporary event space. The station branding features",
+  KIOSK: "Photorealistic 3D render of an interactive touchscreen kiosk in a busy exhibition hall with people walking by. The kiosk displays",
+  
+  // Backdrops & Stages
+  STEP_AND_REPEAT: "Photorealistic 3D render of a professional step and repeat media wall with paparazzi-style lighting and velvet rope visible. Red carpet in foreground. The backdrop shows a repeating pattern of",
+  BACK_WALL: "Photorealistic 3D render of a modern event backdrop with dramatic stage lighting and AV equipment visible. The wall features",
+  MAIN_STAGE_BACKDROP: "Photorealistic 3D render of a massive main stage at a professional conference with LED screens, professional lighting rigs, and audience silhouettes. The backdrop displays",
+  
+  // Architectural elements
+  STAIRS: "Photorealistic 3D render of grand venue stairs with branded risers, attendees walking up, beautiful lighting from above. The stair graphics show",
+  GLASS_DOOR: "Photorealistic 3D render of modern glass entrance doors with vinyl graphics, people entering the building. The door branding shows",
+  GLASS_DOUBLE_DOOR: "Photorealistic 3D render of elegant double glass doors at a corporate venue with the branded graphics spanning both panels. The design displays",
+  GLASS_ROTATING_DOOR: "Photorealistic 3D render of a branded revolving door at a modern office tower entrance. The door panels show",
+  
+  // Print materials in context
+  NAME_TAG: "Photorealistic product photography of a premium name badge with lanyard on a conference table with coffee cup and notebook props. The badge design features",
+  FOLDER: "Photorealistic product photography of a professional presentation folder on a mahogany boardroom table with pen and business cards. The folder cover shows",
+  MENU: "Photorealistic product photography of an elegant menu card on a beautifully set dining table with wine glasses and fine dining elements. The menu design features",
+};
 
 const ASSET_PROMPTS: Record<string, string> = {
   // Standard mockup/preview generation
@@ -270,10 +315,24 @@ serve(async (req) => {
       location,
       incorporateLocationStyle,
       vibeImageBase64,
-      masterPatternBase64
+      masterPatternBase64,
+      venueImageBase64,
+      renderMode = 'hyperrealistic' // Default to hyperrealistic for maximum quality
     } = body;
 
-    const basePrompt = ASSET_PROMPTS[assetType] || "Create a professional event design with modern aesthetics.";
+    // Determine which prompt to use based on render mode
+    let basePrompt: string;
+    
+    if (renderMode === 'hyperrealistic' && HYPERREALISTIC_CONTEXTS[assetType]) {
+      // Use hyper-realistic environment prompt
+      basePrompt = HYPERREALISTIC_CONTEXTS[assetType];
+    } else if (renderMode === 'design' || assetType.includes('_ISOLATED')) {
+      // Flat design mode - no mockup, just the artwork
+      basePrompt = ASSET_PROMPTS[assetType] || "Create a professional event design with modern aesthetics.";
+    } else {
+      // Standard mockup mode
+      basePrompt = ASSET_PROMPTS[assetType] || "Create a professional event design with modern aesthetics.";
+    }
     
     const colorContext = colorPalette?.length 
       ? `Use this exact color palette: ${colorPalette.join(', ')}. These colors should be prominently featured.` 
@@ -327,12 +386,37 @@ Reference Image #${(logoBase64 ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + 1} is a MA
 3. Maintain the pattern's colors and style throughout the design`
       : '';
 
+    // Build venue compositing instructions - for placing assets in actual venue photos
+    const venueInstructions = venueImageBase64
+      ? `
+VENUE COMPOSITING - CRITICAL:
+Reference Image #${(logoBase64 ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + (masterPatternBase64 ? 1 : 0) + 1} is the ACTUAL VENUE PHOTO where this asset will be displayed.
+You MUST:
+1. Composite the branded asset INTO this actual venue environment
+2. Match the lighting, perspective, and shadows of the venue photo
+3. Make the branded element look like it belongs naturally in the space
+4. The final image should look like a real photograph of the installed branding
+5. Maintain photorealistic quality - this should look like a professional installation photo`
+      : '';
+
     // Build style instructions
     const styleInstructions = styleDescription 
       ? `
 STYLE DIRECTION:
 ${styleDescription}
 Follow these style guidelines precisely.`
+      : '';
+
+    // Build hyper-realistic requirements based on render mode
+    const realismRequirements = renderMode === 'hyperrealistic' && !assetType.includes('_ISOLATED')
+      ? `
+PHOTOREALISTIC RENDERING - CRITICAL:
+- Render as a professional product/environment photograph
+- Use dramatic, professional lighting with soft shadows
+- Include shallow depth of field for focus emphasis
+- Add subtle environmental context (reflections, ambient occlusion)
+- Quality should match high-end advertising photography
+- Make viewers believe this is a real photograph, not a render`
       : '';
 
     const fullPrompt = `Generate an image: ${basePrompt}
@@ -345,6 +429,8 @@ ${locationContext}
 ${logoInstructions}
 ${vibeInstructions}
 ${patternInstructions}
+${venueInstructions}
+${realismRequirements}
 
 REQUIREMENTS:
 - Create a high-quality, professional design
@@ -355,17 +441,18 @@ REQUIREMENTS:
 - Maintain visual hierarchy with the event name prominent
 - ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN`;
 
-    console.log(`Generating image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${vibeImageBase64 ? ' [with vibe ref]' : ''}${masterPatternBase64 ? ' [with pattern]' : ''}`);
+    console.log(`Generating image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''} [mode: ${renderMode}]${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue]' : ''}`);
 
-    // Collect all reference images
+    // Collect all reference images in order
     const referenceImages: string[] = [];
     if (logoBase64) referenceImages.push(logoBase64);
     if (vibeImageBase64) referenceImages.push(vibeImageBase64);
     if (masterPatternBase64) referenceImages.push(masterPatternBase64);
+    if (venueImageBase64) referenceImages.push(venueImageBase64); // Venue photo for compositing
 
     const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages);
     
-    console.log(`Successfully generated image for ${assetType}`);
+    console.log(`Successfully generated ${renderMode} image for ${assetType}`);
 
     return new Response(
       JSON.stringify({ success: true, imageUrl }),
