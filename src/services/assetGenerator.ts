@@ -7,8 +7,23 @@ import {
   generateMarketingCopy as aiGenerateMarketingCopy,
   generateRunOfShow as aiGenerateRunOfShow,
   generateAssetImage,
-  generateAIPalette
+  generateAIPalette,
+  analyzeReferenceImage
 } from './geminiService';
+import { 
+  getCachedAnalysis, 
+  cacheAnalysis,
+  optimizeGenerationStrategy,
+  prioritizeAssets,
+  clearGenerationCache 
+} from './generationOptimizer';
+
+// Re-export optimizer utilities for use in components
+export { 
+  optimizeGenerationStrategy, 
+  prioritizeAssets, 
+  clearGenerationCache 
+};
 
 // Design tokens for consistent generation
 const BRAND_GRADIENTS = [
@@ -284,6 +299,19 @@ const generateImageAsset = async (
     enhancedStyleDesc += ' Composite the branded asset into the provided venue photo with realistic lighting, shadows, and perspective matching.';
   }
 
+  // OPTIMIZATION: Check for cached analysis if we have a vibe image
+  let cachedAnalysis = null;
+  if (vibeImageBase64) {
+    cachedAnalysis = getCachedAnalysis(vibeImageBase64);
+    if (!cachedAnalysis) {
+      // Pre-analyze and cache for future use if generating multiple assets
+      cachedAnalysis = await analyzeReferenceImage(vibeImageBase64, eventDetails.name, eventDetails.description);
+      if (cachedAnalysis) {
+        cacheAnalysis(vibeImageBase64, cachedAnalysis);
+      }
+    }
+  }
+
   // Try AI image generation first for supported types
   try {
     const aiImage = await generateAssetImage(
@@ -297,11 +325,12 @@ const generateImageAsset = async (
       eventDetails.incorporateLocationStyle,
       vibeImageBase64,
       masterPatternBase64,
-      venueImageBase64
+      venueImageBase64,
+      cachedAnalysis // Pass cached analysis to avoid redundant AI call
     );
     
     if (aiImage) {
-      console.log(`AI generated image for ${type}${venueImageBase64 ? ' (with venue compositing)' : ''}`);
+      console.log(`AI generated image for ${type}${venueImageBase64 ? ' (with venue compositing)' : ''}${cachedAnalysis ? ' (with cached analysis)' : ''}`);
       return aiImage;
     }
   } catch (e) {

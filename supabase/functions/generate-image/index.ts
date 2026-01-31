@@ -251,6 +251,84 @@ const ASSET_PROMPTS: Record<string, string> = {
   BANNER_ISOLATED: "Generate FLAT PRINT-READY banner design. Full 33x81 inch retractable banner artwork. Include 1 inch bleed. Complete design with no banner stand visible.",
 };
 
+// Inline analysis for when no pre-computed analysis is provided
+// This saves a round-trip by doing analysis in the same call as generation
+async function performInlineAnalysis(
+  apiKey: string,
+  vibeImageBase64: string,
+  eventName: string,
+  eventDescription?: string
+): Promise<ImageAnalysis | null> {
+  const analysisPrompt = `Analyze this reference image for design generation. Extract comprehensive visual characteristics.
+
+Respond with ONLY a JSON object with these exact fields:
+{
+  "dominantColors": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5"],
+  "colorMood": "warm/cool/neutral/vibrant/muted",
+  "colorHarmony": "complementary/analogous/triadic/monochromatic/split-complementary",
+  "designStyle": "minimalist/maximalist/vintage/modern/art-deco/etc",
+  "aestheticKeywords": ["keyword1", "keyword2", "keyword3"],
+  "era": "contemporary/retro/futuristic/timeless",
+  "mood": "elegant/playful/bold/serene/dynamic",
+  "atmosphere": "professional/casual/luxurious/friendly",
+  "emotionalTone": "inspiring/calming/exciting/sophisticated",
+  "patterns": ["pattern1", "pattern2"],
+  "textures": ["texture1", "texture2"],
+  "shapes": "geometric/organic/mixed",
+  "typographyStyle": "serif/sans-serif/display/script",
+  "typographyMood": "modern/classic/bold/delicate",
+  "composition": "centered/asymmetric/grid/freeform",
+  "whitespace": "minimal/balanced/generous",
+  "visualWeight": "light/balanced/heavy",
+  "promptEnhancements": ["enhancement1", "enhancement2"],
+  "avoidElements": ["avoid1", "avoid2"],
+  "analysisConfidence": 0.85
+}`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: analysisPrompt },
+              { type: "image_url", image_url: { url: vibeImageBase64 } }
+            ],
+          },
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Inline analysis failed with status:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+    
+    if (content) {
+      // Extract JSON from response
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]) as ImageAnalysis;
+      }
+    }
+  } catch (e) {
+    console.warn('Inline analysis error:', e);
+  }
+  
+  return null;
+}
+
 async function generateImageWithRetry(
   apiKey: string,
   prompt: string,
@@ -359,8 +437,20 @@ serve(async (req) => {
       masterPatternBase64,
       venueImageBase64,
       renderMode = 'hyperrealistic',
-      imageAnalysis // Comprehensive analysis from reference image
+      imageAnalysis: providedAnalysis // Comprehensive analysis from reference image
     } = body;
+
+    // OPTIMIZATION: Perform inline analysis if vibe image exists but no analysis provided
+    // This saves a separate analyze-reference-image call
+    let imageAnalysis: ImageAnalysis | undefined = providedAnalysis;
+    if (!imageAnalysis && vibeImageBase64) {
+      console.log('No pre-computed analysis provided, performing inline analysis...');
+      const inlineResult = await performInlineAnalysis(LOVABLE_API_KEY, vibeImageBase64, eventName, eventDescription);
+      if (inlineResult) {
+        imageAnalysis = inlineResult;
+        console.log('Inline analysis successful:', imageAnalysis.designStyle, imageAnalysis.mood);
+      }
+    }
 
     // Determine which prompt to use based on render mode
     let basePrompt: string;
