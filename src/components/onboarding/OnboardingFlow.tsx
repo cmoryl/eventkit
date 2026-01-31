@@ -10,6 +10,7 @@ import { Sparkles, Palette, Layers, ChevronLeft, ChevronRight, Zap, ArrowRight }
 import { cn } from '@/lib/utils';
 import { AnimatedGradientBg } from '../animations/GlowingOrb';
 import { MagneticButton } from '../animations/InteractiveCard';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface OnboardingFlowProps {
   onComplete: (data: {
@@ -149,8 +150,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12 overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12 overflow-hidden relative">
       <AnimatedGradientBg />
+      
+      {/* Theme Toggle - Fixed position */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       
       <motion.div 
         className="w-full max-w-4xl"
