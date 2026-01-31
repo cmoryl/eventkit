@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { AssetType } from '../types';
-import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, VenueVideoAnalysis } from '../types';
-import { generatePlaceholderContent } from '../services/assetGenerator';
-import { fileToBase64 } from '../utils';
+import { useState, useCallback } from 'react';
+import { AssetType } from '@/types';
+import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, VenueVideoAnalysis } from '@/types';
+import { generatePlaceholderContent } from '@/services/assetGenerator';
+import { fileToBase64 } from '@/utils';
 
 interface UseAIOrchestratorProps {
   eventDetails: EventDetails;
@@ -15,6 +15,16 @@ interface UseAIOrchestratorProps {
   setGeneratedAssets: React.Dispatch<React.SetStateAction<GeneratedAsset[]>>;
   ensureProtocol: (url: string) => string;
 }
+
+interface GenerationResult {
+  id: string;
+  success: boolean;
+  content?: string | string[] | ColorInfo[];
+  error?: string;
+}
+
+// Batch size for parallel generation
+const PARALLEL_BATCH_SIZE = 3;
 
 export const useAIOrchestrator = ({
   eventDetails,
@@ -30,7 +40,7 @@ export const useAIOrchestrator = ({
   const [isLoading, setIsLoading] = useState(false);
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 });
 
-  const generateAssets = async (
+  const generateAssets = useCallback(async (
     assetsToGenerate: GeneratedAsset[], 
     currentStyleDesc: string, 
     paletteOverride?: ColorInfo[],
@@ -41,59 +51,64 @@ export const useAIOrchestrator = ({
   ) => {
     setIsLoading(true);
     
-    // Get primary logo as base64 for AI reference
-    let primaryLogoBase64: string | undefined;
-    if (logos.length > 0 && logos[0].file) {
-      try {
-        const b64 = await fileToBase64(logos[0].file);
-        primaryLogoBase64 = `data:${b64.type};base64,${b64.data}`;
-      } catch (e) {
-        console.warn('Failed to convert logo to base64:', e);
-        primaryLogoBase64 = logos[0].url;
-      }
-    }
-    
-    // Convert vibe image to base64 for AI reference
-    let vibeImageBase64: string | undefined;
-    const vibeFile = vibeImageFile || styleImage?.file;
-    if (vibeFile) {
-      try {
-        const b64 = await fileToBase64(vibeFile);
-        vibeImageBase64 = `data:${b64.type};base64,${b64.data}`;
-      } catch (e) {
-        console.warn('Failed to convert vibe image to base64:', e);
-      }
-    }
-    
-    // Convert master pattern to base64 for AI reference
-    let masterPatternBase64: string | undefined;
-    const patternFile = masterPatternFile || masterPatternImage;
-    if (patternFile) {
-      try {
-        const b64 = await fileToBase64(patternFile);
-        masterPatternBase64 = `data:${b64.type};base64,${b64.data}`;
-      } catch (e) {
-        console.warn('Failed to convert master pattern to base64:', e);
-      }
-    }
-
-    // Convert venue image to base64 for realistic compositing
-    let venueImageBase64: string | undefined;
-    if (venueImageFile) {
-      try {
-        const b64 = await fileToBase64(venueImageFile);
-        venueImageBase64 = `data:${b64.type};base64,${b64.data}`;
-        console.log('Venue image loaded for photorealistic compositing');
-      } catch (e) {
-        console.warn('Failed to convert venue image to base64:', e);
-      }
-    }
-
-    // Use best frame from video analysis if available and no venue image
-    if (!venueImageBase64 && venueVideoAnalysisData?.keyFrames?.length) {
-      venueImageBase64 = venueVideoAnalysisData.keyFrames[0].imageData;
-      console.log('Using key frame from venue video analysis for compositing');
-    }
+    // Prepare base64 images in parallel
+    const [primaryLogoBase64, vibeImageBase64, masterPatternBase64, venueImageBase64] = await Promise.all([
+      // Primary logo
+      (async () => {
+        if (logos.length > 0 && logos[0].file) {
+          try {
+            const b64 = await fileToBase64(logos[0].file);
+            return `data:${b64.type};base64,${b64.data}`;
+          } catch (e) {
+            console.warn('Failed to convert logo to base64:', e);
+            return logos[0].url;
+          }
+        }
+        return undefined;
+      })(),
+      // Vibe image
+      (async () => {
+        const vibeFile = vibeImageFile || styleImage?.file;
+        if (vibeFile) {
+          try {
+            const b64 = await fileToBase64(vibeFile);
+            return `data:${b64.type};base64,${b64.data}`;
+          } catch (e) {
+            console.warn('Failed to convert vibe image to base64:', e);
+          }
+        }
+        return undefined;
+      })(),
+      // Master pattern
+      (async () => {
+        const patternFile = masterPatternFile || masterPatternImage;
+        if (patternFile) {
+          try {
+            const b64 = await fileToBase64(patternFile);
+            return `data:${b64.type};base64,${b64.data}`;
+          } catch (e) {
+            console.warn('Failed to convert master pattern to base64:', e);
+          }
+        }
+        return undefined;
+      })(),
+      // Venue image
+      (async () => {
+        if (venueImageFile) {
+          try {
+            const b64 = await fileToBase64(venueImageFile);
+            return `data:${b64.type};base64,${b64.data}`;
+          } catch (e) {
+            console.warn('Failed to convert venue image to base64:', e);
+          }
+        }
+        // Use best frame from video analysis if available
+        if (venueVideoAnalysisData?.keyFrames?.length) {
+          return venueVideoAnalysisData.keyFrames[0].imageData;
+        }
+        return undefined;
+      })(),
+    ]);
 
     // Log venue video analysis data for spatial awareness
     if (venueVideoAnalysisData?.success) {
@@ -107,15 +122,15 @@ export const useAIOrchestrator = ({
     }
 
     try {
-      let completedCount = 0;
-      const total = assetsToGenerate.filter(a => a.isLoading).length;
+      const loadingAssets = assetsToGenerate.filter(a => a.isLoading);
+      const total = loadingAssets.length;
       setGenerationProgress({ current: 0, total });
 
       // Get or generate color palette first
       let currentPalette = paletteOverride || colorPalette;
 
-      // Generate Palette first if included
-      const paletteAsset = assetsToGenerate.find(a => a.type === AssetType.Palette && a.isLoading);
+      // Generate Palette first if included (must be sequential)
+      const paletteAsset = loadingAssets.find(a => a.type === AssetType.Palette);
       if (paletteAsset) {
         const paletteContent = await generatePlaceholderContent(
           AssetType.Palette, 
@@ -132,33 +147,62 @@ export const useAIOrchestrator = ({
         setGeneratedAssets(prev => prev.map(a =>
           a.id === paletteAsset.id ? { ...a, content: paletteContent, isLoading: false } : a
         ));
-        completedCount++;
-        setGenerationProgress({ current: completedCount, total });
+        setGenerationProgress({ current: 1, total });
       }
 
-      // Generate other assets with color palette, logo, and style references
-      for (const asset of assetsToGenerate.filter(a => a.isLoading && a.type !== AssetType.Palette)) {
-        try {
-          const content = await generatePlaceholderContent(
-            asset.type,
-            eventDetails,
-            currentPalette,
-            primaryLogoBase64,
-            currentStyleDesc,
-            vibeImageBase64,
-            masterPatternBase64,
-            venueImageBase64
-          );
-          setGeneratedAssets(prev => prev.map(a =>
-            a.id === asset.id ? { ...a, content, isLoading: false } : a
-          ));
-        } catch (error) {
-          console.error(`Failed to generate ${asset.type}:`, error);
-          setGeneratedAssets(prev => prev.map(a =>
-            a.id === asset.id ? { ...a, content: 'Generation failed', isLoading: false } : a
-          ));
-        }
-        completedCount++;
+      // Generate other assets in parallel batches
+      const otherAssets = loadingAssets.filter(a => a.type !== AssetType.Palette);
+      let completedCount = paletteAsset ? 1 : 0;
+
+      // Process in batches for better resource management
+      for (let i = 0; i < otherAssets.length; i += PARALLEL_BATCH_SIZE) {
+        const batch = otherAssets.slice(i, i + PARALLEL_BATCH_SIZE);
+        
+        // Generate batch in parallel using Promise.allSettled
+        const results = await Promise.allSettled(
+          batch.map(async (asset): Promise<GenerationResult> => {
+            try {
+              const content = await generatePlaceholderContent(
+                asset.type,
+                eventDetails,
+                currentPalette,
+                primaryLogoBase64,
+                currentStyleDesc,
+                vibeImageBase64,
+                masterPatternBase64,
+                venueImageBase64
+              );
+              return { id: asset.id, success: true, content };
+            } catch (error) {
+              console.error(`Failed to generate ${asset.type}:`, error);
+              return { 
+                id: asset.id, 
+                success: false, 
+                error: error instanceof Error ? error.message : 'Generation failed' 
+              };
+            }
+          })
+        );
+
+        // Update assets with results
+        results.forEach((result, index) => {
+          const asset = batch[index];
+          if (result.status === 'fulfilled') {
+            const data = result.value;
+            setGeneratedAssets(prev => prev.map(a =>
+              a.id === data.id 
+                ? { ...a, content: data.success ? data.content! : 'Generation failed', isLoading: false } 
+                : a
+            ));
+          } else {
+            // Promise rejected
+            setGeneratedAssets(prev => prev.map(a =>
+              a.id === asset.id ? { ...a, content: 'Generation failed', isLoading: false } : a
+            ));
+          }
+          completedCount++;
+        });
+
         setGenerationProgress({ current: completedCount, total });
       }
 
@@ -167,7 +211,7 @@ export const useAIOrchestrator = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [logos, styleImage, masterPatternImage, colorPalette, setColorPalette, setGeneratedAssets, eventDetails]);
 
   return {
     generateAssets,
