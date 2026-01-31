@@ -24,6 +24,7 @@ import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
 import { useAuth } from '../hooks/useAuth';
+import { useAIBrain } from '../hooks/useAIBrain';
 import { fileToBase64, downloadAllAssets } from '../utils';
 import { getAssetConfig } from '../config/assetConfig';
 import { generateBrandStyleGuide } from '../services/brandGuideGenerator';
@@ -34,6 +35,7 @@ const ensureProtocol = (url: string) => url && !url.match(/^[a-zA-Z]+:\/\//) ? `
 
 const Index: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
+  const { insights, isReady: isBrainReady } = useAIBrain();
   
   const [view, setView] = useState<'onboarding' | 'studio'>('onboarding');
   const [eventDetails, setEventDetails] = useState<EventDetails>({
@@ -511,11 +513,17 @@ const Index: React.FC = () => {
               <div className="mb-8 p-4 glass-card">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium text-foreground">Generating assets...</p>
                     <p className="text-sm text-muted-foreground">
                       {generationProgress.current} of {generationProgress.total} complete
                     </p>
+                    {insights && insights.length > 0 && (
+                      <p className="text-xs text-primary mt-1 flex items-center gap-1.5">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                        Applying {insights.length} learned preference{insights.length !== 1 ? 's' : ''}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 h-2 bg-secondary rounded-full overflow-hidden">
