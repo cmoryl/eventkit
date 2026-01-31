@@ -264,19 +264,34 @@ const generateImageAsset = async (
   type: AssetType,
   eventDetails: EventDetails,
   colorPalette: ColorInfo[] = [],
-  logoDataUrl?: string
+  logoDataUrl?: string,
+  styleDescription?: string,
+  vibeImageBase64?: string,
+  masterPatternBase64?: string
 ): Promise<string> => {
+  // Build enhanced style description incorporating vibe and pattern references
+  let enhancedStyleDesc = styleDescription || `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`;
+  
+  if (vibeImageBase64) {
+    enhancedStyleDesc += ' Match the visual style, color mood, and aesthetic of the provided reference image.';
+  }
+  if (masterPatternBase64) {
+    enhancedStyleDesc += ' Incorporate the provided pattern as a design element throughout the asset.';
+  }
+
   // Try AI image generation first for supported types
   try {
     const aiImage = await generateAssetImage(
       type,
       eventDetails.name,
       eventDetails.description || '',
-      `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`,
+      enhancedStyleDesc,
       colorPalette.map(c => c.hex),
       logoDataUrl,
       eventDetails.location,
-      eventDetails.incorporateLocationStyle
+      eventDetails.incorporateLocationStyle,
+      vibeImageBase64,
+      masterPatternBase64
     );
     
     if (aiImage) {
@@ -465,7 +480,10 @@ export const generatePlaceholderContent = async (
   type: AssetType,
   eventDetails: EventDetails,
   colorPalette: ColorInfo[] = [],
-  logoDataUrl?: string
+  logoDataUrl?: string,
+  styleDescription?: string,
+  vibeImageBase64?: string,
+  masterPatternBase64?: string
 ): Promise<string | string[] | ColorInfo[]> => {
   // Simulate AI delay
   await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
@@ -540,7 +558,7 @@ Use the Color Palette asset for complete color specifications including CMYK for
 - Consistent color grading aligned with brand palette`;
 
     default:
-      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl);
+      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl, styleDescription, vibeImageBase64, masterPatternBase64);
   }
 };
 

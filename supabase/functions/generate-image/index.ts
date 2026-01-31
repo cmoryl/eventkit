@@ -14,6 +14,8 @@ interface GenerateImageRequest {
   logoBase64?: string;
   location?: string;
   incorporateLocationStyle?: boolean;
+  vibeImageBase64?: string;
+  masterPatternBase64?: string;
 }
 
 // Location cultural contexts for enhanced locality awareness
@@ -152,7 +154,11 @@ const ASSET_PROMPTS: Record<string, string> = {
   NAPKIN_DESIGN: "Design a cocktail napkin with simple logo/branding. Elegant and minimal.",
   SEAMLESS_PATTERN: "Create a seamless repeating pattern with abstract geometric shapes inspired by the event theme. Tileable in all directions.",
   
-  // Isolated design variants remain the same...
+  // Step and Repeat / Media Wall
+  STEP_AND_REPEAT: "Design a STEP AND REPEAT media wall backdrop. Create a grid pattern where the event logo/branding repeats in an offset grid pattern across the entire backdrop. The logos should be evenly spaced in a diagonal or straight grid pattern. This is a photo backdrop where celebrities and guests pose for photos. The repeating pattern should be clean, professional, and clearly show the brand/event name multiple times. Typical dimensions are wide format (16:9 or wider). High contrast for photography.",
+  STEP_AND_REPEAT_ISOLATED: "Generate FLAT PRINT-READY step and repeat pattern. Create an 8ft x 10ft repeating grid of logos/brand elements with proper spacing. Offset grid pattern. NO people, NO 3D elements. Just the flat repeating pattern artwork ready for large format printing.",
+  
+  // Isolated design variants
   TSHIRT_ISOLATED: "Generate ONLY the isolated design graphic on a transparent background. Do NOT show any t-shirt or clothing. Just the artwork/logo/graphic that will be printed. Suitable for screen printing with clean edges. 12x16 inch design area.",
   TSHIRT_BACK_ISOLATED: "Generate ONLY the isolated back design graphic on a transparent background. Do NOT show any t-shirt. Just the artwork with event name, date, sponsors. Clean edges for screen printing. 12x14 inch design area.",
   HAT_ISOLATED: "Generate ONLY the isolated embroidery-ready logo on a transparent background. Do NOT show any hat or cap. Just the logo with clean lines, no gradients, suitable for embroidery stitching. Max 6 colors. 4x2.5 inch design area.",
@@ -163,7 +169,7 @@ async function generateImageWithRetry(
   apiKey: string,
   prompt: string,
   assetType: string,
-  logoBase64?: string,
+  referenceImages: string[] = [],
   maxRetries = 2
 ): Promise<string> {
   let lastError: Error | null = null;
@@ -175,17 +181,19 @@ async function generateImageWithRetry(
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
 
-      // Build message content - include logo if provided
+      // Build message content - include all reference images
       const messageContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
         { type: "text", text: prompt }
       ];
 
-      // If logo is provided, include it as a reference image
-      if (logoBase64 && logoBase64.startsWith('data:image')) {
-        messageContent.push({
-          type: "image_url",
-          image_url: { url: logoBase64 }
-        });
+      // Add all reference images (logo, vibe image, pattern)
+      for (const imageBase64 of referenceImages) {
+        if (imageBase64 && imageBase64.startsWith('data:image')) {
+          messageContent.push({
+            type: "image_url",
+            image_url: { url: imageBase64 }
+          });
+        }
       }
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -260,7 +268,9 @@ serve(async (req) => {
       colorPalette, 
       logoBase64,
       location,
-      incorporateLocationStyle 
+      incorporateLocationStyle,
+      vibeImageBase64,
+      masterPatternBase64
     } = body;
 
     const basePrompt = ASSET_PROMPTS[assetType] || "Create a professional event design with modern aesthetics.";
@@ -288,12 +298,33 @@ Subtly weave these local influences into the design while maintaining brand cons
     const logoInstructions = logoBase64 
       ? `
 LOGO INTEGRATION - CRITICAL:
-A reference logo image is attached. You MUST:
+Reference Image #1 is the EVENT LOGO. You MUST:
 1. Incorporate this logo prominently and appropriately into the design
 2. Match the visual style, colors, and aesthetic of the provided logo
 3. Ensure the logo remains clearly visible and is not distorted
 4. Use the logo's color scheme as a guide for the overall design palette
 5. The design should feel like a cohesive extension of the logo's brand identity`
+      : '';
+
+    // Build vibe/style image instructions
+    const vibeInstructions = vibeImageBase64
+      ? `
+STYLE REFERENCE - IMPORTANT:
+Reference Image #${logoBase64 ? '2' : '1'} is a STYLE/VIBE REFERENCE IMAGE. You MUST:
+1. Match the overall aesthetic, mood, and visual style of this reference
+2. Use similar color tones, textures, and design elements
+3. Capture the same energy and feeling conveyed in this reference
+4. Apply this visual language throughout the design`
+      : '';
+
+    // Build pattern instructions
+    const patternInstructions = masterPatternBase64
+      ? `
+PATTERN REFERENCE - IMPORTANT:
+Reference Image #${(logoBase64 ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + 1} is a MASTER PATTERN. You MUST:
+1. Incorporate this pattern as a design element in the final output
+2. Use the pattern as a background, accent, or decorative element
+3. Maintain the pattern's colors and style throughout the design`
       : '';
 
     // Build style instructions
@@ -312,6 +343,8 @@ ${styleInstructions}
 ${colorContext}
 ${locationContext}
 ${logoInstructions}
+${vibeInstructions}
+${patternInstructions}
 
 REQUIREMENTS:
 - Create a high-quality, professional design
@@ -319,11 +352,18 @@ REQUIREMENTS:
 - Modern, polished aesthetic
 - Suitable for both print and digital use
 - Ensure text is readable and well-positioned
-- Maintain visual hierarchy with the event name prominent`;
+- Maintain visual hierarchy with the event name prominent
+- ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN`;
 
-    console.log(`Generating image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}`);
+    console.log(`Generating image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${vibeImageBase64 ? ' [with vibe ref]' : ''}${masterPatternBase64 ? ' [with pattern]' : ''}`);
 
-    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, logoBase64);
+    // Collect all reference images
+    const referenceImages: string[] = [];
+    if (logoBase64) referenceImages.push(logoBase64);
+    if (vibeImageBase64) referenceImages.push(vibeImageBase64);
+    if (masterPatternBase64) referenceImages.push(masterPatternBase64);
+
+    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages);
     
     console.log(`Successfully generated image for ${assetType}`);
 
