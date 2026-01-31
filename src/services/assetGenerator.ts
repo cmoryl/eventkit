@@ -6,7 +6,8 @@ import {
   generateSlogans as aiGenerateSlogans, 
   generateMarketingCopy as aiGenerateMarketingCopy,
   generateRunOfShow as aiGenerateRunOfShow,
-  generateAssetImage
+  generateAssetImage,
+  generateAIPalette
 } from './geminiService';
 
 // Design tokens for consistent generation
@@ -496,7 +497,17 @@ export const generatePlaceholderContent = async (
 
   switch (type) {
     case AssetType.Palette:
-      return generateColorPalette(eventDetails.name, Date.now());
+      // Use AI palette generation - pass vibe image for color extraction
+      try {
+        return await generateAIPalette(
+          eventDetails.name,
+          eventDetails.description,
+          styleDescription,
+          vibeImageBase64 // Extract colors from reference image if provided
+        );
+      } catch {
+        return generateColorPalette(eventDetails.name, Date.now());
+      }
       
     case AssetType.Slogans:
       // Use AI-powered slogan generation

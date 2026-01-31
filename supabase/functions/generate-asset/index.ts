@@ -17,6 +17,7 @@ interface GenerateAssetRequest {
   instruction?: string;
   logoBase64?: string;
   colorPalette?: string[];
+  referenceImageBase64?: string; // For extracting colors from uploaded reference image
 }
 
 serve(async (req) => {
@@ -31,7 +32,7 @@ serve(async (req) => {
     }
 
     const body: GenerateAssetRequest = await req.json();
-    const { type, eventName, eventDescription, eventDate, eventLocation, styleDescription, count, text, instruction, colorPalette } = body;
+    const { type, eventName, eventDescription, eventDate, eventLocation, styleDescription, count, text, instruction, colorPalette, referenceImageBase64 } = body;
 
     let systemPrompt = "";
     let userPrompt = "";
@@ -90,6 +91,64 @@ Create a comprehensive timeline from early morning setup through evening breakdo
         break;
 
       case 'palette':
+        // If reference image is provided, use vision model to extract colors
+        if (referenceImageBase64) {
+          console.log('Extracting palette from reference image...');
+          
+          const visionSystemPrompt = `You are a professional color analyst. Analyze the provided image and extract the dominant colors to create a cohesive brand palette.
+
+Extract exactly 5 colors that:
+1. Are the most visually prominent in the image
+2. Work well together as a brand palette
+3. Include primary, secondary, and accent colors
+4. Maintain the mood and aesthetic of the image
+
+Respond with ONLY a JSON array of exactly 5 hex color codes. No other text.`;
+
+          const visionUserPrompt = `Extract a 5-color palette from this reference image for an event called "${eventName}".
+${eventDescription ? `Event description: ${eventDescription}` : ''}
+${styleDescription ? `Additional style notes: ${styleDescription}` : ''}
+
+Return only a JSON array like: ["#FF5733", "#33FF57", "#3357FF", "#F5F5F5", "#333333"]`;
+
+          const visionResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-3-flash-preview",
+              messages: [
+                { role: "system", content: visionSystemPrompt },
+                { 
+                  role: "user", 
+                  content: [
+                    { type: "text", text: visionUserPrompt },
+                    { type: "image_url", image_url: { url: referenceImageBase64 } }
+                  ]
+                },
+              ],
+              temperature: 0.5,
+            }),
+          });
+
+          if (!visionResponse.ok) {
+            console.error("Vision API failed, falling back to text-based palette");
+            // Fall through to text-based generation
+          } else {
+            const visionData = await visionResponse.json();
+            const content = visionData.choices?.[0]?.message?.content || '[]';
+            console.log('Vision palette response:', content);
+            
+            return new Response(
+              JSON.stringify({ result: content }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+
+        // Text-based palette generation (no reference image)
         systemPrompt = `You are a professional color consultant and brand designer. Suggest a cohesive color palette that:
 - Works well together visually
 - Suits the event's theme and mood
