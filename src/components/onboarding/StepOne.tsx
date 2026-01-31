@@ -77,18 +77,12 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
       >
-        <motion.div 
-          className="absolute -inset-0.5 bg-gradient-to-r from-violet-500 to-purple-500 rounded-2xl opacity-0 blur transition-opacity duration-300 group-focus-within:opacity-100"
-        />
         <div className="relative">
           <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
             Event Name
-            <motion.span 
-              className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-500 text-white"
-              whileHover={{ scale: 1.1 }}
-            >
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
               REQUIRED
-            </motion.span>
+            </span>
           </label>
           <input
             type="text"
@@ -96,7 +90,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
             value={eventDetails.name}
             onChange={handleChange}
             placeholder="e.g., Tech Summit 2025"
-            className="w-full px-5 py-4 rounded-xl border border-border bg-background/80 backdrop-blur-sm text-lg font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+            className="w-full px-5 py-4 rounded-xl border border-border bg-card text-lg font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all"
             autoFocus
           />
         </div>

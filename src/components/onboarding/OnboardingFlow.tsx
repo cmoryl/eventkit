@@ -164,52 +164,59 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         initial="initial"
         animate="animate"
       >
-        {/* Hero Header */}
-        <motion.div variants={itemVariants} className="text-center mb-8">
-          {/* Animated Logo */}
-          <motion.div 
-            className="relative inline-flex items-center justify-center mb-6"
-            whileHover={{ scale: 1.05, rotate: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          >
+        {/* Hero Header - Clean Minimal Design */}
+        <motion.div variants={itemVariants} className="mb-10">
+          <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+            {/* Logo Mark */}
             <motion.div 
-              className="absolute inset-0 bg-gradient-to-r from-violet-500 via-primary to-cyan-500 rounded-3xl blur-xl"
-              animate={{ 
-                opacity: [0.3, 0.5, 0.3],
-                scale: [1, 1.1, 1]
-              }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-            <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-primary to-cyan-500 flex items-center justify-center shadow-2xl">
-              <motion.svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                className="w-10 h-10 text-white" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-                animate={{ rotate: [0, 5, -5, 0] }}
-                transition={{ duration: 4, repeat: Infinity }}
+              className="relative flex-shrink-0"
+              whileHover={{ scale: 1.02 }}
+              transition={{ type: "spring", stiffness: 400, damping: 20 }}
+            >
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center shadow-lg">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+              </div>
+            </motion.div>
+            
+            {/* Title & Description */}
+            <div className="text-center sm:text-left flex-1">
+              <motion.h1 
+                className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight leading-tight"
+                variants={itemVariants}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-              </motion.svg>
+                Event Design Kit
+              </motion.h1>
+              <motion.p 
+                className="text-muted-foreground mt-1.5 text-base sm:text-lg"
+                variants={itemVariants}
+              >
+                Generate professional branding assets in minutes
+              </motion.p>
             </div>
-          </motion.div>
-          
-          <motion.h1 
-            className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight"
-            variants={itemVariants}
-          >
-            Event Design Kit{' '}
-            <span className="bg-gradient-to-r from-violet-500 via-primary to-cyan-500 bg-clip-text text-transparent">
-              Generator
-            </span>
-          </motion.h1>
-          <motion.p 
-            className="text-muted-foreground mt-3 text-lg max-w-md mx-auto"
-            variants={itemVariants}
-          >
-            Professional branding assets in minutes, not weeks
-          </motion.p>
+
+            {/* Stats Pills - Desktop only */}
+            <motion.div 
+              className="hidden lg:flex flex-col gap-2"
+              variants={itemVariants}
+            >
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
+                <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                <span className="text-xs font-medium text-muted-foreground">100+ Asset Types</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <span className="text-xs font-medium text-muted-foreground">AI-Powered</span>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
 
         {/* Progress Bar & Steps */}
