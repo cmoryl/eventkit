@@ -370,6 +370,114 @@ const StepTwo: React.FC<StepTwoProps> = ({
         </div>
       </motion.div>
 
+      {/* Venue Photo Upload - For Realistic Compositing */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.55 }}
+      >
+        <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+          <Camera className="w-4 h-4 text-emerald-500" />
+          Venue Photo
+          <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+          <motion.span 
+            className="ml-auto px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-emerald-500 to-green-500 text-white"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            PHOTOREALISTIC
+          </motion.span>
+        </label>
+        <p className="text-xs text-muted-foreground mb-3">
+          Upload a photo of your actual venue and AI will composite your branded assets directly into the space
+        </p>
+        <input
+          ref={venueInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleVenueUpload}
+          className="hidden"
+          id="venue-upload"
+        />
+        <AnimatePresence mode="wait">
+          {venuePreview ? (
+            <motion.div 
+              className="relative rounded-2xl overflow-hidden border-2 border-emerald-500/30 aspect-video bg-secondary/20 group"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <motion.img 
+                src={venuePreview} 
+                alt="Venue photo" 
+                className="w-full h-full object-cover"
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+              />
+              <motion.div 
+                className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
+                initial={{ opacity: 0 }}
+                whileHover={{ opacity: 1 }}
+              />
+              {/* Overlay showing what will happen */}
+              <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 text-white text-xs">
+                <Building2 className="w-4 h-4" />
+                <span className="font-medium">Assets will be composited into this venue</span>
+              </div>
+              <motion.button
+                onClick={clearVenueImage}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <X className="w-4 h-4" />
+              </motion.button>
+            </motion.div>
+          ) : (
+            <motion.label
+              htmlFor="venue-upload"
+              className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-emerald-500/30 cursor-pointer transition-colors aspect-video group relative overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              whileHover={{ 
+                borderColor: 'rgba(16, 185, 129, 0.5)',
+                background: 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), rgba(34, 197, 94, 0.05))'
+              }}
+            >
+              {/* Background illustration */}
+              <div className="absolute inset-0 opacity-5">
+                <div className="absolute top-4 left-4 w-20 h-12 border-2 border-current rounded" />
+                <div className="absolute top-8 right-8 w-16 h-24 border-2 border-current rounded" />
+                <div className="absolute bottom-4 left-1/4 w-32 h-1 bg-current rounded" />
+                <div className="absolute bottom-8 right-1/4 w-24 h-1 bg-current rounded" />
+              </div>
+              
+              <motion.div 
+                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 flex items-center justify-center mb-4 relative"
+                animate={{ y: [0, -5, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+              >
+                <Camera className="w-7 h-7 text-emerald-500" />
+                <motion.div 
+                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  <Sparkles className="w-2.5 h-2.5 text-white" />
+                </motion.div>
+              </motion.div>
+              <span className="text-sm font-semibold text-foreground text-center group-hover:text-emerald-600 transition-colors">
+                Upload your venue photo
+              </span>
+              <span className="text-xs text-muted-foreground text-center mt-1 max-w-xs">
+                Banners, signage, and counters will be realistically placed in your actual space
+              </span>
+            </motion.label>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
       {/* Venue Intelligence hint */}
       <AnimatePresence>
         {eventDetails.location && (

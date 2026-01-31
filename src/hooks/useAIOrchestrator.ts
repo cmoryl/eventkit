@@ -35,7 +35,8 @@ export const useAIOrchestrator = ({
     currentStyleDesc: string, 
     paletteOverride?: ColorInfo[],
     vibeImageFile?: File | null,
-    masterPatternFile?: File | null
+    masterPatternFile?: File | null,
+    venueImageFile?: File | null
   ) => {
     setIsLoading(true);
     
@@ -75,6 +76,18 @@ export const useAIOrchestrator = ({
       }
     }
 
+    // Convert venue image to base64 for realistic compositing
+    let venueImageBase64: string | undefined;
+    if (venueImageFile) {
+      try {
+        const b64 = await fileToBase64(venueImageFile);
+        venueImageBase64 = `data:${b64.type};base64,${b64.data}`;
+        console.log('Venue image loaded for photorealistic compositing');
+      } catch (e) {
+        console.warn('Failed to convert venue image to base64:', e);
+      }
+    }
+
     try {
       let completedCount = 0;
       const total = assetsToGenerate.filter(a => a.isLoading).length;
@@ -93,7 +106,8 @@ export const useAIOrchestrator = ({
           primaryLogoBase64,
           currentStyleDesc,
           vibeImageBase64,
-          masterPatternBase64
+          masterPatternBase64,
+          venueImageBase64
         ) as ColorInfo[];
         setColorPalette(paletteContent);
         currentPalette = paletteContent;
@@ -114,7 +128,8 @@ export const useAIOrchestrator = ({
             primaryLogoBase64,
             currentStyleDesc,
             vibeImageBase64,
-            masterPatternBase64
+            masterPatternBase64,
+            venueImageBase64
           );
           setGeneratedAssets(prev => prev.map(a =>
             a.id === asset.id ? { ...a, content, isLoading: false } : a

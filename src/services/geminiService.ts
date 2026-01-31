@@ -528,7 +528,8 @@ export const generateAssetImage = async (
   location?: string,
   incorporateLocationStyle?: boolean,
   vibeImageBase64?: string,
-  masterPatternBase64?: string
+  masterPatternBase64?: string,
+  venueImageBase64?: string
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
@@ -547,6 +548,7 @@ export const generateAssetImage = async (
         incorporateLocationStyle,
         vibeImageBase64,
         masterPatternBase64,
+        venueImageBase64,
       },
     });
 
@@ -585,10 +587,11 @@ export const regenerateAssetWithAI = async (
   location?: string,
   incorporateLocationStyle?: boolean,
   vibeImageBase64?: string,
-  masterPatternBase64?: string
+  masterPatternBase64?: string,
+  venueImageBase64?: string
 ): Promise<string | null> => {
   const styleDescription = customPrompt || 'Modern, professional design with clean aesthetics';
-  return generateAssetImage(assetType, eventName, eventDescription, styleDescription, colorPalette, logoBase64, location, incorporateLocationStyle, vibeImageBase64, masterPatternBase64);
+  return generateAssetImage(assetType, eventName, eventDescription, styleDescription, colorPalette, logoBase64, location, incorporateLocationStyle, vibeImageBase64, masterPatternBase64, venueImageBase64);
 };
 
 // Check if an asset type supports AI image generation
