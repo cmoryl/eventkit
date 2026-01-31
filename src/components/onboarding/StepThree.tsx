@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AssetType } from '../../types';
 import { 
   ASSET_CONFIGS, 
   ASSET_CATEGORIES, 
   AssetCategory, 
-  getAssetsByCategory,
   DEFAULT_QUICK_START_ASSETS,
   FULL_SUITE_ASSETS 
 } from '../../config/assetConfig';
@@ -135,15 +135,37 @@ const StepThree: React.FC<StepThreeProps> = ({
   ];
 
   return (
-    <div className="space-y-5">
+    <motion.div 
+      className="space-y-5"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Hero Quick Actions */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border border-primary/20 p-5">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+      <motion.div 
+        className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border border-primary/20 p-5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <motion.div 
+          className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
         
         <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <LucideIcons.Sparkles className="w-5 h-5 text-primary" />
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <LucideIcons.Sparkles className="w-5 h-5 text-primary" />
+              </motion.div>
               Quick Start
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
@@ -152,36 +174,49 @@ const StepThree: React.FC<StepThreeProps> = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <button
+            <motion.button
               onClick={onSelectQuickStart}
-              className="group relative px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold text-sm shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-105 transition-all duration-300 flex items-center gap-2"
+              className="group relative px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold text-sm shadow-lg shadow-primary/25 flex items-center gap-2"
+              whileHover={{ scale: 1.05, boxShadow: "0 10px 40px -10px rgba(139, 92, 246, 0.4)" }}
+              whileTap={{ scale: 0.95 }}
             >
               <LucideIcons.Zap className="w-4 h-4" />
               Quick Start
               <span className="px-1.5 py-0.5 rounded-md bg-primary-foreground/20 text-xs">
                 {DEFAULT_QUICK_START_ASSETS.length}
               </span>
-            </button>
+            </motion.button>
             
-            <button
+            <motion.button
               onClick={onSelectFullSuite}
-              className="group px-4 py-2.5 rounded-xl bg-gradient-to-r from-secondary to-secondary/80 text-foreground font-semibold text-sm border border-border hover:border-primary/30 hover:shadow-lg hover:scale-105 transition-all duration-300 flex items-center gap-2"
+              className="group px-4 py-2.5 rounded-xl bg-gradient-to-r from-secondary to-secondary/80 text-foreground font-semibold text-sm border border-border flex items-center gap-2"
+              whileHover={{ scale: 1.05, borderColor: "rgba(139, 92, 246, 0.3)" }}
+              whileTap={{ scale: 0.95 }}
             >
               <LucideIcons.Package className="w-4 h-4" />
               Full Suite
               <span className="px-1.5 py-0.5 rounded-md bg-muted text-xs text-muted-foreground">
                 {FULL_SUITE_ASSETS.length}
               </span>
-            </button>
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Search & Filters */}
-      <div className="space-y-3">
+      <motion.div 
+        className="space-y-3"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         {/* Search Input with glow effect */}
         <div className="relative group">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-accent/50 rounded-xl opacity-0 group-focus-within:opacity-100 blur transition-opacity duration-300" />
+          <motion.div 
+            className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-accent/50 rounded-xl blur transition-opacity duration-300"
+            initial={{ opacity: 0 }}
+            whileFocus={{ opacity: 1 }}
+          />
           <div className="relative flex items-center">
             <LucideIcons.Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
             <input
@@ -191,33 +226,53 @@ const StepThree: React.FC<StepThreeProps> = ({
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-border bg-background/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm"
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-4 p-1 rounded-lg hover:bg-secondary transition-colors"
-              >
-                <LucideIcons.X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            )}
+            <AnimatePresence>
+              {searchQuery && (
+                <motion.button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 p-1 rounded-lg hover:bg-secondary transition-colors"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <LucideIcons.X className="w-4 h-4 text-muted-foreground" />
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
         {/* Type Filter Pills */}
         <div className="flex flex-wrap items-center gap-2">
-          {filterButtons.map(({ key, label, icon: Icon, count, gradient }) => (
-            <button
+          {filterButtons.map(({ key, label, icon: Icon, count, gradient }, index) => (
+            <motion.button
               key={key}
               onClick={() => setActiveFilter(key)}
               className={cn(
-                "group relative px-3 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition-all duration-300",
+                "group relative px-3 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition-colors",
                 activeFilter === key
-                  ? "text-white shadow-lg scale-105"
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground hover:scale-102"
+                  ? "text-white shadow-lg"
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
               )}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + index * 0.05 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
-              {activeFilter === key && (
-                <div className={cn("absolute inset-0 rounded-xl bg-gradient-to-r", gradient)} />
-              )}
+              <AnimatePresence mode="wait">
+                {activeFilter === key && (
+                  <motion.div 
+                    className={cn("absolute inset-0 rounded-xl bg-gradient-to-r", gradient)}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    layoutId="activeFilter"
+                  />
+                )}
+              </AnimatePresence>
               <span className="relative flex items-center gap-2">
                 <Icon className="w-4 h-4" />
                 {label}
@@ -230,117 +285,190 @@ const StepThree: React.FC<StepThreeProps> = ({
                   {count}
                 </span>
               </span>
-            </button>
+            </motion.button>
           ))}
           
           <div className="h-6 w-px bg-border mx-1" />
           
           {/* Selected only toggle */}
-          <button
+          <motion.button
             onClick={() => setShowSelectedOnly(!showSelectedOnly)}
             className={cn(
-              "px-3 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition-all duration-300",
+              "px-3 py-2 rounded-xl font-medium text-sm flex items-center gap-2 transition-colors",
               showSelectedOnly
                 ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg"
                 : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <LucideIcons.Filter className="w-4 h-4" />
             Selected
-            {stats.selected > 0 && (
-              <span className={cn(
-                "px-1.5 py-0.5 rounded-md text-xs",
-                showSelectedOnly ? "bg-white/20" : "bg-primary/10 text-primary font-bold"
-              )}>
-                {stats.selected}
-              </span>
-            )}
-          </button>
+            <AnimatePresence>
+              {stats.selected > 0 && (
+                <motion.span 
+                  className={cn(
+                    "px-1.5 py-0.5 rounded-md text-xs",
+                    showSelectedOnly ? "bg-white/20" : "bg-primary/10 text-primary font-bold"
+                  )}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  key={stats.selected}
+                >
+                  {stats.selected}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between px-1">
+      <motion.div 
+        className="flex items-center justify-between px-1"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.4 }}
+      >
         <p className="text-sm text-muted-foreground">
-          Showing <span className="font-bold text-foreground">{filteredAssets.length}</span> assets
+          Showing <motion.span 
+            className="font-bold text-foreground"
+            key={filteredAssets.length}
+            initial={{ scale: 1.2 }}
+            animate={{ scale: 1 }}
+          >
+            {filteredAssets.length}
+          </motion.span> assets
           {searchQuery && (
             <span> matching "<span className="text-primary font-medium">{searchQuery}</span>"</span>
           )}
         </p>
         
         <div className="flex items-center gap-2">
-          <button
+          <motion.button
             onClick={selectAllFiltered}
             className="text-xs px-2.5 py-1.5 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors flex items-center gap-1"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <LucideIcons.CheckSquare className="w-3.5 h-3.5" />
             Select shown
-          </button>
-          {stats.selected > 0 && (
-            <button
-              onClick={deselectAll}
-              className="text-xs px-2.5 py-1.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center gap-1"
-            >
-              <LucideIcons.XSquare className="w-3.5 h-3.5" />
-              Clear all
-            </button>
-          )}
+          </motion.button>
+          <AnimatePresence>
+            {stats.selected > 0 && (
+              <motion.button
+                onClick={deselectAll}
+                className="text-xs px-2.5 py-1.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors flex items-center gap-1"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <LucideIcons.XSquare className="w-3.5 h-3.5" />
+                Clear all
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* Category Sections */}
-      <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
-        {filteredAssets.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center mb-4">
-              <LucideIcons.SearchX className="w-10 h-10 text-muted-foreground/50" />
-            </div>
-            <p className="text-lg font-medium text-foreground">No assets found</p>
-            <p className="text-sm text-muted-foreground mt-1">Try adjusting your search or filters</p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setActiveFilter('all');
-                setShowSelectedOnly(false);
-              }}
-              className="mt-4 px-4 py-2 rounded-xl bg-primary/10 text-primary font-medium text-sm hover:bg-primary/20 transition-colors"
+      <motion.div 
+        className="space-y-3 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.5 }}
+      >
+        <AnimatePresence mode="wait">
+          {filteredAssets.length === 0 ? (
+            <motion.div 
+              className="py-16 text-center"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
             >
-              Clear all filters
-            </button>
-          </div>
-        ) : (
-          categories.map(([key]) => (
-            <CategorySection
-              key={key}
-              categoryKey={key}
-              assets={groupedAssets[key]}
-              selectedAssets={selectedAssets}
-              onToggleAsset={onToggleAsset}
-              defaultOpen={groupedAssets[key].length > 0 && groupedAssets[key].length <= 15}
-            />
-          ))
-        )}
-      </div>
+              <motion.div 
+                className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center mb-4"
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                <LucideIcons.SearchX className="w-10 h-10 text-muted-foreground/50" />
+              </motion.div>
+              <p className="text-lg font-medium text-foreground">No assets found</p>
+              <p className="text-sm text-muted-foreground mt-1">Try adjusting your search or filters</p>
+              <motion.button
+                onClick={() => {
+                  setSearchQuery('');
+                  setActiveFilter('all');
+                  setShowSelectedOnly(false);
+                }}
+                className="mt-4 px-4 py-2 rounded-xl bg-primary/10 text-primary font-medium text-sm hover:bg-primary/20 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Clear all filters
+              </motion.button>
+            </motion.div>
+          ) : (
+            categories.map(([key]) => (
+              <CategorySection
+                key={key}
+                categoryKey={key}
+                assets={groupedAssets[key]}
+                selectedAssets={selectedAssets}
+                onToggleAsset={onToggleAsset}
+                defaultOpen={groupedAssets[key].length > 0 && groupedAssets[key].length <= 15}
+              />
+            ))
+          )}
+        </AnimatePresence>
+      </motion.div>
 
       {/* Selection Summary Footer */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-r from-card to-card/50 p-4">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
+      <motion.div 
+        className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-r from-card to-card/50 p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
+        <motion.div 
+          className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-primary to-cyan-500"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: 0.7, duration: 0.5 }}
+          style={{ originX: 0 }}
+        />
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             {/* Animated selection counter */}
             <div className="relative">
-              <div className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl transition-all duration-300",
-                stats.selected > 0
-                  ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20"
-                  : "bg-secondary text-muted-foreground"
-              )}>
+              <motion.div 
+                className={cn(
+                  "w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl transition-colors",
+                  stats.selected > 0
+                    ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20"
+                    : "bg-secondary text-muted-foreground"
+                )}
+                animate={stats.selected > 0 ? { scale: [1, 1.1, 1] } : {}}
+                transition={{ duration: 0.3 }}
+                key={stats.selected}
+              >
                 {stats.selected}
-              </div>
-              {stats.selected > 0 && (
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary to-primary/50 animate-ping opacity-20" />
-              )}
+              </motion.div>
+              <AnimatePresence>
+                {stats.selected > 0 && (
+                  <motion.div 
+                    className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary to-primary/50"
+                    initial={{ scale: 1, opacity: 0.5 }}
+                    animate={{ scale: 1.5, opacity: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.5 }}
+                  />
+                )}
+              </AnimatePresence>
             </div>
             
             <div>
@@ -361,16 +489,21 @@ const StepThree: React.FC<StepThreeProps> = ({
               { icon: LucideIcons.FileText, count: ASSET_CONFIGS.filter(a => selectedAssets.has(a.type) && a.isTextBased).length, label: 'Text', color: 'text-emerald-500' },
               { icon: LucideIcons.Video, count: ASSET_CONFIGS.filter(a => selectedAssets.has(a.type) && (a.isVideo || a.isAudio)).length, label: 'Video', color: 'text-purple-500' },
             ].filter(t => t.count > 0).map(({ icon: Icon, count, label, color }) => (
-              <div key={label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <motion.div 
+                key={label} 
+                className="flex items-center gap-1.5 text-xs text-muted-foreground"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
                 <Icon className={cn("w-4 h-4", color)} />
                 <span className="font-medium">{count}</span>
                 <span className="hidden sm:inline">{label}</span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

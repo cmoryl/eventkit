@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { EventDetails, LogoAsset } from '../../types';
 import { AssetType } from '../../types';
 import { DEFAULT_QUICK_START_ASSETS, FULL_SUITE_ASSETS } from '../../config/assetConfig';
@@ -7,6 +8,8 @@ import StepTwo from './StepTwo';
 import StepThree from './StepThree';
 import { Sparkles, Palette, Layers, ChevronLeft, ChevronRight, Zap, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatedGradientBg } from '../animations/GlowingOrb';
+import { MagneticButton } from '../animations/InteractiveCard';
 
 interface OnboardingFlowProps {
   onComplete: (data: {
@@ -25,8 +28,60 @@ const STEPS = [
   { number: 3, label: 'Select Assets', shortLabel: 'Assets', icon: Layers, gradient: 'from-cyan-500 to-blue-500' },
 ];
 
+// Page transition variants
+const pageVariants = {
+  initial: (direction: number) => ({
+    x: direction > 0 ? 100 : -100,
+    opacity: 0,
+    scale: 0.95,
+  }),
+  animate: {
+    x: 0,
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 30,
+    }
+  },
+  exit: (direction: number) => ({
+    x: direction > 0 ? -100 : 100,
+    opacity: 0,
+    scale: 0.95,
+    transition: {
+      duration: 0.2
+    }
+  })
+};
+
+// Stagger children animation
+const containerVariants = {
+  initial: {},
+  animate: {
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2
+    }
+  }
+};
+
+const itemVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25
+    }
+  }
+};
+
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState(1);
   const [eventDetails, setEventDetails] = useState<EventDetails>({
     name: '',
     description: '',
@@ -49,6 +104,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const isStep3Valid = selectedAssets.size > 0;
 
   const handleNext = () => {
+    setDirection(1);
     if (step === 1 && isStep1Valid) {
       setStep(2);
     } else if (step === 2 && isStep2Valid) {
@@ -66,6 +122,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   };
 
   const handleBack = () => {
+    setDirection(-1);
     if (step > 1) setStep(step - 1);
   };
 
@@ -92,38 +149,78 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12">
-      <div className="w-full max-w-4xl animate-fade-in">
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12 overflow-hidden">
+      <AnimatedGradientBg />
+      
+      <motion.div 
+        className="w-full max-w-4xl"
+        variants={containerVariants}
+        initial="initial"
+        animate="animate"
+      >
         {/* Hero Header */}
-        <div className="text-center mb-8">
+        <motion.div variants={itemVariants} className="text-center mb-8">
           {/* Animated Logo */}
-          <div className="relative inline-flex items-center justify-center mb-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-primary to-cyan-500 rounded-3xl blur-xl opacity-30 animate-pulse" />
+          <motion.div 
+            className="relative inline-flex items-center justify-center mb-6"
+            whileHover={{ scale: 1.05, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-violet-500 via-primary to-cyan-500 rounded-3xl blur-xl"
+              animate={{ 
+                opacity: [0.3, 0.5, 0.3],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
             <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 via-primary to-cyan-500 flex items-center justify-center shadow-2xl">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <motion.svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="w-10 h-10 text-white" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-              </svg>
+              </motion.svg>
             </div>
-          </div>
+          </motion.div>
           
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
+          <motion.h1 
+            className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight"
+            variants={itemVariants}
+          >
             Event Design Kit{' '}
             <span className="bg-gradient-to-r from-violet-500 via-primary to-cyan-500 bg-clip-text text-transparent">
               Generator
             </span>
-          </h1>
-          <p className="text-muted-foreground mt-3 text-lg max-w-md mx-auto">
+          </motion.h1>
+          <motion.p 
+            className="text-muted-foreground mt-3 text-lg max-w-md mx-auto"
+            variants={itemVariants}
+          >
             Professional branding assets in minutes, not weeks
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
         {/* Progress Bar & Steps */}
-        <div className="mb-8">
+        <motion.div variants={itemVariants} className="mb-8">
           {/* Progress track */}
           <div className="relative h-2 bg-secondary rounded-full overflow-hidden mb-6">
-            <div 
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 via-primary to-cyan-500 rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
+            <motion.div 
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 via-primary to-cyan-500 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+            />
+            {/* Shimmer effect */}
+            <motion.div
+              className="absolute inset-y-0 w-20 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              animate={{ x: ['-100%', '500%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             />
           </div>
 
@@ -136,37 +233,69 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
               
               return (
                 <React.Fragment key={s.number}>
-                  <button
-                    onClick={() => isCompleted && setStep(s.number)}
+                  <motion.button
+                    onClick={() => {
+                      if (isCompleted) {
+                        setDirection(s.number < step ? -1 : 1);
+                        setStep(s.number);
+                      }
+                    }}
                     disabled={!isCompleted && !isActive}
                     className={cn(
                       "group relative flex flex-col sm:flex-row items-center gap-2 sm:gap-3 transition-all duration-300",
                       isCompleted && "cursor-pointer"
                     )}
+                    whileHover={isCompleted ? { scale: 1.05 } : undefined}
+                    whileTap={isCompleted ? { scale: 0.95 } : undefined}
                   >
                     {/* Step circle */}
-                    <div className={cn(
-                      "relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-300",
-                      isActive && `bg-gradient-to-br ${s.gradient} text-white shadow-lg scale-110`,
-                      isCompleted && "bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-lg",
-                      !isActive && !isCompleted && "bg-secondary text-muted-foreground"
-                    )}>
-                      {isCompleted ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <Icon className="w-6 h-6" />
+                    <motion.div 
+                      className={cn(
+                        "relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-300",
+                        isActive && `bg-gradient-to-br ${s.gradient} text-white shadow-lg`,
+                        isCompleted && "bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-lg",
+                        !isActive && !isCompleted && "bg-secondary text-muted-foreground"
                       )}
+                      animate={isActive ? { scale: [1, 1.05, 1] } : {}}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    >
+                      <AnimatePresence mode="wait">
+                        {isCompleted ? (
+                          <motion.svg 
+                            key="check"
+                            xmlns="http://www.w3.org/2000/svg" 
+                            className="w-6 h-6" 
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            exit={{ scale: 0, rotate: 180 }}
+                            transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </motion.svg>
+                        ) : (
+                          <motion.div
+                            key="icon"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            exit={{ scale: 0 }}
+                          >
+                            <Icon className="w-6 h-6" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                       
                       {/* Pulse ring for active */}
                       {isActive && (
-                        <div className={cn(
-                          "absolute inset-0 rounded-2xl bg-gradient-to-br animate-ping opacity-30",
-                          s.gradient
-                        )} style={{ animationDuration: '2s' }} />
+                        <motion.div 
+                          className={cn("absolute inset-0 rounded-2xl bg-gradient-to-br", s.gradient)}
+                          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        />
                       )}
-                    </div>
+                    </motion.div>
 
                     {/* Step label */}
                     <div className="text-center sm:text-left">
@@ -190,133 +319,190 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                         {s.shortLabel}
                       </span>
                     </div>
-                  </button>
+                  </motion.button>
 
                   {/* Connector line */}
                   {index < STEPS.length - 1 && (
                     <div className="flex-1 mx-2 sm:mx-4">
-                      <div className={cn(
-                        "h-0.5 rounded-full transition-all duration-500",
-                        step > s.number 
-                          ? "bg-gradient-to-r from-emerald-500 to-green-500" 
-                          : "bg-border"
-                      )} />
+                      <motion.div 
+                        className="h-0.5 rounded-full bg-border"
+                        style={{ originX: 0 }}
+                      >
+                        <motion.div
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500"
+                          initial={{ scaleX: 0 }}
+                          animate={{ scaleX: step > s.number ? 1 : 0 }}
+                          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
+                          style={{ originX: 0 }}
+                        />
+                      </motion.div>
                     </div>
                   )}
                 </React.Fragment>
               );
             })}
           </div>
-        </div>
+        </motion.div>
 
         {/* Main Card */}
-        <div className="relative">
+        <motion.div variants={itemVariants} className="relative">
           {/* Glow effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/20 via-primary/20 to-cyan-500/20 rounded-3xl blur-xl opacity-50" />
+          <motion.div 
+            className="absolute -inset-1 bg-gradient-to-r from-violet-500/20 via-primary/20 to-cyan-500/20 rounded-3xl blur-xl"
+            animate={{ opacity: [0.3, 0.5, 0.3] }}
+            transition={{ duration: 4, repeat: Infinity }}
+          />
           
           {/* Card */}
           <div className="relative rounded-3xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
             {/* Gradient top border */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
+            <motion.div 
+              className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-500 via-primary to-cyan-500"
+              animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+              style={{ backgroundSize: '200% 200%' }}
+            />
 
-            {/* Content */}
-            <div className="p-6 sm:p-8">
-              {step === 1 && (
-                <StepOne
-                  eventDetails={eventDetails}
-                  setEventDetails={setEventDetails}
-                  logos={logos}
-                  setLogos={setLogos}
-                />
-              )}
+            {/* Content with AnimatePresence for page transitions */}
+            <div className="p-6 sm:p-8 min-h-[500px]">
+              <AnimatePresence mode="wait" custom={direction}>
+                <motion.div
+                  key={step}
+                  custom={direction}
+                  variants={pageVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  {step === 1 && (
+                    <StepOne
+                      eventDetails={eventDetails}
+                      setEventDetails={setEventDetails}
+                      logos={logos}
+                      setLogos={setLogos}
+                    />
+                  )}
 
-              {step === 2 && (
-                <StepTwo
-                  styleDescription={styleDescription}
-                  setStyleDescription={setStyleDescription}
-                  vibeImage={vibeImage}
-                  setVibeImage={setVibeImage}
-                  masterPattern={masterPattern}
-                  setMasterPattern={setMasterPattern}
-                  eventDetails={eventDetails}
-                />
-              )}
+                  {step === 2 && (
+                    <StepTwo
+                      styleDescription={styleDescription}
+                      setStyleDescription={setStyleDescription}
+                      vibeImage={vibeImage}
+                      setVibeImage={setVibeImage}
+                      masterPattern={masterPattern}
+                      setMasterPattern={setMasterPattern}
+                      eventDetails={eventDetails}
+                    />
+                  )}
 
-              {step === 3 && (
-                <StepThree
-                  selectedAssets={selectedAssets}
-                  onToggleAsset={handleToggleAsset}
-                  onSelectQuickStart={handleSelectQuickStart}
-                  onSelectFullSuite={handleSelectFullSuite}
-                />
-              )}
+                  {step === 3 && (
+                    <StepThree
+                      selectedAssets={selectedAssets}
+                      onToggleAsset={handleToggleAsset}
+                      onSelectQuickStart={handleSelectQuickStart}
+                      onSelectFullSuite={handleSelectFullSuite}
+                    />
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
             {/* Navigation Footer */}
-            <div className="px-6 sm:px-8 py-5 border-t border-border/50 bg-secondary/20 flex items-center justify-between">
-              <button
+            <motion.div 
+              className="px-6 sm:px-8 py-5 border-t border-border/50 bg-secondary/20 flex items-center justify-between"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <motion.button
                 onClick={handleBack}
                 disabled={step === 1}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-300",
                   step === 1
                     ? "opacity-30 cursor-not-allowed text-muted-foreground"
-                    : "text-foreground hover:bg-secondary hover:scale-105"
+                    : "text-foreground hover:bg-secondary"
                 )}
+                whileHover={step !== 1 ? { x: -4 } : undefined}
+                whileTap={step !== 1 ? { scale: 0.95 } : undefined}
               >
                 <ChevronLeft className="w-4 h-4" />
                 Back
-              </button>
+              </motion.button>
 
-              <button
+              <MagneticButton
                 onClick={handleNext}
                 disabled={step === 1 ? !isStep1Valid : step === 3 ? !isStep3Valid : false}
                 className={cn(
                   "group relative flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all duration-300",
                   "bg-gradient-to-r from-violet-500 via-primary to-cyan-500 text-white",
-                  "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-105",
-                  "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
+                strength={0.2}
               >
                 {step === 3 ? (
                   <>
                     <Zap className="w-4 h-4" />
                     Generate {selectedAssets.size} Assets
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </motion.div>
                   </>
                 ) : (
                   <>
                     Continue
-                    <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    <motion.div
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </motion.div>
                   </>
                 )}
-              </button>
-            </div>
+              </MagneticButton>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Helper text */}
-        <p className="text-center text-sm text-muted-foreground mt-6 flex items-center justify-center gap-2">
-          {step === 1 && (
-            <>
-              <Sparkles className="w-4 h-4 text-violet-500" />
-              Enter your event details and upload your logo
-            </>
-          )}
-          {step === 2 && (
-            <>
-              <Palette className="w-4 h-4 text-pink-500" />
-              Define your visual style with references and descriptions
-            </>
-          )}
-          {step === 3 && (
-            <>
-              <Layers className="w-4 h-4 text-cyan-500" />
-              Choose which assets to generate for your event
-            </>
-          )}
-        </p>
-      </div>
+        <motion.p 
+          className="text-center text-sm text-muted-foreground mt-6 flex items-center justify-center gap-2"
+          variants={itemVariants}
+        >
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={step}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center gap-2"
+            >
+              {step === 1 && (
+                <>
+                  <Sparkles className="w-4 h-4 text-violet-500" />
+                  Enter your event details and upload your logo
+                </>
+              )}
+              {step === 2 && (
+                <>
+                  <Palette className="w-4 h-4 text-pink-500" />
+                  Define your visual style with references and descriptions
+                </>
+              )}
+              {step === 3 && (
+                <>
+                  <Layers className="w-4 h-4 text-cyan-500" />
+                  Choose which assets to generate for your event
+                </>
+              )}
+            </motion.span>
+          </AnimatePresence>
+        </motion.p>
+      </motion.div>
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { EventDetails } from '../../types';
 import { Upload, Image, Palette, Sparkles, X, MapPin, Building2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -92,65 +93,115 @@ const StepTwo: React.FC<StepTwoProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <motion.div 
+      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 mb-4">
-          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 animate-pulse" />
+      <motion.div 
+        className="text-center mb-8"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <motion.div 
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 mb-4"
+          whileHover={{ scale: 1.05 }}
+        >
+          <motion.div 
+            className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500"
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
           <span className="text-sm font-medium bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
             Step 2 of 3
           </span>
-        </div>
+        </motion.div>
         <h2 className="text-2xl font-bold text-foreground mb-2">Define Your Style</h2>
         <p className="text-muted-foreground">Help AI understand your brand's visual language</p>
-      </div>
+      </motion.div>
 
       {/* Style Presets */}
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         <label className="block text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-pink-500" />
+          <motion.div
+            animate={{ rotate: [0, 15, -15, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Sparkles className="w-4 h-4 text-pink-500" />
+          </motion.div>
           Quick Style Presets
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {STYLE_PRESETS.map((preset) => {
+          {STYLE_PRESETS.map((preset, index) => {
             const isSelected = selectedPresets.has(preset.id);
             return (
-              <button
+              <motion.button
                 key={preset.id}
                 onClick={() => togglePreset(preset.id)}
                 className={cn(
-                  "group relative p-4 rounded-2xl border-2 text-left transition-all duration-300 overflow-hidden",
+                  "group relative p-4 rounded-2xl border-2 text-left transition-colors overflow-hidden",
                   isSelected
-                    ? "border-transparent shadow-lg scale-[1.02]"
-                    : "border-border hover:border-primary/30 hover:shadow-md"
+                    ? "border-transparent shadow-lg"
+                    : "border-border hover:border-primary/30"
                 )}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + index * 0.05 }}
+                whileHover={{ scale: 1.03, y: -2 }}
+                whileTap={{ scale: 0.98 }}
               >
                 {/* Background gradient when selected */}
-                {isSelected && (
-                  <div className={cn(
-                    "absolute inset-0 bg-gradient-to-br opacity-10",
-                    preset.gradient
-                  )} />
-                )}
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div 
+                      className={cn("absolute inset-0 bg-gradient-to-br", preset.gradient)}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.1 }}
+                      exit={{ opacity: 0 }}
+                    />
+                  )}
+                </AnimatePresence>
                 
                 {/* Selection indicator */}
-                <div className={cn(
-                  "absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-all",
-                  isSelected
-                    ? `bg-gradient-to-r ${preset.gradient} text-white`
-                    : "bg-secondary text-muted-foreground"
-                )}>
-                  {isSelected && <Check className="w-3 h-3" />}
-                </div>
+                <motion.div 
+                  className={cn(
+                    "absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-colors",
+                    isSelected
+                      ? `bg-gradient-to-r ${preset.gradient} text-white`
+                      : "bg-secondary text-muted-foreground"
+                  )}
+                  animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
+                  transition={{ duration: 0.3 }}
+                >
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -180 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        exit={{ scale: 0, rotate: 180 }}
+                      >
+                        <Check className="w-3 h-3" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
 
                 <div className="relative">
                   {/* Icon */}
-                  <span className={cn(
-                    "text-2xl mb-2 block transition-transform",
-                    isSelected && "scale-110"
-                  )}>
+                  <motion.span 
+                    className="text-2xl mb-2 block"
+                    animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                  >
                     {preset.icon}
-                  </span>
+                  </motion.span>
                   
                   <span className={cn(
                     "text-sm font-bold block transition-colors",
@@ -164,14 +215,19 @@ const StepTwo: React.FC<StepTwoProps> = ({
                     {preset.description}
                   </p>
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
-      </div>
+      </motion.div>
 
       {/* Image Uploads Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <motion.div 
+        className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
         {/* Vibe Image */}
         <div>
           <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
@@ -187,30 +243,60 @@ const StepTwo: React.FC<StepTwoProps> = ({
             className="hidden"
             id="vibe-upload"
           />
-          {vibePreview ? (
-            <div className="relative rounded-2xl overflow-hidden border border-border aspect-video bg-secondary/20 group">
-              <img src={vibePreview} alt="Vibe reference" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <button
-                onClick={clearVibeImage}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-colors shadow-lg"
+          <AnimatePresence mode="wait">
+            {vibePreview ? (
+              <motion.div 
+                className="relative rounded-2xl overflow-hidden border border-border aspect-video bg-secondary/20 group"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
               >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <label
-              htmlFor="vibe-upload"
-              className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border hover:border-pink-500/50 hover:bg-gradient-to-br hover:from-pink-500/5 hover:to-rose-500/5 cursor-pointer transition-all aspect-video group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Upload className="w-6 h-6 text-pink-500" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
-                Upload aesthetic reference
-              </span>
-            </label>
-          )}
+                <motion.img 
+                  src={vibePreview} 
+                  alt="Vibe reference" 
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                />
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                />
+                <motion.button
+                  onClick={clearVibeImage}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </motion.div>
+            ) : (
+              <motion.label
+                htmlFor="vibe-upload"
+                className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border cursor-pointer transition-colors aspect-video group"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                whileHover={{ 
+                  borderColor: 'rgba(236, 72, 153, 0.5)',
+                  background: 'linear-gradient(to bottom right, rgba(236, 72, 153, 0.05), rgba(244, 63, 94, 0.05))'
+                }}
+              >
+                <motion.div 
+                  className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-3"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Upload className="w-6 h-6 text-pink-500" />
+                </motion.div>
+                <span className="text-sm font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
+                  Upload aesthetic reference
+                </span>
+              </motion.label>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Master Pattern */}
@@ -228,67 +314,121 @@ const StepTwo: React.FC<StepTwoProps> = ({
             className="hidden"
             id="pattern-upload"
           />
-          {patternPreview ? (
-            <div className="relative rounded-2xl overflow-hidden border border-border aspect-video bg-secondary/20 group">
-              <img src={patternPreview} alt="Master pattern" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <button
-                onClick={clearPattern}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-colors shadow-lg"
+          <AnimatePresence mode="wait">
+            {patternPreview ? (
+              <motion.div 
+                className="relative rounded-2xl overflow-hidden border border-border aspect-video bg-secondary/20 group"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
               >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <label
-              htmlFor="pattern-upload"
-              className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border hover:border-pink-500/50 hover:bg-gradient-to-br hover:from-pink-500/5 hover:to-rose-500/5 cursor-pointer transition-all aspect-video group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Upload className="w-6 h-6 text-pink-500" />
-              </div>
-              <span className="text-sm font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
-                Upload pattern to use
-              </span>
-            </label>
-          )}
+                <motion.img 
+                  src={patternPreview} 
+                  alt="Master pattern" 
+                  className="w-full h-full object-cover"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                />
+                <motion.div 
+                  className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                />
+                <motion.button
+                  onClick={clearPattern}
+                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </motion.div>
+            ) : (
+              <motion.label
+                htmlFor="pattern-upload"
+                className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border cursor-pointer transition-colors aspect-video group"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                whileHover={{ 
+                  borderColor: 'rgba(236, 72, 153, 0.5)',
+                  background: 'linear-gradient(to bottom right, rgba(236, 72, 153, 0.05), rgba(244, 63, 94, 0.05))'
+                }}
+              >
+                <motion.div 
+                  className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-3"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                >
+                  <Upload className="w-6 h-6 text-pink-500" />
+                </motion.div>
+                <span className="text-sm font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
+                  Upload pattern to use
+                </span>
+              </motion.label>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      </motion.div>
 
       {/* Venue Intelligence hint */}
-      {eventDetails.location && (
-        <div className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative flex items-start gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-lg">
-              <Building2 className="w-5 h-5" />
+      <AnimatePresence>
+        {eventDetails.location && (
+          <motion.div 
+            className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <motion.div 
+              className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+            <div className="relative flex items-start gap-3">
+              <motion.div 
+                className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-lg"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+              >
+                <Building2 className="w-5 h-5" />
+              </motion.div>
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  Venue Intelligence
+                  <motion.span 
+                    className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-emerald-500 to-green-500 text-white"
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  >
+                    ACTIVE
+                  </motion.span>
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  AI will research "<span className="font-medium text-foreground">{eventDetails.location}</span>" to inform floor plans and location-specific designs.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
+                <MapPin className="w-3.5 h-3.5" />
+                Ready
+              </div>
             </div>
-            <div className="flex-1">
-              <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                Venue Intelligence
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-emerald-500 to-green-500 text-white">
-                  ACTIVE
-                </span>
-              </h4>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                AI will research "<span className="font-medium text-foreground">{eventDetails.location}</span>" to inform floor plans and location-specific designs.
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-              <MapPin className="w-3.5 h-3.5" />
-              Ready
-            </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Custom Style Description */}
-      <div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+      >
         <label className="block text-sm font-semibold text-foreground mb-2">
           Additional Style Notes
         </label>
         <div className="relative group">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl opacity-0 group-focus-within:opacity-100 blur transition-opacity duration-300" />
+          <motion.div 
+            className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl blur transition-opacity duration-300 opacity-0 group-focus-within:opacity-100"
+          />
           <textarea
             value={styleDescription}
             onChange={e => setStyleDescription(e.target.value)}
@@ -300,38 +440,48 @@ const StepTwo: React.FC<StepTwoProps> = ({
         <p className="text-xs text-muted-foreground mt-2">
           Be specific about colors, patterns, typography preferences, and any elements to avoid
         </p>
-      </div>
+      </motion.div>
 
       {/* AI Safety Notes */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-secondary/50 to-muted/50 border border-border">
+      <motion.div 
+        className="p-4 rounded-2xl bg-gradient-to-r from-secondary/50 to-muted/50 border border-border"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.7 }}
+      >
         <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center flex-shrink-0">
+          <motion.div 
+            className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center flex-shrink-0"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 3, repeat: Infinity }}
+          >
             <Sparkles className="w-4 h-4 text-violet-500" />
-          </div>
+          </motion.div>
           <div>
             <h4 className="text-sm font-semibold text-foreground mb-1">AI Safety Guarantees</h4>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Check className="w-3 h-3 text-emerald-500" />
-                Text won't overlap logos
-              </span>
-              <span className="flex items-center gap-1">
-                <Check className="w-3 h-3 text-emerald-500" />
-                Clear space maintained
-              </span>
-              <span className="flex items-center gap-1">
-                <Check className="w-3 h-3 text-emerald-500" />
-                Brand colors prioritized
-              </span>
-              <span className="flex items-center gap-1">
-                <Check className="w-3 h-3 text-emerald-500" />
-                Print specs enforced
-              </span>
+              {[
+                "Text won't overlap logos",
+                "Clear space maintained",
+                "Brand colors prioritized",
+                "Print specs enforced"
+              ].map((item, index) => (
+                <motion.span 
+                  key={item}
+                  className="flex items-center gap-1"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.8 + index * 0.1 }}
+                >
+                  <Check className="w-3 h-3 text-emerald-500" />
+                  {item}
+                </motion.span>
+              ))}
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
