@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Video, Loader2, Play, Download, X, Sparkles, Building2, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Video, Download, X, Sparkles, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +29,15 @@ interface BrandElement {
   checked: boolean;
 }
 
+interface GeneratedPreview {
+  frameIndex: number;
+  type: 'video' | 'image';
+  url: string;
+  thumbnailUrl?: string;
+  status: 'pending' | 'generating' | 'complete' | 'error';
+  error?: string;
+}
+
 type GenerationStage = 'selecting' | 'generating' | 'complete' | 'error';
 
 export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
@@ -40,9 +49,9 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
   styleDescription,
 }) => {
   const [stage, setStage] = useState<GenerationStage>('selecting');
-  const [progress, setProgress] = useState(0);
-  const [selectedFrame, setSelectedFrame] = useState<number>(0);
-  const [result, setResult] = useState<{ type: 'video' | 'image'; url: string; thumbnailUrl?: string } | null>(null);
+  const [selectedFrames, setSelectedFrames] = useState<number[]>([0]);
+  const [previews, setPreviews] = useState<GeneratedPreview[]>([]);
+  const [currentGenerating, setCurrentGenerating] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   
   const [brandElements, setBrandElements] = useState<BrandElement[]>([
@@ -61,22 +70,32 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
     ));
   };
 
-  const handleGenerate = useCallback(async () => {
-    if (!hasFrames) return;
+  const toggleFrame = (index: number) => {
+    setSelectedFrames(prev => {
+      if (prev.includes(index)) {
+        return prev.length > 1 ? prev.filter(i => i !== index) : prev;
+      }
+      return [...prev, index].sort((a, b) => a - b);
+    });
+  };
 
+  const selectAllFrames = () => {
+    setSelectedFrames(keyFrames.slice(0, 8).map((_, i) => i));
+  };
+
+  const clearSelection = () => {
+    setSelectedFrames([0]);
+  };
+
+  const generatePreviewForFrame = async (frameIndex: number): Promise<GeneratedPreview> => {
     const selectedElements = brandElements.filter(el => el.checked);
-    if (selectedElements.length === 0) return;
-
-    setStage('generating');
-    setProgress(10);
-    setError(null);
+    const frameData = keyFrames[frameIndex]?.imageData;
+    
+    if (!frameData) {
+      return { frameIndex, type: 'image', url: '', status: 'error', error: 'No frame data' };
+    }
 
     try {
-      const frameData = keyFrames[selectedFrame]?.imageData;
-      if (!frameData) throw new Error('No frame data available');
-
-      setProgress(30);
-
       const { data, error: fnError } = await supabase.functions.invoke('generate-venue-preview', {
         body: {
           venueFrameBase64: frameData,
@@ -94,53 +113,110 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
 
       if (fnError) throw fnError;
 
-      setProgress(100);
-
       if (data.success) {
-        setResult({
+        return {
+          frameIndex,
           type: data.type,
           url: data.videoUrl || data.imageUrl,
           thumbnailUrl: data.thumbnailUrl,
-        });
-        setStage('complete');
+          status: 'complete',
+        };
       } else {
         throw new Error(data.error || 'Generation failed');
       }
-
     } catch (err) {
-      console.error('Venue preview generation failed:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate preview');
-      setStage('error');
+      return {
+        frameIndex,
+        type: 'image',
+        url: '',
+        status: 'error',
+        error: err instanceof Error ? err.message : 'Failed to generate',
+      };
     }
-  }, [hasFrames, brandElements, keyFrames, selectedFrame, eventDetails, colorPalette, styleDescription]);
+  };
 
-  const handleDownload = useCallback(() => {
-    if (!result?.url) return;
+  const handleGenerate = useCallback(async () => {
+    if (!hasFrames || selectedFrames.length === 0) return;
+
+    const selectedElements = brandElements.filter(el => el.checked);
+    if (selectedElements.length === 0) return;
+
+    setStage('generating');
+    setError(null);
+    
+    // Initialize previews with pending status
+    const initialPreviews: GeneratedPreview[] = selectedFrames.map(frameIndex => ({
+      frameIndex,
+      type: 'image',
+      url: '',
+      status: 'pending',
+    }));
+    setPreviews(initialPreviews);
+
+    // Generate each preview sequentially
+    for (let i = 0; i < selectedFrames.length; i++) {
+      setCurrentGenerating(i);
+      
+      // Update status to generating
+      setPreviews(prev => prev.map((p, idx) => 
+        idx === i ? { ...p, status: 'generating' } : p
+      ));
+
+      const result = await generatePreviewForFrame(selectedFrames[i]);
+      
+      // Update with result
+      setPreviews(prev => prev.map((p, idx) => 
+        idx === i ? result : p
+      ));
+    }
+
+    setStage('complete');
+  }, [hasFrames, selectedFrames, brandElements, keyFrames, eventDetails, colorPalette, styleDescription]);
+
+  const handleDownload = useCallback((preview: GeneratedPreview) => {
+    if (!preview.url) return;
     
     const link = document.createElement('a');
-    link.href = result.url;
-    link.download = `${eventDetails.name.replace(/\s+/g, '-')}-venue-preview.${result.type === 'video' ? 'mp4' : 'jpg'}`;
+    link.href = preview.url;
+    link.download = `${eventDetails.name.replace(/\s+/g, '-')}-venue-angle-${preview.frameIndex + 1}.${preview.type === 'video' ? 'mp4' : 'jpg'}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [result, eventDetails.name]);
+  }, [eventDetails.name]);
+
+  const handleDownloadAll = useCallback(() => {
+    const completedPreviews = previews.filter(p => p.status === 'complete' && p.url);
+    completedPreviews.forEach((preview, idx) => {
+      setTimeout(() => handleDownload(preview), idx * 500);
+    });
+  }, [previews, handleDownload]);
 
   const handleReset = () => {
     setStage('selecting');
-    setProgress(0);
-    setResult(null);
+    setPreviews([]);
+    setCurrentGenerating(0);
     setError(null);
   };
 
+  const handleRemovePreview = (frameIndex: number) => {
+    setPreviews(prev => prev.filter(p => p.frameIndex !== frameIndex));
+  };
+
+  const completedCount = previews.filter(p => p.status === 'complete').length;
+  const totalCount = selectedFrames.length;
+  const progress = stage === 'generating' 
+    ? ((currentGenerating + 1) / totalCount) * 100 
+    : completedCount === totalCount ? 100 : 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Video className="w-5 h-5 text-violet-500" />
-            Generate Branded Venue Preview
+            Generate Branded Venue Previews
             <Badge variant="secondary" className="ml-2 bg-gradient-to-r from-violet-500 to-purple-500 text-white border-0">
-              AI VIDEO
+              MULTI-ANGLE
             </Badge>
           </DialogTitle>
         </DialogHeader>
@@ -150,7 +226,7 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
           {!hasFrames && (
             <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-center">
               <p className="text-sm text-amber-600">
-                Upload a venue walkthrough video first to generate a branded preview.
+                Upload a venue walkthrough video first to generate branded previews.
               </p>
             </div>
           )}
@@ -159,29 +235,48 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
           {hasFrames && stage === 'selecting' && (
             <>
               <div>
-                <label className="text-sm font-medium mb-2 block">Select Venue Frame</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium">Select Venue Angles ({selectedFrames.length} selected)</label>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={selectAllFrames}>
+                      <Plus className="w-3 h-3 mr-1" />
+                      Select All
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={clearSelection}>
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Select multiple frames to generate previews from different angles of your venue
+                </p>
                 <div className="grid grid-cols-4 gap-2">
                   {keyFrames.slice(0, 8).map((frame, index) => (
                     <button
                       key={index}
-                      onClick={() => setSelectedFrame(index)}
+                      onClick={() => toggleFrame(index)}
                       className={cn(
                         "relative aspect-video rounded-lg overflow-hidden border-2 transition-all",
-                        selectedFrame === index 
+                        selectedFrames.includes(index) 
                           ? "border-violet-500 ring-2 ring-violet-500/30" 
                           : "border-transparent hover:border-violet-500/50"
                       )}
                     >
                       <img 
                         src={frame.imageData} 
-                        alt={`Frame ${index + 1}`}
+                        alt={`Angle ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      {selectedFrame === index && (
+                      {selectedFrames.includes(index) && (
                         <div className="absolute inset-0 bg-violet-500/20 flex items-center justify-center">
-                          <CheckCircle2 className="w-6 h-6 text-violet-500" />
+                          <div className="absolute top-1 right-1 w-5 h-5 bg-violet-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                            {selectedFrames.indexOf(index) + 1}
+                          </div>
                         </div>
                       )}
+                      <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-[10px] text-white">
+                        Angle {index + 1}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -190,7 +285,7 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
               {/* Brand Elements Selection */}
               <div>
                 <label className="text-sm font-medium mb-3 block">Branding Elements to Add</label>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   {brandElements.map((element) => (
                     <label 
                       key={element.type}
@@ -205,10 +300,9 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
                         checked={element.checked}
                         onCheckedChange={() => toggleElement(element.type)}
                       />
-                      <span className="text-xl">{element.icon}</span>
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">{element.label}</span>
-                        <p className="text-xs text-muted-foreground">{element.description}</p>
+                      <span className="text-lg">{element.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium block truncate">{element.label}</span>
                       </div>
                     </label>
                   ))}
@@ -218,72 +312,153 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
               {/* Generate Button */}
               <Button 
                 onClick={handleGenerate}
-                disabled={!brandElements.some(el => el.checked)}
+                disabled={!brandElements.some(el => el.checked) || selectedFrames.length === 0}
                 className="w-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                Generate Branded Preview
+                Generate {selectedFrames.length} Preview{selectedFrames.length > 1 ? 's' : ''}
               </Button>
             </>
           )}
 
           {/* Generating State */}
           {stage === 'generating' && (
-            <div className="py-8 text-center space-y-4">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center"
-              >
-                <Video className="w-8 h-8 text-violet-500" />
-              </motion.div>
-              <div>
-                <h3 className="font-semibold text-lg">Generating Branded Preview</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  AI is placing your branded assets into the venue...
-                </p>
+            <div className="space-y-4">
+              <div className="text-center space-y-2">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                  className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 flex items-center justify-center"
+                >
+                  <Video className="w-6 h-6 text-violet-500" />
+                </motion.div>
+                <h3 className="font-semibold">Generating Previews ({currentGenerating + 1}/{totalCount})</h3>
+                <Progress value={progress} className="h-2 max-w-xs mx-auto" />
               </div>
-              <Progress value={progress} className="h-2 max-w-xs mx-auto" />
+
+              {/* Preview Grid During Generation */}
+              <div className="grid grid-cols-2 gap-3">
+                {previews.map((preview, idx) => (
+                  <div 
+                    key={preview.frameIndex}
+                    className={cn(
+                      "aspect-video rounded-lg overflow-hidden border-2 relative",
+                      preview.status === 'generating' && "border-violet-500 animate-pulse",
+                      preview.status === 'complete' && "border-green-500",
+                      preview.status === 'error' && "border-destructive",
+                      preview.status === 'pending' && "border-border opacity-50"
+                    )}
+                  >
+                    {preview.status === 'complete' && preview.url ? (
+                      preview.type === 'video' ? (
+                        <video src={preview.url} className="w-full h-full object-cover" muted />
+                      ) : (
+                        <img src={preview.url} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
+                      )
+                    ) : (
+                      <img 
+                        src={keyFrames[preview.frameIndex]?.imageData} 
+                        alt={`Angle ${preview.frameIndex + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                    <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-[10px] text-white">
+                      Angle {preview.frameIndex + 1}
+                    </div>
+                    {preview.status === 'complete' && (
+                      <div className="absolute top-1 right-1">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      </div>
+                    )}
+                    {preview.status === 'error' && (
+                      <div className="absolute inset-0 bg-destructive/20 flex items-center justify-center">
+                        <X className="w-6 h-6 text-destructive" />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Complete State */}
-          {stage === 'complete' && result && (
+          {stage === 'complete' && (
             <div className="space-y-4">
-              <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
-                {result.type === 'video' ? (
-                  <video 
-                    src={result.url} 
-                    controls 
-                    autoPlay 
-                    loop
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <img 
-                    src={result.url} 
-                    alt="Branded venue preview"
-                    className="w-full h-full object-contain"
-                  />
-                )}
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-green-500" />
-                  <span className="text-sm font-medium">
-                    {result.type === 'video' ? 'Video' : 'Image'} Generated Successfully
-                  </span>
+                  <span className="font-medium">{completedCount} Preview{completedCount > 1 ? 's' : ''} Generated</span>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={handleReset}>
-                    Generate Another
+                    Generate More
                   </Button>
-                  <Button size="sm" onClick={handleDownload}>
-                    <Download className="w-4 h-4 mr-1" />
-                    Download
-                  </Button>
+                  {completedCount > 1 && (
+                    <Button size="sm" onClick={handleDownloadAll}>
+                      <Download className="w-4 h-4 mr-1" />
+                      Download All
+                    </Button>
+                  )}
                 </div>
+              </div>
+
+              {/* Results Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                {previews.map((preview) => (
+                  <div 
+                    key={preview.frameIndex}
+                    className={cn(
+                      "aspect-video rounded-lg overflow-hidden border relative group",
+                      preview.status === 'complete' ? "border-border" : "border-destructive"
+                    )}
+                  >
+                    {preview.status === 'complete' && preview.url ? (
+                      <>
+                        {preview.type === 'video' ? (
+                          <video 
+                            src={preview.url} 
+                            controls 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img 
+                            src={preview.url} 
+                            alt={`Preview ${preview.frameIndex + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <Button 
+                            size="icon" 
+                            variant="secondary" 
+                            className="w-8 h-8"
+                            onClick={() => handleDownload(preview)}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            size="icon" 
+                            variant="secondary" 
+                            className="w-8 h-8"
+                            onClick={() => handleRemovePreview(preview.frameIndex)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full bg-destructive/10 flex items-center justify-center">
+                        <div className="text-center p-2">
+                          <X className="w-6 h-6 text-destructive mx-auto mb-1" />
+                          <p className="text-xs text-destructive">{preview.error || 'Failed'}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute bottom-1 left-1 bg-black/60 px-1.5 py-0.5 rounded text-[10px] text-white">
+                      Angle {preview.frameIndex + 1}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
