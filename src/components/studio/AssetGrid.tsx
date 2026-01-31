@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { GeneratedAsset, ColorInfo, AssetFolder } from '../../types';
 import { AssetType } from '../../types';
 import { 
@@ -17,7 +18,6 @@ import {
   Monitor, 
   FileText,
   Search,
-  Filter,
   LayoutGrid,
   List,
   Download,
@@ -29,12 +29,16 @@ import {
   Copy,
   X,
   Keyboard,
-  Sparkles
+  Sparkles,
+  Layers,
+  Filter,
+  ChevronDown,
 } from 'lucide-react';
 import AssetDownloadModal from './AssetDownloadModal';
 import FolderTabs from '../FolderTabs';
 import MoveToFolderModal from '../MoveToFolderModal';
 import { supportsAIGeneration } from '../../services/geminiService';
+import { cn } from '@/lib/utils';
 
 interface AssetGridProps {
   assets: GeneratedAsset[];
@@ -50,6 +54,18 @@ interface AssetGridProps {
   onCreateFolder?: (name: string) => void;
   onDuplicate?: (asset: GeneratedAsset) => void;
 }
+
+const getCategoryGradient = (category: AssetCategory) => {
+  switch (category) {
+    case 'branding': return 'from-violet-500 to-purple-600';
+    case 'print': return 'from-orange-500 to-red-500';
+    case 'merchandise': return 'from-pink-500 to-rose-500';
+    case 'digital': return 'from-cyan-500 to-blue-500';
+    case 'experience': return 'from-emerald-500 to-teal-500';
+    case 'utilities': return 'from-amber-500 to-yellow-500';
+    default: return 'from-primary to-accent';
+  }
+};
 
 const AssetGrid: React.FC<AssetGridProps> = ({ 
   assets, 
@@ -72,7 +88,6 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   const [downloadingAsset, setDownloadingAsset] = useState<GeneratedAsset | null>(null);
   const [movingAsset, setMovingAsset] = useState<GeneratedAsset | null>(null);
   
-  // Batch selection state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -82,19 +97,16 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   const filteredAssets = useMemo(() => {
     let filtered = assets;
 
-    // Filter by folder first
     if (activeFolderId) {
       filtered = filtered.filter(a => a.folderId === activeFolderId);
     }
 
-    // Filter by category
     if (activeCategory === 'favorites') {
       filtered = filtered.filter(a => a.isFavorite);
     } else if (activeCategory !== 'all') {
       filtered = filtered.filter(a => getCategoryForAsset(a.type) === activeCategory);
     }
 
-    // Filter by search
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(a => 
@@ -106,24 +118,19 @@ const AssetGrid: React.FC<AssetGridProps> = ({
     return filtered;
   }, [assets, activeCategory, activeFolderId, searchQuery]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to exit selection mode
       if (e.key === 'Escape' && isSelectionMode) {
         setIsSelectionMode(false);
         setSelectedIds(new Set());
       }
-      // Ctrl+A to select all visible
       if ((e.ctrlKey || e.metaKey) && e.key === 'a' && isSelectionMode) {
         e.preventDefault();
         setSelectedIds(new Set(filteredAssets.map(a => a.id)));
       }
-      // ? to show keyboard shortcuts
       if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
         setShowKeyboardShortcuts(prev => !prev);
       }
-      // Delete selected
       if ((e.key === 'Delete' || e.key === 'Backspace') && isSelectionMode && selectedIds.size > 0 && onDeleteMultiple) {
         e.preventDefault();
         if (confirm(`Delete ${selectedIds.size} selected assets?`)) {
@@ -187,7 +194,7 @@ const AssetGrid: React.FC<AssetGridProps> = ({
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        await new Promise(r => setTimeout(r, 100)); // Small delay between downloads
+        await new Promise(r => setTimeout(r, 100));
       }
     }
   }, [selectedIds, assets]);
@@ -204,41 +211,48 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 
   const getAssetPreview = (asset: GeneratedAsset) => {
     if (asset.isLoading) {
-      return <div className="w-full h-full shimmer rounded-xl" />;
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/50 to-muted/50">
+          <motion.div
+            className="w-12 h-12 rounded-full border-3 border-primary border-t-transparent"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+      );
     }
 
-    // Image assets
     if (typeof asset.content === 'string' && asset.content.startsWith('data:image')) {
       return (
         <img
           src={asset.content}
           alt={asset.title}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
       );
     }
 
-    // Color palette
     if (asset.type === AssetType.Palette && Array.isArray(asset.content)) {
       const colors = asset.content as ColorInfo[];
       return (
-        <div className="w-full h-full flex rounded-t-xl overflow-hidden">
+        <div className="w-full h-full flex">
           {colors.slice(0, 5).map((color, i) => (
-            <div
+            <motion.div
               key={i}
-              className="flex-1 h-full transition-transform duration-300 group-hover:scale-y-105 origin-bottom"
-              style={{ backgroundColor: color.hex, transitionDelay: `${i * 30}ms` }}
+              className="flex-1 h-full"
+              style={{ backgroundColor: color.hex }}
+              whileHover={{ scaleY: 1.1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
             />
           ))}
         </div>
       );
     }
 
-    // Slogans
     if (asset.type === AssetType.Slogans && Array.isArray(asset.content)) {
       return (
-        <div className="w-full h-full p-5 flex flex-col justify-center bg-gradient-to-br from-primary/5 via-transparent to-accent/5">
-          <div className="text-primary/20 text-4xl font-serif mb-2">"</div>
+        <div className="w-full h-full p-5 flex flex-col justify-center bg-gradient-to-br from-violet-500/5 to-purple-500/5">
+          <div className="text-primary/30 text-4xl font-serif mb-2">"</div>
           <p className="text-sm font-medium text-foreground line-clamp-3 leading-relaxed">
             {(asset.content as string[])[0]}
           </p>
@@ -246,10 +260,9 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       );
     }
 
-    // Text content
     if (typeof asset.content === 'string') {
       return (
-        <div className="w-full h-full p-4 flex items-center justify-center bg-secondary/30">
+        <div className="w-full h-full p-4 flex items-center justify-center bg-gradient-to-br from-secondary/30 to-muted/30">
           <p className="text-xs text-muted-foreground line-clamp-5 text-center leading-relaxed">
             {asset.content.substring(0, 180)}...
           </p>
@@ -257,11 +270,10 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       );
     }
 
-    // Default placeholder
     return (
-      <div className="w-full h-full flex items-center justify-center bg-secondary/20">
-        <div className="w-12 h-12 rounded-xl bg-secondary/50 flex items-center justify-center">
-          <FileText className="w-6 h-6 text-muted-foreground" />
+      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/20 to-muted/20">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
+          <FileText className="w-7 h-7 text-muted-foreground" />
         </div>
       </div>
     );
@@ -270,11 +282,13 @@ const AssetGrid: React.FC<AssetGridProps> = ({
   const getAssetBadge = (asset: GeneratedAsset) => {
     const config = getAssetConfig(asset.type);
     if (!config) return null;
+    const category = getCategoryForAsset(asset.type);
+    const gradient = getCategoryGradient(category);
 
     if (config.printSpec) {
       return (
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-secondary/80 px-2 py-0.5 rounded-full">
-          <Printer className="w-3 h-3" />
+        <div className={cn("flex items-center gap-1 text-[10px] text-white px-2 py-0.5 rounded-full bg-gradient-to-r", gradient)}>
+          <Printer className="w-2.5 h-2.5" />
           <span>{config.printSpec.widthInches}" × {config.printSpec.heightInches}"</span>
         </div>
       );
@@ -282,8 +296,8 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 
     if (config.pixelWidth && config.pixelHeight) {
       return (
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-secondary/80 px-2 py-0.5 rounded-full">
-          <Monitor className="w-3 h-3" />
+        <div className={cn("flex items-center gap-1 text-[10px] text-white px-2 py-0.5 rounded-full bg-gradient-to-r", gradient)}>
+          <Monitor className="w-2.5 h-2.5" />
           <span>{config.pixelWidth}×{config.pixelHeight}</span>
         </div>
       );
@@ -291,8 +305,8 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 
     if (config.isTextBased) {
       return (
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-secondary/80 px-2 py-0.5 rounded-full">
-          <FileText className="w-3 h-3" />
+        <div className={cn("flex items-center gap-1 text-[10px] text-white px-2 py-0.5 rounded-full bg-gradient-to-r", gradient)}>
+          <FileText className="w-2.5 h-2.5" />
           <span>Text</span>
         </div>
       );
@@ -303,20 +317,30 @@ const AssetGrid: React.FC<AssetGridProps> = ({
 
   if (assets.length === 0) {
     return (
-      <div className="empty-state glass-card p-12">
-        <div className="empty-state-icon animate-float">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-primary/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-        </div>
-        <h3 className="text-lg font-semibold text-foreground mb-2">No assets yet</h3>
+      <motion.div 
+        className="flex flex-col items-center justify-center py-20 text-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
+        <motion.div 
+          className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-6"
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 3, repeat: Infinity }}
+        >
+          <Layers className="w-12 h-12 text-primary/50" />
+        </motion.div>
+        <h3 className="text-xl font-bold text-foreground mb-2">No assets yet</h3>
         <p className="text-muted-foreground mb-6 max-w-sm">Your generated assets will appear here. Go back to setup to create your first design kit.</p>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      className="space-y-5"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
       {/* Folder Tabs */}
       {folders.length > 0 && (
         <FolderTabs
@@ -340,176 +364,300 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       )}
 
       {/* Batch Selection Toolbar */}
-      {isSelectionMode && (
-        <div className="flex items-center gap-3 p-4 glass-card animate-fade-in">
-          <button onClick={clearSelection} className="p-2 rounded-lg hover:bg-secondary transition-colors" title="Cancel selection">
-            <X className="w-5 h-5 text-muted-foreground" />
-          </button>
-          <div className="flex items-center gap-2">
-            <button onClick={selectAll} className="btn-secondary text-sm px-3 py-1.5">
-              <CheckSquare className="w-4 h-4 mr-1" />
-              Select All
-            </button>
-            <span className="text-sm text-muted-foreground">{selectedIds.size} selected</span>
-          </div>
-          <div className="flex-1" />
-          <div className="flex items-center gap-2">
-            <button onClick={handleBatchFavorite} disabled={selectedIds.size === 0} className="btn-secondary text-sm px-3 py-1.5 disabled:opacity-50" title="Toggle favorite">
-              <Star className="w-4 h-4 mr-1" />
-              Favorite
-            </button>
-            <button onClick={handleBatchDownload} disabled={selectedIds.size === 0} className="btn-secondary text-sm px-3 py-1.5 disabled:opacity-50" title="Download all selected">
-              <Download className="w-4 h-4 mr-1" />
-              Download
-            </button>
-            <button onClick={handleBatchDelete} disabled={selectedIds.size === 0} className="btn-secondary text-sm px-3 py-1.5 text-destructive hover:bg-destructive/10 disabled:opacity-50" title="Delete selected">
-              <Trash2 className="w-4 h-4 mr-1" />
-              Delete
-            </button>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {isSelectionMode && (
+          <motion.div 
+            className="flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20"
+            initial={{ opacity: 0, y: -20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+          >
+            <motion.button 
+              onClick={clearSelection} 
+              className="p-2 rounded-xl hover:bg-secondary transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <X className="w-5 h-5 text-muted-foreground" />
+            </motion.button>
+            <div className="flex items-center gap-2">
+              <motion.button 
+                onClick={selectAll} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary/80 text-sm font-medium hover:bg-secondary transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <CheckSquare className="w-4 h-4" />
+                Select All
+              </motion.button>
+              <motion.span 
+                className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+                key={selectedIds.size}
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+              >
+                {selectedIds.size} selected
+              </motion.span>
+            </div>
+            <div className="flex-1" />
+            <div className="flex items-center gap-2">
+              <motion.button 
+                onClick={handleBatchFavorite} 
+                disabled={selectedIds.size === 0} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning/10 text-warning text-sm font-medium hover:bg-warning/20 transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Star className="w-4 h-4" />
+                Favorite
+              </motion.button>
+              <motion.button 
+                onClick={handleBatchDownload} 
+                disabled={selectedIds.size === 0} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 text-sm font-medium hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Download className="w-4 h-4" />
+                Download
+              </motion.button>
+              <motion.button 
+                onClick={handleBatchDelete} 
+                disabled={selectedIds.size === 0} 
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-destructive/10 text-destructive text-sm font-medium hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+      <motion.div 
+        className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
         {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative flex-1 max-w-md group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search assets..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-border bg-background/50 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+            className="w-full pl-11 pr-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm"
           />
+          <AnimatePresence>
+            {searchQuery && (
+              <motion.button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-secondary"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* View Toggle + Selection Mode + Create Folder */}
+        {/* View Toggle + Selection Mode */}
         <div className="flex items-center gap-2">
-          <button
+          <motion.button
             onClick={() => {
               setIsSelectionMode(!isSelectionMode);
               if (isSelectionMode) setSelectedIds(new Set());
             }}
-            className={`p-2 rounded-lg transition-colors ${isSelectionMode ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground'}`}
+            className={cn(
+              "p-2.5 rounded-xl transition-colors",
+              isSelectionMode 
+                ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg" 
+                : "bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground"
+            )}
             title="Toggle selection mode"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <CheckSquare className="w-4 h-4" />
-          </button>
-          <button
+          </motion.button>
+          
+          <motion.button
             onClick={() => setShowKeyboardShortcuts(true)}
-            className="p-2 rounded-lg bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            title="Keyboard shortcuts (?)"
+            className="p-2.5 rounded-xl bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Keyboard shortcuts"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             <Keyboard className="w-4 h-4" />
-          </button>
+          </motion.button>
+          
           {onCreateFolder && folders.length === 0 && (
-            <button
+            <motion.button
               onClick={() => {
                 const name = prompt('Enter folder name:');
                 if (name) onCreateFolder(name);
               }}
-              className="btn-secondary text-sm px-3 py-2"
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-secondary/50 hover:bg-secondary text-sm font-medium transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Plus className="w-4 h-4 mr-1" />
-              New Folder
-            </button>
+              <Plus className="w-4 h-4" />
+              Folder
+            </motion.button>
           )}
-          <div className="flex rounded-lg border border-border overflow-hidden">
-            <button
+          
+          <div className="flex rounded-xl border border-border overflow-hidden">
+            <motion.button
               onClick={() => setViewMode('grid')}
-              className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-secondary'}`}
+              className={cn(
+                "p-2.5 transition-colors",
+                viewMode === 'grid' 
+                  ? "bg-gradient-to-r from-primary to-accent text-white" 
+                  : "bg-background hover:bg-secondary"
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <LayoutGrid className="w-4 h-4" />
-            </button>
-            <button
+            </motion.button>
+            <motion.button
               onClick={() => setViewMode('list')}
-              className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'bg-background hover:bg-secondary'}`}
+              className={cn(
+                "p-2.5 transition-colors",
+                viewMode === 'list' 
+                  ? "bg-gradient-to-r from-primary to-accent text-white" 
+                  : "bg-background hover:bg-secondary"
+              )}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               <List className="w-4 h-4" />
-            </button>
+            </motion.button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Category Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">
-        <button
+      <motion.div 
+        className="flex gap-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <motion.button
           onClick={() => setActiveCategory('all')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors",
             activeCategory === 'all'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
-          }`}
+              ? "bg-gradient-to-r from-violet-500 via-primary to-cyan-500 text-white shadow-lg"
+              : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          )}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
-          All Assets
-          <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-            activeCategory === 'all' ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'
-          }`}>
+          <Layers className="w-4 h-4" />
+          All
+          <span className={cn(
+            "px-1.5 py-0.5 rounded-full text-xs",
+            activeCategory === 'all' ? "bg-white/20" : "bg-primary/10 text-primary"
+          )}>
             {getCategoryCount('all')}
           </span>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
           onClick={() => setActiveCategory('favorites')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+          className={cn(
+            "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors",
             activeCategory === 'favorites'
-              ? 'bg-warning text-warning-foreground shadow-sm'
-              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
-          }`}
+              ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg"
+              : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
+          )}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           <Star className="w-4 h-4" />
           Favorites
           {getCategoryCount('favorites') > 0 && (
-            <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-              activeCategory === 'favorites' ? 'bg-warning-foreground/20' : 'bg-warning/10 text-warning'
-            }`}>
+            <span className={cn(
+              "px-1.5 py-0.5 rounded-full text-xs",
+              activeCategory === 'favorites' ? "bg-white/20" : "bg-warning/10 text-warning"
+            )}>
               {getCategoryCount('favorites')}
             </span>
           )}
-        </button>
+        </motion.button>
 
         {categories.map(([key, cat]) => {
           const count = getCategoryCount(key);
           if (count === 0) return null;
+          const gradient = getCategoryGradient(key);
           
           return (
-            <button
+            <motion.button
               key={key}
               onClick={() => setActiveCategory(key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors",
                 activeCategory === key
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
-              }`}
+                  ? `bg-gradient-to-r ${gradient} text-white shadow-lg`
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              )}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               {cat.label}
-              <span className={`px-1.5 py-0.5 rounded-full text-xs ${
-                activeCategory === key ? 'bg-primary-foreground/20' : 'bg-primary/10 text-primary'
-              }`}>
+              <span className={cn(
+                "px-1.5 py-0.5 rounded-full text-xs",
+                activeCategory === key ? "bg-white/20" : "bg-primary/10 text-primary"
+              )}>
                 {count}
               </span>
-            </button>
+            </motion.button>
           );
         })}
-      </div>
+      </motion.div>
 
       {/* Results info */}
       {searchQuery && (
-        <p className="text-sm text-muted-foreground">
-          {filteredAssets.length} result{filteredAssets.length !== 1 ? 's' : ''} for "{searchQuery}"
-        </p>
+        <motion.p 
+          className="text-sm text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {filteredAssets.length} result{filteredAssets.length !== 1 ? 's' : ''} for "<span className="font-medium text-primary">{searchQuery}</span>"
+        </motion.p>
       )}
 
       {/* Grid View */}
       {viewMode === 'grid' && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 stagger-children">
-          {filteredAssets.map((asset) => {
+        <motion.div 
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          {filteredAssets.map((asset, index) => {
             const isSelected = selectedIds.has(asset.id);
+            const category = getCategoryForAsset(asset.type);
+            const gradient = getCategoryGradient(category);
+            
             return (
-              <div
+              <motion.div
                 key={asset.id}
-                className={`glass-card-hover group cursor-pointer overflow-hidden rounded-2xl transition-all ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+                className={cn(
+                  "group relative cursor-pointer overflow-hidden rounded-2xl border-2 transition-all bg-card",
+                  isSelected 
+                    ? "border-primary ring-2 ring-primary/30" 
+                    : "border-border/50 hover:border-primary/30"
+                )}
                 onClick={() => {
                   if (isSelectionMode) {
                     toggleSelection(asset.id);
@@ -517,221 +665,161 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                     onView(asset);
                   }
                 }}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: index * 0.02, type: "spring", stiffness: 300, damping: 25 }}
+                whileHover={{ y: -4, scale: 1.02 }}
+                layout
               >
                 {/* Preview */}
-                <div className="aspect-square overflow-hidden relative bg-secondary/20">
+                <div className="aspect-square overflow-hidden relative">
                   {getAssetPreview(asset)}
                   
                   {/* Selection checkbox */}
                   {isSelectionMode && !asset.isLoading && (
-                    <button
+                    <motion.button
                       onClick={(e) => { e.stopPropagation(); toggleSelection(asset.id); }}
-                      className={`absolute top-3 left-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all z-10 ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-muted-foreground hover:bg-white'}`}
+                      className={cn(
+                        "absolute top-3 left-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all z-10 shadow-lg",
+                        isSelected 
+                          ? "bg-gradient-to-r from-primary to-accent text-white" 
+                          : "bg-white/90 backdrop-blur-sm text-muted-foreground hover:bg-white"
+                      )}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                     >
                       {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                    </button>
+                    </motion.button>
                   )}
                   
-                  {/* Hover overlay - only when not in selection mode */}
+                  {/* Hover overlay */}
                   {!asset.isLoading && !isSelectionMode && (
-                    <div className="absolute inset-0 bg-white/90 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2 flex-wrap p-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onView(asset); }}
-                        className="w-9 h-9 rounded-xl bg-secondary/80 hover:bg-secondary flex items-center justify-center text-foreground transition-all hover:scale-110 shadow-md"
-                        title="View"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
-                        className="w-9 h-9 rounded-xl bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-all hover:scale-110 shadow-md"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
+                    <motion.div 
+                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4 gap-2"
+                      initial={false}
+                    >
+                      <ActionButton icon={Eye} onClick={() => onView(asset)} title="View" />
+                      <ActionButton icon={Pencil} onClick={() => onEdit(asset)} title="Edit" gradient="from-violet-500 to-purple-500" />
                       {onDuplicate && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onDuplicate(asset); }}
-                          className="w-9 h-9 rounded-xl bg-violet-500/10 hover:bg-violet-500/20 flex items-center justify-center text-violet-600 transition-all hover:scale-110 shadow-md"
-                          title="Duplicate"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
+                        <ActionButton icon={Copy} onClick={() => onDuplicate(asset)} title="Duplicate" gradient="from-cyan-500 to-blue-500" />
                       )}
                       {onRegenerate && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); onRegenerate(asset); }}
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-110 shadow-md relative ${
-                            supportsAIGeneration(asset.type) 
-                              ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-600'
-                              : 'bg-blue-500/10 hover:bg-blue-500/20 text-blue-600'
-                          }`}
-                          title={supportsAIGeneration(asset.type) ? 'Regenerate with AI' : 'Regenerate'}
-                        >
-                          {supportsAIGeneration(asset.type) ? (
-                            <Sparkles className="w-4 h-4" />
-                          ) : (
-                            <RefreshCw className="w-4 h-4" />
-                          )}
-                        </button>
+                        <ActionButton 
+                          icon={supportsAIGeneration(asset.type) ? Sparkles : RefreshCw} 
+                          onClick={() => onRegenerate(asset)} 
+                          title="Regenerate"
+                          gradient={supportsAIGeneration(asset.type) ? "from-pink-500 to-rose-500" : undefined}
+                        />
                       )}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
-                        className="w-9 h-9 rounded-xl bg-green-500/10 hover:bg-green-500/20 flex items-center justify-center text-green-600 transition-all hover:scale-110 shadow-md"
-                        title="Download"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                      {onMoveToFolder && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setMovingAsset(asset); }}
-                          className="w-9 h-9 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 flex items-center justify-center text-purple-600 transition-all hover:scale-110 shadow-md"
-                          title="Move to Folder"
-                        >
-                          <FolderOpen className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }}
-                        className="w-9 h-9 rounded-xl bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center text-destructive transition-all hover:scale-110 shadow-md"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
+                      <ActionButton icon={Download} onClick={() => setDownloadingAsset(asset)} title="Download" gradient="from-emerald-500 to-green-500" />
+                      <ActionButton icon={Trash2} onClick={() => onDelete(asset.id)} title="Delete" gradient="from-red-500 to-orange-500" />
+                    </motion.div>
                   )}
 
-                {/* Favorite badge */}
-                {asset.isFavorite && (
-                  <div className="absolute top-3 right-3 w-7 h-7 rounded-full bg-warning/90 backdrop-blur-sm flex items-center justify-center shadow-lg">
-                    <Star className="w-4 h-4 text-warning-foreground fill-current" />
-                  </div>
-                )}
+                  {/* Favorite badge */}
+                  {asset.isFavorite && (
+                    <motion.div 
+                      className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                    >
+                      <Star className="w-4 h-4 text-white fill-current" />
+                    </motion.div>
+                  )}
 
-                {/* Spec badge */}
-                <div className="absolute bottom-3 left-3">
-                  {getAssetBadge(asset)}
+                  {/* Spec badge */}
+                  <div className="absolute bottom-3 left-3">
+                    {getAssetBadge(asset)}
+                  </div>
                 </div>
 
-                {/* Loading indicator */}
-                {asset.isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-sm">
-                    <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-              </div>
-
-              {/* Title */}
-              <div className="p-4 flex items-center justify-between bg-white/50">
-                <span className="text-sm font-medium text-foreground truncate">{asset.title}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onToggleFavorite(asset); }}
-                  className={`p-1.5 rounded-lg transition-all ${asset.isFavorite ? 'text-warning bg-warning/10' : 'text-muted-foreground hover:text-warning hover:bg-warning/10'}`}
-                >
-                  <Star className={`w-4 h-4 ${asset.isFavorite ? 'fill-current' : ''}`} />
-                </button>
-              </div>
-            </div>
-          );
+                {/* Title */}
+                <div className="p-3 flex items-center justify-between bg-gradient-to-r from-card to-card/50">
+                  <span className="text-sm font-semibold text-foreground truncate">{asset.title}</span>
+                  <motion.button
+                    onClick={(e) => { e.stopPropagation(); onToggleFavorite(asset); }}
+                    className={cn(
+                      "p-1.5 rounded-lg transition-all",
+                      asset.isFavorite 
+                        ? "text-amber-500 bg-amber-500/10" 
+                        : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                    )}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <Star className={cn("w-4 h-4", asset.isFavorite && "fill-current")} />
+                  </motion.button>
+                </div>
+              </motion.div>
+            );
           })}
-        </div>
+        </motion.div>
       )}
 
       {/* List View */}
       {viewMode === 'list' && (
-        <div className="space-y-2">
-          {filteredAssets.map((asset) => {
+        <motion.div 
+          className="space-y-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          {filteredAssets.map((asset, index) => {
             const config = getAssetConfig(asset.type);
+            const category = getCategoryForAsset(asset.type);
+            const gradient = getCategoryGradient(category);
+            const isSelected = selectedIds.has(asset.id);
             
             return (
-              <div
+              <motion.div
                 key={asset.id}
-                className="glass-card-hover flex items-center gap-4 p-4 rounded-xl cursor-pointer"
-                onClick={() => !asset.isLoading && onView(asset)}
+                className={cn(
+                  "flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all bg-card",
+                  isSelected 
+                    ? "border-primary ring-2 ring-primary/30" 
+                    : "border-border/50 hover:border-primary/30"
+                )}
+                onClick={() => {
+                  if (isSelectionMode) {
+                    toggleSelection(asset.id);
+                  } else if (!asset.isLoading) {
+                    onView(asset);
+                  }
+                }}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.02 }}
+                whileHover={{ x: 4 }}
               >
                 {/* Thumbnail */}
-                <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-secondary/20">
-                  {asset.isLoading ? (
-                    <div className="w-full h-full shimmer" />
-                  ) : typeof asset.content === 'string' && asset.content.startsWith('data:image') ? (
-                    <img src={asset.content} alt={asset.title} className="w-full h-full object-cover" />
-                  ) : asset.type === AssetType.Palette && Array.isArray(asset.content) ? (
-                    <div className="w-full h-full flex">
-                      {(asset.content as ColorInfo[]).slice(0, 4).map((c, i) => (
-                        <div key={i} className="flex-1 h-full" style={{ backgroundColor: c.hex }} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                  )}
+                <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 border border-border/50">
+                  {getAssetPreview(asset)}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium text-foreground truncate">{asset.title}</h4>
-                    {asset.isFavorite && <Star className="w-4 h-4 text-warning fill-current flex-shrink-0" />}
+                    <h4 className="font-semibold text-foreground truncate">{asset.title}</h4>
+                    {asset.isFavorite && <Star className="w-4 h-4 text-amber-500 fill-current flex-shrink-0" />}
                   </div>
                   <p className="text-sm text-muted-foreground truncate">{config?.description}</p>
-                  <div className="mt-1">{getAssetBadge(asset)}</div>
                 </div>
 
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
-                    className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                    title="Edit"
-                  >
-                    <Pencil className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                  {onRegenerate && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onRegenerate(asset); }}
-                      className="p-2 rounded-lg hover:bg-blue-500/10 transition-colors"
-                      title="Regenerate"
-                    >
-                      <RefreshCw className="w-4 h-4 text-muted-foreground hover:text-blue-600" />
-                    </button>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setDownloadingAsset(asset); }}
-                    className="p-2 rounded-lg hover:bg-green-500/10 transition-colors"
-                    title="Download"
-                  >
-                    <Download className="w-4 h-4 text-muted-foreground hover:text-green-600" />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onToggleFavorite(asset); }}
-                    className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                    title="Favorite"
-                  >
-                    <Star className={`w-4 h-4 ${asset.isFavorite ? 'text-warning fill-current' : 'text-muted-foreground'}`} />
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(asset.id); }}
-                    className="p-2 rounded-lg hover:bg-destructive/10 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                  </button>
+                {/* Badge */}
+                {getAssetBadge(asset)}
+
+                {/* Actions */}
+                <div className="flex items-center gap-1">
+                  <ActionButton icon={Eye} onClick={() => onView(asset)} title="View" size="sm" />
+                  <ActionButton icon={Pencil} onClick={() => onEdit(asset)} title="Edit" size="sm" />
+                  <ActionButton icon={Download} onClick={() => setDownloadingAsset(asset)} title="Download" size="sm" />
+                  <ActionButton icon={Trash2} onClick={() => onDelete(asset.id)} title="Delete" size="sm" />
                 </div>
-              </div>
+              </motion.div>
             );
           })}
-        </div>
-      )}
-
-      {/* Empty filtered state */}
-      {filteredAssets.length === 0 && assets.length > 0 && (
-        <div className="text-center py-12">
-          <Filter className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No matching assets</h3>
-          <p className="text-sm text-muted-foreground">
-            Try adjusting your search or category filter
-          </p>
-        </div>
+        </motion.div>
       )}
 
       {/* Download Modal */}
@@ -744,67 +832,97 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       )}
 
       {/* Move to Folder Modal */}
-      {movingAsset && onMoveToFolder && onCreateFolder && (
+      {movingAsset && onMoveToFolder && (
         <MoveToFolderModal
           isOpen={!!movingAsset}
-          onClose={() => setMovingAsset(null)}
           folders={folders}
           onMove={(folderId) => {
             onMoveToFolder(movingAsset.id, folderId);
             setMovingAsset(null);
           }}
-          onCreateFolder={onCreateFolder}
+          onClose={() => setMovingAsset(null)}
+          onCreateFolder={onCreateFolder || (() => {})}
         />
       )}
 
       {/* Keyboard Shortcuts Modal */}
-      {showKeyboardShortcuts && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-[70] p-4 animate-fade-in" onClick={() => setShowKeyboardShortcuts(false)}>
-          <div className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md animate-scale-in" onClick={e => e.stopPropagation()}>
-            <header className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <Keyboard className="w-5 h-5" />
-                Keyboard Shortcuts
-              </h2>
-              <button onClick={() => setShowKeyboardShortcuts(false)} className="text-muted-foreground hover:text-foreground">
-                <X className="w-5 h-5" />
-              </button>
-            </header>
-            <div className="p-4 space-y-3">
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-foreground">Toggle keyboard shortcuts</span>
-                <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">?</kbd>
+      <AnimatePresence>
+        {showKeyboardShortcuts && (
+          <>
+            <motion.div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowKeyboardShortcuts(false)}
+            />
+            <motion.div 
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl z-50 p-6"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-foreground">Keyboard Shortcuts</h3>
+                <motion.button 
+                  onClick={() => setShowKeyboardShortcuts(false)}
+                  className="p-2 rounded-xl hover:bg-secondary"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <X className="w-5 h-5" />
+                </motion.button>
               </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-foreground">Exit selection mode</span>
-                <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">Esc</kbd>
+              <div className="space-y-3">
+                {[
+                  { keys: ['Ctrl', 'A'], desc: 'Select all visible assets' },
+                  { keys: ['Esc'], desc: 'Exit selection mode' },
+                  { keys: ['Delete'], desc: 'Delete selected assets' },
+                  { keys: ['?'], desc: 'Show this help' },
+                ].map((shortcut, idx) => (
+                  <div key={idx} className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">{shortcut.desc}</span>
+                    <div className="flex gap-1">
+                      {shortcut.keys.map((key, i) => (
+                        <kbd key={i} className="px-2 py-1 rounded-lg bg-secondary text-xs font-mono font-bold">{key}</kbd>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-foreground">Select all (in selection mode)</span>
-                <div className="flex gap-1">
-                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">⌘</kbd>
-                  <span className="text-muted-foreground">+</span>
-                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">A</kbd>
-                </div>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-foreground">Delete selected</span>
-                <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">Delete</kbd>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-sm text-foreground">Undo (in editors)</span>
-                <div className="flex gap-1">
-                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">⌘</kbd>
-                  <span className="text-muted-foreground">+</span>
-                  <kbd className="px-2 py-1 bg-secondary rounded text-xs font-mono">Z</kbd>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
+
+// Action Button Component
+interface ActionButtonProps {
+  icon: React.ComponentType<{ className?: string }>;
+  onClick: () => void;
+  title: string;
+  gradient?: string;
+  size?: 'sm' | 'md';
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({ icon: Icon, onClick, title, gradient, size = 'md' }) => (
+  <motion.button
+    onClick={(e) => { e.stopPropagation(); onClick(); }}
+    className={cn(
+      "rounded-xl flex items-center justify-center transition-all shadow-lg",
+      size === 'sm' ? "w-8 h-8" : "w-9 h-9",
+      gradient 
+        ? `bg-gradient-to-r ${gradient} text-white` 
+        : "bg-white/90 backdrop-blur-sm text-foreground hover:bg-white"
+    )}
+    title={title}
+    whileHover={{ scale: 1.1, y: -2 }}
+    whileTap={{ scale: 0.9 }}
+  >
+    <Icon className={size === 'sm' ? "w-3.5 h-3.5" : "w-4 h-4"} />
+  </motion.button>
+);
 
 export default AssetGrid;

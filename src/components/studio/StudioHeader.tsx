@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
   Save, 
@@ -14,15 +15,15 @@ import {
   Video,
   LogIn,
   LogOut,
-  User,
   Cloud,
-  CloudOff,
   LayoutDashboard,
   Settings2,
   Package,
-  Printer,
+  Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 
 interface StudioHeaderProps {
   eventName: string;
@@ -104,29 +105,52 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 frosted-panel border-b border-border/50">
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
+    <motion.header 
+      className="sticky top-0 z-30 border-b border-border/30 bg-background/80 backdrop-blur-xl"
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
+      {/* Gradient accent line */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
+      
+      <div className="container mx-auto px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between gap-4">
           {/* Left: Back + Event Info */}
-          <div className="flex items-center gap-5">
-            <button
+          <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+            <motion.button
               onClick={onBackToSetup}
-              className="btn-ghost group"
+              className="group flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
+              whileHover={{ x: -2 }}
+              whileTap={{ scale: 0.95 }}
             >
-              <ArrowLeft className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-0.5" />
-              Setup
-            </button>
-            <div className="h-8 w-px bg-border/60" />
-            <div>
-              <h1 className="text-xl font-semibold text-foreground tracking-tight">{eventName || 'Your Event'}</h1>
-              <p className="text-sm text-muted-foreground">
-                {assetCount} asset{assetCount !== 1 ? 's' : ''} created
-              </p>
+              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+              <span className="hidden sm:inline">Setup</span>
+            </motion.button>
+            
+            <div className="h-8 w-px bg-border/60 hidden sm:block" />
+            
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground tracking-tight truncate max-w-[150px] sm:max-w-[250px]">
+                  {eventName || 'Your Event'}
+                </h1>
+                <motion.div 
+                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20"
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+                  <span className="text-xs font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    {assetCount} assets
+                  </span>
+                </motion.div>
+              </div>
             </div>
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Hidden file input for loading projects */}
             <input
               ref={fileInputRef}
@@ -138,234 +162,298 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
 
             {/* Undo/Redo */}
             {(onUndo || onRedo) && (
-              <div className="hidden sm:flex items-center gap-1 mr-2">
-                <button
+              <div className="hidden sm:flex items-center gap-0.5 mr-1">
+                <motion.button
                   onClick={onUndo}
                   disabled={!canUndo}
-                  className="btn-ghost p-2 disabled:opacity-30"
+                  className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Undo (Ctrl+Z)"
+                  whileHover={canUndo ? { scale: 1.05 } : undefined}
+                  whileTap={canUndo ? { scale: 0.95 } : undefined}
                 >
                   <Undo2 className="w-4 h-4" />
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   onClick={onRedo}
                   disabled={!canRedo}
-                  className="btn-ghost p-2 disabled:opacity-30"
+                  className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   title="Redo (Ctrl+Y)"
+                  whileHover={canRedo ? { scale: 1.05 } : undefined}
+                  whileTap={canRedo ? { scale: 0.95 } : undefined}
                 >
                   <Redo2 className="w-4 h-4" />
-                </button>
+                </motion.button>
               </div>
             )}
 
             {/* Quick Actions */}
-            <button
+            <motion.button
               onClick={onAddMoreAssets}
-              className="btn-ghost hidden sm:flex items-center gap-2"
-              title="Add more assets"
+              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden md:inline">Add Assets</span>
-            </button>
+              <span className="hidden md:inline">Add</span>
+            </motion.button>
 
-            <button
+            <motion.button
               onClick={onOpenQRGenerator}
-              className="btn-ghost hidden sm:flex items-center gap-2"
-              title="Generate QR Code"
+              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               <QrCode className="w-4 h-4" />
-              <span className="hidden md:inline">QR Code</span>
-            </button>
+              <span className="hidden xl:inline">QR</span>
+            </motion.button>
 
             {onOpenVideoGenerator && (
-              <button
+              <motion.button
                 onClick={onOpenVideoGenerator}
-                className="btn-ghost hidden sm:flex items-center gap-2"
-                title="Generate Video Teaser"
+                className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Video className="w-4 h-4" />
-                <span className="hidden md:inline">Video</span>
-              </button>
+                <span className="hidden xl:inline">Video</span>
+              </motion.button>
             )}
 
             {onOpenDashboard && (
-              <button
+              <motion.button
                 onClick={onOpenDashboard}
-                className="btn-ghost hidden sm:flex items-center gap-2"
-                title="Event Dashboard"
+                className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-foreground bg-secondary/50 hover:bg-secondary transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden md:inline">Dashboard</span>
-              </button>
+              </motion.button>
             )}
-
-            <div className="h-6 w-px bg-border/60 hidden sm:block" />
 
             {/* More Menu */}
             <div className="relative">
-              <button
+              <motion.button
                 onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className="btn-ghost p-2"
-                title="More options"
+                className={cn(
+                  "p-2 rounded-xl transition-colors",
+                  showMoreMenu 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-secondary/50 hover:bg-secondary text-foreground"
+                )}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <MoreHorizontal className="w-5 h-5" />
-              </button>
+              </motion.button>
 
-              {showMoreMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setShowMoreMenu(false)} 
-                  />
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-xl z-50 py-2 animate-scale-in">
-                    <button
-                      onClick={() => { onExportBrandGuide(); setShowMoreMenu(false); }}
-                      disabled={isGeneratingGuide}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+              <AnimatePresence>
+                {showMoreMenu && (
+                  <>
+                    <motion.div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setShowMoreMenu(false)}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    />
+                    <motion.div 
+                      className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-2xl shadow-2xl z-50 py-2 overflow-hidden"
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     >
-                      {isGeneratingGuide ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <FileText className="w-4 h-4 text-primary" />
+                      {/* Gradient accent */}
+                      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
+                      
+                      <MenuItem
+                        icon={FileText}
+                        label="Export Brand Guide"
+                        onClick={() => { onExportBrandGuide(); setShowMoreMenu(false); }}
+                        isLoading={isGeneratingGuide}
+                        gradient="from-violet-500 to-purple-500"
+                      />
+                      
+                      <MenuItem
+                        icon={QrCode}
+                        label="Generate QR Code"
+                        onClick={() => { onOpenQRGenerator(); setShowMoreMenu(false); }}
+                        className="lg:hidden"
+                        gradient="from-cyan-500 to-blue-500"
+                      />
+                      
+                      <MenuItem
+                        icon={Plus}
+                        label="Add More Assets"
+                        onClick={() => { onAddMoreAssets(); setShowMoreMenu(false); }}
+                        className="sm:hidden"
+                        gradient="from-emerald-500 to-green-500"
+                      />
+                      
+                      {onOpenAdvancedExport && (
+                        <MenuItem
+                          icon={Settings2}
+                          label="Advanced Export"
+                          onClick={() => { onOpenAdvancedExport(); setShowMoreMenu(false); }}
+                          gradient="from-orange-500 to-amber-500"
+                        />
                       )}
-                      Export Brand Style Guide
-                    </button>
-                    <button
-                      onClick={() => { onOpenQRGenerator(); setShowMoreMenu(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors sm:hidden"
-                    >
-                      <QrCode className="w-4 h-4 text-primary" />
-                      Generate QR Code
-                    </button>
-                    <button
-                      onClick={() => { onAddMoreAssets(); setShowMoreMenu(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors sm:hidden"
-                    >
-                      <Plus className="w-4 h-4 text-primary" />
-                      Add More Assets
-                    </button>
-                    {onOpenAdvancedExport && (
-                      <button
-                        onClick={() => { onOpenAdvancedExport(); setShowMoreMenu(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
-                      >
-                        <Settings2 className="w-4 h-4 text-primary" />
-                        Advanced Export
-                      </button>
-                    )}
-                    {onOpenBatchPrintExport && (
-                      <button
-                        onClick={() => { onOpenBatchPrintExport(); setShowMoreMenu(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
-                      >
-                        <Package className="w-4 h-4 text-primary" />
-                        Batch Print Export
-                      </button>
-                    )}
-                    {onOpenDashboard && (
-                      <button
-                        onClick={() => { onOpenDashboard(); setShowMoreMenu(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors sm:hidden"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-primary" />
-                        Event Dashboard
-                      </button>
-                    )}
-                    <div className="h-px bg-border my-2" />
-                    <button
-                      onClick={() => { fileInputRef.current?.click(); setShowMoreMenu(false); }}
-                      disabled={isLoadingProject}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
-                    >
-                      {isLoadingProject ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Upload className="w-4 h-4 text-muted-foreground" />
+                      
+                      {onOpenBatchPrintExport && (
+                        <MenuItem
+                          icon={Package}
+                          label="Batch Print Export"
+                          onClick={() => { onOpenBatchPrintExport(); setShowMoreMenu(false); }}
+                          gradient="from-pink-500 to-rose-500"
+                        />
                       )}
-                      Load Project
-                    </button>
-                    <button
-                      onClick={() => { onSave(); setShowMoreMenu(false); }}
-                      disabled={isExporting}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
-                    >
-                      <Save className="w-4 h-4 text-muted-foreground" />
-                      Save Project
-                    </button>
-                  </div>
-                </>
-              )}
+                      
+                      {onOpenDashboard && (
+                        <MenuItem
+                          icon={LayoutDashboard}
+                          label="Event Dashboard"
+                          onClick={() => { onOpenDashboard(); setShowMoreMenu(false); }}
+                          className="lg:hidden"
+                          gradient="from-indigo-500 to-violet-500"
+                        />
+                      )}
+                      
+                      <div className="h-px bg-border my-2 mx-3" />
+                      
+                      <MenuItem
+                        icon={Upload}
+                        label="Load Project"
+                        onClick={() => { fileInputRef.current?.click(); setShowMoreMenu(false); }}
+                        isLoading={isLoadingProject}
+                      />
+                      
+                      <MenuItem
+                        icon={Save}
+                        label="Save Project"
+                        onClick={() => { onSave(); setShowMoreMenu(false); }}
+                        isLoading={isExporting}
+                      />
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
+
+            <div className="h-6 w-px bg-border/60 hidden sm:block" />
 
             {/* Cloud Save */}
             {isAuthenticated && onSaveToCloud && (
-              <button
+              <motion.button
                 onClick={onSaveToCloud}
                 disabled={isSavingToCloud}
-                className="btn-ghost hidden sm:flex items-center gap-2"
-                title="Save to Cloud"
+                className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 text-cyan-600 hover:from-cyan-500/20 hover:to-blue-500/20 transition-colors disabled:opacity-50"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 {isSavingToCloud ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Cloud className="w-4 h-4 text-primary" />
+                  <Cloud className="w-4 h-4" />
                 )}
                 <span className="hidden md:inline">Cloud</span>
-              </button>
+              </motion.button>
             )}
 
             {/* Auth Button */}
             {isAuthenticated ? (
               <div className="hidden sm:flex items-center gap-2">
-                <span className="text-sm text-muted-foreground truncate max-w-[100px]">
+                <span className="text-xs text-muted-foreground truncate max-w-[80px]">
                   {user?.email?.split('@')[0]}
                 </span>
-                <button
+                <motion.button
                   onClick={signOut}
-                  className="btn-ghost p-2"
+                  className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                   title="Sign Out"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <LogOut className="w-4 h-4" />
-                </button>
+                </motion.button>
               </div>
             ) : onOpenAuth && (
-              <button
+              <motion.button
                 onClick={onOpenAuth}
-                className="btn-ghost hidden sm:flex items-center gap-2"
+                className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <LogIn className="w-4 h-4" />
                 <span className="hidden md:inline">Sign In</span>
-              </button>
+              </motion.button>
             )}
 
-            <div className="h-6 w-px bg-border/60 hidden sm:block" />
-
-            {/* Primary Actions */}
-            <button
-              onClick={onSave}
-              disabled={isExporting}
-              className="btn-secondary hidden sm:flex items-center gap-2"
-            >
-              {isExporting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4" />
-              )}
-              Save
-            </button>
-            <button
+            {/* Primary Download Button */}
+            <motion.button
               onClick={onDownloadAll}
               disabled={assetCount === 0}
-              className="btn-primary flex items-center gap-2"
+              className={cn(
+                "relative flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all",
+                "bg-gradient-to-r from-violet-500 via-primary to-cyan-500 text-white",
+                "shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30",
+                "disabled:opacity-50 disabled:cursor-not-allowed"
+              )}
+              whileHover={assetCount > 0 ? { scale: 1.02, y: -1 } : undefined}
+              whileTap={assetCount > 0 ? { scale: 0.98 } : undefined}
             >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Download All</span>
-            </button>
+              {/* Shimmer effect */}
+              <motion.div
+                className="absolute inset-0 rounded-xl overflow-hidden"
+                initial={false}
+              >
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                />
+              </motion.div>
+              
+              <Download className="w-4 h-4 relative" />
+              <span className="hidden sm:inline relative">Download All</span>
+            </motion.button>
           </div>
         </div>
       </div>
-    </header>
+    </motion.header>
   );
 };
+
+// Menu Item Component
+interface MenuItemProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  isLoading?: boolean;
+  gradient?: string;
+  className?: string;
+}
+
+const MenuItem: React.FC<MenuItemProps> = ({ icon: Icon, label, onClick, isLoading, gradient, className }) => (
+  <motion.button
+    onClick={onClick}
+    disabled={isLoading}
+    className={cn(
+      "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-secondary/80 transition-colors disabled:opacity-50",
+      className
+    )}
+    whileHover={{ x: 4 }}
+  >
+    {isLoading ? (
+      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+    ) : (
+      <div className={cn(
+        "w-7 h-7 rounded-lg flex items-center justify-center",
+        gradient ? `bg-gradient-to-br ${gradient} text-white` : "bg-secondary text-muted-foreground"
+      )}>
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+    )}
+    <span className="font-medium">{label}</span>
+  </motion.button>
+);
 
 export default StudioHeader;
