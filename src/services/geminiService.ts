@@ -1,6 +1,6 @@
 // AI Service for Event Design Kit Generator
-// Provides text refinement, color analysis, and image editing capabilities
-import type { ColorInfo, GeneratedAsset } from '../types';
+// Provides text refinement, color analysis, image analysis, and image editing capabilities
+import type { ColorInfo, GeneratedAsset, ImageAnalysis } from '../types';
 import { AssetType } from '../types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -734,4 +734,93 @@ export const generateAIPalette = async (
   const fallbackColors = ['#667eea', '#764ba2', '#f093fb', '#43e97b', '#1f2937'];
   const colorPromises = fallbackColors.map(hex => getColorDetails(hex));
   return await Promise.all(colorPromises);
+};
+
+// Comprehensive image analysis for reference images
+export const analyzeReferenceImage = async (
+  imageBase64: string,
+  eventName?: string,
+  eventDescription?: string
+): Promise<ImageAnalysis | null> => {
+  if (!USE_AI_GENERATION) {
+    console.log('AI generation disabled, skipping image analysis');
+    return null;
+  }
+
+  try {
+    console.log('Analyzing reference image for comprehensive style extraction...');
+
+    const { data, error } = await supabase.functions.invoke('analyze-reference-image', {
+      body: {
+        imageBase64,
+        eventName,
+        eventDescription,
+      },
+    });
+
+    if (error) throw error;
+    
+    if (data?.analysis) {
+      console.log('Image analysis complete:', {
+        style: data.analysis.designStyle,
+        mood: data.analysis.mood,
+        confidence: data.analysis.analysisConfidence
+      });
+      return data.analysis as ImageAnalysis;
+    }
+
+    return null;
+  } catch (e) {
+    console.error('Reference image analysis failed:', e);
+    return null;
+  }
+};
+
+// Build enhanced style description from image analysis
+export const buildEnhancedStyleDescription = (
+  analysis: ImageAnalysis,
+  baseStyleDescription?: string
+): string => {
+  const parts: string[] = [];
+  
+  if (baseStyleDescription) {
+    parts.push(baseStyleDescription);
+  }
+  
+  // Add design style
+  if (analysis.designStyle) {
+    parts.push(`${analysis.designStyle} design style`);
+  }
+  
+  // Add mood and atmosphere
+  if (analysis.mood && analysis.atmosphere) {
+    parts.push(`${analysis.mood} mood with ${analysis.atmosphere} atmosphere`);
+  }
+  
+  // Add aesthetic keywords
+  if (analysis.aestheticKeywords?.length > 0) {
+    parts.push(`aesthetic: ${analysis.aestheticKeywords.join(', ')}`);
+  }
+  
+  // Add texture and pattern info
+  if (analysis.textures?.length > 0) {
+    parts.push(`textures: ${analysis.textures.join(', ')}`);
+  }
+  
+  // Add typography guidance
+  if (analysis.typographyStyle) {
+    parts.push(`typography: ${analysis.typographyStyle}`);
+  }
+  
+  // Add prompt enhancements
+  if (analysis.promptEnhancements?.length > 0) {
+    parts.push(analysis.promptEnhancements.join(', '));
+  }
+  
+  return parts.join('. ');
+};
+
+// Get elements to avoid from analysis
+export const getAvoidElements = (analysis: ImageAnalysis): string[] => {
+  return analysis.avoidElements || [];
 };

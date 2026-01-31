@@ -460,3 +460,42 @@ export interface GeneratedLogoVariation {
   feedback: 'liked' | 'disliked' | null;
   title?: string;
 }
+
+// Comprehensive image analysis for reference images
+export interface ImageAnalysis {
+  // Color analysis
+  dominantColors: string[];
+  colorMood: string;
+  colorHarmony: string;
+  
+  // Style analysis
+  designStyle: string;
+  aestheticKeywords: string[];
+  era: string;
+  
+  // Mood & atmosphere
+  mood: string;
+  atmosphere: string;
+  emotionalTone: string;
+  
+  // Visual elements
+  patterns: string[];
+  textures: string[];
+  shapes: string;
+  
+  // Typography suggestions
+  typographyStyle: string;
+  typographyMood: string;
+  
+  // Layout characteristics
+  composition: string;
+  whitespace: string;
+  visualWeight: string;
+  
+  // Generation guidance
+  promptEnhancements: string[];
+  avoidElements: string[];
+  
+  // Confidence
+  analysisConfidence: number;
+}

@@ -12,6 +12,7 @@ export {
   type AssetFolder,
   type LogoGenerationOptions,
   type GeneratedLogoVariation,
+  type ImageAnalysis,
 } from './asset.types';
 
 // Event types  
