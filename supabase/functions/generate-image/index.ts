@@ -5,6 +5,29 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+interface ImageAnalysis {
+  dominantColors: string[];
+  colorMood: string;
+  colorHarmony: string;
+  designStyle: string;
+  aestheticKeywords: string[];
+  era: string;
+  mood: string;
+  atmosphere: string;
+  emotionalTone: string;
+  patterns: string[];
+  textures: string[];
+  shapes: string;
+  typographyStyle: string;
+  typographyMood: string;
+  composition: string;
+  whitespace: string;
+  visualWeight: string;
+  promptEnhancements: string[];
+  avoidElements: string[];
+  analysisConfidence: number;
+}
+
 interface GenerateImageRequest {
   assetType: string;
   eventName: string;
@@ -16,10 +39,11 @@ interface GenerateImageRequest {
   incorporateLocationStyle?: boolean;
   vibeImageBase64?: string;
   masterPatternBase64?: string;
-  venueImageBase64?: string; // User's actual venue photo for realistic compositing
-  renderMode?: 'design' | 'mockup' | 'hyperrealistic'; // Control realism level
-  isPrintAsset?: boolean; // Flag for print-optimized generation
-  printDPI?: number; // Target DPI for print (300+ recommended)
+  venueImageBase64?: string;
+  renderMode?: 'design' | 'mockup' | 'hyperrealistic';
+  isPrintAsset?: boolean;
+  printDPI?: number;
+  imageAnalysis?: ImageAnalysis; // Comprehensive analysis from reference image
 }
 
 // Print asset categories for automatic detection
@@ -334,7 +358,8 @@ serve(async (req) => {
       vibeImageBase64,
       masterPatternBase64,
       venueImageBase64,
-      renderMode = 'hyperrealistic' // Default to hyperrealistic for maximum quality
+      renderMode = 'hyperrealistic',
+      imageAnalysis // Comprehensive analysis from reference image
     } = body;
 
     // Determine which prompt to use based on render mode
@@ -424,6 +449,38 @@ ${styleDescription}
 Follow these style guidelines precisely.`
       : '';
 
+    // Build comprehensive image analysis instructions
+    const analysisInstructions = imageAnalysis && imageAnalysis.analysisConfidence > 0.5 ? `
+IMAGE ANALYSIS - DESIGN INTELLIGENCE FROM REFERENCE:
+The reference image has been analyzed in detail. Apply these findings:
+
+DESIGN STYLE: ${imageAnalysis.designStyle}
+ERA/PERIOD: ${imageAnalysis.era}
+MOOD: ${imageAnalysis.mood} | ATMOSPHERE: ${imageAnalysis.atmosphere}
+EMOTIONAL TONE: ${imageAnalysis.emotionalTone}
+
+VISUAL CHARACTERISTICS:
+- Aesthetic Keywords: ${imageAnalysis.aestheticKeywords?.join(', ') || 'modern, professional'}
+- Shapes: ${imageAnalysis.shapes || 'mixed'}
+- Patterns: ${imageAnalysis.patterns?.join(', ') || 'none'}
+- Textures: ${imageAnalysis.textures?.join(', ') || 'smooth'}
+
+TYPOGRAPHY GUIDANCE:
+- Style: ${imageAnalysis.typographyStyle || 'sans-serif modern'}
+- Mood: ${imageAnalysis.typographyMood || 'clean'}
+
+COMPOSITION:
+- Layout: ${imageAnalysis.composition || 'balanced'}
+- Whitespace: ${imageAnalysis.whitespace || 'balanced'}
+- Visual Weight: ${imageAnalysis.visualWeight || 'balanced'}
+
+GENERATION GUIDANCE - APPLY THESE:
+${imageAnalysis.promptEnhancements?.map(p => `- ${p}`).join('\n') || '- Professional, cohesive design'}
+
+AVOID THESE ELEMENTS:
+${imageAnalysis.avoidElements?.map(a => `- DO NOT use: ${a}`).join('\n') || '- Avoid cluttered layouts'}`
+      : '';
+
     // Build hyper-realistic requirements based on render mode
     const realismRequirements = renderMode === 'hyperrealistic' && !assetType.includes('_ISOLATED')
       ? `
@@ -474,6 +531,7 @@ PROFESSIONAL PRINT AESTHETIC:
 Event: "${eventName}"
 ${eventDescription ? `Event Description: ${eventDescription}` : ''}
 ${styleInstructions}
+${analysisInstructions}
 ${colorContext}
 ${locationContext}
 ${logoInstructions}
@@ -491,6 +549,7 @@ ${isPrint ? '- PRINT-OPTIMIZED: CMYK-safe colors, crisp text, production-ready q
 - Ensure text is razor-sharp and perfectly legible
 - Maintain visual hierarchy with the event name prominent
 - ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN
+${imageAnalysis ? '- APPLY ALL DESIGN INTELLIGENCE FROM IMAGE ANALYSIS' : ''}
 ${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}`;
 
     console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue]' : ''}`);
