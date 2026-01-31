@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import type { EventDetails, LogoAsset, EventType } from '../../types';
+import type { EventDetails, LogoAsset } from '../../types';
 import EventTypeSelector from './EventTypeSelector';
-import { Users, DollarSign, Hash, Shirt } from 'lucide-react';
+import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, MapPin, Globe, Mail } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StepOneProps {
   eventDetails: EventDetails;
@@ -39,25 +40,38 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-foreground mb-1">Event Details</h2>
-        <p className="text-sm text-muted-foreground">Tell us about your event</p>
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 mb-4">
+          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 animate-pulse" />
+          <span className="text-sm font-medium bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
+            Step 1 of 3
+          </span>
+        </div>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Tell us about your event</h2>
+        <p className="text-muted-foreground">The more details you provide, the better your designs will be</p>
       </div>
 
-      {/* Event Name - Primary field */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Event Name <span className="text-destructive">*</span>
-        </label>
-        <input
-          type="text"
-          name="name"
-          value={eventDetails.name}
-          onChange={handleChange}
-          placeholder="e.g., Tech Summit 2025"
-          className="input-field text-lg"
-          autoFocus
-        />
+      {/* Event Name - Hero Field */}
+      <div className="relative group">
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-violet-500 to-purple-500 rounded-2xl opacity-0 group-focus-within:opacity-100 blur transition-opacity duration-300" />
+        <div className="relative">
+          <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+            Event Name
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-500 text-white">
+              REQUIRED
+            </span>
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={eventDetails.name}
+            onChange={handleChange}
+            placeholder="e.g., Tech Summit 2025"
+            className="w-full px-5 py-4 rounded-xl border border-border bg-background/80 backdrop-blur-sm text-lg font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+            autoFocus
+          />
+        </div>
       </div>
 
       {/* Event Type Selector */}
@@ -70,49 +84,46 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
 
       {/* Logo Upload */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Event Logo <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+        <label className="block text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <Upload className="w-4 h-4 text-violet-500" />
+          Event Logo
+          <span className="text-xs text-muted-foreground font-normal">(optional)</span>
         </label>
         
         {logos.length > 0 ? (
           <div className="flex flex-wrap gap-3 mb-3">
             {logos.map(logo => (
               <div key={logo.id} className="relative group">
-                <div className="w-20 h-20 rounded-xl bg-secondary/50 border border-border overflow-hidden flex items-center justify-center shadow-sm">
-                  <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain" />
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-secondary to-muted border border-border overflow-hidden flex items-center justify-center shadow-lg transition-transform group-hover:scale-105">
+                  <img src={logo.url} alt={logo.name} className="max-w-full max-h-full object-contain p-2" />
                 </div>
                 <button
                   onClick={() => removeLogo(logo.id)}
-                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                  className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-rose-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
             ))}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="w-20 h-20 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 flex items-center justify-center text-muted-foreground hover:text-primary transition-all"
+              className="w-24 h-24 rounded-2xl border-2 border-dashed border-border hover:border-violet-500/50 hover:bg-violet-500/5 flex flex-col items-center justify-center text-muted-foreground hover:text-violet-500 transition-all group"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
+              <Plus className="w-6 h-6 transition-transform group-hover:scale-110" />
+              <span className="text-xs mt-1">Add more</span>
             </button>
           </div>
         ) : (
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="w-full py-10 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 flex flex-col items-center justify-center gap-3 text-muted-foreground hover:text-foreground transition-all group"
+            className="w-full py-12 rounded-2xl border-2 border-dashed border-border hover:border-violet-500/50 hover:bg-gradient-to-br hover:from-violet-500/5 hover:to-purple-500/5 flex flex-col items-center justify-center gap-4 text-muted-foreground hover:text-foreground transition-all group"
           >
-            <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-violet-500/20 group-hover:to-purple-500/20 transition-colors">
+              <Upload className="w-8 h-8 text-violet-500" />
             </div>
             <div className="text-center">
-              <span className="block text-sm font-medium">Upload your logo</span>
-              <span className="text-xs text-muted-foreground">PNG, JPG, or SVG</span>
+              <span className="block text-sm font-semibold">Upload your logo</span>
+              <span className="text-xs text-muted-foreground">PNG, JPG, SVG • Drag & drop or click</span>
             </div>
           </button>
         )}
@@ -128,73 +139,87 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
 
       {/* Optional Details - Collapsible */}
       <details className="group pt-2">
-        <summary className="flex items-center gap-2 text-sm font-medium text-muted-foreground cursor-pointer hover:text-foreground transition-colors py-2">
-          <div className="w-6 h-6 rounded-lg bg-secondary flex items-center justify-center group-open:bg-primary/10 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 transition-transform group-open:rotate-90 group-open:text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+        <summary className="flex items-center gap-3 text-sm font-semibold text-muted-foreground cursor-pointer hover:text-foreground transition-colors py-3">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center group-open:from-violet-500/10 group-open:to-purple-500/10 transition-colors">
+            <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90 group-open:text-violet-500" />
           </div>
-          Add more details
+          <span className="group-open:text-foreground">Add more details for better results</span>
+          <div className="flex-1 h-px bg-border" />
         </summary>
         
-        <div className="mt-4 space-y-4 animate-fade-in pl-8">
+        <div className="mt-6 space-y-5 animate-fade-in">
+          {/* Description */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">Description</label>
             <textarea
               name="description"
               value={eventDetails.description}
               onChange={handleChange}
-              placeholder="A brief description of your event..."
+              placeholder="A brief description of your event, its purpose, and target audience..."
               rows={3}
-              className="input-field resize-none"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all resize-none"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Date & Location Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Date</label>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                Date
+              </label>
               <input
                 type="date"
                 name="date"
                 value={eventDetails.date}
                 onChange={handleChange}
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Location</label>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-muted-foreground" />
+                Location
+              </label>
               <input
                 type="text"
                 name="location"
                 value={eventDetails.location}
                 onChange={handleChange}
                 placeholder="City, Venue"
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Website & Email Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Website</label>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                Website
+              </label>
               <input
                 type="url"
                 name="website"
                 value={eventDetails.website}
                 onChange={handleChange}
                 placeholder="https://..."
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Email</label>
+              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                Email
+              </label>
               <input
                 type="email"
                 name="email"
                 value={eventDetails.email}
                 onChange={handleChange}
                 placeholder="contact@event.com"
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
           </div>
@@ -212,7 +237,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                 value={eventDetails.expectedAttendees || ''}
                 onChange={(e) => setEventDetails(prev => ({ ...prev, expectedAttendees: parseInt(e.target.value) || undefined }))}
                 placeholder="250"
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
             <div>
@@ -226,7 +251,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                 value={eventDetails.budget || ''}
                 onChange={(e) => setEventDetails(prev => ({ ...prev, budget: parseFloat(e.target.value) || undefined }))}
                 placeholder="50000"
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
           </div>
@@ -243,7 +268,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                 value={eventDetails.hashtag || ''}
                 onChange={(e) => setEventDetails(prev => ({ ...prev, hashtag: e.target.value }))}
                 placeholder="#TechSummit2025"
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
             <div>
@@ -257,7 +282,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                 value={eventDetails.dresscode || ''}
                 onChange={(e) => setEventDetails(prev => ({ ...prev, dresscode: e.target.value }))}
                 placeholder="Business Casual"
-                className="input-field"
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
               />
             </div>
           </div>
