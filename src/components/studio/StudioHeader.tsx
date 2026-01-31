@@ -39,6 +39,7 @@ interface StudioHeaderProps {
   onExportBrandGuide: () => void;
   onOpenQRGenerator: () => void;
   onOpenVideoGenerator?: () => void;
+  onOpenVenuePreview?: () => void;
   onAddMoreAssets: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -66,6 +67,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onExportBrandGuide,
   onOpenQRGenerator,
   onOpenVideoGenerator,
+  onOpenVenuePreview,
   onAddMoreAssets,
   onUndo,
   onRedo,
@@ -227,6 +229,18 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               >
                 <Video className="w-4 h-4" />
                 <span className="hidden xl:inline">Video</span>
+              </motion.button>
+            )}
+
+            {onOpenVenuePreview && (
+              <motion.button
+                onClick={onOpenVenuePreview}
+                className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Video className="w-4 h-4" />
+                <span className="hidden xl:inline">Venue Preview</span>
               </motion.button>
             )}
 
