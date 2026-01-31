@@ -671,3 +671,67 @@ export const extractColorsFromImage = async (imageDataUrl: string): Promise<Colo
     img.src = imageDataUrl;
   });
 };
+
+// Generate color palette using AI - optionally from a reference image
+export const generateAIPalette = async (
+  eventName: string,
+  eventDescription?: string,
+  styleDescription?: string,
+  referenceImageBase64?: string
+): Promise<ColorInfo[]> => {
+  if (USE_AI_GENERATION) {
+    try {
+      console.log('Generating AI palette', { 
+        hasReferenceImage: !!referenceImageBase64,
+        eventName 
+      });
+
+      const { data, error } = await supabase.functions.invoke('generate-asset', {
+        body: {
+          type: 'palette',
+          eventName,
+          eventDescription,
+          styleDescription,
+          referenceImageBase64,
+        },
+      });
+
+      if (error) throw error;
+      
+      let hexColors: string[] = [];
+      
+      // Parse the result - could be JSON string or array
+      if (data?.result) {
+        if (typeof data.result === 'string') {
+          // Try to parse JSON from the string
+          const cleanedResult = data.result.replace(/```json\n?|\n?```/g, '').trim();
+          try {
+            hexColors = JSON.parse(cleanedResult);
+          } catch {
+            // Try to extract hex codes with regex
+            const hexMatches = cleanedResult.match(/#[0-9A-Fa-f]{6}/g);
+            if (hexMatches) {
+              hexColors = hexMatches.slice(0, 5);
+            }
+          }
+        } else if (Array.isArray(data.result)) {
+          hexColors = data.result;
+        }
+      }
+
+      if (hexColors.length > 0) {
+        console.log('AI extracted colors:', hexColors);
+        // Convert hex codes to full ColorInfo objects
+        const colorPromises = hexColors.slice(0, 5).map(hex => getColorDetails(hex));
+        return await Promise.all(colorPromises);
+      }
+    } catch (e) {
+      console.warn('AI palette generation failed, using fallback:', e);
+    }
+  }
+
+  // Fallback to basic generation
+  const fallbackColors = ['#667eea', '#764ba2', '#f093fb', '#43e97b', '#1f2937'];
+  const colorPromises = fallbackColors.map(hex => getColorDetails(hex));
+  return await Promise.all(colorPromises);
+};
