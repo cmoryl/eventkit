@@ -5,6 +5,7 @@ import SkeletonLoader from './SkeletonLoader';
 import { getAspectRatioStyle } from '../utils';
 import Spinner from './Spinner';
 import { supportsAIGeneration } from '../services/geminiService';
+import { isSvgContent, isImageContent, getImageSrc } from '../utils/svgUtils';
 
 interface AssetCardProps {
   asset: GeneratedAsset;
@@ -123,10 +124,12 @@ const AssetCard: React.FC<AssetCardProps> = ({
       );
     }
 
-    if (typeof contentToShow === 'string' && contentToShow.startsWith('data:image')) {
+    // Handle all image types including SVG
+    if (typeof contentToShow === 'string' && isImageContent(contentToShow)) {
+      const imgSrc = getImageSrc(contentToShow);
       return (
         <img
-          src={contentToShow}
+          src={imgSrc}
           alt={asset.title}
           className="w-full h-full object-cover"
           style={getAspectRatioStyle(asset.type)}

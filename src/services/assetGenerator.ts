@@ -274,7 +274,9 @@ const generateImageAsset = async (
       eventDetails.description || '',
       `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`,
       colorPalette.map(c => c.hex),
-      logoDataUrl
+      logoDataUrl,
+      eventDetails.location,
+      eventDetails.incorporateLocationStyle
     );
     
     if (aiImage) {

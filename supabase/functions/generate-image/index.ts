@@ -12,6 +12,100 @@ interface GenerateImageRequest {
   styleDescription?: string;
   colorPalette?: string[];
   logoBase64?: string;
+  location?: string;
+  incorporateLocationStyle?: boolean;
+}
+
+// Location cultural contexts for enhanced locality awareness
+const LOCATION_CULTURAL_CONTEXTS: Record<string, string> = {
+  // US Cities
+  'new york': 'NYC urban sophistication, Broadway energy, art deco influences, metropolitan elegance, Times Square vibrancy',
+  'los angeles': 'Hollywood glamour, beach lifestyle, entertainment industry aesthetics, palm tree motifs, California sunshine',
+  'las vegas': 'Neon lights, entertainment spectacle, desert luxury, casino glamour, bold show-stopping designs',
+  'miami': 'Art deco pastels, tropical vibes, Cuban influences, ocean blues and sunset oranges, South Beach energy',
+  'san francisco': 'Tech-forward innovation, Victorian charm, fog and bridge imagery, progressive culture, startup energy',
+  'chicago': 'Industrial strength, architectural excellence, deep dish culture, blues heritage, lakefront beauty',
+  'austin': 'Live music capital, tech meets BBQ, Keep Austin Weird spirit, creative independence, food truck culture',
+  'seattle': 'Pacific Northwest nature, coffee culture, tech innovation, rain-forest greens, grunge heritage',
+  'nashville': 'Country music heritage, honky-tonk energy, southern hospitality, music row aesthetics',
+  'new orleans': 'Jazz heritage, French Quarter charm, Mardi Gras colors, Creole culture, wrought iron details',
+  
+  // International
+  'london': 'British elegance, royal heritage, modern meets traditional, underground culture, cosmopolitan sophistication',
+  'paris': 'French haute couture, romantic aesthetics, art nouveau details, café culture, Parisian chic',
+  'tokyo': 'Japanese minimalism, kawaii culture, neon-lit streets, zen tranquility balanced with Harajuku boldness',
+  'dubai': 'Ultra-luxury, futuristic architecture, Arabian opulence, desert gold, modern innovation',
+  'singapore': 'Garden city aesthetics, multicultural fusion, modern efficiency, tropical sophistication',
+  'sydney': 'Harbour vibes, beach lifestyle, outdoor culture, Opera House inspired curves, Australian warmth',
+  'berlin': 'Industrial chic, underground culture, creative freedom, street art influences, techno heritage',
+  'barcelona': 'Gaudí-inspired organic forms, Mediterranean colors, Catalan modernism, beach meets city',
+  'amsterdam': 'Dutch design minimalism, canal charm, cycling culture, tulip colors, progressive creativity',
+  'hong kong': 'Vertical city energy, East meets West, neon nights, harbor views, financial sophistication',
+  'mumbai': 'Bollywood vibrancy, rich colors, traditional meets modern, monsoon moods, bustling energy',
+  'mexico city': 'Frida Kahlo colors, ancient meets contemporary, Day of Dead aesthetics, street food culture',
+  'rio': 'Carnival energy, beach culture, samba rhythms, tropical boldness, Christ the Redeemer majesty',
+  'toronto': 'Multicultural mosaic, CN Tower modern, Canadian politeness, diverse neighborhood vibes',
+  'vancouver': 'Mountain meets ocean, sustainable living, Asian-Pacific fusion, outdoor lifestyle',
+};
+
+// Get cultural context for a location
+function getLocationCulturalContext(location: string): string {
+  if (!location) return '';
+  
+  const locationLower = location.toLowerCase();
+  
+  // Check for exact city matches
+  for (const [city, context] of Object.entries(LOCATION_CULTURAL_CONTEXTS)) {
+    if (locationLower.includes(city)) {
+      return context;
+    }
+  }
+  
+  // Regional fallbacks
+  if (locationLower.includes('california') || locationLower.includes('ca')) {
+    return 'California sunshine, laid-back sophistication, tech-forward thinking, outdoor lifestyle';
+  }
+  if (locationLower.includes('texas') || locationLower.includes('tx')) {
+    return 'Texas pride, big and bold, hospitality warmth, western heritage with modern flair';
+  }
+  if (locationLower.includes('florida') || locationLower.includes('fl')) {
+    return 'Tropical vibes, beach lifestyle, retirement luxury meets spring break energy, sunshine state';
+  }
+  if (locationLower.includes('hawaii') || locationLower.includes('hi')) {
+    return 'Aloha spirit, tropical paradise, island time, lush greenery, ocean blues, lei and hibiscus motifs';
+  }
+  if (locationLower.includes('japan')) {
+    return 'Japanese attention to detail, wabi-sabi aesthetics, cherry blossom beauty, precision and harmony';
+  }
+  if (locationLower.includes('italy') || locationLower.includes('rome') || locationLower.includes('milan')) {
+    return 'Italian elegance, Renaissance artistry, fashion-forward, Mediterranean warmth, la dolce vita';
+  }
+  if (locationLower.includes('france')) {
+    return 'French sophistication, artistic heritage, culinary excellence, romantic aesthetics';
+  }
+  if (locationLower.includes('germany')) {
+    return 'German precision, Bauhaus design principles, efficiency meets creativity, industrial heritage';
+  }
+  if (locationLower.includes('spain')) {
+    return 'Spanish passion, flamenco energy, Moorish influences, vibrant colors, siesta lifestyle';
+  }
+  if (locationLower.includes('india')) {
+    return 'Indian richness, vibrant colors, intricate patterns, spiritual depth, festival energy';
+  }
+  if (locationLower.includes('china') || locationLower.includes('beijing') || locationLower.includes('shanghai')) {
+    return 'Chinese heritage, red and gold prosperity, dragon motifs, ancient wisdom meets modern power';
+  }
+  if (locationLower.includes('australia')) {
+    return 'Australian outback ruggedness, beach culture, indigenous art influences, laid-back sophistication';
+  }
+  if (locationLower.includes('brazil')) {
+    return 'Brazilian vibrancy, carnival colors, tropical energy, football passion, Amazon lushness';
+  }
+  if (locationLower.includes('uk') || locationLower.includes('england') || locationLower.includes('britain')) {
+    return 'British heritage, understated elegance, pub culture warmth, royal traditions';
+  }
+  
+  return '';
 }
 
 const ASSET_PROMPTS: Record<string, string> = {
@@ -56,57 +150,20 @@ const ASSET_PROMPTS: Record<string, string> = {
   WRISTBAND_DESIGN: "Design an event wristband with branded pattern. Colorful and distinctive.",
   COASTER_DESIGN: "Design a round coaster with event branding. Subtle and professional.",
   NAPKIN_DESIGN: "Design a cocktail napkin with simple logo/branding. Elegant and minimal.",
+  SEAMLESS_PATTERN: "Create a seamless repeating pattern with abstract geometric shapes inspired by the event theme. Tileable in all directions.",
   
-  // ============================================
-  // ISOLATED DESIGN VARIANTS FOR PRINT EXTRACTION
-  // ============================================
-  
-  // Apparel isolated designs
+  // Isolated design variants remain the same...
   TSHIRT_ISOLATED: "Generate ONLY the isolated design graphic on a transparent background. Do NOT show any t-shirt or clothing. Just the artwork/logo/graphic that will be printed. Suitable for screen printing with clean edges. 12x16 inch design area.",
   TSHIRT_BACK_ISOLATED: "Generate ONLY the isolated back design graphic on a transparent background. Do NOT show any t-shirt. Just the artwork with event name, date, sponsors. Clean edges for screen printing. 12x14 inch design area.",
-  TSHIRT_SLEEVE_ISOLATED: "Generate ONLY the isolated small sleeve logo on a transparent background. Simple design, max 2 colors. 3x3 inch design area. No clothing visible.",
   HAT_ISOLATED: "Generate ONLY the isolated embroidery-ready logo on a transparent background. Do NOT show any hat or cap. Just the logo with clean lines, no gradients, suitable for embroidery stitching. Max 6 colors. 4x2.5 inch design area.",
-  SWAG_BAG_ISOLATED: "Generate ONLY the isolated tote bag graphic on a transparent background. Do NOT show any bag. Just the artwork/logo that will be printed. Bold, simple design. Max 3 colors for screen printing. 10x10 inch design area.",
-  WATER_BOTTLE_ISOLATED: "Generate ONLY the isolated water bottle label design. Rectangular wrap-around format, 8x3 inches. Clean design without showing any bottle. Ready for vinyl printing.",
-  LANYARD_ISOLATED: "Generate ONLY the isolated repeating pattern for lanyard printing. Slim vertical format 1x6 inches. Pattern should tile seamlessly. Do NOT show any lanyard or strap.",
-  WRISTBAND_DESIGN_ISOLATED: "Generate ONLY the isolated wristband pattern design. 10x1 inch strip format. Continuous design for wrap-around printing. No wristband visible.",
-  COASTER_DESIGN_ISOLATED: "Generate ONLY the isolated round coaster design on transparent background. 4x4 inch circular format. No coaster or table visible.",
-  NAPKIN_DESIGN_ISOLATED: "Generate ONLY the isolated napkin logo/design on transparent background. Simple, 1-2 colors. 5x5 inch design area. No napkin visible.",
-  
-  // Environmental/booth isolated panel designs
-  KIOSK_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for kiosk panels. Show as labeled sections: 1) Header panel (48x12 inches), 2) Left side panel (24x72 inches), 3) Right side panel (24x72 inches). Clean flat artwork on solid background. NO 3D kiosk structure.",
-  REGISTRATION_COUNTER_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for registration counter. Show as labeled sections: 1) Front panel (8ft x 3.5ft), 2) Top graphic strip if branded. Clean flat artwork on solid background. NO 3D counter structure.",
-  WELCOME_COUNTER_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for welcome desk. Show as labeled sections: 1) Front face graphic (6ft x 3ft), 2) Header/topper panel. Clean flat artwork on solid background. NO 3D counter visible.",
-  TECHNOLOGY_COUNTER_ISOLATED: "Generate FLAT PRINT-READY GRAPHICS for tech counter. Show front panel artwork (6ft x 3ft) and any accent graphics. Clean flat design. NO 3D structure.",
-  REGISTRATION_BACK_WALL_ISOLATED: "Generate FLAT PRINT-READY ARTWORK for registration backdrop. Full 20ft x 10ft design. Solid background with event branding. NO 3D room or people visible.",
-  BACK_WALL_ISOLATED: "Generate FLAT PRINT-READY ARTWORK for booth backdrop. Full 10ft x 8ft design. Complete artwork for fabric printing. NO 3D booth visible.",
-  MAIN_STAGE_BACKDROP_ISOLATED: "Generate FLAT PRINT-READY ARTWORK for main stage backdrop. Full 40ft x 20ft design at digital resolution. NO stage, lights, or 3D elements visible.",
-  STAIRS_ISOLATED: "Generate FLAT PRINT-READY stair riser graphic. Single riser design, 4ft wide x 8 inches tall. Pattern tile for repeating on multiple risers. NO 3D stairs visible.",
-  GLASS_DOOR_ISOLATED: "Generate FLAT PRINT-READY vinyl graphics for glass door. 36x84 inch design with transparent areas indicated. NO door or glass visible.",
-  GLASS_ROTATING_DOOR_ISOLATED: "Generate FLAT PRINT-READY vinyl graphics for rotating door panels. Show 3-4 individual panel designs (30x80 inches each). NO door mechanism visible.",
-  GLASS_DOUBLE_DOOR_ISOLATED: "Generate FLAT PRINT-READY vinyl graphics for double doors. Full 72x84 inch design spanning both panels. Include center gap indication. NO doors visible.",
-  
-  // Large format signage isolated
   BANNER_ISOLATED: "Generate FLAT PRINT-READY banner design. Full 33x81 inch retractable banner artwork. Include 1 inch bleed. Complete design with no banner stand visible.",
-  STAND_UP_PILLAR_BANNER_ISOLATED: "Generate FLAT PRINT-READY pillar wrap design. Full 3ft x 7ft unrolled flat artwork. NO pillar structure visible.",
-  FEATHER_FLAG_ISOLATED: "Generate FLAT PRINT-READY feather flag design. Curved feather shape template, 2ft x 8ft. Include seam allowance. NO flag pole visible.",
-  TEARDROP_FLAG_ISOLATED: "Generate FLAT PRINT-READY teardrop flag design. Teardrop shape template, 2.5ft x 7ft. Include seam allowance. NO flag pole visible.",
-  HANGING_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY hanging sign design. 4ft x 3ft design with grommet positions marked. Double-sided layout. NO ceiling or mounting visible.",
-  OUTDOOR_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY outdoor sign design. 4ft x 6ft weather-resistant design. Include mounting holes positions. High contrast colors.",
-  EVENT_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY event sign design. 24x36 inch poster format. Include bleed area. NO easel or mounting visible.",
-  EASEL_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY easel sign design. 22x28 inch format. Complete artwork with no easel visible.",
-  
-  // Location signage isolated
-  LOCATION_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY wayfinding sign design. 18x24 inch format. Include directional arrows placeholder. Clean, high-contrast design.",
-  ROOM_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY room sign design. 11x17 inch format. Include placeholders for session title, time, speaker. Clean design.",
-  DOOR_SIGNAGE_ISOLATED: "Generate FLAT PRINT-READY door sign design. 8x10 inch format. Include room number/name area. Professional wayfinding design.",
-  WIFI_SIGN_ISOLATED: "Generate FLAT PRINT-READY WiFi sign design. 8.5x11 inch format. Include large WiFi icon and text areas for network/password. Clean design.",
 };
 
 async function generateImageWithRetry(
   apiKey: string,
   prompt: string,
   assetType: string,
+  logoBase64?: string,
   maxRetries = 2
 ): Promise<string> {
   let lastError: Error | null = null;
@@ -115,8 +172,20 @@ async function generateImageWithRetry(
     try {
       if (attempt > 0) {
         console.log(`Retry attempt ${attempt} for ${assetType}`);
-        // Add small delay between retries
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+
+      // Build message content - include logo if provided
+      const messageContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
+        { type: "text", text: prompt }
+      ];
+
+      // If logo is provided, include it as a reference image
+      if (logoBase64 && logoBase64.startsWith('data:image')) {
+        messageContent.push({
+          type: "image_url",
+          image_url: { url: logoBase64 }
+        });
       }
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -130,7 +199,7 @@ async function generateImageWithRetry(
           messages: [
             {
               role: "user",
-              content: prompt,
+              content: messageContent,
             },
           ],
           modalities: ["image", "text"],
@@ -156,15 +225,12 @@ async function generateImageWithRetry(
         return imageUrl;
       }
 
-      // No image in response - log details and retry
-      console.warn(`No image in response for ${assetType} (attempt ${attempt}). Response:`, 
-        JSON.stringify(data.choices?.[0]?.message || {}).substring(0, 500));
+      console.warn(`No image in response for ${assetType} (attempt ${attempt}).`);
       lastError = new Error("No image in AI response");
       
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       
-      // Don't retry on rate limit or payment errors
       if (lastError.message === "RATE_LIMIT" || lastError.message === "PAYMENT_REQUIRED") {
         throw lastError;
       }
@@ -186,26 +252,78 @@ serve(async (req) => {
     }
 
     const body: GenerateImageRequest = await req.json();
-    const { assetType, eventName, eventDescription, styleDescription, colorPalette } = body;
+    const { 
+      assetType, 
+      eventName, 
+      eventDescription, 
+      styleDescription, 
+      colorPalette, 
+      logoBase64,
+      location,
+      incorporateLocationStyle 
+    } = body;
 
     const basePrompt = ASSET_PROMPTS[assetType] || "Create a professional event design with modern aesthetics.";
     
     const colorContext = colorPalette?.length 
-      ? `Use this color palette: ${colorPalette.join(', ')}.` 
+      ? `Use this exact color palette: ${colorPalette.join(', ')}. These colors should be prominently featured.` 
+      : '';
+
+    // Build location cultural context
+    let locationContext = '';
+    if (location && incorporateLocationStyle) {
+      const culturalVibes = getLocationCulturalContext(location);
+      if (culturalVibes) {
+        locationContext = `
+LOCATION CULTURAL CONTEXT - IMPORTANT:
+This event is in ${location}. Incorporate local cultural aesthetics:
+${culturalVibes}
+Subtly weave these local influences into the design while maintaining brand consistency.`;
+      } else {
+        locationContext = `This event is located in ${location}. Consider any local cultural elements that would resonate with attendees.`;
+      }
+    }
+
+    // Build logo integration instructions
+    const logoInstructions = logoBase64 
+      ? `
+LOGO INTEGRATION - CRITICAL:
+A reference logo image is attached. You MUST:
+1. Incorporate this logo prominently and appropriately into the design
+2. Match the visual style, colors, and aesthetic of the provided logo
+3. Ensure the logo remains clearly visible and is not distorted
+4. Use the logo's color scheme as a guide for the overall design palette
+5. The design should feel like a cohesive extension of the logo's brand identity`
+      : '';
+
+    // Build style instructions
+    const styleInstructions = styleDescription 
+      ? `
+STYLE DIRECTION:
+${styleDescription}
+Follow these style guidelines precisely.`
       : '';
 
     const fullPrompt = `Generate an image: ${basePrompt}
 
 Event: "${eventName}"
-${eventDescription ? `Theme: ${eventDescription}` : ''}
-${styleDescription ? `Style: ${styleDescription}` : ''}
+${eventDescription ? `Event Description: ${eventDescription}` : ''}
+${styleInstructions}
 ${colorContext}
+${locationContext}
+${logoInstructions}
 
-Create a high-quality, professional design. Ultra high resolution. Modern, clean aesthetic. Suitable for print and digital use.`;
+REQUIREMENTS:
+- Create a high-quality, professional design
+- Ultra high resolution
+- Modern, polished aesthetic
+- Suitable for both print and digital use
+- Ensure text is readable and well-positioned
+- Maintain visual hierarchy with the event name prominent`;
 
-    console.log(`Generating image for ${assetType}: ${eventName}`);
+    console.log(`Generating image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}`);
 
-    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType);
+    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, logoBase64);
     
     console.log(`Successfully generated image for ${assetType}`);
 

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { GeneratedAsset, ColorInfo, PresentationData } from '../../types';
 import { AssetType } from '../../types';
+import { isImageContent, getImageSrc, isSvgContent } from '../../utils/svgUtils';
 
 interface AssetPreviewModalProps {
   asset: GeneratedAsset;
@@ -33,12 +34,14 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const isImageAsset = typeof asset.content === 'string' && asset.content.startsWith('data:image');
+  // Check content types - now includes SVG
+  const isImageAsset = typeof asset.content === 'string' && isImageContent(asset.content);
+  const isSvgAsset = typeof asset.content === 'string' && isSvgContent(asset.content);
   const isVideoAsset = typeof asset.content === 'string' && asset.content.startsWith('data:video');
   const isPaletteAsset = asset.type === AssetType.Palette && Array.isArray(asset.content);
   const isSlogansAsset = asset.type === AssetType.Slogans && Array.isArray(asset.content);
   const isPresentationAsset = asset.type === AssetType.Presentation;
-  const isTextAsset = typeof asset.content === 'string' && !asset.content.startsWith('data:');
+  const isTextAsset = typeof asset.content === 'string' && !asset.content.startsWith('data:') && !isSvgAsset;
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 5));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.25));
@@ -113,7 +116,9 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
   }, []);
 
   const renderContent = () => {
+    // Handle images (including SVG)
     if (isImageAsset) {
+      const imgSrc = getImageSrc(asset.content as string);
       return (
         <div
           className="w-full h-full flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing"
@@ -123,7 +128,7 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
           onMouseLeave={handleMouseUp}
         >
           <img
-            src={asset.content as string}
+            src={imgSrc}
             alt={asset.title}
             className="max-w-full max-h-full object-contain transition-transform duration-200"
             style={{
@@ -131,6 +136,11 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
             }}
             draggable={false}
           />
+          {isSvgAsset && (
+            <div className="absolute top-4 left-4 px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full border border-purple-500/30">
+              SVG
+            </div>
+          )}
         </div>
       );
     }
