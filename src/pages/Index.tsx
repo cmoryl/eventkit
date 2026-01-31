@@ -50,6 +50,8 @@ const Index: React.FC = () => {
   const [folders, setFolders] = useState<{ id: string; name: string }[]>([]);
   const [styleDescription, setStyleDescription] = useState('');
   const [colorPalette, setColorPalette] = useState<ColorInfo[]>([]);
+  const [vibeImage, setVibeImage] = useState<File | null>(null);
+  const [masterPattern, setMasterPattern] = useState<File | null>(null);
   const [toastState, setToastState] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Modal states
@@ -109,6 +111,8 @@ const Index: React.FC = () => {
     setEventDetails(data.eventDetails);
     setLogos(data.logos);
     setStyleDescription(data.styleDescription);
+    setVibeImage(data.vibeImage);
+    setMasterPattern(data.masterPattern);
     setView('studio');
 
     // Create asset placeholders
@@ -139,7 +143,14 @@ const Index: React.FC = () => {
     });
 
     setGeneratedAssets(newAssets);
-    await generateAssets(newAssets.filter(a => a.isLoading), data.styleDescription);
+    // Pass vibe image and master pattern to generation
+    await generateAssets(
+      newAssets.filter(a => a.isLoading), 
+      data.styleDescription,
+      undefined, // paletteOverride
+      data.vibeImage,
+      data.masterPattern
+    );
   };
 
   const handleDeleteAsset = (id: string) => {
