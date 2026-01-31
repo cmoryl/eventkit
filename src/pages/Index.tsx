@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LandingPage from '../components/landing/LandingPage';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
 import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerationParams, PresentationData, VenueVideoAnalysis } from '../types';
@@ -38,7 +39,7 @@ const Index: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { insights, isReady: isBrainReady } = useAIBrain();
   
-  const [view, setView] = useState<'onboarding' | 'studio'>('onboarding');
+  const [view, setView] = useState<'landing' | 'onboarding' | 'studio'>('landing');
   const [eventDetails, setEventDetails] = useState<EventDetails>({
     name: '',
     description: '',
@@ -484,6 +485,10 @@ const Index: React.FC = () => {
     <div className="min-h-screen text-foreground font-sans depth-orbs">
       <div className="soft-bg" />
       
+      {view === 'landing' && (
+        <LandingPage onGetStarted={() => setView('onboarding')} />
+      )}
+
       {view === 'onboarding' && (
         <OnboardingFlow onComplete={handleOnboardingComplete} />
       )}
