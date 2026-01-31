@@ -108,6 +108,7 @@ const Index: React.FC = () => {
     styleDescription: string;
     vibeImage: File | null;
     masterPattern: File | null;
+    venueImage: File | null;
   }) => {
     pushSnapshot();
     setEventDetails(data.eventDetails);
@@ -145,13 +146,14 @@ const Index: React.FC = () => {
     });
 
     setGeneratedAssets(newAssets);
-    // Pass vibe image and master pattern to generation
+    // Pass vibe image, master pattern, and venue image to generation
     await generateAssets(
       newAssets.filter(a => a.isLoading), 
       data.styleDescription,
       undefined, // paletteOverride
       data.vibeImage,
-      data.masterPattern
+      data.masterPattern,
+      data.venueImage
     );
   };
 

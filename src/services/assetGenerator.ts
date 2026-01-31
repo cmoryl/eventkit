@@ -267,7 +267,8 @@ const generateImageAsset = async (
   logoDataUrl?: string,
   styleDescription?: string,
   vibeImageBase64?: string,
-  masterPatternBase64?: string
+  masterPatternBase64?: string,
+  venueImageBase64?: string
 ): Promise<string> => {
   // Build enhanced style description incorporating vibe and pattern references
   let enhancedStyleDesc = styleDescription || `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`;
@@ -277,6 +278,9 @@ const generateImageAsset = async (
   }
   if (masterPatternBase64) {
     enhancedStyleDesc += ' Incorporate the provided pattern as a design element throughout the asset.';
+  }
+  if (venueImageBase64) {
+    enhancedStyleDesc += ' Composite the branded asset into the provided venue photo with realistic lighting, shadows, and perspective matching.';
   }
 
   // Try AI image generation first for supported types
@@ -291,11 +295,12 @@ const generateImageAsset = async (
       eventDetails.location,
       eventDetails.incorporateLocationStyle,
       vibeImageBase64,
-      masterPatternBase64
+      masterPatternBase64,
+      venueImageBase64
     );
     
     if (aiImage) {
-      console.log(`AI generated image for ${type}`);
+      console.log(`AI generated image for ${type}${venueImageBase64 ? ' (with venue compositing)' : ''}`);
       return aiImage;
     }
   } catch (e) {
@@ -483,7 +488,8 @@ export const generatePlaceholderContent = async (
   logoDataUrl?: string,
   styleDescription?: string,
   vibeImageBase64?: string,
-  masterPatternBase64?: string
+  masterPatternBase64?: string,
+  venueImageBase64?: string
 ): Promise<string | string[] | ColorInfo[]> => {
   // Simulate AI delay
   await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
@@ -558,7 +564,7 @@ Use the Color Palette asset for complete color specifications including CMYK for
 - Consistent color grading aligned with brand palette`;
 
     default:
-      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl, styleDescription, vibeImageBase64, masterPatternBase64);
+      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl, styleDescription, vibeImageBase64, masterPatternBase64, venueImageBase64);
   }
 };
 
