@@ -31,10 +31,10 @@ const PROVIDER_INFO: Record<RenderProvider, { name: string; description: string;
     models: ['flux-pro', 'flux-schnell', 'sdxl'],
   },
   midjourney: {
-    name: 'Midjourney',
-    description: 'Midjourney API for artistic image generation.',
+    name: 'Midjourney Style',
+    description: 'Midjourney-style image generation via Replicate (requires Replicate API key).',
     requiresKey: true,
-    models: ['v6', 'v5.2'],
+    models: ['openjourney', 'sdxl-lightning'],
   },
 };
 

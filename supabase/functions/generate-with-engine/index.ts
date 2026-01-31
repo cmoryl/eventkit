@@ -60,6 +60,10 @@ serve(async (req) => {
       case 'replicate':
         imageUrl = await generateWithReplicate(apiKey!, prompt, config);
         break;
+      case 'midjourney':
+        // Midjourney doesn't have an official API - use Replicate's Midjourney-style models
+        imageUrl = await generateWithReplicateMidjourney(apiKey!, prompt, config);
+        break;
       default:
         throw new Error(`Unsupported provider: ${provider}`);
     }
@@ -164,6 +168,16 @@ async function generateWithOpenAI(
   if (!response.ok) {
     const errorText = await response.text();
     console.error("OpenAI error:", response.status, errorText);
+    
+    if (response.status === 401) {
+      throw new Error("Invalid OpenAI API key");
+    }
+    if (response.status === 429) {
+      throw new Error("OpenAI rate limit exceeded. Please try again later.");
+    }
+    if (response.status === 402) {
+      throw new Error("OpenAI billing issue. Please check your OpenAI account.");
+    }
     throw new Error(`OpenAI error: ${response.status}`);
   }
 
@@ -214,17 +228,18 @@ async function generateWithReplicate(
   prompt: string,
   config?: Record<string, unknown>
 ): Promise<string | null> {
-  const model = (config?.model as string) || "black-forest-labs/flux-schnell";
-
-  // Start prediction
-  const response = await fetch("https://api.replicate.com/v1/predictions", {
+  // Use the official model identifier format for Replicate
+  const modelConfig = config?.model as string || "black-forest-labs/flux-schnell";
+  
+  // For flux models, use the deployments API which is simpler
+  const response = await fetch("https://api.replicate.com/v1/models/" + modelConfig + "/predictions", {
     method: "POST",
     headers: {
-      Authorization: `Token ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "Prefer": "wait", // Wait for the result instead of polling
     },
     body: JSON.stringify({
-      version: model,
       input: {
         prompt,
         num_outputs: 1,
@@ -237,25 +252,100 @@ async function generateWithReplicate(
   if (!response.ok) {
     const errorText = await response.text();
     console.error("Replicate error:", response.status, errorText);
+    
+    if (response.status === 401) {
+      throw new Error("Invalid Replicate API key");
+    }
+    if (response.status === 429) {
+      throw new Error("Replicate rate limit exceeded. Please try again later.");
+    }
     throw new Error(`Replicate error: ${response.status}`);
   }
 
-  const prediction = await response.json();
+  const result = await response.json();
   
-  // Poll for completion
-  let result = prediction;
-  while (result.status !== "succeeded" && result.status !== "failed") {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  // Handle async predictions that need polling
+  if (result.status === "starting" || result.status === "processing") {
+    let pollResult = result;
+    let attempts = 0;
+    const maxAttempts = 60; // 60 seconds max
     
-    const pollResponse = await fetch(result.urls.get, {
-      headers: { Authorization: `Token ${apiKey}` },
-    });
-    result = await pollResponse.json();
+    while (pollResult.status !== "succeeded" && pollResult.status !== "failed" && attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
+      
+      const pollResponse = await fetch(pollResult.urls.get, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      pollResult = await pollResponse.json();
+    }
+    
+    if (pollResult.status === "failed") {
+      throw new Error("Replicate generation failed: " + (pollResult.error || "Unknown error"));
+    }
+    
+    return pollResult.output?.[0] || (Array.isArray(pollResult.output) ? pollResult.output[0] : pollResult.output) || null;
+  }
+  
+  // Direct result
+  return result.output?.[0] || (Array.isArray(result.output) ? result.output[0] : result.output) || null;
+}
+
+// Generate using Replicate with Midjourney-style models
+async function generateWithReplicateMidjourney(
+  apiKey: string,
+  prompt: string,
+  config?: Record<string, unknown>
+): Promise<string | null> {
+  // Use a Midjourney-style model on Replicate
+  const model = "prompthero/openjourney";
+  
+  const response = await fetch("https://api.replicate.com/v1/models/" + model + "/predictions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "Prefer": "wait",
+    },
+    body: JSON.stringify({
+      input: {
+        prompt: `mdjrny-v4 style ${prompt}`,
+        num_outputs: 1,
+        width: 1024,
+        height: 1024,
+        guidance_scale: (config?.guidanceScale as number) || 7,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Replicate Midjourney error:", response.status, errorText);
+    throw new Error(`Replicate error: ${response.status}`);
   }
 
-  if (result.status === "failed") {
-    throw new Error("Replicate generation failed");
+  const result = await response.json();
+  
+  if (result.status === "starting" || result.status === "processing") {
+    let pollResult = result;
+    let attempts = 0;
+    
+    while (pollResult.status !== "succeeded" && pollResult.status !== "failed" && attempts < 60) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
+      
+      const pollResponse = await fetch(pollResult.urls.get, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      pollResult = await pollResponse.json();
+    }
+    
+    if (pollResult.status === "failed") {
+      throw new Error("Generation failed");
+    }
+    
+    return pollResult.output?.[0] || null;
   }
-
+  
   return result.output?.[0] || null;
 }
