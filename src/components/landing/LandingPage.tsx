@@ -429,14 +429,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-border">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-3 h-3 text-primary-foreground" />
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <Sparkles className="w-3 h-3 text-primary-foreground" />
+              </div>
+              <span className="font-medium">EventKit AI</span>
             </div>
-            <span>EventKit AI</span>
+
+            {/* Navigation Links */}
+            <nav className="flex items-center gap-6 text-sm">
+              <button 
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Home
+              </button>
+              <button 
+                onClick={onGetStarted}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Get Started
+              </button>
+            </nav>
+
+            {/* Copyright */}
+            <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} All rights reserved</p>
           </div>
-          <p>© {new Date().getFullYear()} All rights reserved</p>
         </div>
       </footer>
     </div>

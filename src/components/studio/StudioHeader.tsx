@@ -23,6 +23,7 @@ import {
   ChevronDown,
   Cpu,
   Brain,
+  Home,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,7 @@ interface StudioHeaderProps {
   eventName: string;
   assetCount: number;
   onBackToSetup: () => void;
+  onGoHome?: () => void;
   onDownloadAll: () => void;
   onSave: () => void;
   onLoad: (file: File) => void;
@@ -61,6 +63,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   eventName,
   assetCount,
   onBackToSetup,
+  onGoHome,
   onDownloadAll,
   onSave,
   onLoad,
@@ -126,8 +129,20 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
       
       <div className="container mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between gap-4">
-          {/* Left: Back + Event Info */}
+          {/* Left: Home + Back + Event Info */}
           <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+            {onGoHome && (
+              <motion.button
+                onClick={onGoHome}
+                className="flex items-center justify-center w-9 h-9 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="Home"
+              >
+                <Home className="w-4 h-4" />
+              </motion.button>
+            )}
+            
             <motion.button
               onClick={onBackToSetup}
               className="group flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors"

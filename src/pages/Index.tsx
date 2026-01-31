@@ -499,6 +499,7 @@ const Index: React.FC = () => {
             eventName={eventDetails.name}
             assetCount={generatedAssets.length}
             onBackToSetup={() => setView('onboarding')}
+            onGoHome={() => setView('landing')}
             onDownloadAll={handleDownloadAll}
             onSave={handleSaveProject}
             onLoad={handleLoadProject}
