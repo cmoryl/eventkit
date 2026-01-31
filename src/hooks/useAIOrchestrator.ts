@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { AssetType } from '@/types';
 import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, VenueVideoAnalysis } from '@/types';
 import { generatePlaceholderContent } from '@/services/assetGenerator';
@@ -40,7 +40,7 @@ export const useAIOrchestrator = ({
   const [isLoading, setIsLoading] = useState(false);
   const [generationProgress, setGenerationProgress] = useState({ current: 0, total: 0 });
 
-  const generateAssets = useCallback(async (
+  const generateAssets = async (
     assetsToGenerate: GeneratedAsset[], 
     currentStyleDesc: string, 
     paletteOverride?: ColorInfo[],
@@ -211,7 +211,7 @@ export const useAIOrchestrator = ({
     } finally {
       setIsLoading(false);
     }
-  }, [logos, styleImage, masterPatternImage, colorPalette, setColorPalette, setGeneratedAssets, eventDetails]);
+  };
 
   return {
     generateAssets,
