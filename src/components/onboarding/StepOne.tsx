@@ -46,29 +46,6 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
-      <motion.div 
-        className="text-center mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <motion.div 
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 mb-4"
-          whileHover={{ scale: 1.05 }}
-        >
-          <motion.div 
-            className="w-2 h-2 rounded-full bg-gradient-to-r from-violet-500 to-purple-500"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-          <span className="text-sm font-medium bg-gradient-to-r from-violet-500 to-purple-500 bg-clip-text text-transparent">
-            Step 1 of 3
-          </span>
-        </motion.div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Tell us about your event</h2>
-        <p className="text-muted-foreground">The more details you provide, the better your designs will be</p>
-      </motion.div>
 
       {/* Event Name - Hero Field */}
       <motion.div 

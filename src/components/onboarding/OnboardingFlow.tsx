@@ -164,196 +164,72 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         initial="initial"
         animate="animate"
       >
-        {/* Hero Header - Clean Minimal Design */}
-        <motion.div variants={itemVariants} className="mb-10">
-          <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
-            {/* Logo Mark */}
-            <motion.div 
-              className="relative flex-shrink-0"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            >
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary via-accent to-primary flex items-center justify-center shadow-lg">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                </svg>
-              </div>
-            </motion.div>
-            
-            {/* Title & Description */}
-            <div className="text-center sm:text-left flex-1">
-              <motion.h1 
-                className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight leading-tight"
-                variants={itemVariants}
-              >
-                Event Design Kit
-              </motion.h1>
-              <motion.p 
-                className="text-muted-foreground mt-1.5 text-base sm:text-lg"
-                variants={itemVariants}
-              >
-                Generate professional branding assets in minutes
-              </motion.p>
-            </div>
-
-            {/* Stats Pills - Desktop only */}
-            <motion.div 
-              className="hidden lg:flex flex-col gap-2"
-              variants={itemVariants}
-            >
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
-                <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                <span className="text-xs font-medium text-muted-foreground">100+ Asset Types</span>
-              </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/80 border border-border/50">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                <span className="text-xs font-medium text-muted-foreground">AI-Powered</span>
-              </div>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* Progress Bar & Steps */}
+        {/* Landing Hero Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          {/* Progress track */}
-          <div className="relative h-2 bg-secondary rounded-full overflow-hidden mb-6">
-            <motion.div 
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-violet-500 via-primary to-cyan-500 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-            />
-            {/* Shimmer effect */}
-            <motion.div
-              className="absolute inset-y-0 w-20 bg-gradient-to-r from-transparent via-white/30 to-transparent"
-              animate={{ x: ['-100%', '500%'] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            />
-          </div>
-
-          {/* Step indicators */}
-          <div className="flex items-center justify-between">
-            {STEPS.map((s, index) => {
-              const Icon = s.icon;
-              const isActive = step === s.number;
-              const isCompleted = step > s.number;
-              
-              return (
+          {/* Step Badge */}
+          <div className="flex items-center justify-center sm:justify-start gap-3 mb-6">
+            <div className="flex items-center gap-1.5">
+              {STEPS.map((s, index) => (
                 <React.Fragment key={s.number}>
-                  <motion.button
+                  <button
                     onClick={() => {
-                      if (isCompleted) {
+                      if (step > s.number) {
                         setDirection(s.number < step ? -1 : 1);
                         setStep(s.number);
                       }
                     }}
-                    disabled={!isCompleted && !isActive}
+                    disabled={step < s.number}
                     className={cn(
-                      "group relative flex flex-col sm:flex-row items-center gap-2 sm:gap-3 transition-all duration-300",
-                      isCompleted && "cursor-pointer"
+                      "w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all",
+                      step === s.number && "bg-primary text-primary-foreground",
+                      step > s.number && "bg-success text-success-foreground cursor-pointer hover:opacity-80",
+                      step < s.number && "bg-secondary text-muted-foreground"
                     )}
-                    whileHover={isCompleted ? { scale: 1.05 } : undefined}
-                    whileTap={isCompleted ? { scale: 0.95 } : undefined}
                   >
-                    {/* Step circle */}
-                    <motion.div 
-                      className={cn(
-                        "relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-300",
-                        isActive && `bg-gradient-to-br ${s.gradient} text-white shadow-lg`,
-                        isCompleted && "bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-lg",
-                        !isActive && !isCompleted && "bg-secondary text-muted-foreground"
-                      )}
-                      animate={isActive ? { scale: [1, 1.05, 1] } : {}}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      <AnimatePresence mode="wait">
-                        {isCompleted ? (
-                          <motion.svg 
-                            key="check"
-                            xmlns="http://www.w3.org/2000/svg" 
-                            className="w-6 h-6" 
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            exit={{ scale: 0, rotate: 180 }}
-                            transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                          </motion.svg>
-                        ) : (
-                          <motion.div
-                            key="icon"
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0 }}
-                          >
-                            <Icon className="w-6 h-6" />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                      
-                      {/* Pulse ring for active */}
-                      {isActive && (
-                        <motion.div 
-                          className={cn("absolute inset-0 rounded-2xl bg-gradient-to-br", s.gradient)}
-                          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
-                      )}
-                    </motion.div>
-
-                    {/* Step label */}
-                    <div className="text-center sm:text-left">
-                      <span className={cn(
-                        "block text-xs font-medium transition-colors",
-                        isActive ? "text-foreground" : "text-muted-foreground"
-                      )}>
-                        Step {s.number}
-                      </span>
-                      <span className={cn(
-                        "block text-sm font-bold transition-colors hidden sm:block",
-                        isActive ? `bg-gradient-to-r ${s.gradient} bg-clip-text text-transparent` : 
-                        isCompleted ? "text-emerald-500" : "text-muted-foreground"
-                      )}>
-                        {s.label}
-                      </span>
-                      <span className={cn(
-                        "block text-xs font-semibold transition-colors sm:hidden",
-                        isActive ? "text-foreground" : "text-muted-foreground"
-                      )}>
-                        {s.shortLabel}
-                      </span>
-                    </div>
-                  </motion.button>
-
-                  {/* Connector line */}
+                    {step > s.number ? (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      s.number
+                    )}
+                  </button>
                   {index < STEPS.length - 1 && (
-                    <div className="flex-1 mx-2 sm:mx-4">
-                      <motion.div 
-                        className="h-0.5 rounded-full bg-border"
-                        style={{ originX: 0 }}
-                      >
-                        <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-green-500"
-                          initial={{ scaleX: 0 }}
-                          animate={{ scaleX: step > s.number ? 1 : 0 }}
-                          transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
-                          style={{ originX: 0 }}
-                        />
-                      </motion.div>
-                    </div>
+                    <div className={cn(
+                      "w-6 h-0.5 rounded-full transition-colors",
+                      step > s.number ? "bg-success" : "bg-border"
+                    )} />
                   )}
                 </React.Fragment>
-              );
-            })}
+              ))}
+            </div>
+            <span className="text-sm text-muted-foreground">
+              Step {step} of {STEPS.length}
+            </span>
+          </div>
+
+          {/* Dynamic Hero Title based on step */}
+          <div className="text-center sm:text-left">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight leading-tight mb-3">
+                  {step === 1 && "Tell us about your event"}
+                  {step === 2 && "Define your style"}
+                  {step === 3 && "Choose your assets"}
+                </h1>
+                <p className="text-lg text-muted-foreground max-w-xl">
+                  {step === 1 && "Start with the basics — name, date, and any logos you want to include."}
+                  {step === 2 && "Upload inspiration images and describe the vibe you're going for."}
+                  {step === 3 && "Select which design assets you need for your event."}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </motion.div>
 

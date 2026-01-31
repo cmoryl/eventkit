@@ -99,29 +99,6 @@ const StepTwo: React.FC<StepTwoProps> = ({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
-      <motion.div 
-        className="text-center mb-8"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <motion.div 
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 mb-4"
-          whileHover={{ scale: 1.05 }}
-        >
-          <motion.div 
-            className="w-2 h-2 rounded-full bg-gradient-to-r from-pink-500 to-rose-500"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-          <span className="text-sm font-medium bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">
-            Step 2 of 3
-          </span>
-        </motion.div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Define Your Style</h2>
-        <p className="text-muted-foreground">Help AI understand your brand's visual language</p>
-      </motion.div>
 
       {/* Style Presets */}
       <motion.div
