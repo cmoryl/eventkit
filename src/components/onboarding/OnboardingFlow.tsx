@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { EventDetails, LogoAsset } from '../../types';
+import type { EventDetails, LogoAsset, VenueVideoAnalysis } from '../../types';
 import { AssetType } from '../../types';
 import { DEFAULT_QUICK_START_ASSETS, FULL_SUITE_ASSETS } from '../../config/assetConfig';
 import StepOne from './StepOne';
@@ -22,6 +22,7 @@ interface OnboardingFlowProps {
     vibeImage: File | null;
     masterPattern: File | null;
     venueImage: File | null;
+    venueVideoAnalysis: VenueVideoAnalysis | null;
   }) => void;
 }
 
@@ -102,6 +103,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
   const [vibeImage, setVibeImage] = useState<File | null>(null);
   const [masterPattern, setMasterPattern] = useState<File | null>(null);
   const [venueImage, setVenueImage] = useState<File | null>(null);
+  const [venueVideoAnalysis, setVenueVideoAnalysis] = useState<VenueVideoAnalysis | null>(null);
 
   const isStep1Valid = eventDetails.name.trim().length > 0;
   const isStep2Valid = true;
@@ -122,6 +124,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
         vibeImage,
         masterPattern,
         venueImage,
+        venueVideoAnalysis,
       });
     }
   };
@@ -286,6 +289,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
                       setMasterPattern={setMasterPattern}
                       venueImage={venueImage}
                       setVenueImage={setVenueImage}
+                      venueVideoAnalysis={venueVideoAnalysis}
+                      setVenueVideoAnalysis={setVenueVideoAnalysis}
                       eventDetails={eventDetails}
                     />
                   )}

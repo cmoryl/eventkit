@@ -385,6 +385,48 @@ export interface VenueSearchResult {
   placeId: string;
 }
 
+export interface VenueVideoAnalysis {
+  success: boolean;
+  areas: {
+    name: string;
+    description: string;
+    dimensions: {
+      estimated_width: string;
+      estimated_height: string;
+      estimated_depth: string;
+    };
+    surfaces: string[];
+    suggestedAssets: {
+      assetType: string;
+      placement: string;
+      recommendedSize: string;
+    }[];
+    lightingConditions: string;
+    frameIndex: number;
+  }[];
+  overallAssessment: {
+    venueType: string;
+    totalEstimatedArea: string;
+    primarySurfaces: string[];
+    brandingOpportunities: string[];
+    challengesAndConsiderations: string[];
+  };
+  keyFrames: {
+    frameIndex: number;
+    description: string;
+    bestFor: string[];
+    imageData: string;
+  }[];
+  assetRecommendations: {
+    assetType: string;
+    priority: 'high' | 'medium' | 'low';
+    recommendedQuantity: number;
+    suggestedSizes: string[];
+    placementAreas: string[];
+  }[];
+  extractedFrames: string[];
+}
+
 export interface PdfExportOptions {
   paperSize: string;
   bleed: number;

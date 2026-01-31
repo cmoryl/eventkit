@@ -1,8 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { EventDetails } from '../../types';
-import { Upload, Image, Palette, Sparkles, X, MapPin, Building2, Check, Camera } from 'lucide-react';
+import { EventDetails, VenueVideoAnalysis } from '../../types';
+import { Upload, Image, Palette, Sparkles, X, MapPin, Building2, Check, Camera, Video, Ruler, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import VenueVideoUploader from '../VenueVideoUploader';
+import { VenueAnalysis } from '@/services/venueVideoService';
 
 interface StepTwoProps {
   styleDescription: string;
@@ -13,6 +15,8 @@ interface StepTwoProps {
   setMasterPattern: React.Dispatch<React.SetStateAction<File | null>>;
   venueImage: File | null;
   setVenueImage: React.Dispatch<React.SetStateAction<File | null>>;
+  venueVideoAnalysis: VenueVideoAnalysis | null;
+  setVenueVideoAnalysis: React.Dispatch<React.SetStateAction<VenueVideoAnalysis | null>>;
   eventDetails: EventDetails;
 }
 
@@ -34,15 +38,37 @@ const StepTwo: React.FC<StepTwoProps> = ({
   setMasterPattern,
   venueImage,
   setVenueImage,
+  venueVideoAnalysis,
+  setVenueVideoAnalysis,
   eventDetails,
 }) => {
   const [vibePreview, setVibePreview] = useState<string | null>(null);
   const [patternPreview, setPatternPreview] = useState<string | null>(null);
   const [venuePreview, setVenuePreview] = useState<string | null>(null);
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
+  const [showVideoUploader, setShowVideoUploader] = useState(false);
   const vibeInputRef = useRef<HTMLInputElement>(null);
   const patternInputRef = useRef<HTMLInputElement>(null);
   const venueInputRef = useRef<HTMLInputElement>(null);
+
+  const handleVideoAnalysisComplete = useCallback((analysis: VenueAnalysis) => {
+    setVenueVideoAnalysis(analysis as VenueVideoAnalysis);
+    // If a key frame was selected, use it as the venue image
+    if (analysis.keyFrames.length > 0 && analysis.keyFrames[0].imageData) {
+      setVenuePreview(analysis.keyFrames[0].imageData);
+    }
+  }, [setVenueVideoAnalysis]);
+
+  const handleVideoFrameSelect = useCallback((frameData: string) => {
+    setVenuePreview(frameData);
+    // Convert base64 to File for the venue image
+    fetch(frameData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], 'venue-frame.jpg', { type: 'image/jpeg' });
+        setVenueImage(file);
+      });
+  }, [setVenueImage]);
 
   const handleVibeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -476,6 +502,95 @@ const StepTwo: React.FC<StepTwoProps> = ({
             </motion.label>
           )}
         </AnimatePresence>
+      </motion.div>
+
+      {/* Venue Video Walkthrough Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.58 }}
+      >
+        <button
+          onClick={() => setShowVideoUploader(!showVideoUploader)}
+          className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-dashed border-violet-500/30 hover:border-violet-500/50 transition-colors bg-gradient-to-r from-violet-500/5 to-purple-500/5"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div 
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center"
+              animate={{ rotate: showVideoUploader ? 0 : [0, 5, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <Video className="w-5 h-5 text-violet-500" />
+            </motion.div>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">Venue Walkthrough Video</span>
+                <motion.span 
+                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-500 text-white"
+                  animate={{ scale: [1, 1.05, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  AI SPATIAL ANALYSIS
+                </motion.span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Upload a walkthrough video for AI-powered space analysis & measurements
+              </p>
+            </div>
+          </div>
+          <motion.div
+            animate={{ rotate: showVideoUploader ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
+          </motion.div>
+        </button>
+
+        <AnimatePresence>
+          {showVideoUploader && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-4">
+                <VenueVideoUploader
+                  eventName={eventDetails.name}
+                  eventDescription={eventDetails.description}
+                  onAnalysisComplete={handleVideoAnalysisComplete}
+                  onFrameSelect={handleVideoFrameSelect}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Show analysis summary if completed */}
+        {venueVideoAnalysis && venueVideoAnalysis.success && !showVideoUploader && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-3 p-3 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-violet-500" />
+                <span className="text-sm font-medium text-foreground">
+                  {venueVideoAnalysis.areas.length} areas analyzed
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  • {venueVideoAnalysis.keyFrames.length} key frames extracted
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-violet-600">
+                <Ruler className="w-3.5 h-3.5" />
+                {venueVideoAnalysis.overallAssessment.totalEstimatedArea}
+              </div>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Venue Intelligence hint */}

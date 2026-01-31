@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
-import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerationParams, PresentationData } from '../types';
+import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerationParams, PresentationData, VenueVideoAnalysis } from '../types';
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
 import StudioHeader from '../components/studio/StudioHeader';
 import AssetGrid from '../components/studio/AssetGrid';
@@ -54,6 +54,7 @@ const Index: React.FC = () => {
   const [colorPalette, setColorPalette] = useState<ColorInfo[]>([]);
   const [vibeImage, setVibeImage] = useState<File | null>(null);
   const [masterPattern, setMasterPattern] = useState<File | null>(null);
+  const [venueVideoAnalysis, setVenueVideoAnalysis] = useState<VenueVideoAnalysis | null>(null);
   const [toastState, setToastState] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Modal states
@@ -109,6 +110,7 @@ const Index: React.FC = () => {
     vibeImage: File | null;
     masterPattern: File | null;
     venueImage: File | null;
+    venueVideoAnalysis: VenueVideoAnalysis | null;
   }) => {
     pushSnapshot();
     setEventDetails(data.eventDetails);
@@ -116,6 +118,7 @@ const Index: React.FC = () => {
     setStyleDescription(data.styleDescription);
     setVibeImage(data.vibeImage);
     setMasterPattern(data.masterPattern);
+    setVenueVideoAnalysis(data.venueVideoAnalysis);
     setView('studio');
 
     // Create asset placeholders
@@ -146,14 +149,15 @@ const Index: React.FC = () => {
     });
 
     setGeneratedAssets(newAssets);
-    // Pass vibe image, master pattern, and venue image to generation
+    // Pass vibe image, master pattern, venue image, and video analysis to generation
     await generateAssets(
       newAssets.filter(a => a.isLoading), 
       data.styleDescription,
       undefined, // paletteOverride
       data.vibeImage,
       data.masterPattern,
-      data.venueImage
+      data.venueImage,
+      data.venueVideoAnalysis
     );
   };
 
