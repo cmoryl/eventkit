@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Palette, Trash2, Check, X, Star, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Edit, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { BrandStyleEditor } from './BrandStyleEditor';
 
 interface Brand {
   id: string;
@@ -22,6 +23,7 @@ export const AdminBrandManager: React.FC = () => {
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [newBrand, setNewBrand] = useState({ name: '', description: '' });
 
   useEffect(() => {
@@ -226,6 +228,14 @@ export const AdminBrandManager: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setEditingBrand(brand)} 
+                  title="Edit brand style"
+                >
+                  <Settings className="w-4 h-4 text-primary" />
+                </Button>
                 {!brand.is_default && (
                   <Button variant="ghost" size="icon" onClick={() => setDefaultBrand(brand.id)} title="Set as default">
                     <Star className="w-4 h-4" />
@@ -239,6 +249,20 @@ export const AdminBrandManager: React.FC = () => {
           ))
         )}
       </div>
+
+      {/* Brand Style Editor Modal */}
+      <AnimatePresence>
+        {editingBrand && (
+          <BrandStyleEditor
+            brand={editingBrand}
+            onClose={() => setEditingBrand(null)}
+            onSave={() => {
+              setEditingBrand(null);
+              loadBrands();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
