@@ -24,11 +24,14 @@ import {
   Cpu,
   Brain,
   Home,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '../ThemeToggle';
 import { RenderEngineSettings } from '../RenderEngineSettings';
+import { ApiSettingsModal } from '../settings/ApiSettingsModal';
+import { useApiSettings } from '@/hooks/useApiSettings';
 
 interface StudioHeaderProps {
   eventName: string;
@@ -88,8 +91,10 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onOpenRenderEngineSettings,
 }) => {
   const { user, isAuthenticated, signOut } = useAuth();
+  const { configuredKeysCount } = useApiSettings();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showRenderSettings, setShowRenderSettings] = useState(false);
+  const [showApiSettings, setShowApiSettings] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Keyboard shortcuts for undo/redo
@@ -184,6 +189,22 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               onChange={handleFileChange}
               className="hidden"
             />
+
+            {/* API Settings */}
+            <motion.button
+              onClick={() => setShowApiSettings(true)}
+              className="relative p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              title="API Settings"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Settings className="w-4 h-4" />
+              {configuredKeysCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-emerald-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5">
+                  {configuredKeysCount}
+                </span>
+              )}
+            </motion.button>
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -472,6 +493,12 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
       open={showRenderSettings}
       onOpenChange={setShowRenderSettings}
       userId={user?.id || ''}
+    />
+    
+    {/* API Settings Modal */}
+    <ApiSettingsModal 
+      isOpen={showApiSettings} 
+      onClose={() => setShowApiSettings(false)} 
     />
     </>
   );
