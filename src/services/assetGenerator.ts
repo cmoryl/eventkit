@@ -1,6 +1,7 @@
 import { AssetType } from '../types';
 import type { EventDetails, ColorInfo } from '../types';
 import type { RenderEngine } from './aiBrain/types';
+import type { BrandContext } from '../types/brand.types';
 import { getAssetConfig } from '../config/assetConfig';
 import { renderAsset } from './canvasRenderer';
 import { 
@@ -26,6 +27,7 @@ export {
   prioritizeAssets, 
   clearGenerationCache 
 };
+
 
 // Design tokens for consistent generation
 const BRAND_GRADIENTS = [
@@ -287,7 +289,8 @@ const generateImageAsset = async (
   vibeImageBase64?: string,
   masterPatternBase64?: string,
   venueImageBase64?: string,
-  renderEngine?: RenderEngine
+  renderEngine?: RenderEngine,
+  brandContext?: BrandContext | null
 ): Promise<string> => {
   // Build enhanced style description incorporating vibe and pattern references
   let enhancedStyleDesc = styleDescription || `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`;
@@ -361,11 +364,12 @@ const generateImageAsset = async (
       cachedAnalysis, // Pass cached analysis to avoid redundant AI call
       eventDetails.venueIntelligence, // Pass venue intelligence for cultural context
       eventDetails.date, // Pass event date for template variable merging
-      eventDetails.eventType // Pass event type for template variable merging
+      eventDetails.eventType, // Pass event type for template variable merging
+      brandContext // Pass brand intelligence for on-brand generation
     );
     
     if (aiImage) {
-      console.log(`AI generated image for ${type}${venueImageBase64 ? ' (with venue compositing)' : ''}${cachedAnalysis ? ' (with cached analysis)' : ''}${eventDetails.venueIntelligence ? ' (with venue intelligence)' : ''}`);
+      console.log(`AI generated image for ${type}${venueImageBase64 ? ' (with venue compositing)' : ''}${cachedAnalysis ? ' (with cached analysis)' : ''}${eventDetails.venueIntelligence ? ' (with venue intelligence)' : ''}${brandContext ? ` (with brand: ${brandContext.brandName})` : ''}`);
       return aiImage;
     }
   } catch (e) {

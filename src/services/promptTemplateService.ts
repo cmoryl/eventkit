@@ -4,6 +4,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { EventDetails, ColorInfo } from '../types';
 import { AssetType } from '../types';
+import type { BrandContext } from '../types/brand.types';
+import { buildBrandStylePrompt, getBrandColorPalette } from '../types/brand.types';
 
 interface PromptTemplate {
   id: string;
@@ -33,6 +35,17 @@ interface TemplateVariables {
   audienceType?: string;
   website?: string;
   tagline?: string;
+  // Brand-specific variables
+  brandName?: string;
+  brandVoice?: string;
+  brandArchetype?: string;
+  imageryStyle?: string;
+  patternStyle?: string;
+  iconStyle?: string;
+  industry?: string;
+  targetAudience?: string;
+  headingFont?: string;
+  bodyFont?: string;
 }
 
 // Cache for templates to avoid repeated DB calls
@@ -98,18 +111,32 @@ export async function fetchPromptTemplate(assetType: AssetType): Promise<PromptT
 }
 
 /**
- * Build template variables from event details and color palette
+ * Build template variables from event details, color palette, and brand context
  */
 export function buildTemplateVariables(
   eventDetails: EventDetails,
   colorPalette: ColorInfo[] = [],
   styleDescription?: string,
-  culturalContext?: string
+  culturalContext?: string,
+  brandContext?: BrandContext | null
 ): TemplateVariables {
-  const colors = colorPalette.map(c => c.name || c.hex).join(', ');
-  const primaryColor = colorPalette[0]?.name || colorPalette[0]?.hex || '';
-  const secondaryColor = colorPalette[1]?.name || colorPalette[1]?.hex || '';
-  const accentColor = colorPalette[2]?.name || colorPalette[2]?.hex || '';
+  // Use brand colors if available, otherwise fall back to event palette
+  const brandColors = brandContext ? getBrandColorPalette(brandContext) : [];
+  const effectivePalette = brandColors.length > 0 
+    ? brandColors 
+    : colorPalette.map(c => c.hex);
+  
+  const colors = brandContext?.colorPalette.map(c => c.name || c.hex).join(', ') 
+    || colorPalette.map(c => c.name || c.hex).join(', ');
+  const primaryColor = brandContext?.primaryColor || colorPalette[0]?.name || colorPalette[0]?.hex || '';
+  const secondaryColor = brandContext?.secondaryColor || colorPalette[1]?.name || colorPalette[1]?.hex || '';
+  const accentColor = brandContext?.accentColor || colorPalette[2]?.name || colorPalette[2]?.hex || '';
+
+  // Build enhanced style description incorporating brand context
+  const brandStylePrompt = buildBrandStylePrompt(brandContext);
+  const enhancedStyle = brandStylePrompt 
+    ? `${styleDescription || 'professional and modern'}. ${brandStylePrompt}`
+    : styleDescription || 'professional and modern';
 
   return {
     eventName: eventDetails.name || 'Event',
@@ -117,18 +144,29 @@ export function buildTemplateVariables(
     eventDate: eventDetails.date || '',
     eventLocation: eventDetails.location || '',
     eventType: eventDetails.eventType || 'conference',
-    mood: styleDescription || 'professional and modern',
-    style: styleDescription || 'clean and elegant',
+    mood: enhancedStyle,
+    style: enhancedStyle,
     colors,
     primaryColor,
     secondaryColor,
     accentColor,
     logoDescription: '', // Could be extracted from logo analysis
-    culturalContext: culturalContext || eventDetails.venueIntelligence?.culturalContext || '',
+    culturalContext: brandContext?.culturalContext || culturalContext || eventDetails.venueIntelligence?.culturalContext || '',
     venueType: eventDetails.venueIntelligence?.venueType || '',
-    audienceType: 'professionals', // Default audience type
+    audienceType: brandContext?.targetAudience || 'professionals',
     website: eventDetails.website || '',
-    tagline: eventDetails.hashtag || '', // Use hashtag as tagline fallback
+    tagline: brandContext?.tagline || eventDetails.hashtag || '',
+    // Brand-specific variables
+    brandName: brandContext?.brandName,
+    brandVoice: brandContext?.brandVoice?.join(', '),
+    brandArchetype: brandContext?.archetype,
+    imageryStyle: brandContext?.imageryStyle,
+    patternStyle: brandContext?.patternStyle,
+    iconStyle: brandContext?.iconStyle,
+    industry: brandContext?.industry,
+    targetAudience: brandContext?.targetAudience,
+    headingFont: brandContext?.headingFont,
+    bodyFont: brandContext?.bodyFont,
   };
 }
 
@@ -166,17 +204,19 @@ export async function buildAssetPrompt(
   colorPalette: ColorInfo[] = [],
   styleDescription?: string,
   culturalContext?: string,
-  additionalContext?: string
+  additionalContext?: string,
+  brandContext?: BrandContext | null
 ): Promise<string> {
   // Fetch the template from database
   const template = await fetchPromptTemplate(assetType);
   
-  // Build variables
+  // Build variables with brand context
   const variables = buildTemplateVariables(
     eventDetails,
     colorPalette,
     styleDescription,
-    culturalContext
+    culturalContext,
+    brandContext
   );
   
   let prompt: string;
@@ -190,6 +230,14 @@ export async function buildAssetPrompt(
   } else {
     // Fallback to a generic prompt if no template exists
     prompt = buildFallbackPrompt(assetType, variables);
+  }
+  
+  // Append brand context as additional guidance
+  if (brandContext) {
+    const brandPrompt = buildBrandStylePrompt(brandContext);
+    if (brandPrompt) {
+      prompt += ` Brand Guidelines: ${brandPrompt}`;
+    }
   }
   
   // Append additional context if provided

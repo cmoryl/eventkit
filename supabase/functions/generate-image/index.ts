@@ -52,6 +52,36 @@ interface VenueIntelligence {
   culturalContext?: string;
 }
 
+// Brand context for comprehensive brand-aware generation
+interface BrandContext {
+  brandName?: string;
+  tagline?: string;
+  mission?: string;
+  archetype?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  colorPalette?: Array<{ hex: string; name?: string; cmyk?: string; pantone?: string; usage?: string }>;
+  approvedColorCombinations?: Array<{ name: string; colors: string[]; status: string }>;
+  gradients?: Array<{ name: string; colors: string[]; direction?: string }>;
+  headingFont?: string;
+  bodyFont?: string;
+  accentFont?: string;
+  brandVoice?: string[];
+  toneKeywords?: string[];
+  writingStyle?: string;
+  moodKeywords?: string[];
+  imageryStyle?: string;
+  patternStyle?: string;
+  iconStyle?: string;
+  targetAudience?: string;
+  culturalContext?: string;
+  industry?: string;
+  printColorMode?: 'CMYK' | 'RGB' | 'Pantone';
+  logoUrl?: string;
+  customPrompts?: Record<string, unknown>;
+}
+
 // Prompt template from database
 interface PromptTemplate {
   id: string;
@@ -83,6 +113,7 @@ interface GenerateImageRequest {
   printDPI?: number;
   imageAnalysis?: ImageAnalysis; // Comprehensive analysis from reference image
   venueIntelligence?: VenueIntelligence; // AI-researched venue data
+  brandContext?: BrandContext; // Brand intelligence from BrandHub or local brand
 }
 
 // Print asset categories for automatic detection
@@ -577,7 +608,8 @@ serve(async (req) => {
       venueImageBase64,
       renderMode = 'hyperrealistic',
       imageAnalysis: providedAnalysis, // Comprehensive analysis from reference image
-      venueIntelligence // AI-researched venue intelligence data
+      venueIntelligence, // AI-researched venue intelligence data
+      brandContext // Brand intelligence from BrandHub or local brand
     } = body;
 
     // OPTIMIZATION: Perform inline analysis if vibe image exists but no analysis provided
@@ -592,17 +624,112 @@ serve(async (req) => {
       }
     }
 
+    // BUILD BRAND CONTEXT STRING
+    // This injects comprehensive brand intelligence into the generation prompt
+    let brandContextString = '';
+    if (brandContext) {
+      const brandParts: string[] = [];
+      
+      // Brand identity
+      if (brandContext.brandName) {
+        brandParts.push(`This design is for the brand "${brandContext.brandName}".`);
+      }
+      if (brandContext.archetype) {
+        brandParts.push(`Brand archetype: ${brandContext.archetype}.`);
+      }
+      if (brandContext.tagline) {
+        brandParts.push(`Brand tagline for design inspiration: "${brandContext.tagline}".`);
+      }
+      
+      // Visual mood and style
+      if (brandContext.moodKeywords && brandContext.moodKeywords.length > 0) {
+        brandParts.push(`Visual mood: ${brandContext.moodKeywords.join(', ')}.`);
+      }
+      if (brandContext.imageryStyle) {
+        brandParts.push(`Imagery style: ${brandContext.imageryStyle}.`);
+      }
+      if (brandContext.patternStyle) {
+        brandParts.push(`Pattern style to incorporate: ${brandContext.patternStyle}.`);
+      }
+      if (brandContext.iconStyle) {
+        brandParts.push(`Icon style: ${brandContext.iconStyle}.`);
+      }
+      
+      // Typography
+      if (brandContext.headingFont || brandContext.bodyFont) {
+        const fonts = [brandContext.headingFont, brandContext.bodyFont].filter(Boolean);
+        brandParts.push(`Typography: Use ${fonts.join(' for headings and ')} font styles. Ensure typography feels consistent with the brand.`);
+      }
+      
+      // Industry and audience
+      if (brandContext.industry) {
+        brandParts.push(`Industry context: ${brandContext.industry}.`);
+      }
+      if (brandContext.targetAudience) {
+        brandParts.push(`Target audience: ${brandContext.targetAudience}. Design should resonate with this demographic.`);
+      }
+      
+      // Brand voice and tone
+      if (brandContext.brandVoice && brandContext.brandVoice.length > 0) {
+        brandParts.push(`Brand voice: ${brandContext.brandVoice.join(', ')}. Visual design should embody these qualities.`);
+      }
+      if (brandContext.toneKeywords && brandContext.toneKeywords.length > 0) {
+        brandParts.push(`Tone: ${brandContext.toneKeywords.join(', ')}.`);
+      }
+      
+      // Cultural context from brand
+      if (brandContext.culturalContext) {
+        brandParts.push(`Brand cultural context: ${brandContext.culturalContext}.`);
+      }
+      
+      // Print color mode
+      if (brandContext.printColorMode) {
+        brandParts.push(`Preferred color mode: ${brandContext.printColorMode}. Ensure colors are appropriate for this output.`);
+      }
+      
+      // Approved color combinations
+      if (brandContext.approvedColorCombinations && brandContext.approvedColorCombinations.length > 0) {
+        const approved = brandContext.approvedColorCombinations
+          .filter(c => c.status === 'approved')
+          .map(c => c.colors.join(' + '))
+          .slice(0, 3);
+        if (approved.length > 0) {
+          brandParts.push(`Approved color combinations: ${approved.join('; ')}.`);
+        }
+      }
+      
+      // Gradients
+      if (brandContext.gradients && brandContext.gradients.length > 0) {
+        const gradientDesc = brandContext.gradients
+          .slice(0, 2)
+          .map(g => `${g.name}: ${g.colors.join(' to ')}`)
+          .join('; ');
+        brandParts.push(`Brand gradients available: ${gradientDesc}.`);
+      }
+      
+      if (brandParts.length > 0) {
+        brandContextString = `
+BRAND INTELLIGENCE - CRITICAL DESIGN CONTEXT:
+${brandParts.join('\n')}
+Ensure the design is unmistakably on-brand while remaining fresh and contextually appropriate.`;
+        console.log('Brand context applied:', brandContext.brandName, brandContext.archetype || 'no archetype');
+      }
+    }
+
     // FETCH PROMPT TEMPLATE FROM DATABASE
     // This enables cohesive, professionally-crafted prompts that merge with user event data
     const promptTemplate = await fetchPromptTemplate(assetType);
     let templateBasedPrompt: string | null = null;
     
     if (promptTemplate) {
-      // Build template variables from event data
-      const colors = colorPalette?.join(', ') || '';
-      const primaryColor = colorPalette?.[0] || '';
-      const secondaryColor = colorPalette?.[1] || '';
-      const accentColor = colorPalette?.[2] || '';
+      // Build template variables from event data AND brand context
+      const brandColors = brandContext?.colorPalette?.map(c => c.hex) || [];
+      const effectiveColorPalette = brandColors.length > 0 ? brandColors : (colorPalette || []);
+      
+      const colors = effectiveColorPalette.join(', ');
+      const primaryColor = brandContext?.primaryColor || effectiveColorPalette[0] || '';
+      const secondaryColor = brandContext?.secondaryColor || effectiveColorPalette[1] || '';
+      const accentColor = brandContext?.accentColor || effectiveColorPalette[2] || '';
       
       const templateVariables: Record<string, string> = {
         eventName: eventName || 'Event',
@@ -610,16 +737,28 @@ serve(async (req) => {
         eventDate: eventDate || '',
         eventLocation: eventLocation || location || '',
         eventType: eventType || 'conference',
-        mood: styleDescription || 'professional and modern',
-        style: styleDescription || 'clean and elegant',
+        mood: styleDescription || brandContext?.moodKeywords?.join(', ') || 'professional and modern',
+        style: styleDescription || brandContext?.imageryStyle || 'clean and elegant',
         colors,
         primaryColor,
         secondaryColor,
         accentColor,
-        culturalContext: venueIntelligence?.culturalContext || '',
+        culturalContext: brandContext?.culturalContext || venueIntelligence?.culturalContext || '',
         venueType: venueIntelligence?.venueType || '',
         venueName: venueIntelligence?.name || '',
         city: venueIntelligence?.city || '',
+        // Brand-specific variables
+        brandName: brandContext?.brandName || '',
+        brandVoice: brandContext?.brandVoice?.join(', ') || '',
+        brandArchetype: brandContext?.archetype || '',
+        imageryStyle: brandContext?.imageryStyle || '',
+        patternStyle: brandContext?.patternStyle || '',
+        iconStyle: brandContext?.iconStyle || '',
+        industry: brandContext?.industry || '',
+        targetAudience: brandContext?.targetAudience || '',
+        headingFont: brandContext?.headingFont || '',
+        bodyFont: brandContext?.bodyFont || '',
+        tagline: brandContext?.tagline || '',
       };
       
       // Merge template with variables
@@ -868,6 +1007,7 @@ PROFESSIONAL PRINT AESTHETIC:
 
 Event: "${eventName}"
 ${eventDescription ? `Event Description: ${eventDescription}` : ''}
+${brandContextString}
 ${styleInstructions}
 ${analysisInstructions}
 ${colorContext}
@@ -884,15 +1024,17 @@ REQUIREMENTS:
 - Create a high-quality, professional design
 - Ultra high resolution - maximum quality output
 - Modern, polished aesthetic
+${brandContext ? '- FOLLOW ALL BRAND GUIDELINES AND VISUAL IDENTITY RULES' : ''}
 ${isPrint ? '- PRINT-OPTIMIZED: CMYK-safe colors, crisp text, production-ready quality' : '- Suitable for digital display'}
 - Ensure text is razor-sharp and perfectly legible
 - Maintain visual hierarchy with the event name prominent
 - ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN
 ${imageAnalysis ? '- APPLY ALL DESIGN INTELLIGENCE FROM IMAGE ANALYSIS' : ''}
 ${venueIntelligence ? '- APPLY VENUE INTELLIGENCE TO CREATE VENUE-SPECIFIC DESIGN' : ''}
+${brandContext ? '- THE DESIGN MUST BE UNMISTAKABLY ON-BRAND' : ''}
 ${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}`;
 
-    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}`);
+    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}`);
 
     // Collect all reference images in order
     const referenceImages: string[] = [];

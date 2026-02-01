@@ -525,6 +525,7 @@ NOTES:
 
 // Import VenueIntelligence from main types
 import type { VenueIntelligence } from '../types';
+import type { BrandContext } from '../types/brand.types';
 
 // Generate AI image for an asset - OPTIMIZED to use cached analysis and pass to backend
 export const generateAssetImage = async (
@@ -542,7 +543,8 @@ export const generateAssetImage = async (
   preComputedAnalysis?: ImageAnalysis | null, // Pass pre-computed analysis to avoid extra AI call
   venueIntelligence?: VenueIntelligence | null, // AI-researched venue intelligence
   eventDate?: string,
-  eventType?: string
+  eventType?: string,
+  brandContext?: BrandContext | null // Brand intelligence from BrandHub or local brand
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
@@ -558,6 +560,11 @@ export const generateAssetImage = async (
       }
     }
     
+    // Use brand colors if provided, otherwise fall back to event palette
+    const effectiveColorPalette = brandContext?.colorPalette?.length 
+      ? brandContext.colorPalette.map(c => c.hex)
+      : colorPalette;
+    
     const { data, error } = await supabase.functions.invoke('generate-image', {
       body: {
         assetType: assetTypeStr,
@@ -567,7 +574,7 @@ export const generateAssetImage = async (
         eventLocation: location, // Pass as eventLocation for template merging
         eventType, // Pass event type for template variable merging
         styleDescription,
-        colorPalette,
+        colorPalette: effectiveColorPalette,
         logoBase64,
         location,
         incorporateLocationStyle,
@@ -576,6 +583,7 @@ export const generateAssetImage = async (
         venueImageBase64,
         imageAnalysis, // Pass analysis to avoid inline re-analysis
         venueIntelligence, // Pass AI-researched venue data
+        brandContext, // Pass comprehensive brand intelligence
       },
     });
 
