@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface ApiSettings {
   googleMapsApiKey?: string;
+  openaiApiKey?: string;
+  stabilityApiKey?: string;
+  replicateApiKey?: string;
 }
 
 const STORAGE_KEY = 'event-design-kit-api-settings';
@@ -44,12 +47,23 @@ export const useApiSettings = () => {
     }
   }, []);
 
+  const configuredKeysCount = [
+    settings.googleMapsApiKey,
+    settings.openaiApiKey,
+    settings.stabilityApiKey,
+    settings.replicateApiKey,
+  ].filter(Boolean).length;
+
   return {
     settings,
     isLoaded,
     updateSettings,
     clearSettings,
     hasGoogleMapsKey: Boolean(settings.googleMapsApiKey),
+    hasOpenAIKey: Boolean(settings.openaiApiKey),
+    hasStabilityKey: Boolean(settings.stabilityApiKey),
+    hasReplicateKey: Boolean(settings.replicateApiKey),
+    configuredKeysCount,
   };
 };
 

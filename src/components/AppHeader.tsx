@@ -31,7 +31,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const loadProjectInputRef = useRef<HTMLInputElement>(null);
   const [showApiSettings, setShowApiSettings] = useState(false);
-  const { hasGoogleMapsKey } = useApiSettings();
+  const { configuredKeysCount } = useApiSettings();
 
   const handleLoadClick = () => {
     loadProjectInputRef.current?.click();
@@ -66,8 +66,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             title="API Settings"
           >
             <Settings className="h-4 w-4 text-muted-foreground" />
-            {hasGoogleMapsKey && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
+            {configuredKeysCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] bg-emerald-500 rounded-full text-[9px] font-bold text-white flex items-center justify-center px-0.5">
+                {configuredKeysCount}
+              </span>
             )}
           </button>
           
