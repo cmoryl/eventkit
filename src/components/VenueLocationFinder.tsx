@@ -18,13 +18,17 @@ import {
   Hotel,
   Lightbulb,
   Accessibility,
-  MapPinned
+  MapPinned,
+  Clock,
+  Settings
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useRecentVenues, type RecentVenue } from '@/hooks/useRecentVenues';
+import ApiSettingsModal from '@/components/settings/ApiSettingsModal';
 
 interface VenueIntelligence {
   name: string;
@@ -76,9 +80,13 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
   const [suggestions, setSuggestions] = useState<VenueSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
+  
+  const { recentVenues, addRecentVenue, clearRecentVenues } = useRecentVenues();
 
   useEffect(() => {
     setInputValue(value);
@@ -94,6 +102,7 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
         !inputRef.current.contains(e.target as Node)
       ) {
         setShowSuggestions(false);
+        setIsFocused(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -184,12 +193,22 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
     }, 300);
   };
 
-  const handleSuggestionClick = (suggestion: VenueSuggestion) => {
+  const handleSuggestionClick = (suggestion: VenueSuggestion | RecentVenue) => {
     const fullValue = `${suggestion.name}, ${suggestion.city}`;
     setInputValue(fullValue);
     onChange(fullValue);
     setShowSuggestions(false);
     setSuggestions([]);
+    setIsFocused(false);
+    
+    // Add to recent venues
+    addRecentVenue({
+      name: suggestion.name,
+      city: suggestion.city,
+      country: suggestion.country,
+      type: suggestion.type,
+    });
+    
     // Auto-research the selected venue
     handleSearch(fullValue);
   };
@@ -227,10 +246,17 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
   };
 
   const handleInputFocus = () => {
-    if (suggestions.length > 0) {
+    setIsFocused(true);
+    // Show suggestions if we have any, or show recent venues
+    if (suggestions.length > 0 || (recentVenues.length > 0 && inputValue.trim().length < 2)) {
       setShowSuggestions(true);
     }
   };
+
+  // Determine what to show in dropdown
+  const showRecentVenues = isFocused && inputValue.trim().length < 2 && recentVenues.length > 0;
+  const showAISuggestions = suggestions.length > 0 && !showRecentVenues;
+  const hasDropdownContent = showRecentVenues || showAISuggestions;
 
   const clearVenueData = () => {
     setVenueData(null);
@@ -239,6 +265,12 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
 
   return (
     <div className={cn("space-y-3", className)}>
+      {/* Settings Modal */}
+      <ApiSettingsModal 
+        isOpen={showSettingsModal} 
+        onClose={() => setShowSettingsModal(false)} 
+      />
+      
       {/* Search Input with Autocomplete */}
       <div className="relative">
         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
@@ -251,19 +283,29 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
           onFocus={handleInputFocus}
           placeholder="Search venue name or city..."
           className={cn(
-            "w-full pl-10 pr-24 py-3 rounded-xl border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all",
+            "w-full pl-10 pr-32 py-3 rounded-xl border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all",
             venueData ? "border-primary/50" : "border-border",
-            showSuggestions && suggestions.length > 0 && "rounded-b-none border-b-0"
+            showSuggestions && hasDropdownContent && "rounded-b-none border-b-0"
           )}
           autoComplete="off"
         />
         
         {/* Loading indicator for suggestions */}
         {isSuggesting && (
-          <div className="absolute right-20 top-1/2 -translate-y-1/2">
+          <div className="absolute right-28 top-1/2 -translate-y-1/2">
             <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
           </div>
         )}
+        
+        {/* Settings button */}
+        <button
+          type="button"
+          onClick={() => setShowSettingsModal(true)}
+          className="absolute right-[4.5rem] top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-secondary transition-colors z-10"
+          title="API Settings"
+        >
+          <Settings className="w-4 h-4 text-muted-foreground" />
+        </button>
         
         <Button
           type="button"
@@ -282,7 +324,7 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
 
         {/* Autocomplete Suggestions Dropdown */}
         <AnimatePresence>
-          {showSuggestions && suggestions.length > 0 && (
+          {showSuggestions && hasDropdownContent && (
             <motion.div
               ref={suggestionsRef}
               initial={{ opacity: 0, y: -4 }}
@@ -291,43 +333,98 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
               transition={{ duration: 0.15 }}
               className="absolute left-0 right-0 top-full z-50 bg-background border border-t-0 border-border rounded-b-xl shadow-lg overflow-hidden"
             >
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={`${suggestion.name}-${suggestion.city}-${index}`}
-                  type="button"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className={cn(
-                    "w-full px-3 py-2.5 flex items-start gap-3 text-left hover:bg-secondary/50 transition-colors",
-                    selectedIndex === index && "bg-secondary/70"
-                  )}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    {suggestion.type === 'Convention Center' ? (
-                      <Building2 className="w-4 h-4 text-primary" />
-                    ) : suggestion.type === 'Hotel' ? (
-                      <Hotel className="w-4 h-4 text-primary" />
-                    ) : (
-                      <MapPinned className="w-4 h-4 text-primary" />
-                    )}
+              {/* Recent Venues Section */}
+              {showRecentVenues && (
+                <>
+                  <div className="px-3 py-2 flex items-center justify-between border-b border-border/50 bg-secondary/20">
+                    <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Clock className="w-3 h-3" />
+                      Recent Searches
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearRecentVenues();
+                        setShowSuggestions(false);
+                      }}
+                      className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Clear all
+                    </button>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm text-foreground truncate">
-                      {suggestion.name}
-                    </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <span>{suggestion.city}, {suggestion.country}</span>
-                      <span className="text-muted-foreground/50">•</span>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {suggestion.type}
-                      </Badge>
-                    </div>
+                  {recentVenues.map((venue, index) => (
+                    <button
+                      key={`recent-${venue.name}-${venue.city}-${index}`}
+                      type="button"
+                      onClick={() => handleSuggestionClick(venue)}
+                      className={cn(
+                        "w-full px-3 py-2.5 flex items-start gap-3 text-left hover:bg-secondary/50 transition-colors",
+                        selectedIndex === index && "bg-secondary/70"
+                      )}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-muted to-secondary flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-foreground truncate">
+                          {venue.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <span>{venue.city}, {venue.country}</span>
+                          <span className="text-muted-foreground/50">•</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            {venue.type}
+                          </Badge>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </>
+              )}
+              
+              {/* AI Suggestions Section */}
+              {showAISuggestions && (
+                <>
+                  {suggestions.map((suggestion, index) => (
+                    <button
+                      key={`${suggestion.name}-${suggestion.city}-${index}`}
+                      type="button"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className={cn(
+                        "w-full px-3 py-2.5 flex items-start gap-3 text-left hover:bg-secondary/50 transition-colors",
+                        selectedIndex === index && "bg-secondary/70"
+                      )}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {suggestion.type === 'Convention Center' ? (
+                          <Building2 className="w-4 h-4 text-primary" />
+                        ) : suggestion.type === 'Hotel' ? (
+                          <Hotel className="w-4 h-4 text-primary" />
+                        ) : (
+                          <MapPinned className="w-4 h-4 text-primary" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-foreground truncate">
+                          {suggestion.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <span>{suggestion.city}, {suggestion.country}</span>
+                          <span className="text-muted-foreground/50">•</span>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            {suggestion.type}
+                          </Badge>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                  <div className="px-3 py-1.5 text-[10px] text-muted-foreground bg-secondary/30 border-t border-border/50 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    AI-suggested venues • Select to research
                   </div>
-                </button>
-              ))}
-              <div className="px-3 py-1.5 text-[10px] text-muted-foreground bg-secondary/30 border-t border-border/50 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                AI-suggested venues • Select to research
-              </div>
+                </>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
