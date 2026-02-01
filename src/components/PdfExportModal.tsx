@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { GeneratedAsset, PdfExportOptions } from '../types';
+import type { GeneratedAsset, PdfExportOptions, PDF_EXPORT_PRESETS, PdfExportPreset } from '../types';
 import { printDimensionsMap, paperSizes } from '../utils';
 import Spinner from './Spinner';
 import { 
@@ -11,11 +11,15 @@ import {
   getDefaultPrintSpec,
   type PreflightResult
 } from '../services/printService';
+import { ChevronDown, ChevronUp, Settings2, FileCheck } from 'lucide-react';
+
+// Import presets from types
+import { PDF_EXPORT_PRESETS as PRESETS } from '../types';
 
 interface PdfExportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (options: PdfExportOptions & { colorMode: 'CMYK' | 'RGB'; showSafeZone: boolean; safeZone: number; dpi: number }) => void;
+  onExport: (options: PdfExportOptions) => void;
   asset: GeneratedAsset;
   isExporting?: boolean;
 }
@@ -25,6 +29,7 @@ const PdfExportModal: React.FC<PdfExportModalProps> = ({ isOpen, onClose, onExpo
   const isLargeFormat = assetDims && (assetDims.w > 17 || assetDims.h > 17);
   const defaultSpec = getDefaultPrintSpec(asset.type);
 
+  // Basic settings
   const [paperSize, setPaperSize] = useState(isLargeFormat ? 'custom' : 'letter');
   const [bleed, setBleed] = useState(defaultSpec.bleed);
   const [showTrimMarks, setShowTrimMarks] = useState(true);
@@ -32,6 +37,29 @@ const PdfExportModal: React.FC<PdfExportModalProps> = ({ isOpen, onClose, onExpo
   const [safeZone, setSafeZone] = useState(defaultSpec.safeZone);
   const [colorMode, setColorMode] = useState<'CMYK' | 'RGB'>('CMYK');
   const [dpi, setDpi] = useState(defaultSpec.dpi);
+  
+  // Advanced settings
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<string>('High Quality Print');
+  const [pdfXStandard, setPdfXStandard] = useState<string>('none');
+  const [colorProfile, setColorProfile] = useState<string>('U.S. Web Coated (SWOP) v2');
+  const [registrationMarks, setRegistrationMarks] = useState(true);
+  const [colorBars, setColorBars] = useState(true);
+  const [bleedMarks, setBleedMarks] = useState(true);
+  const [pageInformation, setPageInformation] = useState(true);
+  const [includeMetadata, setIncludeMetadata] = useState(true);
+  const [preserveOverprint, setPreserveOverprint] = useState(true);
+  const [fontEmbedding, setFontEmbedding] = useState<'subset' | 'full'>('subset');
+  const [imageCompression, setImageCompression] = useState<'jpeg' | 'zip'>('jpeg');
+  const [imageQuality, setImageQuality] = useState<'maximum' | 'high' | 'medium'>('maximum');
+  
+  // Per-side bleed
+  const [useUniformBleed, setUseUniformBleed] = useState(true);
+  const [bleedTop, setBleedTop] = useState(defaultSpec.bleed);
+  const [bleedBottom, setBleedBottom] = useState(defaultSpec.bleed);
+  const [bleedLeft, setBleedLeft] = useState(defaultSpec.bleed);
+  const [bleedRight, setBleedRight] = useState(defaultSpec.bleed);
+  
   const [preflightResult, setPreflightResult] = useState<PreflightResult | null>(null);
   const [isRunningPreflight, setIsRunningPreflight] = useState(false);
 
@@ -49,6 +77,33 @@ const PdfExportModal: React.FC<PdfExportModalProps> = ({ isOpen, onClose, onExpo
     setSafeZone(defaultSpec.safeZone);
     setDpi(defaultSpec.dpi);
   }, [asset, isLargeFormat, defaultSpec.bleed, defaultSpec.safeZone, defaultSpec.dpi]);
+
+  // Apply preset when selected
+  const applyPreset = (presetName: string) => {
+    const preset = PRESETS.find(p => p.name === presetName);
+    if (!preset) return;
+    
+    setSelectedPreset(presetName);
+    const opts = preset.options;
+    
+    if (opts.pdfXStandard) setPdfXStandard(opts.pdfXStandard);
+    if (opts.colorMode) setColorMode(opts.colorMode as 'CMYK' | 'RGB');
+    if (opts.colorProfile) setColorProfile(opts.colorProfile);
+    if (opts.dpi) setDpi(opts.dpi);
+    if (opts.advanced?.fontEmbedding) setFontEmbedding(opts.advanced.fontEmbedding as 'subset' | 'full');
+    if (opts.advanced?.preserveOverprint !== undefined) setPreserveOverprint(opts.advanced.preserveOverprint);
+    if (opts.printMarks) {
+      setShowTrimMarks(opts.printMarks.trimMarks ?? true);
+      setRegistrationMarks(opts.printMarks.registrationMarks ?? true);
+      setColorBars(opts.printMarks.colorBars ?? true);
+      setBleedMarks(opts.printMarks.bleedMarks ?? true);
+      setPageInformation(opts.printMarks.pageInformation ?? true);
+    }
+    if (opts.imageSettings) {
+      if (opts.imageSettings.colorCompression) setImageCompression(opts.imageSettings.colorCompression as 'jpeg' | 'zip');
+      if (opts.imageSettings.colorQuality) setImageQuality(opts.imageSettings.colorQuality as 'maximum' | 'high' | 'medium');
+    }
+  };
 
   // Run preflight check when modal opens
   useEffect(() => {
@@ -72,7 +127,71 @@ const PdfExportModal: React.FC<PdfExportModalProps> = ({ isOpen, onClose, onExpo
   }, [isOpen, asset, bleed, dpi, colorMode, showTrimMarks, showSafeZone, safeZone, assetDims]);
 
   const handleExportClick = () => {
-    onExport({ paperSize, bleed, showTrimMarks, colorMode, showSafeZone, safeZone, dpi });
+    const exportOptions: PdfExportOptions = {
+      paperSize,
+      bleed: useUniformBleed ? bleed : bleedTop, // Use top for backward compat
+      showTrimMarks,
+      pdfXStandard: pdfXStandard as PdfExportOptions['pdfXStandard'],
+      colorMode,
+      colorProfile: colorProfile as PdfExportOptions['colorProfile'],
+      dpi,
+      showSafeZone,
+      safeZone,
+      includeMetadata,
+      includeJobTicket: pageInformation,
+      printMarks: {
+        trimMarks: showTrimMarks,
+        registrationMarks,
+        colorBars,
+        pageInformation,
+        bleedMarks,
+        trimMarkWeight: 0.25,
+        trimMarkOffset: 6
+      },
+      bleedSlug: useUniformBleed ? {
+        bleedTop: bleed,
+        bleedBottom: bleed,
+        bleedLeft: bleed,
+        bleedRight: bleed,
+        useDocumentBleed: true,
+        includeSlugArea: false
+      } : {
+        bleedTop,
+        bleedBottom,
+        bleedLeft,
+        bleedRight,
+        useDocumentBleed: false,
+        includeSlugArea: false
+      },
+      imageSettings: {
+        colorCompression: imageCompression,
+        colorQuality: imageQuality,
+        colorDownsample: 'bicubic',
+        colorDownsampleDpi: dpi,
+        colorDownsampleAbove: Math.round(dpi * 1.5),
+        grayscaleCompression: imageCompression,
+        grayscaleQuality: imageQuality,
+        monochromeCompression: 'ccitt4',
+        antiAliasing: true
+      },
+      advanced: {
+        fontEmbedding,
+        subsetFontsBelow: fontEmbedding === 'subset' ? 100 : 0,
+        convertTextToOutlines: false,
+        transparencyFlattening: pdfXStandard.includes('X-1') ? 'high' : 'none',
+        flatteningResolution: dpi,
+        preserveOverprint,
+        simulateOverprint: false,
+        useMaximumJpegQuality: imageQuality === 'maximum',
+        optimizeForFastWebView: false,
+        createTaggedPdf: false,
+        createAcrobatLayers: pdfXStandard === 'PDF/X-4:2010',
+        exportNonPrintingObjects: false,
+        exportVisibleGuidesAndBaselines: false
+      }
+    };
+    
+    onExport(exportOptions);
   };
 
   if (!isOpen) return null;

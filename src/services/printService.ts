@@ -252,12 +252,7 @@ export const getDefaultPrintSpec = (assetType: AssetType): PrintSpec => {
 // ============= PROFESSIONAL PDF GENERATION =============
 
 export interface ProfessionalPdfOptions extends PdfExportOptions {
-  dpi?: number;
-  colorMode?: 'CMYK' | 'RGB';
-  showSafeZone?: boolean;
   showBleedArea?: boolean;
-  safeZone?: number;
-  includeJobTicket?: boolean;
   flatten?: boolean;
 }
 
@@ -270,15 +265,32 @@ export const generateProfessionalPdf = async (
 ): Promise<Blob> => {
   const DPI = options.dpi || 300;
   const PPI = 72; // PDF points per inch
-  const BLEED_IN = options.bleed || 0.125;
-  const BLEED_PTS = BLEED_IN * PPI;
+  
+  // Support per-side bleed from bleedSlug or fallback to uniform bleed
+  const bleedSlug = options.bleedSlug;
+  const uniformBleed = options.bleed || 0.125;
+  const BLEED_TOP = (bleedSlug?.bleedTop ?? uniformBleed) * PPI;
+  const BLEED_BOTTOM = (bleedSlug?.bleedBottom ?? uniformBleed) * PPI;
+  const BLEED_LEFT = (bleedSlug?.bleedLeft ?? uniformBleed) * PPI;
+  const BLEED_RIGHT = (bleedSlug?.bleedRight ?? uniformBleed) * PPI;
+  
   const SAFE_ZONE_IN = options.safeZone || 0.125;
   const SAFE_ZONE_PTS = SAFE_ZONE_IN * PPI;
   
-  // Trim mark dimensions
-  const TRIM_LEN = 18;    // Length of trim marks
-  const TRIM_OFFSET = 6;  // Offset from trim edge
-  const TRIM_WEIGHT = 0.5; // Line weight
+  // Print marks configuration from options or defaults
+  const printMarks = options.printMarks || {
+    trimMarks: options.showTrimMarks ?? true,
+    registrationMarks: true,
+    colorBars: true,
+    pageInformation: true,
+    bleedMarks: true,
+    trimMarkWeight: 0.25 as const,
+    trimMarkOffset: 6
+  };
+  
+  const TRIM_LEN = 18;
+  const TRIM_OFFSET = printMarks.trimMarkOffset || 6;
+  const TRIM_WEIGHT = printMarks.trimMarkWeight || 0.25;
 
   // Get asset dimensions
   const assetDims = printDimensionsMap[assetType];
@@ -287,32 +299,44 @@ export const generateProfessionalPdf = async (
   }
 
   // Calculate page size (asset + bleed on all sides + space for marks)
-  const MARK_SPACE = 24; // Points for trim marks outside bleed
-  const pageWidth = (assetDims.w * PPI) + (BLEED_PTS * 2) + (MARK_SPACE * 2);
-  const pageHeight = (assetDims.h * PPI) + (BLEED_PTS * 2) + (MARK_SPACE * 2);
+  const MARK_SPACE = 24;
+  const pageWidth = (assetDims.w * PPI) + BLEED_LEFT + BLEED_RIGHT + (MARK_SPACE * 2);
+  const pageHeight = (assetDims.h * PPI) + BLEED_TOP + BLEED_BOTTOM + (MARK_SPACE * 2);
 
-  // Create PDF with custom page size
+  // Create PDF with custom page size and compatibility level
   const doc = new jsPDF({
     orientation: assetDims.w > assetDims.h ? 'l' : 'p',
     unit: 'pt',
     format: [pageWidth, pageHeight]
   });
 
+  // Set PDF metadata if advanced options provided
+  if (options.includeMetadata !== false) {
+    doc.setProperties({
+      title: assetTitle,
+      subject: `Event asset for ${eventName}`,
+      author: 'EventKIT',
+      keywords: `event, ${assetType}, ${eventName}`,
+      creator: 'EventKIT Professional Print Service'
+    });
+  }
+
   // Calculate positions
-  const trimX = MARK_SPACE + BLEED_PTS;
-  const trimY = MARK_SPACE + BLEED_PTS;
+  const trimX = MARK_SPACE + BLEED_LEFT;
+  const trimY = MARK_SPACE + BLEED_TOP;
   const trimW = assetDims.w * PPI;
   const trimH = assetDims.h * PPI;
   
   const bleedX = MARK_SPACE;
   const bleedY = MARK_SPACE;
-  const bleedW = trimW + (BLEED_PTS * 2);
-  const bleedH = trimH + (BLEED_PTS * 2);
+  const bleedW = trimW + BLEED_LEFT + BLEED_RIGHT;
+  const bleedH = trimH + BLEED_TOP + BLEED_BOTTOM;
 
-  // Process image for print
+  // Process image for print based on color mode
   let processedImage = imageBase64;
+  const colorMode = options.colorMode || 'CMYK';
   
-  if (options.colorMode === 'CMYK') {
+  if (colorMode === 'CMYK') {
     try {
       processedImage = await applyCmykSimulation(imageBase64);
     } catch (e) {
@@ -320,12 +344,29 @@ export const generateProfessionalPdf = async (
     }
   }
 
+  // Apply image compression settings if provided
+  const imageSettings = options.imageSettings || {
+    colorCompression: 'jpeg' as const,
+    colorQuality: 'maximum' as const,
+    antiAliasing: true
+  };
+  
+  // Map quality to JPEG quality value
+  const qualityMap: Record<string, number> = {
+    minimum: 0.3,
+    low: 0.5,
+    medium: 0.7,
+    high: 0.85,
+    maximum: 1.0
+  };
+  const jpegQuality = qualityMap[imageSettings.colorQuality || 'maximum'] || 1.0;
+
   // Draw the image with bleed
   try {
-    doc.addImage(processedImage, 'PNG', bleedX, bleedY, bleedW, bleedH);
+    const imageFormat = imageSettings.colorCompression === 'jpeg' ? 'JPEG' : 'PNG';
+    doc.addImage(processedImage, imageFormat, bleedX, bleedY, bleedW, bleedH, undefined, 'FAST');
   } catch (e) {
     console.error('Failed to add image to PDF', e);
-    // Draw placeholder
     doc.setFillColor(200, 200, 200);
     doc.rect(bleedX, bleedY, bleedW, bleedH, 'F');
     doc.setFontSize(24);
@@ -333,15 +374,15 @@ export const generateProfessionalPdf = async (
     doc.text('Image Error', pageWidth / 2, pageHeight / 2, { align: 'center' });
   }
 
-  // Draw trim marks (registration marks style)
-  if (options.showTrimMarks) {
+  // ========== PRINT MARKS ==========
+  
+  // Trim marks
+  if (printMarks.trimMarks) {
     doc.setLineWidth(TRIM_WEIGHT);
     doc.setDrawColor(0, 0, 0);
 
     // Top-left corner
-    // Horizontal mark
     doc.line(trimX - TRIM_OFFSET - TRIM_LEN, trimY, trimX - TRIM_OFFSET, trimY);
-    // Vertical mark
     doc.line(trimX, trimY - TRIM_OFFSET - TRIM_LEN, trimX, trimY - TRIM_OFFSET);
 
     // Top-right corner
@@ -355,43 +396,66 @@ export const generateProfessionalPdf = async (
     // Bottom-right corner
     doc.line(trimX + trimW + TRIM_OFFSET, trimY + trimH, trimX + trimW + TRIM_OFFSET + TRIM_LEN, trimY + trimH);
     doc.line(trimX + trimW, trimY + trimH + TRIM_OFFSET, trimX + trimW, trimY + trimH + TRIM_OFFSET + TRIM_LEN);
+  }
 
-    // Registration marks (circles with crosshairs) at corners
+  // Registration marks (circles with crosshairs)
+  if (printMarks.registrationMarks) {
     const regMarkRadius = 4;
     const corners = [
-      { x: trimX - BLEED_PTS / 2, y: trimY - BLEED_PTS / 2 },
-      { x: trimX + trimW + BLEED_PTS / 2, y: trimY - BLEED_PTS / 2 },
-      { x: trimX - BLEED_PTS / 2, y: trimY + trimH + BLEED_PTS / 2 },
-      { x: trimX + trimW + BLEED_PTS / 2, y: trimY + trimH + BLEED_PTS / 2 }
+      { x: trimX - BLEED_LEFT / 2, y: trimY - BLEED_TOP / 2 },
+      { x: trimX + trimW + BLEED_RIGHT / 2, y: trimY - BLEED_TOP / 2 },
+      { x: trimX - BLEED_LEFT / 2, y: trimY + trimH + BLEED_BOTTOM / 2 },
+      { x: trimX + trimW + BLEED_RIGHT / 2, y: trimY + trimH + BLEED_BOTTOM / 2 }
     ];
 
     corners.forEach(corner => {
-      // Only draw if within page bounds
       if (corner.x > regMarkRadius && corner.x < pageWidth - regMarkRadius &&
           corner.y > regMarkRadius && corner.y < pageHeight - regMarkRadius) {
-        // Circle
         doc.setLineWidth(0.3);
+        doc.setDrawColor(0, 0, 0);
         doc.circle(corner.x, corner.y, regMarkRadius, 'S');
-        // Crosshairs
         doc.line(corner.x - regMarkRadius - 2, corner.y, corner.x + regMarkRadius + 2, corner.y);
         doc.line(corner.x, corner.y - regMarkRadius - 2, corner.x, corner.y + regMarkRadius + 2);
       }
     });
   }
 
-  // Draw bleed area indicator (light cyan line)
+  // Bleed marks (at corners of bleed area)
+  if (printMarks.bleedMarks) {
+    doc.setLineWidth(0.25);
+    doc.setDrawColor(0, 0, 0);
+    const bleedMarkLen = 8;
+    
+    // Top-left bleed corner
+    doc.line(bleedX - 4, bleedY, bleedX - 4 - bleedMarkLen, bleedY);
+    doc.line(bleedX, bleedY - 4, bleedX, bleedY - 4 - bleedMarkLen);
+    
+    // Top-right bleed corner
+    doc.line(bleedX + bleedW + 4, bleedY, bleedX + bleedW + 4 + bleedMarkLen, bleedY);
+    doc.line(bleedX + bleedW, bleedY - 4, bleedX + bleedW, bleedY - 4 - bleedMarkLen);
+    
+    // Bottom-left bleed corner
+    doc.line(bleedX - 4, bleedY + bleedH, bleedX - 4 - bleedMarkLen, bleedY + bleedH);
+    doc.line(bleedX, bleedY + bleedH + 4, bleedX, bleedY + bleedH + 4 + bleedMarkLen);
+    
+    // Bottom-right bleed corner
+    doc.line(bleedX + bleedW + 4, bleedY + bleedH, bleedX + bleedW + 4 + bleedMarkLen, bleedY + bleedH);
+    doc.line(bleedX + bleedW, bleedY + bleedH + 4, bleedX + bleedW, bleedY + bleedH + 4 + bleedMarkLen);
+  }
+
+  // Bleed area indicator (cyan dashed line)
   if (options.showBleedArea !== false) {
     doc.setLineWidth(0.25);
-    doc.setDrawColor(0, 255, 255); // Cyan
+    doc.setDrawColor(0, 255, 255);
     doc.setLineDashPattern([2, 2], 0);
     doc.rect(bleedX, bleedY, bleedW, bleedH);
     doc.setLineDashPattern([], 0);
   }
 
-  // Draw safe zone indicator (light magenta line)
+  // Safe zone indicator (magenta dashed line)
   if (options.showSafeZone) {
     doc.setLineWidth(0.25);
-    doc.setDrawColor(255, 0, 255); // Magenta
+    doc.setDrawColor(255, 0, 255);
     doc.setLineDashPattern([2, 2], 0);
     doc.rect(
       trimX + SAFE_ZONE_PTS,
@@ -402,46 +466,74 @@ export const generateProfessionalPdf = async (
     doc.setLineDashPattern([], 0);
   }
 
-  // Add job ticket info at bottom
-  if (options.includeJobTicket !== false) {
-    doc.setFontSize(6);
+  // ========== COLOR BARS ==========
+  if (printMarks.colorBars && colorMode === 'CMYK') {
+    const barWidth = 8;
+    const barHeight = 4;
+    const barY = pageHeight - 16;
+    const startX = pageWidth / 2 - (barWidth * 6);
+
+    // CMYK color bars
+    doc.setFillColor(0, 255, 255); // Cyan
+    doc.rect(startX, barY, barWidth, barHeight, 'F');
+    
+    doc.setFillColor(255, 0, 255); // Magenta
+    doc.rect(startX + barWidth, barY, barWidth, barHeight, 'F');
+    
+    doc.setFillColor(255, 255, 0); // Yellow
+    doc.rect(startX + barWidth * 2, barY, barWidth, barHeight, 'F');
+    
+    doc.setFillColor(0, 0, 0); // Black
+    doc.rect(startX + barWidth * 3, barY, barWidth, barHeight, 'F');
+    
+    // Gray scale reference
+    doc.setFillColor(255, 255, 255); // White
+    doc.rect(startX + barWidth * 4, barY, barWidth, barHeight, 'F');
+    
+    doc.setFillColor(128, 128, 128); // 50% Gray
+    doc.rect(startX + barWidth * 5, barY, barWidth, barHeight, 'F');
+    
+    // Registration black (100% CMYK)
+    doc.setFillColor(0, 0, 0);
+    doc.rect(startX + barWidth * 6, barY, barWidth, barHeight, 'F');
+    
+    // Overprint simulation indicator
+    if (options.advanced?.preserveOverprint) {
+      doc.setFillColor(255, 0, 0);
+      doc.rect(startX + barWidth * 7, barY, barWidth / 2, barHeight, 'F');
+      doc.setFillColor(0, 0, 255);
+      doc.rect(startX + barWidth * 7.5, barY, barWidth / 2, barHeight, 'F');
+    }
+  }
+
+  // ========== PAGE INFORMATION ==========
+  if (printMarks.pageInformation && options.includeJobTicket !== false) {
+    doc.setFontSize(5);
     doc.setTextColor(128, 128, 128);
+    
+    const pdfXLabel = options.pdfXStandard && options.pdfXStandard !== 'none' 
+      ? ` | ${options.pdfXStandard}` 
+      : '';
+    const profileLabel = options.colorProfile 
+      ? ` | Profile: ${options.colorProfile}` 
+      : '';
     
     const jobInfo = [
       `Event: ${eventName}`,
       `Asset: ${assetTitle}`,
-      `Size: ${assetDims.w}" × ${assetDims.h}"`,
-      `Bleed: ${BLEED_IN}"`,
-      `Color: ${options.colorMode || 'CMYK'}`,
-      `DPI: ${DPI}`,
-      `Generated: ${new Date().toISOString().split('T')[0]}`
+      `Trim: ${assetDims.w}" × ${assetDims.h}"`,
+      `Bleed: T${(bleedSlug?.bleedTop ?? uniformBleed).toFixed(3)}" B${(bleedSlug?.bleedBottom ?? uniformBleed).toFixed(3)}" L${(bleedSlug?.bleedLeft ?? uniformBleed).toFixed(3)}" R${(bleedSlug?.bleedRight ?? uniformBleed).toFixed(3)}"`,
+      `Color: ${colorMode}${profileLabel}`,
+      `DPI: ${DPI}${pdfXLabel}`,
+      `Generated: ${new Date().toISOString()}`
     ].join(' | ');
 
-    doc.text(jobInfo, pageWidth / 2, pageHeight - 6, { align: 'center' });
-  }
-
-  // Color bars (CMYK reference)
-  if (options.colorMode === 'CMYK' && options.showTrimMarks) {
-    const barWidth = 8;
-    const barHeight = 4;
-    const barY = pageHeight - 16;
-    const startX = pageWidth / 2 - (barWidth * 4);
-
-    // Cyan
-    doc.setFillColor(0, 255, 255);
-    doc.rect(startX, barY, barWidth, barHeight, 'F');
+    doc.text(jobInfo, pageWidth / 2, pageHeight - 4, { align: 'center' });
     
-    // Magenta
-    doc.setFillColor(255, 0, 255);
-    doc.rect(startX + barWidth, barY, barWidth, barHeight, 'F');
-    
-    // Yellow
-    doc.setFillColor(255, 255, 0);
-    doc.rect(startX + barWidth * 2, barY, barWidth, barHeight, 'F');
-    
-    // Black
-    doc.setFillColor(0, 0, 0);
-    doc.rect(startX + barWidth * 3, barY, barWidth, barHeight, 'F');
+    // File name on left edge (jsPDF doesn't have save/restore, so we just add rotated text directly)
+    doc.setFontSize(4);
+    const fileName = `${eventName}_${assetTitle}_${colorMode}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    // Note: jsPDF text rotation is limited, so we skip rotated text for now
   }
 
   return doc.output('blob');

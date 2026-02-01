@@ -450,11 +450,425 @@ export interface VenueVideoAnalysis {
   extractedFrames: string[];
 }
 
+// ============= COMPREHENSIVE ADOBE PDF EXPORT OPTIONS =============
+
+// PDF/X Standards for print production
+export type PdfXStandard = 'none' | 'PDF/X-1a:2001' | 'PDF/X-1a:2003' | 'PDF/X-3:2002' | 'PDF/X-3:2003' | 'PDF/X-4:2010';
+
+// Color profiles for professional printing
+export type ColorProfile = 
+  | 'sRGB IEC61966-2.1'
+  | 'Adobe RGB (1998)'
+  | 'ProPhoto RGB'
+  | 'U.S. Web Coated (SWOP) v2'
+  | 'Coated FOGRA39'
+  | 'Uncoated FOGRA29'
+  | 'Japan Color 2001 Coated'
+  | 'Japan Color 2001 Uncoated'
+  | 'GRACoL 2006 (ISO 12647-2:2004)'
+  | 'Custom';
+
+// Image compression settings
+export type ImageCompression = 'none' | 'jpeg' | 'jpeg2000' | 'zip' | 'auto';
+export type ImageQuality = 'minimum' | 'low' | 'medium' | 'high' | 'maximum';
+export type ImageDownsample = 'none' | 'average' | 'subsampling' | 'bicubic';
+
+// Font embedding options
+export type FontEmbedding = 'none' | 'subset' | 'full';
+
+// Transparency flattening
+export type TransparencyFlattening = 'none' | 'low' | 'medium' | 'high';
+
+// Print marks types
+export interface PrintMarksOptions {
+  trimMarks: boolean;
+  registrationMarks: boolean;
+  colorBars: boolean;
+  pageInformation: boolean;
+  bleedMarks: boolean;
+  trimMarkWeight: 0.125 | 0.25 | 0.5;
+  trimMarkOffset: number; // in points
+}
+
+// Bleed and slug settings
+export interface BleedSlugOptions {
+  bleedTop: number;
+  bleedBottom: number;
+  bleedLeft: number;
+  bleedRight: number;
+  useDocumentBleed: boolean;
+  includeSlugArea: boolean;
+  slugTop?: number;
+  slugBottom?: number;
+  slugLeft?: number;
+  slugRight?: number;
+}
+
+// Output intent for PDF/X
+export interface OutputIntent {
+  standard: PdfXStandard;
+  profile: ColorProfile;
+  outputCondition?: string;
+  registryName?: string;
+}
+
+// Image settings
+export interface ImageSettings {
+  colorCompression: ImageCompression;
+  colorQuality: ImageQuality;
+  colorDownsample: ImageDownsample;
+  colorDownsampleDpi: number;
+  colorDownsampleAbove: number;
+  grayscaleCompression: ImageCompression;
+  grayscaleQuality: ImageQuality;
+  monochromeCompression: 'ccitt4' | 'ccitt3' | 'zip' | 'runlength';
+  antiAliasing: boolean;
+}
+
+// Advanced PDF options
+export interface AdvancedPdfOptions {
+  fontEmbedding: FontEmbedding;
+  subsetFontsBelow: number; // percentage
+  convertTextToOutlines: boolean;
+  transparencyFlattening: TransparencyFlattening;
+  flatteningResolution: number;
+  preserveOverprint: boolean;
+  simulateOverprint: boolean;
+  useMaximumJpegQuality: boolean;
+  optimizeForFastWebView: boolean;
+  createTaggedPdf: boolean;
+  createAcrobatLayers: boolean;
+  exportNonPrintingObjects: boolean;
+  exportVisibleGuidesAndBaselines: boolean;
+}
+
+// Security settings
+export interface PdfSecurityOptions {
+  requirePassword: boolean;
+  documentOpenPassword?: string;
+  permissionsPassword?: string;
+  allowPrinting: 'none' | 'lowResolution' | 'highResolution';
+  allowChanges: 'none' | 'insertDeleteRotate' | 'fillSignature' | 'commentFillSign' | 'any';
+  allowCopying: boolean;
+  allowAccessibility: boolean;
+  encryptionLevel: '128bit-aes' | '256bit-aes';
+}
+
+// Complete PDF export options matching Adobe standards
+// All advanced fields are optional for backward compatibility
 export interface PdfExportOptions {
+  // Basic settings (required - backward compatible)
   paperSize: string;
   bleed: number;
   showTrimMarks: boolean;
+  
+  // PDF/X Compatibility (optional)
+  pdfXStandard?: PdfXStandard;
+  compatibilityLevel?: '1.3' | '1.4' | '1.5' | '1.6' | '1.7' | '2.0';
+  
+  // Color management (optional - defaults applied at export time)
+  colorMode?: 'CMYK' | 'RGB' | 'Grayscale';
+  colorProfile?: ColorProfile;
+  colorConversion?: 'none' | 'convertToDestination' | 'convertToDestinationPreserve';
+  includeIccProfile?: boolean;
+  
+  // Resolution & quality (optional)
+  dpi?: number;
+  imageSettings?: ImageSettings;
+  
+  // Print marks & bleed (optional - detailed control)
+  printMarks?: PrintMarksOptions;
+  bleedSlug?: BleedSlugOptions;
+  
+  // Output intent (optional)
+  outputIntent?: OutputIntent;
+  
+  // Advanced options (optional)
+  advanced?: AdvancedPdfOptions;
+  
+  // Security (optional)
+  security?: PdfSecurityOptions;
+  
+  // Metadata (optional)
+  includeMetadata?: boolean;
+  includeJobTicket?: boolean;
+  
+  // Safe zone (optional)
+  showSafeZone?: boolean;
+  safeZone?: number;
 }
+
+// Preset configurations for common workflows
+export interface PdfExportPreset {
+  name: string;
+  description: string;
+  category: 'print' | 'press' | 'digital' | 'archive';
+  options: Partial<PdfExportOptions>;
+}
+
+// Built-in Adobe-style presets
+export const PDF_EXPORT_PRESETS: PdfExportPreset[] = [
+  {
+    name: 'High Quality Print',
+    description: 'Use for high-quality desktop printers and proofing devices',
+    category: 'print',
+    options: {
+      pdfXStandard: 'none',
+      compatibilityLevel: '1.5',
+      colorMode: 'CMYK',
+      dpi: 300,
+      imageSettings: {
+        colorCompression: 'jpeg',
+        colorQuality: 'maximum',
+        colorDownsample: 'bicubic',
+        colorDownsampleDpi: 300,
+        colorDownsampleAbove: 450,
+        grayscaleCompression: 'jpeg',
+        grayscaleQuality: 'maximum',
+        monochromeCompression: 'ccitt4',
+        antiAliasing: true
+      },
+      advanced: {
+        fontEmbedding: 'subset',
+        subsetFontsBelow: 100,
+        convertTextToOutlines: false,
+        transparencyFlattening: 'high',
+        flatteningResolution: 300,
+        preserveOverprint: true,
+        simulateOverprint: false,
+        useMaximumJpegQuality: true,
+        optimizeForFastWebView: false,
+        createTaggedPdf: false,
+        createAcrobatLayers: false,
+        exportNonPrintingObjects: false,
+        exportVisibleGuidesAndBaselines: false
+      }
+    }
+  },
+  {
+    name: 'PDF/X-1a:2001',
+    description: 'ISO standard for blind exchange of CMYK print data',
+    category: 'press',
+    options: {
+      pdfXStandard: 'PDF/X-1a:2001',
+      compatibilityLevel: '1.3',
+      colorMode: 'CMYK',
+      colorConversion: 'convertToDestination',
+      includeIccProfile: true,
+      dpi: 300,
+      advanced: {
+        fontEmbedding: 'full',
+        subsetFontsBelow: 0,
+        convertTextToOutlines: false,
+        transparencyFlattening: 'high',
+        flatteningResolution: 300,
+        preserveOverprint: true,
+        simulateOverprint: false,
+        useMaximumJpegQuality: true,
+        optimizeForFastWebView: false,
+        createTaggedPdf: false,
+        createAcrobatLayers: false,
+        exportNonPrintingObjects: false,
+        exportVisibleGuidesAndBaselines: false
+      }
+    }
+  },
+  {
+    name: 'PDF/X-4:2010',
+    description: 'Latest PDF/X standard with transparency and layers support',
+    category: 'press',
+    options: {
+      pdfXStandard: 'PDF/X-4:2010',
+      compatibilityLevel: '1.6',
+      colorMode: 'CMYK',
+      colorConversion: 'convertToDestinationPreserve',
+      includeIccProfile: true,
+      dpi: 300,
+      advanced: {
+        fontEmbedding: 'full',
+        subsetFontsBelow: 0,
+        convertTextToOutlines: false,
+        transparencyFlattening: 'none',
+        flatteningResolution: 300,
+        preserveOverprint: true,
+        simulateOverprint: true,
+        useMaximumJpegQuality: true,
+        optimizeForFastWebView: false,
+        createTaggedPdf: false,
+        createAcrobatLayers: true,
+        exportNonPrintingObjects: false,
+        exportVisibleGuidesAndBaselines: false
+      }
+    }
+  },
+  {
+    name: 'Press Quality',
+    description: 'For commercial printing with high image quality',
+    category: 'press',
+    options: {
+      pdfXStandard: 'PDF/X-3:2003',
+      compatibilityLevel: '1.4',
+      colorMode: 'CMYK',
+      colorProfile: 'U.S. Web Coated (SWOP) v2',
+      dpi: 300,
+      printMarks: {
+        trimMarks: true,
+        registrationMarks: true,
+        colorBars: true,
+        pageInformation: true,
+        bleedMarks: true,
+        trimMarkWeight: 0.25,
+        trimMarkOffset: 6
+      },
+      advanced: {
+        fontEmbedding: 'full',
+        subsetFontsBelow: 0,
+        convertTextToOutlines: false,
+        transparencyFlattening: 'high',
+        flatteningResolution: 300,
+        preserveOverprint: true,
+        simulateOverprint: false,
+        useMaximumJpegQuality: true,
+        optimizeForFastWebView: false,
+        createTaggedPdf: false,
+        createAcrobatLayers: false,
+        exportNonPrintingObjects: false,
+        exportVisibleGuidesAndBaselines: false
+      }
+    }
+  },
+  {
+    name: 'Smallest File Size',
+    description: 'Optimized for web sharing and email',
+    category: 'digital',
+    options: {
+      pdfXStandard: 'none',
+      compatibilityLevel: '1.5',
+      colorMode: 'RGB',
+      colorProfile: 'sRGB IEC61966-2.1',
+      dpi: 150,
+      imageSettings: {
+        colorCompression: 'jpeg',
+        colorQuality: 'medium',
+        colorDownsample: 'bicubic',
+        colorDownsampleDpi: 150,
+        colorDownsampleAbove: 225,
+        grayscaleCompression: 'jpeg',
+        grayscaleQuality: 'medium',
+        monochromeCompression: 'ccitt4',
+        antiAliasing: true
+      },
+      advanced: {
+        fontEmbedding: 'subset',
+        subsetFontsBelow: 100,
+        convertTextToOutlines: false,
+        transparencyFlattening: 'medium',
+        flatteningResolution: 150,
+        preserveOverprint: false,
+        simulateOverprint: false,
+        useMaximumJpegQuality: false,
+        optimizeForFastWebView: true,
+        createTaggedPdf: false,
+        createAcrobatLayers: false,
+        exportNonPrintingObjects: false,
+        exportVisibleGuidesAndBaselines: false
+      }
+    }
+  },
+  {
+    name: 'PDF/A-1b (Archive)',
+    description: 'ISO standard for long-term document preservation',
+    category: 'archive',
+    options: {
+      pdfXStandard: 'none',
+      compatibilityLevel: '1.4',
+      colorMode: 'RGB',
+      includeIccProfile: true,
+      dpi: 300,
+      advanced: {
+        fontEmbedding: 'full',
+        subsetFontsBelow: 0,
+        convertTextToOutlines: false,
+        transparencyFlattening: 'high',
+        flatteningResolution: 300,
+        preserveOverprint: false,
+        simulateOverprint: false,
+        useMaximumJpegQuality: true,
+        optimizeForFastWebView: false,
+        createTaggedPdf: true,
+        createAcrobatLayers: false,
+        exportNonPrintingObjects: false,
+        exportVisibleGuidesAndBaselines: false
+      },
+      includeMetadata: true
+    }
+  }
+];
+
+// Helper to get default options
+export const getDefaultPdfExportOptions = (): PdfExportOptions => ({
+  paperSize: 'custom',
+  bleed: 0.125,
+  showTrimMarks: true,
+  pdfXStandard: 'none',
+  compatibilityLevel: '1.5',
+  colorMode: 'CMYK',
+  colorProfile: 'U.S. Web Coated (SWOP) v2',
+  colorConversion: 'convertToDestination',
+  includeIccProfile: true,
+  dpi: 300,
+  imageSettings: {
+    colorCompression: 'jpeg',
+    colorQuality: 'maximum',
+    colorDownsample: 'bicubic',
+    colorDownsampleDpi: 300,
+    colorDownsampleAbove: 450,
+    grayscaleCompression: 'jpeg',
+    grayscaleQuality: 'maximum',
+    monochromeCompression: 'ccitt4',
+    antiAliasing: true
+  },
+  printMarks: {
+    trimMarks: true,
+    registrationMarks: true,
+    colorBars: true,
+    pageInformation: true,
+    bleedMarks: true,
+    trimMarkWeight: 0.25,
+    trimMarkOffset: 6
+  },
+  bleedSlug: {
+    bleedTop: 0.125,
+    bleedBottom: 0.125,
+    bleedLeft: 0.125,
+    bleedRight: 0.125,
+    useDocumentBleed: true,
+    includeSlugArea: false
+  },
+  outputIntent: {
+    standard: 'none',
+    profile: 'U.S. Web Coated (SWOP) v2'
+  },
+  advanced: {
+    fontEmbedding: 'subset',
+    subsetFontsBelow: 100,
+    convertTextToOutlines: false,
+    transparencyFlattening: 'high',
+    flatteningResolution: 300,
+    preserveOverprint: true,
+    simulateOverprint: false,
+    useMaximumJpegQuality: true,
+    optimizeForFastWebView: false,
+    createTaggedPdf: false,
+    createAcrobatLayers: false,
+    exportNonPrintingObjects: false,
+    exportVisibleGuidesAndBaselines: false
+  },
+  includeMetadata: true,
+  includeJobTicket: true,
+  showSafeZone: true,
+  safeZone: 0.125
+});
 
 export interface LogoGenerationOptions {
   eventTitle: string;
