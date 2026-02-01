@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface ApiSettings {
   googleMapsApiKey?: string;
+  googleCloudApiKey?: string;
   openaiApiKey?: string;
   stabilityApiKey?: string;
   replicateApiKey?: string;
@@ -49,6 +50,7 @@ export const useApiSettings = () => {
 
   const configuredKeysCount = [
     settings.googleMapsApiKey,
+    settings.googleCloudApiKey,
     settings.openaiApiKey,
     settings.stabilityApiKey,
     settings.replicateApiKey,
@@ -60,6 +62,7 @@ export const useApiSettings = () => {
     updateSettings,
     clearSettings,
     hasGoogleMapsKey: Boolean(settings.googleMapsApiKey),
+    hasGoogleCloudKey: Boolean(settings.googleCloudApiKey),
     hasOpenAIKey: Boolean(settings.openaiApiKey),
     hasStabilityKey: Boolean(settings.stabilityApiKey),
     hasReplicateKey: Boolean(settings.replicateApiKey),
