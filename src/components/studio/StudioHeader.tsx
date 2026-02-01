@@ -427,22 +427,9 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               </motion.button>
             )}
 
-            {/* Auth Button */}
+            {/* Auth Button / User Area */}
             {isAuthenticated ? (
-              <div className="hidden sm:flex items-center gap-2">
-                <span className="text-xs text-muted-foreground truncate max-w-[80px]">
-                  {user?.email?.split('@')[0]}
-                </span>
-                <motion.button
-                  onClick={signOut}
-                  className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-                  title="Sign Out"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <LogOut className="w-4 h-4" />
-                </motion.button>
-              </div>
+              <UserProfileDropdown user={user} onSignOut={signOut} />
             ) : onOpenAuth && (
               <motion.button
                 onClick={onOpenAuth}
@@ -501,6 +488,118 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
       onClose={() => setShowApiSettings(false)} 
     />
     </>
+  );
+};
+
+// User Profile Dropdown Component
+interface UserProfileDropdownProps {
+  user: { email?: string; id?: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null;
+  onSignOut: () => void;
+}
+
+const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user, onSignOut }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const avatarUrl = user?.user_metadata?.avatar_url;
+  const initials = displayName.slice(0, 2).toUpperCase();
+  
+  return (
+    <div className="relative hidden sm:block">
+      <motion.button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "flex items-center gap-2 px-2 py-1.5 rounded-xl transition-colors",
+          isOpen ? "bg-secondary" : "hover:bg-secondary/80"
+        )}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        {/* Avatar */}
+        <div className="relative">
+          {avatarUrl ? (
+            <img 
+              src={avatarUrl} 
+              alt={displayName}
+              className="w-8 h-8 rounded-full object-cover ring-2 ring-primary/20"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold text-white ring-2 ring-primary/20">
+              {initials}
+            </div>
+          )}
+          {/* Online indicator */}
+          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-background" />
+        </div>
+        
+        {/* Name & chevron */}
+        <div className="hidden md:flex items-center gap-1">
+          <span className="text-sm font-medium text-foreground max-w-[100px] truncate">
+            {displayName}
+          </span>
+          <ChevronDown className={cn(
+            "w-3.5 h-3.5 text-muted-foreground transition-transform",
+            isOpen && "rotate-180"
+          )} />
+        </div>
+      </motion.button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div 
+              className="fixed inset-0 z-40" 
+              onClick={() => setIsOpen(false)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            />
+            <motion.div 
+              className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-xl shadow-2xl z-50 overflow-hidden"
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            >
+              {/* Gradient accent */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
+              
+              {/* User Info Header */}
+              <div className="px-4 py-3 border-b border-border bg-secondary/30">
+                <div className="flex items-center gap-3">
+                  {avatarUrl ? (
+                    <img 
+                      src={avatarUrl} 
+                      alt={displayName}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-sm font-bold text-white">
+                      {initials}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{displayName}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Menu Items */}
+              <div className="py-1">
+                <button 
+                  onClick={() => { onSignOut(); setIsOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
