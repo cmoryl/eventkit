@@ -291,15 +291,22 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                   )}
                 </AnimatePresence>
               </div>
-            ) : onGetStarted ? (
-              <Button onClick={onGetStarted} size="sm" className="hidden sm:flex">
-                Get Started
-              </Button>
             ) : (
-              <Button onClick={() => navigate('/')} size="sm" variant="ghost" className="hidden sm:flex">
-                <LogIn className="w-4 h-4 mr-2" />
-                Sign In
-              </Button>
+              <div className="flex items-center gap-2">
+                {onGetStarted && (
+                  <Button onClick={onGetStarted} size="sm" className="hidden sm:flex">
+                    Get Started
+                  </Button>
+                )}
+                <Button 
+                  onClick={onGetStarted || (() => navigate('/'))} 
+                  size="sm" 
+                  variant={onGetStarted ? "ghost" : "default"}
+                >
+                  <LogIn className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Sign In</span>
+                </Button>
+              </div>
             )}
           </div>
         </div>
