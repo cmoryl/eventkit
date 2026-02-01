@@ -153,6 +153,137 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_styles: {
+        Row: {
+          accent_color: string | null
+          accent_font: string | null
+          body_font: string | null
+          brand_id: string
+          brand_voice: string[] | null
+          color_palette: Json | null
+          created_at: string | null
+          cultural_context: string | null
+          custom_prompts: Json | null
+          heading_font: string | null
+          icon_style: string | null
+          id: string
+          imagery_style: string | null
+          industry: string | null
+          mood_keywords: string[] | null
+          pattern_style: string | null
+          preferred_render_engine: string | null
+          primary_color: string | null
+          print_color_mode: string | null
+          secondary_color: string | null
+          target_audience: string | null
+          tone_keywords: string[] | null
+          typography_scale: Json | null
+          updated_at: string | null
+          writing_style: string | null
+        }
+        Insert: {
+          accent_color?: string | null
+          accent_font?: string | null
+          body_font?: string | null
+          brand_id: string
+          brand_voice?: string[] | null
+          color_palette?: Json | null
+          created_at?: string | null
+          cultural_context?: string | null
+          custom_prompts?: Json | null
+          heading_font?: string | null
+          icon_style?: string | null
+          id?: string
+          imagery_style?: string | null
+          industry?: string | null
+          mood_keywords?: string[] | null
+          pattern_style?: string | null
+          preferred_render_engine?: string | null
+          primary_color?: string | null
+          print_color_mode?: string | null
+          secondary_color?: string | null
+          target_audience?: string | null
+          tone_keywords?: string[] | null
+          typography_scale?: Json | null
+          updated_at?: string | null
+          writing_style?: string | null
+        }
+        Update: {
+          accent_color?: string | null
+          accent_font?: string | null
+          body_font?: string | null
+          brand_id?: string
+          brand_voice?: string[] | null
+          color_palette?: Json | null
+          created_at?: string | null
+          cultural_context?: string | null
+          custom_prompts?: Json | null
+          heading_font?: string | null
+          icon_style?: string | null
+          id?: string
+          imagery_style?: string | null
+          industry?: string | null
+          mood_keywords?: string[] | null
+          pattern_style?: string | null
+          preferred_render_engine?: string | null
+          primary_color?: string | null
+          print_color_mode?: string | null
+          secondary_color?: string | null
+          target_audience?: string | null
+          tone_keywords?: string[] | null
+          typography_scale?: Json | null
+          updated_at?: string | null
+          writing_style?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_styles_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brands: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          logo_monochrome_url: string | null
+          logo_reversed_url: string | null
+          logo_url: string | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo_monochrome_url?: string | null
+          logo_reversed_url?: string | null
+          logo_url?: string | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo_monochrome_url?: string | null
+          logo_reversed_url?: string | null
+          logo_url?: string | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       print_templates: {
         Row: {
           asset_type: string | null
@@ -433,6 +564,158 @@ export type Database = {
           provider?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      studio_configs: {
+        Row: {
+          auto_generate: boolean | null
+          created_at: string | null
+          default_brand_id: string | null
+          default_export_format: string | null
+          default_resolution: number | null
+          generation_quality: string | null
+          id: string
+          include_bleed: boolean | null
+          include_crop_marks: boolean | null
+          layout_preference: string | null
+          preferred_model: string | null
+          show_advanced_options: boolean | null
+          studio_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auto_generate?: boolean | null
+          created_at?: string | null
+          default_brand_id?: string | null
+          default_export_format?: string | null
+          default_resolution?: number | null
+          generation_quality?: string | null
+          id?: string
+          include_bleed?: boolean | null
+          include_crop_marks?: boolean | null
+          layout_preference?: string | null
+          preferred_model?: string | null
+          show_advanced_options?: boolean | null
+          studio_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auto_generate?: boolean | null
+          created_at?: string | null
+          default_brand_id?: string | null
+          default_export_format?: string | null
+          default_resolution?: number | null
+          generation_quality?: string | null
+          id?: string
+          include_bleed?: boolean | null
+          include_crop_marks?: boolean | null
+          layout_preference?: string | null
+          preferred_model?: string | null
+          show_advanced_options?: boolean | null
+          studio_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "studio_configs_default_brand_id_fkey"
+            columns: ["default_brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      studio_templates: {
+        Row: {
+          asset_type: string
+          base_prompt: string | null
+          bleed_inches: number | null
+          category: string | null
+          color_mode: string | null
+          created_at: string | null
+          description: string | null
+          height_inches: number | null
+          height_px: number | null
+          id: string
+          is_digital_optimized: boolean | null
+          is_featured: boolean | null
+          is_print_ready: boolean | null
+          is_system: boolean | null
+          output_formats: string[] | null
+          prompt_variables: string[] | null
+          resolution_dpi: number | null
+          safe_zone_inches: number | null
+          sort_order: number | null
+          studio_type: string
+          style_modifiers: string[] | null
+          tags: string[] | null
+          template_name: string
+          thumbnail_url: string | null
+          updated_at: string | null
+          width_inches: number | null
+          width_px: number | null
+        }
+        Insert: {
+          asset_type: string
+          base_prompt?: string | null
+          bleed_inches?: number | null
+          category?: string | null
+          color_mode?: string | null
+          created_at?: string | null
+          description?: string | null
+          height_inches?: number | null
+          height_px?: number | null
+          id?: string
+          is_digital_optimized?: boolean | null
+          is_featured?: boolean | null
+          is_print_ready?: boolean | null
+          is_system?: boolean | null
+          output_formats?: string[] | null
+          prompt_variables?: string[] | null
+          resolution_dpi?: number | null
+          safe_zone_inches?: number | null
+          sort_order?: number | null
+          studio_type: string
+          style_modifiers?: string[] | null
+          tags?: string[] | null
+          template_name: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          width_inches?: number | null
+          width_px?: number | null
+        }
+        Update: {
+          asset_type?: string
+          base_prompt?: string | null
+          bleed_inches?: number | null
+          category?: string | null
+          color_mode?: string | null
+          created_at?: string | null
+          description?: string | null
+          height_inches?: number | null
+          height_px?: number | null
+          id?: string
+          is_digital_optimized?: boolean | null
+          is_featured?: boolean | null
+          is_print_ready?: boolean | null
+          is_system?: boolean | null
+          output_formats?: string[] | null
+          prompt_variables?: string[] | null
+          resolution_dpi?: number | null
+          safe_zone_inches?: number | null
+          sort_order?: number | null
+          studio_type?: string
+          style_modifiers?: string[] | null
+          tags?: string[] | null
+          template_name?: string
+          thumbnail_url?: string | null
+          updated_at?: string | null
+          width_inches?: number | null
+          width_px?: number | null
         }
         Relationships: []
       }

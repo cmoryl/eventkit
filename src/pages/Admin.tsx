@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, LayoutDashboard, FileText, Brain, 
-  Settings, BarChart3, ArrowLeft, Sparkles
+  Settings, BarChart3, ArrowLeft, Sparkles, Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import AdminPromptManager from '@/components/admin/AdminPromptManager';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminKnowledgeManager from '@/components/admin/AdminKnowledgeManager';
 import AdminRenderEngines from '@/components/admin/AdminRenderEngines';
+import { AdminBrandManager } from '@/components/admin/AdminBrandManager';
 
 const Admin: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -149,10 +150,14 @@ const Admin: React.FC = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl mx-auto">
+          <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
             <TabsTrigger value="prompts" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Prompts</span>
+            </TabsTrigger>
+            <TabsTrigger value="brands" className="flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              <span className="hidden sm:inline">Brands</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -178,6 +183,10 @@ const Admin: React.FC = () => {
             >
               <TabsContent value="prompts" className="mt-0">
                 <AdminPromptManager />
+              </TabsContent>
+
+              <TabsContent value="brands" className="mt-0">
+                <AdminBrandManager />
               </TabsContent>
 
               <TabsContent value="analytics" className="mt-0">
