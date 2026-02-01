@@ -12,13 +12,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+interface ColorInfo {
+  hex: string;
+  name: string;
+  cmyk?: string;
+  pantone?: string;
+  usage?: string;
+}
+
 interface BrandStyle {
   id?: string;
   brand_id: string;
   primary_color?: string;
   secondary_color?: string;
   accent_color?: string;
-  color_palette?: { hex: string; name: string }[];
+  color_palette?: ColorInfo[];
   heading_font?: string;
   body_font?: string;
   accent_font?: string;
@@ -27,9 +35,11 @@ interface BrandStyle {
   brand_voice?: string[];
   imagery_style?: string;
   pattern_style?: string;
+  icon_style?: string;
   target_audience?: string;
   cultural_context?: string;
   industry?: string;
+  custom_prompts?: Record<string, unknown>;
 }
 
 interface Brand {
@@ -37,6 +47,8 @@ interface Brand {
   name: string;
   description?: string;
   logo_url?: string;
+  logo_monochrome_url?: string;
+  logo_reversed_url?: string;
 }
 
 interface BrandStyleEditorProps {
@@ -148,36 +160,39 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 
       if (data?.brand) {
         const hubBrand = data.brand;
+        const guideData = hubBrand.guide_data || {};
         
         // Check if it's partial data (only OG meta tags)
         if (data.partial) {
           toast.info(data.message || 'Only partial brand data was imported. Consider uploading a PDF for complete extraction.', { duration: 5000 });
         }
         
-        // Map BrandHub data to our style format
-        // BrandHub uses: colors, fonts, logo_url, tagline, voice, mission
-        // We use: primary_color, secondary_color, color_palette, heading_font, body_font, etc.
-        
-        // Extract colors from BrandHub format
-        const colors = hubBrand.colors || [];
+        // === EXTRACT COLORS ===
+        // BrandHub uses: colors array with hex, cmyk, pantone, usage
+        const colors = hubBrand.colors || guideData.colors || [];
         const primaryColor = colors[0]?.hex || hubBrand.primary_color;
         const secondaryColor = colors[1]?.hex || hubBrand.secondary_color;
         const accentColor = colors[2]?.hex || hubBrand.accent_color;
         
-        // Map color palette
-        const colorPalette = colors.length > 0 
-          ? colors.map((c: { hex: string; name?: string }) => ({ hex: c.hex, name: c.name || '' }))
-          : hubBrand.color_palette;
+        // Map full color palette with CMYK and Pantone info
+        const colorPalette: ColorInfo[] = colors.length > 0 
+          ? colors.map((c: { hex: string; name?: string; cmyk?: string; pantone?: string; usage?: string }) => ({ 
+              hex: c.hex, 
+              name: c.name || '',
+              cmyk: c.cmyk,
+              pantone: c.pantone,
+              usage: c.usage
+            }))
+          : hubBrand.color_palette || [];
         
-        // Extract fonts from BrandHub format
+        // === EXTRACT FONTS ===
         // BrandHub returns fonts as an array: [{ fontFamily, name, usage, weight }, ...]
-        const fonts = hubBrand.fonts || [];
+        const fonts = hubBrand.fonts || guideData.fonts || [];
         let headingFont: string | undefined;
         let bodyFont: string | undefined;
         let accentFont: string | undefined;
         
-        if (Array.isArray(fonts)) {
-          // Find fonts by their usage/name
+        if (Array.isArray(fonts) && fonts.length > 0) {
           const headingEntry = fonts.find((f: { name?: string; usage?: string }) => 
             f.name?.toLowerCase().includes('heading') || f.usage?.toLowerCase().includes('headline')
           );
@@ -191,24 +206,78 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           headingFont = headingEntry?.fontFamily || fonts[0]?.fontFamily;
           bodyFont = bodyEntry?.fontFamily || fonts[1]?.fontFamily || fonts[0]?.fontFamily;
           accentFont = accentEntry?.fontFamily;
-        } else {
-          // Fallback for object format
+        } else if (fonts && typeof fonts === 'object') {
           headingFont = fonts.heading || fonts.primary || hubBrand.heading_font;
           bodyFont = fonts.body || fonts.secondary || hubBrand.body_font;
           accentFont = fonts.accent || hubBrand.accent_font;
         }
         
-        // Extract voice/mood
+        // === EXTRACT VOICE & MOOD ===
         const voiceKeywords = hubBrand.voice 
           ? (Array.isArray(hubBrand.voice) ? hubBrand.voice : [hubBrand.voice])
-          : hubBrand.brand_voice;
+          : hubBrand.brand_voice || [];
+          
+        // === EXTRACT IMAGERY & PATTERN STYLE ===
+        // From guide_data iconography and gradients
+        const iconography = guideData.iconography || [];
+        const iconStyle = iconography.length > 0 
+          ? `${iconography[0]?.fillMode || 'stroke'} style icons`
+          : hubBrand.icon_style;
+          
+        const gradients = guideData.gradients || [];
+        const patternStyle = gradients.length > 0
+          ? gradients.map((g: { name: string }) => g.name).join(', ')
+          : hubBrand.pattern_style;
         
+        // === EXTRACT LOGO URLs ===
+        // From guide_data.hero.logoUrl and guide_data.brandIcons
+        const heroData = guideData.hero || {};
+        const brandIcons = guideData.brandIcons || [];
+        
+        // Find primary, monochrome, and reversed logos
+        const primaryLogo = heroData.logoUrl || hubBrand.logo_url;
+        const monochromeIcon = brandIcons.find((icon: { name?: string }) => 
+          icon.name?.toLowerCase().includes('black') || icon.name?.toLowerCase().includes('mono')
+        );
+        const reversedIcon = brandIcons.find((icon: { name?: string }) => 
+          icon.name?.toLowerCase().includes('white') || icon.name?.toLowerCase().includes('reversed')
+        );
+        
+        // === BUILD CUSTOM PROMPTS FROM GUIDE BRAIN ===
+        // Include tagline, mission, archetype for AI generation context
+        const customPrompts: Record<string, unknown> = {};
+        
+        if (heroData.tagline) customPrompts.tagline = heroData.tagline;
+        if (hubBrand.mission) customPrompts.mission = hubBrand.mission;
+        if (hubBrand.archetype) customPrompts.archetype = hubBrand.archetype;
+        if (hubBrand.tagline) customPrompts.tagline = hubBrand.tagline;
+        
+        // Add color combinations for approved palettes
+        const colorCombinations = guideData.colorCombinations?.filter(
+          (c: { status: string }) => c.status === 'approved'
+        ) || [];
+        if (colorCombinations.length > 0) {
+          customPrompts.approvedColorCombinations = colorCombinations;
+        }
+        
+        // Add gradients for background generation
+        if (gradients.length > 0) {
+          customPrompts.gradients = gradients;
+        }
+        
+        // Add case studies for imagery context
+        const caseStudies = guideData.caseStudies || [];
+        if (caseStudies.length > 0) {
+          customPrompts.caseStudyIndustries = caseStudies.map((c: { industry: string }) => c.industry);
+        }
+        
+        // === UPDATE BRAND STYLE STATE ===
         setStyle(prev => ({
           ...prev,
           primary_color: primaryColor || prev.primary_color,
           secondary_color: secondaryColor || prev.secondary_color,
           accent_color: accentColor || prev.accent_color,
-          color_palette: colorPalette?.length > 0 
+          color_palette: colorPalette.length > 0 
             ? [...(prev.color_palette || []), ...colorPalette]
             : prev.color_palette,
           heading_font: headingFont || prev.heading_font,
@@ -220,14 +289,50 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           imagery_style: hubBrand.imagery_style || prev.imagery_style,
           industry: hubBrand.industry || prev.industry,
           target_audience: hubBrand.target_audience || prev.target_audience,
-          pattern_style: hubBrand.pattern_style || prev.pattern_style,
-          brand_voice: voiceKeywords?.length > 0
+          pattern_style: patternStyle || prev.pattern_style,
+          icon_style: iconStyle || prev.icon_style,
+          brand_voice: voiceKeywords.length > 0
             ? [...new Set([...(prev.brand_voice || []), ...voiceKeywords])]
-            : prev.brand_voice
+            : prev.brand_voice,
+          custom_prompts: Object.keys(customPrompts).length > 0
+            ? { ...(prev.custom_prompts || {}), ...customPrompts }
+            : prev.custom_prompts
         }));
 
+        // === UPDATE BRAND LOGOS ===
+        // Update the parent brand record with logo URLs
+        if (primaryLogo || monochromeIcon?.url || reversedIcon?.url) {
+          try {
+            const logoUpdates: Record<string, string> = {};
+            if (primaryLogo) logoUpdates.logo_url = primaryLogo;
+            if (monochromeIcon?.url) logoUpdates.logo_monochrome_url = monochromeIcon.url;
+            if (reversedIcon?.url) logoUpdates.logo_reversed_url = reversedIcon.url;
+            
+            await supabase
+              .from('brands')
+              .update(logoUpdates)
+              .eq('id', brand.id);
+              
+            console.log('Updated brand logos:', logoUpdates);
+          } catch (logoError) {
+            console.error('Error updating brand logos:', logoError);
+          }
+        }
+
         setBrandHubUrl('');
-        toast.success(`Imported "${hubBrand.name || 'brand'}" from BrandHub Creator!`);
+        
+        // Build success message
+        const importedItems: string[] = [];
+        if (colorPalette.length > 0) importedItems.push(`${colorPalette.length} colors`);
+        if (headingFont) importedItems.push('fonts');
+        if (voiceKeywords.length > 0) importedItems.push('voice keywords');
+        if (primaryLogo) importedItems.push('logo');
+        if (Object.keys(customPrompts).length > 0) importedItems.push('brand guide context');
+        
+        toast.success(
+          `Imported "${hubBrand.name || 'brand'}" from BrandHub: ${importedItems.join(', ')}`,
+          { duration: 5000 }
+        );
       } else {
         toast.warning('No brand data found at this share link');
       }
@@ -342,11 +447,14 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         setStyle({
           ...data,
           color_palette: Array.isArray(data.color_palette) 
-            ? data.color_palette as { hex: string; name: string }[]
+            ? (data.color_palette as unknown as ColorInfo[])
             : [],
           mood_keywords: data.mood_keywords || [],
           tone_keywords: data.tone_keywords || [],
-          brand_voice: data.brand_voice || []
+          brand_voice: data.brand_voice || [],
+          custom_prompts: (data.custom_prompts && typeof data.custom_prompts === 'object' && !Array.isArray(data.custom_prompts))
+            ? (data.custom_prompts as unknown as Record<string, unknown>)
+            : undefined
         });
       }
     } catch (error) {
@@ -359,7 +467,8 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const styleData = {
+      // Cast to any to work around Supabase's strict Json typing
+      const styleData: Record<string, unknown> = {
         brand_id: brand.id,
         primary_color: style.primary_color,
         secondary_color: style.secondary_color,
@@ -373,21 +482,23 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         brand_voice: style.brand_voice,
         imagery_style: style.imagery_style,
         pattern_style: style.pattern_style,
+        icon_style: style.icon_style,
         target_audience: style.target_audience,
         cultural_context: style.cultural_context,
-        industry: style.industry
+        industry: style.industry,
+        custom_prompts: style.custom_prompts
       };
 
       if (style.id) {
         const { error } = await supabase
           .from('brand_styles')
-          .update(styleData)
+          .update(styleData as never)
           .eq('id', style.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('brand_styles')
-          .insert(styleData);
+          .insert(styleData as never);
         if (error) throw error;
       }
 
