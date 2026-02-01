@@ -54,7 +54,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             </svg>
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-lg font-bold text-foreground leading-tight">Event Design Kit</h1>
+            <h1 className="text-lg font-bold text-foreground leading-tight">EventKIT</h1>
             <p className="text-xs text-muted-foreground">Generator</p>
           </div>
         </div>
