@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MapPin, 
@@ -17,7 +17,8 @@ import {
   ExternalLink,
   Hotel,
   Lightbulb,
-  Accessibility
+  Accessibility,
+  MapPinned
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -47,6 +48,13 @@ interface VenueIntelligence {
   culturalContext?: string;
 }
 
+interface VenueSuggestion {
+  name: string;
+  city: string;
+  country: string;
+  type: string;
+}
+
 interface VenueLocationFinderProps {
   value: string;
   onChange: (value: string, venueData?: VenueIntelligence) => void;
@@ -62,14 +70,66 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState(value);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSuggesting, setIsSuggesting] = useState(false);
   const [venueData, setVenueData] = useState<VenueIntelligence | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [suggestions, setSuggestions] = useState<VenueSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     setInputValue(value);
   }, [value]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current && 
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSuggesting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-venues', {
+        body: { query, eventType },
+      });
+
+      if (error) throw error;
+      
+      if (data.suggestions && data.suggestions.length > 0) {
+        setSuggestions(data.suggestions);
+        setShowSuggestions(true);
+        setSelectedIndex(-1);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.warn('Venue suggestions error:', error);
+      setSuggestions([]);
+    } finally {
+      setIsSuggesting(false);
+    }
+  }, [eventType]);
 
   const handleSearch = async (searchValue: string) => {
     if (searchValue.trim().length < 3) {
@@ -79,6 +139,7 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
 
     setIsSearching(true);
     setVenueData(null);
+    setShowSuggestions(false);
 
     try {
       const { data, error } = await supabase.functions.invoke('research-venue', {
@@ -114,10 +175,23 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
     setInputValue(newValue);
     onChange(newValue);
 
-    // Debounce the search
+    // Debounce the suggestions
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
+    debounceRef.current = setTimeout(() => {
+      fetchSuggestions(newValue);
+    }, 300);
+  };
+
+  const handleSuggestionClick = (suggestion: VenueSuggestion) => {
+    const fullValue = `${suggestion.name}, ${suggestion.city}`;
+    setInputValue(fullValue);
+    onChange(fullValue);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    // Auto-research the selected venue
+    handleSearch(fullValue);
   };
 
   const handleSearchClick = () => {
@@ -129,9 +203,32 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (showSuggestions && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.max(prev - 1, -1));
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        handleSuggestionClick(suggestions[selectedIndex]);
+        return;
+      } else if (e.key === 'Escape') {
+        setShowSuggestions(false);
+        return;
+      }
+    }
+    
+    if (e.key === 'Enter' && selectedIndex < 0) {
       e.preventDefault();
       handleSearchClick();
+    }
+  };
+
+  const handleInputFocus = () => {
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
     }
   };
 
@@ -142,27 +239,38 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
 
   return (
     <div className={cn("space-y-3", className)}>
-      {/* Search Input */}
+      {/* Search Input with Autocomplete */}
       <div className="relative">
-        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
         <input
           ref={inputRef}
           type="text"
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
+          onFocus={handleInputFocus}
           placeholder="Search venue name or city..."
           className={cn(
             "w-full pl-10 pr-24 py-3 rounded-xl border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all",
-            venueData ? "border-primary/50" : "border-border"
+            venueData ? "border-primary/50" : "border-border",
+            showSuggestions && suggestions.length > 0 && "rounded-b-none border-b-0"
           )}
+          autoComplete="off"
         />
+        
+        {/* Loading indicator for suggestions */}
+        {isSuggesting && (
+          <div className="absolute right-20 top-1/2 -translate-y-1/2">
+            <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        
         <Button
           type="button"
           size="sm"
           onClick={handleSearchClick}
           disabled={isSearching || inputValue.trim().length < 3}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 gap-1.5"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 gap-1.5 z-10"
         >
           {isSearching ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -171,6 +279,58 @@ export const VenueLocationFinder: React.FC<VenueLocationFinderProps> = ({
           )}
           <span className="hidden sm:inline">Find</span>
         </Button>
+
+        {/* Autocomplete Suggestions Dropdown */}
+        <AnimatePresence>
+          {showSuggestions && suggestions.length > 0 && (
+            <motion.div
+              ref={suggestionsRef}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="absolute left-0 right-0 top-full z-50 bg-background border border-t-0 border-border rounded-b-xl shadow-lg overflow-hidden"
+            >
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={`${suggestion.name}-${suggestion.city}-${index}`}
+                  type="button"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className={cn(
+                    "w-full px-3 py-2.5 flex items-start gap-3 text-left hover:bg-secondary/50 transition-colors",
+                    selectedIndex === index && "bg-secondary/70"
+                  )}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    {suggestion.type === 'Convention Center' ? (
+                      <Building2 className="w-4 h-4 text-primary" />
+                    ) : suggestion.type === 'Hotel' ? (
+                      <Hotel className="w-4 h-4 text-primary" />
+                    ) : (
+                      <MapPinned className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm text-foreground truncate">
+                      {suggestion.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <span>{suggestion.city}, {suggestion.country}</span>
+                      <span className="text-muted-foreground/50">•</span>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {suggestion.type}
+                      </Badge>
+                    </div>
+                  </div>
+                </button>
+              ))}
+              <div className="px-3 py-1.5 text-[10px] text-muted-foreground bg-secondary/30 border-t border-border/50 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                AI-suggested venues • Select to research
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Venue Intelligence Card */}
