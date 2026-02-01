@@ -4,12 +4,11 @@ import {
   Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { AssetShowcase } from './AssetShowcase';
 import { RecentCreationsSection } from './RecentCreationsSection';
 import { FeaturedSection } from './FeaturedSection';
 import { AssetType } from '@/types';
-import { UserAdminDropdown } from './UserAdminDropdown';
+import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { useAuth } from '@/hooks/useAuth';
 
 interface LandingPageProps {
@@ -71,31 +70,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         />
       </div>
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-background/60 border-b border-border/50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <motion.div 
-            className="flex items-center gap-3"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">EventKIT</span>
-          </motion.div>
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            {isLoggedIn && user ? (
-              <UserAdminDropdown user={user} onSignOut={signOut} />
-            ) : (
-              <Button onClick={onGetStarted} className="hidden sm:flex">
-                Get Started <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* Hero Header */}
+      <AppNavHeader onGetStarted={onGetStarted} />
 
       {/* Unified Hero Section */}
       <section className="pt-28 sm:pt-32 pb-16 sm:pb-20">

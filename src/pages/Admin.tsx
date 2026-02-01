@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Lock, Shield, LayoutDashboard, FileText, Brain, 
-  Settings, BarChart3, ArrowLeft, Sparkles, Palette
+  Lock, Shield, FileText, Brain, 
+  Settings, BarChart3, Sparkles, Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import AdminPromptManager from '@/components/admin/AdminPromptManager';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminKnowledgeManager from '@/components/admin/AdminKnowledgeManager';
@@ -111,8 +112,7 @@ const Admin: React.FC = () => {
               onClick={() => navigate('/')}
               className="w-full mt-4"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to App
+              ← Back to App
             </Button>
           </div>
         </motion.div>
@@ -120,32 +120,19 @@ const Admin: React.FC = () => {
     );
   }
 
+  const adminActions = (
+    <Button variant="outline" size="sm" onClick={handleLogout}>
+      Logout
+    </Button>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold">EventKIT Admin</h1>
-              <p className="text-xs text-muted-foreground">System Management</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={() => navigate('/')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to App
-            </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
-      </header>
+      {/* Hero Header */}
+      <AppNavHeader 
+        subtitle="Admin Panel"
+        actions={adminActions}
+      />
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">

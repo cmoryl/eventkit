@@ -2,20 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Palette, Printer, Shirt, Share2, Presentation, Building,
+  Palette, Printer, Shirt, Share2, Presentation, Building,
   Ticket, UtensilsCrossed, Video, FileText, Camera, Shield, Plus,
-  Grid, List, Sliders, Download, Sparkles, ChevronRight, Settings
+  Grid, List, Sliders, Download, Sparkles, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { 
   StudioType, StudioDefinition, STUDIO_DEFINITIONS, getStudioById,
-  Brand, StudioConfig, StudioTemplate
+  Brand
 } from '@/types/studio.types';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { StudioSidebar } from './StudioSidebar';
 import { StudioAssetGrid } from './StudioAssetGrid';
 import { StudioProductionPanel } from './StudioProductionPanel';
@@ -156,81 +155,63 @@ export const CreationStudio: React.FC = () => {
     ? studio.assetTypes 
     : studio.categories.find(c => c.id === activeCategory)?.assetTypes || [];
 
+  const studioActions = (
+    <>
+      {/* Brand Selector */}
+      <BrandSelector
+        brands={brands}
+        selectedBrand={selectedBrand}
+        onSelectBrand={setSelectedBrand}
+        onCreateBrand={() => navigate('/admin?tab=brands')}
+      />
+      
+      <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+        <Button
+          variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => setViewMode('grid')}
+        >
+          <Grid className="h-4 w-4" />
+        </Button>
+        <Button
+          variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => setViewMode('list')}
+        >
+          <List className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setShowProductionPanel(!showProductionPanel)}
+        className="hidden md:flex"
+      >
+        <Sliders className="h-4 w-4 mr-2" />
+        Production
+      </Button>
+      
+      {selectedAssets.length > 0 && (
+        <Button size="sm" className={`bg-gradient-to-r ${studio.gradient}`}>
+          <Download className="h-4 w-4 mr-2" />
+          Export ({selectedAssets.length})
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => navigate('/')}
-              className="rounded-xl"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${studio.gradient} flex items-center justify-center shadow-lg`}>
-                <StudioIcon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-foreground">{studio.name}</h1>
-                <p className="text-xs text-muted-foreground">{studio.assetTypes.length} asset types</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {/* Brand Selector */}
-            <BrandSelector
-              brands={brands}
-              selectedBrand={selectedBrand}
-              onSelectBrand={setSelectedBrand}
-              onCreateBrand={() => navigate('/admin?tab=brands')}
-            />
-            
-            <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
-              <Button
-                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <ThemeToggle />
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowProductionPanel(!showProductionPanel)}
-              className="hidden md:flex"
-            >
-              <Sliders className="h-4 w-4 mr-2" />
-              Production
-            </Button>
-            
-            {selectedAssets.length > 0 && (
-              <Button size="sm" className={`bg-gradient-to-r ${studio.gradient}`}>
-                <Download className="h-4 w-4 mr-2" />
-                Export ({selectedAssets.length})
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+      {/* Hero Header */}
+      <AppNavHeader 
+        subtitle={studio.name}
+        showStudioNav
+        currentStudioId={studio.id}
+        actions={studioActions}
+      />
 
       <div className="flex">
         {/* Sidebar - Categories */}
