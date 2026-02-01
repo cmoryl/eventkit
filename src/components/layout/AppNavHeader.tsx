@@ -17,6 +17,7 @@ import {
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { STUDIO_DEFINITIONS, StudioType } from '@/types/studio.types';
 import { toast } from 'sonner';
@@ -69,10 +70,16 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, signOut } = useAuth();
-  const { logoType, logoUrl, logoIconUrl } = useAppSettings();
+  const { logoType, logoUrl, logoUrlDark, logoIconUrl, logoIconUrlDark } = useAppSettings();
+  const { resolvedTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showStudiosMenu, setShowStudiosMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Determine which logo to use based on theme
+  const isDark = resolvedTheme === 'dark';
+  const effectiveLogoUrl = isDark ? (logoUrlDark || logoUrl) : logoUrl;
+  const effectiveIconUrl = isDark ? (logoIconUrlDark || logoIconUrl) : logoIconUrl;
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarUrl = user?.user_metadata?.avatar_url;
@@ -121,11 +128,11 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
               whileTap={{ scale: 0.98 }}
             >
               {/* Custom Logo */}
-              {logoType === 'custom' && logoUrl ? (
-                <img src={logoUrl} alt="Logo" className="h-10 object-contain" />
-              ) : logoType === 'icon-only' && logoIconUrl ? (
+              {logoType === 'custom' && effectiveLogoUrl ? (
+                <img src={effectiveLogoUrl} alt="Logo" className="h-10 object-contain" />
+              ) : logoType === 'icon-only' && effectiveIconUrl ? (
                 <div className="w-10 h-10 rounded-xl overflow-hidden bg-background flex items-center justify-center">
-                  <img src={logoIconUrl} alt="Logo" className="w-8 h-8 object-contain" />
+                  <img src={effectiveIconUrl} alt="Logo" className="w-8 h-8 object-contain" />
                 </div>
               ) : (
                 /* Default EventKIT Logo */
