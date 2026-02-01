@@ -195,7 +195,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       </section>
 
       {/* How It Works */}
-      <section className="py-20 px-6 bg-muted/30">
+      <section className="py-20 px-6 bg-muted/30 overflow-hidden">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -203,25 +203,89 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
+            <motion.span
+              initial={{ opacity: 0, scale: 0.8 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4"
+            >
+              Simple Process
+            </motion.span>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
             <p className="text-muted-foreground text-lg">Three simple steps to your complete event design kit</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* Animated connecting line */}
+            <motion.div 
+              className="hidden md:block absolute top-12 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent"
+              initial={{ scaleX: 0, opacity: 0 }}
+              whileInView={{ scaleX: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+            />
+            
             {steps.map((item, i) => (
               <motion.div
                 key={item.step}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                className="relative text-center"
+                transition={{ 
+                  delay: i * 0.2,
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15
+                }}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                className="relative text-center group cursor-default"
               >
-                <div className="text-6xl font-bold text-primary/20 mb-4">{item.step}</div>
-                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                <p className="text-muted-foreground">{item.description}</p>
+                {/* Card background with hover glow */}
+                <div className="absolute inset-0 -m-4 rounded-2xl bg-gradient-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                
+                {/* Step number with animation */}
+                <motion.div 
+                  className="relative inline-block mb-4"
+                  whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+                  transition={{ duration: 0.4 }}
+                >
+                  <span className="text-6xl sm:text-7xl font-bold bg-gradient-to-br from-primary/40 to-primary/10 bg-clip-text text-transparent group-hover:from-primary/60 group-hover:to-primary/20 transition-all duration-300">
+                    {item.step}
+                  </span>
+                  {/* Pulse ring on hover */}
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-primary/20 opacity-0 group-hover:opacity-100"
+                    initial={false}
+                    animate={{ scale: [1, 1.5, 1], opacity: [0, 0.5, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 0.5 }}
+                  />
+                </motion.div>
+                
+                {/* Title with underline animation */}
+                <h3 className="text-xl font-semibold mb-2 relative inline-block">
+                  {item.title}
+                  <motion.span 
+                    className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-primary to-accent origin-left"
+                    initial={{ scaleX: 0 }}
+                    whileInView={{ scaleX: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.5 + i * 0.2, duration: 0.4 }}
+                  />
+                </h3>
+                
+                <p className="text-muted-foreground group-hover:text-foreground/70 transition-colors duration-300">
+                  {item.description}
+                </p>
+                
+                {/* Floating arrow indicator */}
                 {i < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] border-t-2 border-dashed border-border" />
+                  <motion.div 
+                    className="hidden md:flex absolute -right-4 top-10 text-primary/40"
+                    animate={{ x: [0, 8, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <ArrowRight className="w-6 h-6" />
+                  </motion.div>
                 )}
               </motion.div>
             ))}
