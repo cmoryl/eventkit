@@ -540,7 +540,9 @@ export const generateAssetImage = async (
   masterPatternBase64?: string,
   venueImageBase64?: string,
   preComputedAnalysis?: ImageAnalysis | null, // Pass pre-computed analysis to avoid extra AI call
-  venueIntelligence?: VenueIntelligence | null // AI-researched venue intelligence
+  venueIntelligence?: VenueIntelligence | null, // AI-researched venue intelligence
+  eventDate?: string,
+  eventType?: string
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
@@ -561,6 +563,9 @@ export const generateAssetImage = async (
         assetType: assetTypeStr,
         eventName,
         eventDescription,
+        eventDate, // Pass for template variable merging
+        eventLocation: location, // Pass as eventLocation for template merging
+        eventType, // Pass event type for template variable merging
         styleDescription,
         colorPalette,
         logoBase64,

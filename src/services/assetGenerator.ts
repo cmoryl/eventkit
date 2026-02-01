@@ -359,7 +359,9 @@ const generateImageAsset = async (
       masterPatternBase64,
       venueImageBase64,
       cachedAnalysis, // Pass cached analysis to avoid redundant AI call
-      eventDetails.venueIntelligence // Pass venue intelligence for cultural context
+      eventDetails.venueIntelligence, // Pass venue intelligence for cultural context
+      eventDetails.date, // Pass event date for template variable merging
+      eventDetails.eventType // Pass event type for template variable merging
     );
     
     if (aiImage) {
