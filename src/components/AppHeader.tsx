@@ -1,5 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import Spinner from './Spinner';
+import { Settings } from 'lucide-react';
+import ApiSettingsModal from './settings/ApiSettingsModal';
 
 interface AppHeaderProps {
   onNewProject: () => void;
@@ -27,6 +29,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   canRedo
 }) => {
   const loadProjectInputRef = useRef<HTMLInputElement>(null);
+  const [showApiSettings, setShowApiSettings] = useState(false);
 
   const handleLoadClick = () => {
     loadProjectInputRef.current?.click();
@@ -55,6 +58,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowApiSettings(true)}
+            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            title="API Settings"
+          >
+            <Settings className="h-4 w-4 text-muted-foreground" />
+          </button>
+          
           {showDashboardControls && (
             <>
               <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
@@ -123,6 +134,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           </button>
         </div>
       </div>
+      
+      <ApiSettingsModal 
+        isOpen={showApiSettings} 
+        onClose={() => setShowApiSettings(false)} 
+      />
     </header>
   );
 };
