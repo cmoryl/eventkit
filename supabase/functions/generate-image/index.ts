@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,10 +52,24 @@ interface VenueIntelligence {
   culturalContext?: string;
 }
 
+// Prompt template from database
+interface PromptTemplate {
+  id: string;
+  asset_type: string;
+  template_name: string;
+  prompt_template: string;
+  variables: Record<string, string>[] | null;
+  success_rate: number | null;
+  usage_count: number | null;
+}
+
 interface GenerateImageRequest {
   assetType: string;
   eventName: string;
   eventDescription?: string;
+  eventDate?: string;
+  eventLocation?: string;
+  eventType?: string;
   styleDescription?: string;
   colorPalette?: string[];
   logoBase64?: string;
@@ -275,6 +290,103 @@ const ASSET_PROMPTS: Record<string, string> = {
   BANNER_ISOLATED: "Generate FLAT PRINT-READY banner design. Full 33x81 inch retractable banner artwork. Include 1 inch bleed. Complete design with no banner stand visible.",
 };
 
+/**
+ * Fetch prompt template from database for the given asset type
+ */
+async function fetchPromptTemplate(assetType: string): Promise<PromptTemplate | null> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('Supabase credentials not available for template fetch');
+      return null;
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data, error } = await supabase
+      .from('prompt_templates')
+      .select('*')
+      .eq('asset_type', assetType)
+      .order('success_rate', { ascending: false, nullsFirst: false })
+      .order('usage_count', { ascending: false, nullsFirst: false })
+      .limit(1);
+    
+    if (error) {
+      console.warn('Error fetching prompt template:', error.message);
+      return null;
+    }
+    
+    if (data && data.length > 0) {
+      console.log(`Found prompt template for ${assetType}: "${data[0].template_name}"`);
+      return data[0] as PromptTemplate;
+    }
+    
+    return null;
+  } catch (e) {
+    console.warn('Failed to fetch prompt template:', e);
+    return null;
+  }
+}
+
+/**
+ * Merge template with event variables
+ */
+function mergeTemplateWithVariables(
+  template: string,
+  variables: Record<string, string>
+): string {
+  let merged = template;
+  
+  // Replace all {{variable}} patterns
+  for (const [key, value] of Object.entries(variables)) {
+    const pattern = new RegExp(`\\{\\{${key}\\}\\}`, 'gi');
+    merged = merged.replace(pattern, value || '');
+  }
+  
+  // Clean up any remaining unreplaced variables
+  merged = merged.replace(/\{\{[^}]+\}\}/g, '');
+  
+  // Clean up extra whitespace
+  merged = merged.replace(/\s+/g, ' ').trim();
+  
+  return merged;
+}
+
+/**
+ * Increment usage count for a template (fire and forget)
+ */
+async function incrementTemplateUsage(templateId: string): Promise<void> {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (!supabaseUrl || !supabaseKey) return;
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Fetch current count and increment
+    const { data } = await supabase
+      .from('prompt_templates')
+      .select('usage_count')
+      .eq('id', templateId)
+      .single();
+    
+    if (data) {
+      await supabase
+        .from('prompt_templates')
+        .update({ 
+          usage_count: (data.usage_count || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', templateId);
+    }
+  } catch (e) {
+    // Silent fail - usage tracking is not critical
+  }
+}
+
 // Inline analysis for when no pre-computed analysis is provided
 // This saves a round-trip by doing analysis in the same call as generation
 async function performInlineAnalysis(
@@ -451,7 +563,10 @@ serve(async (req) => {
     const { 
       assetType, 
       eventName, 
-      eventDescription, 
+      eventDescription,
+      eventDate,
+      eventLocation,
+      eventType,
       styleDescription, 
       colorPalette, 
       logoBase64,
@@ -477,10 +592,51 @@ serve(async (req) => {
       }
     }
 
-    // Determine which prompt to use based on render mode
+    // FETCH PROMPT TEMPLATE FROM DATABASE
+    // This enables cohesive, professionally-crafted prompts that merge with user event data
+    const promptTemplate = await fetchPromptTemplate(assetType);
+    let templateBasedPrompt: string | null = null;
+    
+    if (promptTemplate) {
+      // Build template variables from event data
+      const colors = colorPalette?.join(', ') || '';
+      const primaryColor = colorPalette?.[0] || '';
+      const secondaryColor = colorPalette?.[1] || '';
+      const accentColor = colorPalette?.[2] || '';
+      
+      const templateVariables: Record<string, string> = {
+        eventName: eventName || 'Event',
+        eventDescription: eventDescription || '',
+        eventDate: eventDate || '',
+        eventLocation: eventLocation || location || '',
+        eventType: eventType || 'conference',
+        mood: styleDescription || 'professional and modern',
+        style: styleDescription || 'clean and elegant',
+        colors,
+        primaryColor,
+        secondaryColor,
+        accentColor,
+        culturalContext: venueIntelligence?.culturalContext || '',
+        venueType: venueIntelligence?.venueType || '',
+        venueName: venueIntelligence?.name || '',
+        city: venueIntelligence?.city || '',
+      };
+      
+      // Merge template with variables
+      templateBasedPrompt = mergeTemplateWithVariables(promptTemplate.prompt_template, templateVariables);
+      console.log(`Using database template "${promptTemplate.template_name}" for ${assetType}`);
+      
+      // Track usage (fire and forget)
+      incrementTemplateUsage(promptTemplate.id);
+    }
+
+    // Determine which prompt to use based on render mode and template availability
     let basePrompt: string;
     
-    if (renderMode === 'hyperrealistic' && HYPERREALISTIC_CONTEXTS[assetType]) {
+    if (templateBasedPrompt) {
+      // Use the merged template from database as the foundation
+      basePrompt = templateBasedPrompt;
+    } else if (renderMode === 'hyperrealistic' && HYPERREALISTIC_CONTEXTS[assetType]) {
       // Use hyper-realistic environment prompt
       basePrompt = HYPERREALISTIC_CONTEXTS[assetType];
     } else if (renderMode === 'design' || assetType.includes('_ISOLATED')) {
