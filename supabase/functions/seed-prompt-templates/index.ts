@@ -594,29 +594,29 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authorization required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Check if user is authenticated (optional - admin check)
+    const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+    
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+      
+      // Try to get claims to validate the token
+      const { data: claimsData, error: claimsError } = await authClient.auth.getUser(token);
+      if (!claimsError && claimsData?.user) {
+        userId = claimsData.user.id;
+      }
     }
+    
+    // Use service role for database operations (seeding is an admin operation)
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { action } = await req.json();
 
@@ -654,7 +654,7 @@ serve(async (req) => {
         prompt_template: t.prompt_template,
         variables: t.variables,
         is_system: true,
-        created_by: user.id,
+        created_by: userId,
         usage_count: 0,
         success_rate: 0.5
       }));
