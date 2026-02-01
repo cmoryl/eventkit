@@ -284,6 +284,45 @@ export type Database = {
         }
         Relationships: []
       }
+      hero_content: {
+        Row: {
+          badge_text: string | null
+          created_at: string
+          cta_text: string | null
+          description: string | null
+          headline_highlight: string | null
+          headline_start: string | null
+          id: string
+          is_active: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          badge_text?: string | null
+          created_at?: string
+          cta_text?: string | null
+          description?: string | null
+          headline_highlight?: string | null
+          headline_start?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          badge_text?: string | null
+          created_at?: string
+          cta_text?: string | null
+          description?: string | null
+          headline_highlight?: string | null
+          headline_start?: string | null
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       print_templates: {
         Row: {
           asset_type: string | null

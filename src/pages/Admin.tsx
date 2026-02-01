@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, FileText, Brain, 
-  Settings, BarChart3, Palette
+  Settings, BarChart3, Palette, Type
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,7 @@ import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminKnowledgeManager from '@/components/admin/AdminKnowledgeManager';
 import AdminRenderEngines from '@/components/admin/AdminRenderEngines';
 import { AdminBrandManager } from '@/components/admin/AdminBrandManager';
+import { AdminHeroManager } from '@/components/admin/AdminHeroManager';
 import { useAuth } from '@/hooks/useAuth';
 
 const Admin: React.FC = () => {
@@ -38,7 +39,7 @@ const Admin: React.FC = () => {
   // Handle tab from URL params
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['prompts', 'brands', 'analytics', 'knowledge', 'engines'].includes(tab)) {
+    if (tab && ['prompts', 'brands', 'hero', 'analytics', 'knowledge', 'engines'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -183,7 +184,7 @@ const Admin: React.FC = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full max-w-3xl mx-auto">
+          <TabsList className="grid grid-cols-6 w-full max-w-4xl mx-auto">
             <TabsTrigger value="prompts" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Prompts</span>
@@ -191,6 +192,10 @@ const Admin: React.FC = () => {
             <TabsTrigger value="brands" className="flex items-center gap-2">
               <Palette className="w-4 h-4" />
               <span className="hidden sm:inline">Brands</span>
+            </TabsTrigger>
+            <TabsTrigger value="hero" className="flex items-center gap-2">
+              <Type className="w-4 h-4" />
+              <span className="hidden sm:inline">Hero</span>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4" />
@@ -220,6 +225,10 @@ const Admin: React.FC = () => {
 
               <TabsContent value="brands" className="mt-0">
                 <AdminBrandManager />
+              </TabsContent>
+
+              <TabsContent value="hero" className="mt-0">
+                <AdminHeroManager />
               </TabsContent>
 
               <TabsContent value="analytics" className="mt-0">
