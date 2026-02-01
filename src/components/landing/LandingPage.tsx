@@ -6,9 +6,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AssetShowcase } from './AssetShowcase';
+import { AssetType } from '@/types';
 
 interface LandingPageProps {
   onGetStarted: () => void;
+  isAuthenticated?: boolean;
+  onAssetClick?: (assetType: AssetType) => void;
 }
 
 const features = [
@@ -40,7 +43,11 @@ const steps = [
   { step: '03', title: 'Generate & Download', description: 'AI creates your complete design kit instantly' },
 ];
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ 
+  onGetStarted,
+  isAuthenticated = false,
+  onAssetClick
+}) => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       {/* Animated Background */}
@@ -133,7 +140,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <AssetShowcase embedded />
+          <AssetShowcase 
+            embedded 
+            isAuthenticated={isAuthenticated}
+            onAssetClick={onAssetClick}
+          />
         </motion.div>
 
         {/* Stats Row */}
