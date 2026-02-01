@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Plus, Edit2, Trash2, Save, X, Sparkles, 
-  Copy, CheckCircle2, AlertCircle, Search, Filter
+  Copy, CheckCircle2, AlertCircle, Search, Filter,
+  Database, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ const ASSET_TYPES = [
 const AdminPromptManager: React.FC = () => {
   const [templates, setTemplates] = useState<PromptTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSeeding, setIsSeeding] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
   const [editingTemplate, setEditingTemplate] = useState<PromptTemplate | null>(null);
@@ -212,6 +214,33 @@ const AdminPromptManager: React.FC = () => {
     }
   };
 
+  const handleSeedTemplates = async () => {
+    if (!confirm('This will add 70+ default prompt templates for all asset types. Continue?')) {
+      return;
+    }
+
+    setIsSeeding(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('seed-prompt-templates', {
+        body: { action: 'seed' }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`${data.message}`, {
+          description: `Inserted: ${data.inserted}, Skipped: ${data.skipped || 0}`
+        });
+        fetchTemplates();
+      }
+    } catch (error) {
+      console.error('Error seeding templates:', error);
+      toast.error('Failed to seed templates');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   const filteredTemplates = templates.filter(t => {
     const matchesSearch = t.template_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           t.prompt_template.toLowerCase().includes(searchQuery.toLowerCase());
@@ -234,13 +263,27 @@ const AdminPromptManager: React.FC = () => {
           <p className="text-muted-foreground">Manage system prompts for asset generation</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Template
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleSeedTemplates}
+            disabled={isSeeding}
+          >
+            {isSeeding ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Database className="w-4 h-4 mr-2" />
+            )}
+            {isSeeding ? 'Seeding...' : 'Seed Defaults'}
+          </Button>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                New Template
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
@@ -323,7 +366,8 @@ const AdminPromptManager: React.FC = () => {
               </div>
             </div>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
