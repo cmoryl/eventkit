@@ -327,15 +327,25 @@ const Index: React.FC = () => {
 
   // Track whether we're in "add more" mode vs fresh onboarding
   const [addMoreMode, setAddMoreMode] = useState(false);
+  // Track pre-selected asset type from landing page click
+  const [preSelectedAssetType, setPreSelectedAssetType] = useState<AssetType | null>(null);
 
   const handleAddMoreAssets = () => {
     setAddMoreMode(true);
+    setPreSelectedAssetType(null);
     setView('onboarding');
   };
 
   const handleCancelAddMore = () => {
     setAddMoreMode(false);
+    setPreSelectedAssetType(null);
     setView('studio');
+  };
+
+  // Handle quick asset creation from landing page (logged-in users)
+  const handleQuickAssetCreate = (assetType: AssetType) => {
+    setPreSelectedAssetType(assetType);
+    setView('onboarding');
   };
 
   // Open regenerate with engine modal instead of immediate regeneration
@@ -552,7 +562,11 @@ const Index: React.FC = () => {
       <div className="soft-bg" />
       
       {view === 'landing' && (
-        <LandingPage onGetStarted={() => setView('onboarding')} />
+        <LandingPage 
+          onGetStarted={() => setView('onboarding')} 
+          isAuthenticated={isAuthenticated}
+          onAssetClick={isAuthenticated ? handleQuickAssetCreate : undefined}
+        />
       )}
 
       {view === 'onboarding' && (
@@ -560,12 +574,14 @@ const Index: React.FC = () => {
           onComplete={(data) => {
             const wasAddingMore = addMoreMode;
             setAddMoreMode(false);
+            setPreSelectedAssetType(null);
             handleOnboardingComplete(data, wasAddingMore);
           }}
           initialStep={addMoreMode ? 3 : 1}
           initialEventDetails={addMoreMode ? eventDetails : undefined}
           initialLogos={addMoreMode ? logos : undefined}
           initialStyleDescription={addMoreMode ? styleDescription : undefined}
+          preSelectedAssetType={preSelectedAssetType}
           onCancel={addMoreMode ? handleCancelAddMore : undefined}
         />
       )}

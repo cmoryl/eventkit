@@ -32,6 +32,8 @@ interface OnboardingFlowProps {
   initialLogos?: LogoAsset[];
   /** Preserve existing style description when adding more assets */
   initialStyleDescription?: string;
+  /** Pre-select a specific asset type (from landing page quick-create) */
+  preSelectedAssetType?: AssetType | null;
   /** Optional callback to cancel and return to studio */
   onCancel?: () => void;
 }
@@ -99,6 +101,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   initialEventDetails,
   initialLogos,
   initialStyleDescription,
+  preSelectedAssetType,
   onCancel,
 }) => {
   const [step, setStep] = useState(initialStep);
@@ -115,9 +118,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     }
   );
   const [logos, setLogos] = useState<LogoAsset[]>(initialLogos ?? []);
-  const [selectedAssets, setSelectedAssets] = useState<Set<AssetType>>(
-    new Set(DEFAULT_QUICK_START_ASSETS)
-  );
+  const [selectedAssets, setSelectedAssets] = useState<Set<AssetType>>(() => {
+    // If a pre-selected asset type is provided, start with just that asset
+    if (preSelectedAssetType) {
+      return new Set([preSelectedAssetType]);
+    }
+    return new Set(DEFAULT_QUICK_START_ASSETS);
+  });
   const [styleDescription, setStyleDescription] = useState(initialStyleDescription ?? '');
   const [vibeImage, setVibeImage] = useState<File | null>(null);
   const [masterPattern, setMasterPattern] = useState<File | null>(null);
