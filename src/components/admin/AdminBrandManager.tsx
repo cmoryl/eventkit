@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Palette, Trash2, Edit2, Check, X, Upload, Star } from 'lucide-react';
+import { Plus, Palette, Trash2, Check, X, Star, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Brand {
   id: string;
@@ -17,17 +18,26 @@ interface Brand {
 }
 
 export const AdminBrandManager: React.FC = () => {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [newBrand, setNewBrand] = useState({ name: '', description: '' });
 
   useEffect(() => {
-    loadBrands();
-  }, []);
+    if (!authLoading && isAuthenticated) {
+      loadBrands();
+    } else if (!authLoading && !isAuthenticated) {
+      setIsLoading(false);
+    }
+  }, [authLoading, isAuthenticated]);
 
   const loadBrands = async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('brands')
@@ -51,21 +61,28 @@ export const AdminBrandManager: React.FC = () => {
       return;
     }
 
+    if (!user) {
+      toast.error('You must be logged in to create a brand');
+      return;
+    }
+
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) {
-        toast.error('You must be logged in');
+      const { data, error } = await supabase.from('brands').insert({
+        name: newBrand.name.trim(),
+        description: newBrand.description?.trim() || null,
+        user_id: user.id,
+        is_default: brands.length === 0
+      }).select();
+
+      if (error) {
+        console.error('Brand creation error:', error);
+        if (error.message.includes('row-level security')) {
+          toast.error('Permission denied. Please ensure you are logged in.');
+        } else {
+          toast.error(`Failed to create brand: ${error.message}`);
+        }
         return;
       }
-
-      const { error } = await supabase.from('brands').insert({
-        name: newBrand.name,
-        description: newBrand.description || null,
-        user_id: userData.user.id,
-        is_default: brands.length === 0
-      });
-
-      if (error) throw error;
 
       toast.success('Brand created successfully');
       setNewBrand({ name: '', description: '' });
@@ -93,12 +110,11 @@ export const AdminBrandManager: React.FC = () => {
   };
 
   const setDefaultBrand = async (id: string) => {
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
+    if (!user) return;
 
+    try {
       // Reset all defaults
-      await supabase.from('brands').update({ is_default: false }).eq('user_id', userData.user.id);
+      await supabase.from('brands').update({ is_default: false }).eq('user_id', user.id);
       
       // Set new default
       await supabase.from('brands').update({ is_default: true }).eq('id', id);
@@ -111,8 +127,17 @@ export const AdminBrandManager: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return <div className="text-center py-12 text-muted-foreground">Loading brands...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-3" />
+        <p className="text-muted-foreground">You must be logged in to manage brands</p>
+      </div>
+    );
   }
 
   return (

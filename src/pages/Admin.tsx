@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, FileText, Brain, 
-  Settings, BarChart3, Sparkles, Palette
+  Settings, BarChart3, Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,21 +16,32 @@ import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminKnowledgeManager from '@/components/admin/AdminKnowledgeManager';
 import AdminRenderEngines from '@/components/admin/AdminRenderEngines';
 import { AdminBrandManager } from '@/components/admin/AdminBrandManager';
+import { useAuth } from '@/hooks/useAuth';
 
 const Admin: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('prompts');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'prompts');
   const navigate = useNavigate();
 
   // Check if already authenticated in session
   useEffect(() => {
     const adminAuth = sessionStorage.getItem('admin_authenticated');
     if (adminAuth === 'true') {
-      setIsAuthenticated(true);
+      setIsAdminAuthenticated(true);
     }
   }, []);
+
+  // Handle tab from URL params
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['prompts', 'brands', 'analytics', 'knowledge', 'engines'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +55,7 @@ const Admin: React.FC = () => {
       if (error) throw error;
 
       if (data?.success) {
-        setIsAuthenticated(true);
+        setIsAdminAuthenticated(true);
         sessionStorage.setItem('admin_authenticated', 'true');
         toast.success('Welcome to Admin Panel');
       } else {
@@ -59,13 +70,48 @@ const Admin: React.FC = () => {
   };
 
   const handleLogout = () => {
-    setIsAuthenticated(false);
+    setIsAdminAuthenticated(false);
     sessionStorage.removeItem('admin_authenticated');
     setPassword('');
     toast.info('Logged out of admin panel');
   };
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // Require user authentication first
   if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-card border border-border rounded-2xl p-8 shadow-xl text-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-destructive/20 to-destructive/10 flex items-center justify-center">
+              <Shield className="w-8 h-8 text-destructive" />
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Authentication Required</h1>
+            <p className="text-muted-foreground mb-6">
+              You must be logged in to access the admin panel.
+            </p>
+            <Button onClick={() => navigate('/')} className="w-full">
+              Go to Home
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (!isAdminAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <motion.div
