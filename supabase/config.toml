@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.refine-prompt]
 verify_jwt = false
+
+[functions.seed-prompt-templates]
+verify_jwt = false
