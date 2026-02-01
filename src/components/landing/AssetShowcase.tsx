@@ -1,41 +1,50 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Sparkles, Image, Tag, Ticket, Monitor, ShoppingBag, FileText,
-  Presentation, Layers, QrCode, Mail, Megaphone, Gift, Camera,
-  MapPin, Calendar, CreditCard, Users, Video, Shield, UtensilsCrossed
-} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AssetType } from '@/types';
-import { getStudioByAssetType, StudioType } from '@/types/studio.types';
+import { StudioType } from '@/types/studio.types';
+
+// Import studio images
+import studioBrandingImg from '@/assets/studios/studio-branding.jpg';
+import studioPrintImg from '@/assets/studios/studio-print.jpg';
+import studioMerchImg from '@/assets/studios/studio-merch.jpg';
+import studioSocialImg from '@/assets/studios/studio-social.jpg';
+import studioPresentationsImg from '@/assets/studios/studio-presentations.jpg';
+import studioVenueImg from '@/assets/studios/studio-venue.jpg';
+import studioInvitationsImg from '@/assets/studios/studio-invitations.jpg';
+import studioDiningImg from '@/assets/studios/studio-dining.jpg';
+import studioVideoImg from '@/assets/studios/studio-video.jpg';
+import studioDocsImg from '@/assets/studios/studio-docs.jpg';
+import studioPhotoImg from '@/assets/studios/studio-photo.jpg';
+import studioSafetyImg from '@/assets/studios/studio-safety.jpg';
 
 interface ShowcaseAsset {
   id: string;
-  icon: React.ComponentType<{ className?: string }>;
+  image: string;
   title: string;
   gradient: string;
   assetType: AssetType;
   studioId: StudioType;
 }
 
-// Map assets to their studios
+// Map assets to their studios with images
 const topRowAssets: ShowcaseAsset[] = [
-  { id: 'branding', icon: Sparkles, title: 'Branding', gradient: 'from-violet-500 to-purple-600', assetType: AssetType.Logo, studioId: 'branding' },
-  { id: 'banner', icon: Image, title: 'Print', gradient: 'from-blue-500 to-cyan-500', assetType: AssetType.Banner, studioId: 'print-signage' },
-  { id: 'tshirt', icon: ShoppingBag, title: 'Merch', gradient: 'from-orange-500 to-red-500', assetType: AssetType.Tshirt, studioId: 'merchandise' },
-  { id: 'social', icon: Monitor, title: 'Social', gradient: 'from-pink-500 to-rose-500', assetType: AssetType.SocialPost, studioId: 'social-digital' },
-  { id: 'presentation', icon: Presentation, title: 'Slides', gradient: 'from-emerald-500 to-teal-500', assetType: AssetType.Presentation, studioId: 'presentations' },
-  { id: 'venue', icon: Layers, title: 'Venue', gradient: 'from-indigo-500 to-blue-600', assetType: AssetType.MainStageBackdrop, studioId: 'venue-experience' },
+  { id: 'branding', image: studioBrandingImg, title: 'Branding', gradient: 'from-violet-500 to-purple-600', assetType: AssetType.Logo, studioId: 'branding' },
+  { id: 'banner', image: studioPrintImg, title: 'Print', gradient: 'from-blue-500 to-cyan-500', assetType: AssetType.Banner, studioId: 'print-signage' },
+  { id: 'tshirt', image: studioMerchImg, title: 'Merch', gradient: 'from-orange-500 to-red-500', assetType: AssetType.Tshirt, studioId: 'merchandise' },
+  { id: 'social', image: studioSocialImg, title: 'Social', gradient: 'from-pink-500 to-rose-500', assetType: AssetType.SocialPost, studioId: 'social-digital' },
+  { id: 'presentation', image: studioPresentationsImg, title: 'Slides', gradient: 'from-emerald-500 to-teal-500', assetType: AssetType.Presentation, studioId: 'presentations' },
+  { id: 'venue', image: studioVenueImg, title: 'Venue', gradient: 'from-indigo-500 to-blue-600', assetType: AssetType.MainStageBackdrop, studioId: 'venue-experience' },
 ];
 
 const bottomRowAssets: ShowcaseAsset[] = [
-  { id: 'invites', icon: Ticket, title: 'Invites', gradient: 'from-amber-500 to-yellow-500', assetType: AssetType.InvitationCard, studioId: 'invitations-access' },
-  { id: 'dining', icon: UtensilsCrossed, title: 'Dining', gradient: 'from-lime-500 to-green-500', assetType: AssetType.Menu, studioId: 'hospitality-dining' },
-  { id: 'video', icon: Video, title: 'Video', gradient: 'from-red-500 to-pink-600', assetType: AssetType.VideoTeaser, studioId: 'video-motion' },
-  { id: 'docs', icon: FileText, title: 'Docs', gradient: 'from-slate-500 to-gray-600', assetType: AssetType.ProgramBooklet, studioId: 'documents-forms' },
-  { id: 'photo', icon: Camera, title: 'Photo', gradient: 'from-fuchsia-500 to-purple-600', assetType: AssetType.PhotoBoothFrame, studioId: 'photo-engagement' },
-  { id: 'safety', icon: Shield, title: 'Safety', gradient: 'from-green-500 to-emerald-600', assetType: AssetType.AccessibilitySignage, studioId: 'accessibility-safety' },
+  { id: 'invites', image: studioInvitationsImg, title: 'Invites', gradient: 'from-amber-500 to-yellow-500', assetType: AssetType.InvitationCard, studioId: 'invitations-access' },
+  { id: 'dining', image: studioDiningImg, title: 'Dining', gradient: 'from-lime-500 to-green-500', assetType: AssetType.Menu, studioId: 'hospitality-dining' },
+  { id: 'video', image: studioVideoImg, title: 'Video', gradient: 'from-red-500 to-pink-600', assetType: AssetType.VideoTeaser, studioId: 'video-motion' },
+  { id: 'docs', image: studioDocsImg, title: 'Docs', gradient: 'from-slate-500 to-gray-600', assetType: AssetType.ProgramBooklet, studioId: 'documents-forms' },
+  { id: 'photo', image: studioPhotoImg, title: 'Photo', gradient: 'from-fuchsia-500 to-purple-600', assetType: AssetType.PhotoBoothFrame, studioId: 'photo-engagement' },
+  { id: 'safety', image: studioSafetyImg, title: 'Safety', gradient: 'from-green-500 to-emerald-600', assetType: AssetType.AccessibilitySignage, studioId: 'accessibility-safety' },
 ];
 
 const IconCard: React.FC<{
@@ -45,8 +54,6 @@ const IconCard: React.FC<{
   isClickable: boolean;
   onClick?: (studioId: StudioType) => void;
 }> = ({ asset, isHovered, onHover, isClickable, onClick }) => {
-  const Icon = asset.icon;
-  
   const handleClick = () => {
     if (isClickable && onClick) {
       onClick(asset.studioId);
@@ -62,12 +69,12 @@ const IconCard: React.FC<{
       onMouseEnter={() => onHover(asset.id)}
       onMouseLeave={() => onHover(null)}
       onClick={handleClick}
-      whileHover={{ scale: 1.1, y: -8 }}
-      whileTap={isClickable ? { scale: 0.95 } : undefined}
+      whileHover={{ scale: 1.05, y: -6 }}
+      whileTap={isClickable ? { scale: 0.97 } : undefined}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <div className={cn(
-        "relative flex flex-col items-center gap-2 px-4 sm:px-5 py-3 sm:py-4 rounded-2xl transition-all duration-300",
+        "relative flex flex-col items-center gap-2 px-2 sm:px-3 py-2 sm:py-3 rounded-2xl transition-all duration-300",
         isHovered ? "bg-card/90 shadow-xl" : "bg-transparent"
       )}>
         {/* Glow effect */}
@@ -77,13 +84,21 @@ const IconCard: React.FC<{
           isHovered && "opacity-40"
         )} />
         
-        {/* Icon */}
+        {/* Image Card */}
         <div className={cn(
-          "w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-all duration-300",
-          asset.gradient,
-          isHovered && "scale-110 shadow-xl"
+          "w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shadow-lg transition-all duration-300 relative",
+          isHovered && "scale-105 shadow-xl ring-2 ring-primary/50"
         )}>
-          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+          <img 
+            src={asset.image} 
+            alt={asset.title}
+            className="w-full h-full object-cover"
+          />
+          {/* Gradient overlay */}
+          <div className={cn(
+            "absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity",
+            isHovered ? "opacity-30" : "opacity-50"
+          )} />
         </div>
         
         {/* Label */}
@@ -99,7 +114,7 @@ const IconCard: React.FC<{
           <motion.span
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute -bottom-6 text-[10px] text-primary font-medium whitespace-nowrap"
+            className="absolute -bottom-5 text-[10px] text-primary font-medium whitespace-nowrap"
           >
             Open Studio →
           </motion.span>

@@ -6,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { STUDIO_DEFINITIONS } from '@/types/studio.types';
 import { cn } from '@/lib/utils';
 
+// Import template images
+import corporateConferenceImg from '@/assets/templates/corporate-conference-kit.jpg';
+import weddingCelebrationImg from '@/assets/templates/wedding-celebration-suite.jpg';
+import techSummitImg from '@/assets/templates/tech-summit-bundle.jpg';
+import galaDinnerImg from '@/assets/templates/gala-dinner-awards.jpg';
+
 const featuredTemplates = [
   {
     id: 'corporate-conference',
@@ -13,7 +19,7 @@ const featuredTemplates = [
     description: 'Complete branding for professional events',
     category: 'Business Events',
     studioId: 'branding',
-    gradient: 'from-blue-500 to-indigo-600',
+    image: corporateConferenceImg,
     assets: ['Logo', 'Banner', 'Name Badges', 'Signage', 'Presentation'],
   },
   {
@@ -22,7 +28,7 @@ const featuredTemplates = [
     description: 'Elegant designs for your special day',
     category: 'Social Events',
     studioId: 'invitations-access',
-    gradient: 'from-rose-400 to-pink-600',
+    image: weddingCelebrationImg,
     assets: ['Invitation', 'RSVP', 'Menu', 'Place Cards', 'Thank You'],
   },
   {
@@ -31,7 +37,7 @@ const featuredTemplates = [
     description: 'Modern designs for tech conferences',
     category: 'Tech Events',
     studioId: 'social-digital',
-    gradient: 'from-violet-500 to-purple-600',
+    image: techSummitImg,
     assets: ['Social Posts', 'Slides', 'Badges', 'Swag', 'Signage'],
   },
   {
@@ -40,7 +46,7 @@ const featuredTemplates = [
     description: 'Sophisticated materials for formal events',
     category: 'Galas & Awards',
     studioId: 'hospitality-dining',
-    gradient: 'from-amber-500 to-orange-600',
+    image: galaDinnerImg,
     assets: ['Invitation', 'Program', 'Menu', 'Certificate', 'Backdrop'],
   },
 ];
@@ -88,13 +94,14 @@ export const FeaturedSection: React.FC = () => {
                 onClick={() => navigate(`/studio/${template.studioId}`)}
               >
                 <div className="flex">
-                  {/* Visual Side */}
-                  <div className={cn(
-                    "w-1/3 aspect-square bg-gradient-to-br flex items-center justify-center relative",
-                    template.gradient
-                  )}>
-                    <Sparkles className="w-12 h-12 text-white/80" />
-                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                  {/* Visual Side - Now with real image */}
+                  <div className="w-2/5 relative overflow-hidden">
+                    <img 
+                      src={template.image} 
+                      alt={template.title}
+                      className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent to-card/50" />
                   </div>
 
                   {/* Content Side */}
