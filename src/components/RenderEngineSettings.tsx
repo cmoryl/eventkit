@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Cpu, 
   Key, 
@@ -22,7 +23,13 @@ import {
   AlertCircle,
   Loader2,
   Sparkles,
-  Zap
+  Zap,
+  PlayCircle,
+  XCircle,
+  Clock,
+  Shield,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import type { RenderEngine, RenderProvider } from '@/services/aiBrain/types';
 import {
@@ -33,6 +40,16 @@ import {
   setDefaultRenderEngine,
   testRenderEngine,
 } from '@/services/aiBrain/renderEngineService';
+import { supabase } from '@/integrations/supabase/client';
+
+// Test status types
+type TestStatus = 'idle' | 'testing' | 'success' | 'error';
+
+interface TestResult {
+  status: TestStatus;
+  message: string;
+  latencyMs?: number;
+}
 
 interface RenderEngineSettingsProps {
   open: boolean;
@@ -50,6 +67,11 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
   const [newProvider, setNewProvider] = useState<RenderProvider>('openai');
   const [newName, setNewName] = useState('');
   const [newApiKey, setNewApiKey] = useState('');
+  const [showApiKey, setShowApiKey] = useState(false);
+  
+  // Test panel state
+  const [testResult, setTestResult] = useState<TestResult>({ status: 'idle', message: '' });
+  const [isValidated, setIsValidated] = useState(false);
 
   const providers = getAllProviders();
 
@@ -70,6 +92,59 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
     setLoading(false);
   };
 
+  // Reset test state when provider or API key changes
+  useEffect(() => {
+    setTestResult({ status: 'idle', message: '' });
+    setIsValidated(false);
+  }, [newProvider, newApiKey]);
+
+  // Test API key before saving
+  const handleTestApiKey = async () => {
+    const provider = providers.find(p => p.id === newProvider);
+    if (provider?.requiresKey && !newApiKey.trim()) {
+      setTestResult({ status: 'error', message: 'Please enter an API key first' });
+      return;
+    }
+
+    setTestResult({ status: 'testing', message: 'Validating API key...' });
+    const startTime = Date.now();
+
+    try {
+      const response = await supabase.functions.invoke('generate-with-engine', {
+        body: {
+          provider: newProvider,
+          apiKey: newApiKey,
+          test: true,
+        },
+      });
+
+      const latencyMs = Date.now() - startTime;
+
+      if (response.error) {
+        setTestResult({ 
+          status: 'error', 
+          message: response.error.message || 'Connection failed',
+          latencyMs 
+        });
+        setIsValidated(false);
+      } else {
+        setTestResult({ 
+          status: 'success', 
+          message: 'API key validated successfully!',
+          latencyMs 
+        });
+        setIsValidated(true);
+      }
+    } catch (error) {
+      setTestResult({ 
+        status: 'error', 
+        message: error instanceof Error ? error.message : 'Test failed',
+        latencyMs: Date.now() - startTime
+      });
+      setIsValidated(false);
+    }
+  };
+
   const handleAddEngine = async () => {
     if (!newName.trim()) {
       toast.error('Please enter a name for the engine');
@@ -80,6 +155,12 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
     if (provider?.requiresKey && !newApiKey.trim()) {
       toast.error('This provider requires an API key');
       return;
+    }
+
+    // Warn if not validated
+    if (provider?.requiresKey && !isValidated) {
+      const proceed = confirm('API key has not been validated. Do you want to save anyway?');
+      if (!proceed) return;
     }
 
     setAdding(true);
@@ -95,6 +176,8 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
         setEngines([...engines, engine]);
         setNewName('');
         setNewApiKey('');
+        setTestResult({ status: 'idle', message: '' });
+        setIsValidated(false);
         toast.success('Render engine added!');
       } else {
         toast.error('Failed to add engine');
@@ -290,32 +373,142 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
               </div>
 
               {providers.find(p => p.id === newProvider)?.requiresKey && (
-                <div className="space-y-2">
-                  <Label>API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder="Enter your API key"
-                    value={newApiKey}
-                    onChange={(e) => setNewApiKey(e.target.value)}
-                  />
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Key className="h-4 w-4 text-muted-foreground" />
+                    API Key
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type={showApiKey ? 'text' : 'password'}
+                      placeholder="Enter your API key"
+                      value={newApiKey}
+                      onChange={(e) => setNewApiKey(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                    >
+                      {showApiKey ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    Your API key is stored securely
+                    <Shield className="h-3 w-3" />
+                    Your API key is encrypted and stored securely
                   </p>
                 </div>
               )}
 
+              {/* API Key Test Panel */}
+              {providers.find(p => p.id === newProvider)?.requiresKey && newApiKey && (
+                <Card className={`border-2 transition-colors ${
+                  testResult.status === 'success' ? 'border-emerald-500/50 bg-emerald-500/5' :
+                  testResult.status === 'error' ? 'border-destructive/50 bg-destructive/5' :
+                  'border-border'
+                }`}>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <PlayCircle className="h-4 w-4" />
+                      API Key Validation
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Test your API key before saving to ensure it works correctly
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTestApiKey}
+                      disabled={testResult.status === 'testing'}
+                      className="w-full"
+                    >
+                      {testResult.status === 'testing' ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Validating...
+                        </>
+                      ) : (
+                        <>
+                          <PlayCircle className="h-4 w-4 mr-2" />
+                          Test Connection
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Test Results */}
+                    <AnimatePresence mode="wait">
+                      {testResult.status !== 'idle' && testResult.status !== 'testing' && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className={`p-3 rounded-lg ${
+                            testResult.status === 'success' 
+                              ? 'bg-emerald-500/10 border border-emerald-500/30' 
+                              : 'bg-destructive/10 border border-destructive/30'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2">
+                            {testResult.status === 'success' ? (
+                              <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+                            ) : (
+                              <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium ${
+                                testResult.status === 'success' ? 'text-emerald-600' : 'text-destructive'
+                              }`}>
+                                {testResult.status === 'success' ? 'Connection Successful!' : 'Connection Failed'}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {testResult.message}
+                              </p>
+                              {testResult.latencyMs && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                  <Clock className="h-3 w-3" />
+                                  Response time: {testResult.latencyMs}ms
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Validation Status Badge */}
+                    {isValidated && (
+                      <Badge variant="outline" className="w-full justify-center bg-emerald-500/10 text-emerald-600 border-emerald-500/30">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Ready to save
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Add Button */}
               <Button 
                 onClick={handleAddEngine} 
-                className="w-full"
+                className={`w-full ${isValidated ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
                 disabled={adding}
               >
                 {adding ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : isValidated ? (
+                  <CheckCircle className="h-4 w-4 mr-2" />
                 ) : (
                   <Plus className="h-4 w-4 mr-2" />
                 )}
-                Add Render Engine
+                {isValidated ? 'Save Validated Engine' : 'Add Render Engine'}
               </Button>
             </div>
 
