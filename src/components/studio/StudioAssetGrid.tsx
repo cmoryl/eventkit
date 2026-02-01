@@ -5,6 +5,8 @@ import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
@@ -351,19 +353,64 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   studioGradient
 }) => {
   const [generatingAssets, setGeneratingAssets] = useState<Set<string>>(new Set());
+  const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string } | null>(null);
   
   const handleGenerate = async (assetType: string) => {
+    if (!brand) {
+      toast.error('Please select a brand first');
+      return;
+    }
+    
     setGeneratingAssets(prev => new Set(prev).add(assetType));
     
-    // Simulate generation - replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setGeneratingAssets(prev => {
-      const next = new Set(prev);
-      next.delete(assetType);
-      return next;
-    });
+    try {
+      const info = getAssetInfo(assetType);
+      
+      // Build prompt from brand and asset info
+      const colorPalette = brand.styles?.color_palette?.map((c: any) => 
+        typeof c === 'object' ? c.hex || c.color : c
+      ) || [];
+      
+      const { data, error } = await supabase.functions.invoke('generate-image', {
+        body: {
+          assetType,
+          eventName: brand.name,
+          eventDescription: brand.description || `Professional ${info.name} design`,
+          styleDescription: brand.styles?.imagery_style || 'Modern, professional, clean design',
+          colorPalette,
+          logoBase64: brand.logo_url,
+        },
+      });
+      
+      if (error) {
+        throw new Error(error.message || 'Generation failed');
+      }
+      
+      if (data?.imageUrl) {
+        setGeneratedImages(prev => ({
+          ...prev,
+          [assetType]: data.imageUrl
+        }));
+        toast.success(`${info.name} generated successfully!`);
+      } else {
+        throw new Error('No image returned from generation');
+      }
+    } catch (error) {
+      console.error('Generation error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate asset');
+    } finally {
+      setGeneratingAssets(prev => {
+        const next = new Set(prev);
+        next.delete(assetType);
+        return next;
+      });
+    }
+  };
+  
+  // Get the image to display - generated takes priority over demo
+  const getDisplayImage = (assetType: string, info: { demoImage?: string }) => {
+    return generatedImages[assetType] || info.demoImage;
   };
 
   const handleViewImage = (imageSrc: string, title: string) => {
@@ -414,27 +461,37 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                   className="w-16 h-16 rounded-lg overflow-hidden bg-muted relative group/image cursor-zoom-in"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (info.demoImage) {
-                      handleViewImage(info.demoImage, info.name);
+                    const displayImage = getDisplayImage(assetType, info);
+                    if (displayImage) {
+                      handleViewImage(displayImage, info.name);
                     }
                   }}
                 >
-                  {info.demoImage ? (
-                    <>
-                      <img 
-                        src={info.demoImage} 
-                        alt={info.name}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity">
-                        <ZoomIn className="w-4 h-4 text-white" />
+                  {(() => {
+                    const displayImage = getDisplayImage(assetType, info);
+                    const hasGenerated = !!generatedImages[assetType];
+                    return displayImage ? (
+                      <>
+                        <img 
+                          src={displayImage} 
+                          alt={info.name}
+                          className="w-full h-full object-cover"
+                        />
+                        {hasGenerated && (
+                          <div className="absolute top-0.5 right-0.5 bg-primary rounded-full p-0.5">
+                            <Sparkles className="w-2 h-2 text-primary-foreground" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity">
+                          <ZoomIn className="w-4 h-4 text-white" />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-6 h-6 text-muted-foreground" />
                       </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
                 
                 <div className="flex-1">
@@ -513,12 +570,15 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
               </div>
               
               {/* View Larger Button */}
-              {info.demoImage && (
+              {(info.demoImage || generatedImages[assetType]) && (
                 <button 
                   className="absolute top-3 right-10 z-10 p-1.5 rounded-lg bg-black/20 text-white/70 hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleViewImage(info.demoImage!, info.name);
+                    const displayImage = getDisplayImage(assetType, info);
+                    if (displayImage) {
+                      handleViewImage(displayImage, info.name);
+                    }
                   }}
                   title="View larger"
                 >
@@ -536,23 +596,35 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
               
               {/* Preview Area with Demo Image */}
               <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 relative overflow-hidden">
-                {info.demoImage ? (
-                  <img 
-                    src={info.demoImage} 
-                    alt={info.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                ) : (
-                  <>
-                    <div className={cn(
-                      "absolute inset-0 bg-gradient-to-br opacity-10",
-                      studioGradient
-                    )} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
-                    </div>
-                  </>
-                )}
+                {(() => {
+                  const displayImage = getDisplayImage(assetType, info);
+                  const hasGenerated = !!generatedImages[assetType];
+                  return displayImage ? (
+                    <>
+                      <img 
+                        src={displayImage} 
+                        alt={info.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      {hasGenerated && (
+                        <div className="absolute top-2 left-10 z-10 bg-primary rounded-full px-2 py-0.5 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-primary-foreground" />
+                          <span className="text-[10px] font-medium text-primary-foreground">AI Generated</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className={cn(
+                        "absolute inset-0 bg-gradient-to-br opacity-10",
+                        studioGradient
+                      )} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
+                      </div>
+                    </>
+                  );
+                })()}
                 
                 {/* Generate Overlay */}
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
