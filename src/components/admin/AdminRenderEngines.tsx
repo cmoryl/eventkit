@@ -201,54 +201,52 @@ const AdminRenderEngines: React.FC = () => {
 
   const handleTestApiKey = async () => {
     const providerConfig = getProviderConfig(formData.provider);
-    if (!providerConfig || !formData.api_key) return;
+    if (!providerConfig) return;
+
+    // For Lovable AI, just confirm it's ready
+    if (formData.provider === 'lovable') {
+      setKeyTestResult('success');
+      toast.success('Lovable AI is pre-configured and ready');
+      return;
+    }
+
+    if (!formData.api_key) {
+      toast.error('Please enter an API key first');
+      return;
+    }
 
     setIsTestingKey(true);
     setKeyTestResult(null);
 
     try {
-      // Simple validation - check key format
-      let isValid = false;
-      
-      switch (formData.provider) {
-        case 'openai':
-          isValid = formData.api_key.startsWith('sk-') && formData.api_key.length > 20;
-          break;
-        case 'stability':
-          isValid = formData.api_key.startsWith('sk-') && formData.api_key.length > 20;
-          break;
-        case 'replicate':
-          isValid = formData.api_key.startsWith('r8_') && formData.api_key.length > 20;
-          break;
-        case 'google':
-          isValid = formData.api_key.startsWith('AIza') && formData.api_key.length > 30;
-          break;
-        case 'flux':
-          isValid = formData.api_key.length > 10;
-          break;
-        case 'midjourney':
-          isValid = formData.api_key.length > 10;
-          break;
-        case 'ideogram':
-          isValid = formData.api_key.length > 10;
-          break;
-        default:
-          isValid = formData.api_key.length > 0;
+      const { data, error } = await supabase.functions.invoke('validate-api-key', {
+        body: { 
+          provider: formData.provider, 
+          apiKey: formData.api_key 
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message);
       }
 
-      // Simulate a brief test delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setKeyTestResult(isValid ? 'success' : 'error');
-      
-      if (isValid) {
-        toast.success('API key format looks valid');
+      if (data?.valid) {
+        setKeyTestResult('success');
+        toast.success(data.message, {
+          description: data.details
+        });
       } else {
-        toast.error('API key format appears invalid');
+        setKeyTestResult('error');
+        toast.error(data?.message || 'Invalid API key', {
+          description: data?.details
+        });
       }
     } catch (error) {
+      console.error('Validation error:', error);
       setKeyTestResult('error');
-      toast.error('Failed to validate API key');
+      toast.error('Failed to validate API key', {
+        description: error instanceof Error ? error.message : 'Connection error'
+      });
     } finally {
       setIsTestingKey(false);
     }
@@ -519,7 +517,7 @@ const AdminRenderEngines: React.FC = () => {
                       disabled={isTestingKey}
                       className="w-full"
                     >
-                      {isTestingKey ? 'Validating...' : 'Validate Key Format'}
+                      {isTestingKey ? 'Validating with provider...' : 'Test API Key'}
                     </Button>
                   )}
 
