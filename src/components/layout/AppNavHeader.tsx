@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
+import { useAppSettings } from '@/hooks/useAppSettings';
 import { cn } from '@/lib/utils';
 import { STUDIO_DEFINITIONS, StudioType } from '@/types/studio.types';
 import { toast } from 'sonner';
@@ -68,6 +69,7 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, signOut } = useAuth();
+  const { logoType, logoUrl, logoIconUrl } = useAppSettings();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showStudiosMenu, setShowStudiosMenu] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -118,15 +120,27 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
-                <Sparkles className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-lg font-bold text-foreground">EventKIT</span>
-                {subtitle && (
-                  <span className="ml-2 text-sm text-muted-foreground">{subtitle}</span>
-                )}
-              </div>
+              {/* Custom Logo */}
+              {logoType === 'custom' && logoUrl ? (
+                <img src={logoUrl} alt="Logo" className="h-10 object-contain" />
+              ) : logoType === 'icon-only' && logoIconUrl ? (
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-background flex items-center justify-center">
+                  <img src={logoIconUrl} alt="Logo" className="w-8 h-8 object-contain" />
+                </div>
+              ) : (
+                /* Default EventKIT Logo */
+                <>
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
+                    <Sparkles className="w-5 h-5 text-primary-foreground" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <span className="text-lg font-bold text-foreground">EventKIT</span>
+                    {subtitle && (
+                      <span className="ml-2 text-sm text-muted-foreground">{subtitle}</span>
+                    )}
+                  </div>
+                </>
+              )}
             </motion.button>
 
             {/* Main Navigation */}
