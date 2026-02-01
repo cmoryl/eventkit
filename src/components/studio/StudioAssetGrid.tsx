@@ -483,14 +483,57 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                   </Button>
                 </div>
                 
-                {/* Loading Overlay */}
+                {/* Loading Overlay with Enhanced Animation */}
                 {isGenerating && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <div className="text-center">
-                      <Loader2 className="w-8 h-8 animate-spin text-white mx-auto mb-2" />
-                      <p className="text-xs text-white/80">Generating...</p>
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-black/70 flex items-center justify-center backdrop-blur-sm"
+                  >
+                    {/* Animated shimmer background */}
+                    <div className="absolute inset-0 overflow-hidden">
+                      <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                        animate={{ x: ['-100%', '100%'] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                      />
                     </div>
-                  </div>
+                    
+                    {/* Central loading indicator */}
+                    <div className="relative text-center z-10">
+                      {/* Outer pulsing ring */}
+                      <motion.div
+                        className="absolute inset-0 -m-4 rounded-full border-2 border-primary/30"
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      />
+                      
+                      {/* Inner rotating ring */}
+                      <motion.div
+                        className="w-12 h-12 rounded-full border-2 border-transparent border-t-primary border-r-primary/50 mx-auto"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      />
+                      
+                      {/* Center sparkle icon */}
+                      <motion.div
+                        className="absolute inset-0 flex items-center justify-center"
+                        animate={{ scale: [0.9, 1.1, 0.9] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      </motion.div>
+                      
+                      {/* Status text */}
+                      <motion.p 
+                        className="mt-3 text-xs text-white/90 font-medium"
+                        animate={{ opacity: [0.6, 1, 0.6] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                      >
+                        Generating...
+                      </motion.p>
+                    </div>
+                  </motion.div>
                 )}
               </div>
               
