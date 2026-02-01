@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Video, Loader2, Play, Download, Sparkles, Cpu, Zap, Clock } from 'lucide-react';
+import { Video, Loader2, Play, Download, Sparkles, Cpu, Clock, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from '@/hooks/useAuth';
@@ -53,6 +53,7 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
   onVideoGenerated,
 }) => {
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [styleDescription, setStyleDescription] = useState('');
   const [duration, setDuration] = useState('5');
   const [aspectRatio, setAspectRatio] = useState('16:9');
@@ -64,6 +65,8 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
   const [videoStatus, setVideoStatus] = useState<string | null>(null);
   const [userEngines, setUserEngines] = useState<RenderEngine[]>([]);
   const [generationTime, setGenerationTime] = useState<number | null>(null);
+  const [startingFrame, setStartingFrame] = useState<string | null>(null);
+  const [startingFramePreview, setStartingFramePreview] = useState<string | null>(null);
 
   // Load user's Replicate engines if available
   useEffect(() => {
@@ -78,6 +81,43 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
     // Filter for Replicate engines (they support video)
     const replicateEngines = engines.filter(e => e.provider === 'replicate');
     setUserEngines(replicateEngines);
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image must be less than 10MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setStartingFrame(base64);
+      setStartingFramePreview(base64);
+      toast.success('Starting frame uploaded!');
+    };
+    reader.onerror = () => {
+      toast.error('Failed to read image file');
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveStartingFrame = () => {
+    setStartingFrame(null);
+    setStartingFramePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleGenerate = async () => {
@@ -106,6 +146,7 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
           resolution,
           provider: selectedEngine,
           apiKey,
+          startingFrameBase64: startingFrame,
         },
       });
 
@@ -154,6 +195,8 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
     setVideoStatus(null);
     setStyleDescription('');
     setGenerationTime(null);
+    setStartingFrame(null);
+    setStartingFramePreview(null);
   };
 
   const canUseReplicate = userEngines.length > 0;
@@ -225,6 +268,61 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
             </CardContent>
           </Card>
 
+          {/* Starting Frame Upload */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" />
+                Starting Frame (Optional)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Upload an image to animate into a video. Great for logos, posters, or event graphics.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+              />
+              
+              {startingFramePreview ? (
+                <div className="relative">
+                  <div className="aspect-video rounded-lg overflow-hidden border bg-muted">
+                    <img
+                      src={startingFramePreview}
+                      alt="Starting frame preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-8 w-8"
+                    onClick={handleRemoveStartingFrame}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2 text-center">
+                    This image will be animated into video
+                  </p>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full h-24 border-dashed gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isGenerating}
+                >
+                  <Upload className="h-5 w-5" />
+                  <span>Upload Starting Frame</span>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Settings */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
@@ -241,7 +339,7 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
             </div>
             <div className="space-y-2">
               <Label>Aspect Ratio</Label>
-              <Select value={aspectRatio} onValueChange={setAspectRatio}>
+              <Select value={aspectRatio} onValueChange={setAspectRatio} disabled={!!startingFrame}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -251,6 +349,9 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
                   <SelectItem value="1:1">1:1 (Square)</SelectItem>
                 </SelectContent>
               </Select>
+              {startingFrame && (
+                <p className="text-[10px] text-muted-foreground">Auto-detected from image</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Resolution</Label>
@@ -268,9 +369,12 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
 
           {/* Style Description */}
           <div className="space-y-2">
-            <Label>Visual Style (optional)</Label>
+            <Label>{startingFrame ? 'Motion Description' : 'Visual Style'} (optional)</Label>
             <Textarea
-              placeholder="Describe the visual style you want... (e.g., 'Cinematic with dramatic lighting', 'Colorful and energetic', 'Minimal and elegant')"
+              placeholder={startingFrame 
+                ? "Describe how the image should animate... (e.g., 'Gentle zoom with floating particles', 'Dynamic camera pan', 'Subtle breathing motion')"
+                : "Describe the visual style you want... (e.g., 'Cinematic with dramatic lighting', 'Colorful and energetic', 'Minimal and elegant')"
+              }
               value={styleDescription}
               onChange={(e) => setStyleDescription(e.target.value)}
               rows={3}
