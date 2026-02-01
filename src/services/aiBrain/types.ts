@@ -2,6 +2,7 @@
 // Centralized types for the learning and render engine system
 
 export type RenderProvider = 'lovable' | 'openai' | 'stability' | 'replicate' | 'midjourney';
+export type VideoProvider = 'lovable' | 'replicate';
 
 export interface RenderEngine {
   id: string;
