@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2, FileText
@@ -11,6 +11,23 @@ import { AssetType } from '@/types';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { supabase } from '@/integrations/supabase/client';
+
+interface HeroContent {
+  badge_text: string;
+  headline_start: string;
+  headline_highlight: string;
+  description: string;
+  cta_text: string;
+}
+
+const defaultHeroContent: HeroContent = {
+  badge_text: '100+ Asset Types',
+  headline_start: 'Create Stunning',
+  headline_highlight: 'Event Design Kits',
+  description: 'From banners to merchandise — upload your logo, describe your style, and generate a complete professional branding package in minutes.',
+  cta_text: 'Get Started'
+};
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -54,6 +71,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 }) => {
   const { user, signOut, isAuthenticated: isLoggedIn } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [heroContent, setHeroContent] = useState<HeroContent>(defaultHeroContent);
+
+  // Fetch hero content from database
+  useEffect(() => {
+    const fetchHeroContent = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('hero_content')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching hero content:', error);
+          return;
+        }
+
+        if (data) {
+          setHeroContent({
+            badge_text: data.badge_text || defaultHeroContent.badge_text,
+            headline_start: data.headline_start || defaultHeroContent.headline_start,
+            headline_highlight: data.headline_highlight || defaultHeroContent.headline_highlight,
+            description: data.description || defaultHeroContent.description,
+            cta_text: data.cta_text || defaultHeroContent.cta_text
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching hero content:', error);
+      }
+    };
+
+    fetchHeroContent();
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
@@ -95,7 +147,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
           >
             <Sparkles className="w-4 h-4" />
-            100+ Asset Types
+            {heroContent.badge_text}
           </motion.div>
 
           <motion.h1
@@ -104,9 +156,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ delay: 0.2 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5"
           >
-            Create Stunning{' '}
+            {heroContent.headline_start}{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary">
-              Event Design Kits
+              {heroContent.headline_highlight}
             </span>
           </motion.h1>
 
@@ -116,7 +168,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             transition={{ delay: 0.3 }}
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
           >
-            From banners to merchandise — upload your logo, describe your style, and generate a complete professional branding package in minutes.
+            {heroContent.description}
           </motion.p>
 
           <motion.div
@@ -126,7 +178,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             className="flex items-center justify-center mb-2"
           >
             <Button size="lg" onClick={onGetStarted} className="text-lg px-8 py-6 rounded-xl shadow-lg shadow-primary/25">
-              Get Started <ArrowRight className="ml-2 w-5 h-5" />
+              {heroContent.cta_text} <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </motion.div>
         </div>
