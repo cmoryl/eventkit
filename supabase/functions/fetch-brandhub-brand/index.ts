@@ -23,15 +23,16 @@ Deno.serve(async (req) => {
 
     console.log("BrandHub import requested with token:", shareToken);
 
-    // BrandHub integration is not yet configured
-    // Return a helpful message instead of trying to connect to a non-existent service
+    // BrandHub integration is not yet configured.
+    // IMPORTANT: return 200 so the web client doesn't treat this as a hard runtime failure.
+    // The UI should rely on `setupRequired: true` to show a friendly message.
     return new Response(
-      JSON.stringify({ 
-        error: "BrandHub integration is not yet configured",
-        message: "The BrandHub Creator share feature requires additional setup. Please create your brand manually using the brand editor.",
-        setupRequired: true
+      JSON.stringify({
+        setupRequired: true,
+        message:
+          "BrandHub Creator import is not yet available in this project. Please create your brand manually using the brand editor or import a brand guide PDF/image.",
       }),
-      { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
 
   } catch (error: unknown) {
