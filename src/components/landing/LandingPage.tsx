@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2
+  Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2, FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -194,157 +194,187 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20 px-6 bg-muted/30 overflow-hidden">
-        <div className="max-w-5xl mx-auto">
+      {/* How It Works - Clean Staggered Design */}
+      <section className="py-24 sm:py-32 px-6 relative overflow-hidden">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/20 to-background pointer-events-none" />
+        
+        <div className="max-w-6xl mx-auto relative">
+          {/* Section Header */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
+            className="text-center mb-20"
           >
-            <motion.span
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+            <motion.h2
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4"
+              transition={{ duration: 0.6 }}
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4"
             >
-              Simple Process
-            </motion.span>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">How It Works</h2>
-            <p className="text-muted-foreground text-lg">Three simple steps to your complete event design kit</p>
+              How It{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
+                Works
+              </span>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-lg text-muted-foreground max-w-md mx-auto"
+            >
+              Three simple steps to your complete event kit
+            </motion.p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 relative">
-            {/* Animated connecting line */}
-            <motion.div 
-              className="hidden md:block absolute top-16 left-[20%] right-[20%] h-0.5 overflow-hidden"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-            >
+          {/* Vertical Timeline */}
+          <div className="relative">
+            {/* Central line - desktop only */}
+            <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2">
               <motion.div
-                className="h-full bg-gradient-to-r from-primary/50 via-accent/50 to-primary/50"
-                initial={{ x: '-100%' }}
-                whileInView={{ x: '0%' }}
+                className="w-full h-full bg-gradient-to-b from-transparent via-primary/30 to-transparent"
+                initial={{ scaleY: 0 }}
+                whileInView={{ scaleY: 1 }}
                 viewport={{ once: true }}
-                transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                style={{ originY: 0 }}
               />
-            </motion.div>
-            
-            {steps.map((item, i) => (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ 
-                  delay: i * 0.2,
-                  type: "spring",
-                  stiffness: 100,
-                  damping: 15
-                }}
-                whileHover={{ 
-                  y: -12, 
-                  scale: 1.02,
-                  transition: { duration: 0.3, type: "spring", stiffness: 300 } 
-                }}
-                className="relative text-center group cursor-default p-6 rounded-2xl transition-all duration-300"
-              >
-                {/* Card background with animated gradient border */}
-                <motion.div 
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-500"
-                  whileHover={{ 
-                    boxShadow: "0 20px 40px -15px hsl(var(--primary) / 0.3)",
-                  }}
-                />
-                <div className="absolute inset-0 rounded-2xl border border-transparent group-hover:border-primary/30 transition-colors duration-300" />
+            </div>
+
+            {/* Steps */}
+            <div className="space-y-16 lg:space-y-24">
+              {steps.map((step, i) => {
+                const isEven = i % 2 === 0;
                 
-                {/* Animated corner accents */}
-                <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-transparent group-hover:border-primary/50 rounded-tl-2xl transition-all duration-500 group-hover:w-12 group-hover:h-12" />
-                <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-transparent group-hover:border-accent/50 rounded-br-2xl transition-all duration-500 group-hover:w-12 group-hover:h-12" />
-                
-                {/* Step number with animation */}
-                <motion.div 
-                  className="relative inline-block mb-4"
-                  whileHover={{ 
-                    scale: 1.15, 
-                    rotate: [0, -8, 8, -4, 0],
-                    transition: { duration: 0.5 }
-                  }}
-                >
-                  <span className="text-6xl sm:text-7xl font-bold bg-gradient-to-br from-primary/50 to-primary/20 bg-clip-text text-transparent group-hover:from-primary group-hover:to-accent transition-all duration-500">
-                    {item.step}
-                  </span>
-                  {/* Animated ring */}
+                return (
                   <motion.div
-                    className="absolute -inset-4 rounded-full border-2 border-primary/0 group-hover:border-primary/30"
-                    initial={false}
-                    whileHover={{ 
-                      scale: [1, 1.3, 1.1],
-                      opacity: [0, 0.8, 0.4],
-                      transition: { duration: 0.6 }
-                    }}
-                  />
-                  {/* Glow effect */}
-                  <div className="absolute inset-0 blur-2xl bg-primary/0 group-hover:bg-primary/20 transition-all duration-500 rounded-full" />
-                </motion.div>
-                
-                {/* Title with animated underline */}
-                <h3 className="text-xl font-semibold mb-3 relative inline-block">
-                  <span className="relative z-10 group-hover:text-primary transition-colors duration-300">{item.title}</span>
-                  <motion.span 
-                    className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-primary via-accent to-primary origin-left rounded-full"
-                    initial={{ scaleX: 0, opacity: 0 }}
-                    whileInView={{ scaleX: 1, opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.5 + i * 0.2, duration: 0.4 }}
-                  />
-                  <motion.span 
-                    className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-accent to-primary origin-center rounded-full opacity-0 group-hover:opacity-100 scale-x-0 group-hover:scale-x-100 transition-all duration-300"
-                  />
-                </h3>
-                
-                <p className="text-muted-foreground group-hover:text-foreground/80 transition-colors duration-300 relative z-10">
-                  {item.description}
-                </p>
-                
-                {/* Floating arrow with enhanced animation */}
-                {i < steps.length - 1 && (
-                  <motion.div 
-                    className="hidden md:flex absolute -right-4 top-14 text-primary/30 group-hover:text-primary/60 transition-colors duration-300"
-                    animate={{ 
-                      x: [0, 10, 0],
-                      opacity: [0.4, 1, 0.4]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    key={step.step}
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true, margin: "-100px" }}
+                    transition={{ duration: 0.5 }}
+                    className={`relative flex flex-col lg:flex-row items-center gap-8 lg:gap-16 ${
+                      isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'
+                    }`}
                   >
-                    <ArrowRight className="w-6 h-6" />
+                    {/* Content Side */}
+                    <motion.div
+                      initial={{ opacity: 0, x: isEven ? -60 : 60 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
+                      className={`flex-1 ${isEven ? 'lg:text-right' : 'lg:text-left'} text-center lg:text-inherit`}
+                    >
+                      <div className={`inline-block ${isEven ? 'lg:ml-auto' : 'lg:mr-auto'}`}>
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.5 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ duration: 0.5, delay: 0.3, type: "spring" }}
+                          className="inline-block text-xs font-semibold tracking-widest text-primary uppercase mb-3"
+                        >
+                          Step {step.step}
+                        </motion.span>
+                        <h3 className="text-2xl sm:text-3xl font-bold mb-3">{step.title}</h3>
+                        <p className="text-muted-foreground max-w-sm">{step.description}</p>
+                      </div>
+                    </motion.div>
+
+                    {/* Center Number - Desktop */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ 
+                        duration: 0.5, 
+                        delay: 0.1,
+                        type: "spring",
+                        stiffness: 200
+                      }}
+                      className="relative flex-shrink-0 order-first lg:order-none"
+                    >
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl shadow-primary/25 relative z-10">
+                        <span className="text-3xl sm:text-4xl font-bold text-primary-foreground">
+                          {step.step}
+                        </span>
+                      </div>
+                      {/* Glow ring */}
+                      <motion.div
+                        className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl"
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          opacity: [0.5, 0.3, 0.5]
+                        }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                      />
+                    </motion.div>
+
+                    {/* Visual Side - Icon/Illustration */}
+                    <motion.div
+                      initial={{ opacity: 0, x: isEven ? 60 : -60 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true, margin: "-100px" }}
+                      transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
+                      className="flex-1 hidden lg:flex justify-center"
+                    >
+                      <div className={`w-full max-w-xs aspect-[4/3] rounded-2xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50 flex items-center justify-center relative overflow-hidden group`}>
+                        {/* Animated background pattern */}
+                        <div className="absolute inset-0 opacity-30">
+                          <div className="absolute inset-0" style={{
+                            backgroundImage: `radial-gradient(circle at 2px 2px, hsl(var(--primary) / 0.3) 1px, transparent 0)`,
+                            backgroundSize: '24px 24px'
+                          }} />
+                        </div>
+                        {/* Floating icon */}
+                        <motion.div
+                          animate={{ y: [0, -8, 0] }}
+                          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                          className="relative z-10"
+                        >
+                          {i === 0 && (
+                            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <FileText className="w-8 h-8 text-primary" />
+                            </div>
+                          )}
+                          {i === 1 && (
+                            <div className="w-16 h-16 rounded-xl bg-accent/10 flex items-center justify-center">
+                              <Palette className="w-8 h-8 text-accent" />
+                            </div>
+                          )}
+                          {i === 2 && (
+                            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <Download className="w-8 h-8 text-primary" />
+                            </div>
+                          )}
+                        </motion.div>
+                        {/* Hover glow */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/0 to-accent/0 group-hover:from-primary/5 group-hover:to-accent/5 transition-all duration-500" />
+                      </div>
+                    </motion.div>
                   </motion.div>
-                )}
-                
-                {/* Particle effect on hover */}
-                <motion.div
-                  className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-primary/50 opacity-0 group-hover:opacity-100"
-                  animate={{ 
-                    scale: [0, 1, 0],
-                    y: [0, -30, -60],
-                    x: [0, 10, 20],
-                  }}
-                  transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
-                />
-                <motion.div
-                  className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full bg-accent/50 opacity-0 group-hover:opacity-100"
-                  animate={{ 
-                    scale: [0, 1, 0],
-                    y: [0, -40, -70],
-                    x: [0, -15, -25],
-                  }}
-                  transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 0.3, delay: 0.2 }}
-                />
-              </motion.div>
-            ))}
+                );
+              })}
+            </div>
+
+            {/* Bottom CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-center mt-20"
+            >
+              <Button 
+                size="lg" 
+                onClick={onGetStarted}
+                className="rounded-xl px-8 shadow-lg shadow-primary/25"
+              >
+                Start Creating <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </motion.div>
           </div>
         </div>
       </section>
