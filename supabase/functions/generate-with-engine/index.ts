@@ -31,7 +31,7 @@ serve(async (req) => {
 
     console.log(`Generate with engine: ${provider}, test: ${test}`);
 
-    // For test mode, just validate the API key format
+    // For test mode, validate the API key by making a lightweight request
     if (test) {
       if (provider !== 'lovable' && !apiKey) {
         return new Response(
@@ -39,10 +39,27 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      return new Response(
-        JSON.stringify({ success: true, message: "Connection validated" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+
+      try {
+        const validationResult = await validateApiKey(provider, apiKey);
+        if (validationResult.valid) {
+          return new Response(
+            JSON.stringify({ success: true, message: validationResult.message }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          return new Response(
+            JSON.stringify({ error: validationResult.message }),
+            { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : "Validation failed";
+        return new Response(
+          JSON.stringify({ error: errorMsg }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     let imageUrl: string | null = null;
@@ -85,6 +102,73 @@ serve(async (req) => {
     );
   }
 });
+
+// Validate API key by making a lightweight request to each provider
+async function validateApiKey(provider: string, apiKey?: string): Promise<{ valid: boolean; message: string }> {
+  switch (provider) {
+    case 'lovable':
+      // Lovable uses internal API key, no validation needed
+      return { valid: true, message: "Lovable AI is ready to use" };
+    
+    case 'openai':
+      try {
+        // Check OpenAI API key by fetching models list (lightweight)
+        const response = await fetch("https://api.openai.com/v1/models", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (response.status === 401) {
+          return { valid: false, message: "Invalid OpenAI API key" };
+        }
+        if (response.status === 429) {
+          return { valid: true, message: "API key valid (rate limited)" };
+        }
+        if (!response.ok) {
+          return { valid: false, message: `OpenAI error: ${response.status}` };
+        }
+        return { valid: true, message: "OpenAI API key validated successfully" };
+      } catch (e) {
+        return { valid: false, message: `OpenAI connection failed: ${e instanceof Error ? e.message : 'Unknown error'}` };
+      }
+    
+    case 'stability':
+      try {
+        // Check Stability AI API key
+        const response = await fetch("https://api.stability.ai/v1/user/account", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (response.status === 401) {
+          return { valid: false, message: "Invalid Stability AI API key" };
+        }
+        if (!response.ok) {
+          return { valid: false, message: `Stability error: ${response.status}` };
+        }
+        return { valid: true, message: "Stability AI API key validated successfully" };
+      } catch (e) {
+        return { valid: false, message: `Stability connection failed: ${e instanceof Error ? e.message : 'Unknown error'}` };
+      }
+    
+    case 'replicate':
+    case 'midjourney':
+      try {
+        // Check Replicate API key by fetching account info
+        const response = await fetch("https://api.replicate.com/v1/account", {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        if (response.status === 401) {
+          return { valid: false, message: "Invalid Replicate API key" };
+        }
+        if (!response.ok) {
+          return { valid: false, message: `Replicate error: ${response.status}` };
+        }
+        return { valid: true, message: "Replicate API key validated successfully" };
+      } catch (e) {
+        return { valid: false, message: `Replicate connection failed: ${e instanceof Error ? e.message : 'Unknown error'}` };
+      }
+    
+    default:
+      return { valid: false, message: `Unknown provider: ${provider}` };
+  }
+}
 
 // Generate using Lovable AI (built-in) - Powered by Google Gemini image models
 async function generateWithLovable(
