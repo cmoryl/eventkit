@@ -4,7 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface LogoSettings {
   type: 'default' | 'custom' | 'icon-only';
   url: string | null;
+  urlDark: string | null; // Logo for dark mode
   iconUrl: string | null;
+  iconUrlDark: string | null; // Icon for dark mode
 }
 
 interface AppSettings {
@@ -15,7 +17,9 @@ const defaultSettings: AppSettings = {
   logo: {
     type: 'default',
     url: null,
-    iconUrl: null
+    urlDark: null,
+    iconUrl: null,
+    iconUrlDark: null
   }
 };
 
@@ -40,7 +44,9 @@ export const useAppSettings = () => {
           newSettings.logo = {
             type: (val.type as LogoSettings['type']) || 'default',
             url: (val.url as string | null) || null,
-            iconUrl: (val.iconUrl as string | null) || null
+            urlDark: (val.urlDark as string | null) || null,
+            iconUrl: (val.iconUrl as string | null) || null,
+            iconUrlDark: (val.iconUrlDark as string | null) || null
           };
         }
       });
@@ -84,7 +90,9 @@ export const useAppSettings = () => {
     updateLogoSettings,
     refetch: fetchSettings,
     logoUrl: settings.logo.url,
+    logoUrlDark: settings.logo.urlDark,
     logoIconUrl: settings.logo.iconUrl,
+    logoIconUrlDark: settings.logo.iconUrlDark,
     logoType: settings.logo.type,
     hasCustomLogo: settings.logo.type === 'custom' && !!settings.logo.url
   };
