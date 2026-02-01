@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import Spinner from './Spinner';
 import { Settings } from 'lucide-react';
 import ApiSettingsModal from './settings/ApiSettingsModal';
+import { useApiSettings } from '@/hooks/useApiSettings';
 
 interface AppHeaderProps {
   onNewProject: () => void;
@@ -30,6 +31,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 }) => {
   const loadProjectInputRef = useRef<HTMLInputElement>(null);
   const [showApiSettings, setShowApiSettings] = useState(false);
+  const { hasGoogleMapsKey } = useApiSettings();
 
   const handleLoadClick = () => {
     loadProjectInputRef.current?.click();
@@ -60,10 +62,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowApiSettings(true)}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors"
+            className="relative p-2 rounded-lg hover:bg-secondary transition-colors"
             title="API Settings"
           >
             <Settings className="h-4 w-4 text-muted-foreground" />
+            {hasGoogleMapsKey && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
+            )}
           </button>
           
           {showDashboardControls && (
