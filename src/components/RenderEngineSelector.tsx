@@ -2,8 +2,8 @@
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Key } from 'lucide-react';
-import type { RenderEngine, RenderProvider } from '@/services/aiBrain/types';
+import { Sparkles, Zap, Key, Video } from 'lucide-react';
+import type { RenderEngine, RenderProvider, VideoProvider } from '@/services/aiBrain/types';
 import { getUserRenderEngines, getAllProviders } from '@/services/aiBrain/renderEngineService';
 import { cn } from '@/lib/utils';
 
@@ -14,7 +14,10 @@ interface RenderEngineSelectorProps {
   compact?: boolean;
   className?: string;
   disabled?: boolean;
+  engineType?: 'image' | 'video' | 'all'; // Filter by engine type
 }
+
+type AnyProvider = RenderProvider | VideoProvider;
 
 export function RenderEngineSelector({
   userId,
@@ -23,6 +26,7 @@ export function RenderEngineSelector({
   compact = false,
   className,
   disabled = false,
+  engineType = 'image',
 }: RenderEngineSelectorProps) {
   const [engines, setEngines] = useState<RenderEngine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,9 +59,16 @@ export function RenderEngineSelector({
     config: { model: 'gemini-2.5-flash-image' },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    engineType: 'image',
   };
 
-  const allEngines = [defaultEngine, ...engines.filter(e => e.isActive)];
+  // Filter engines by type
+  const filteredEngines = engines.filter(e => {
+    if (engineType === 'all') return e.isActive;
+    return e.isActive && (e.engineType === engineType || !e.engineType);
+  });
+
+  const allEngines = [defaultEngine, ...filteredEngines];
   const selectedEngine = allEngines.find(e => e.id === value) || defaultEngine;
 
   const handleChange = (engineId: string) => {
@@ -65,7 +76,10 @@ export function RenderEngineSelector({
     onChange(engineId, engine || null);
   };
 
-  const getProviderIcon = (provider: RenderProvider) => {
+  const getProviderIcon = (provider: AnyProvider) => {
+    if (provider.startsWith('lovable-veo') || provider.startsWith('replicate-luma') || provider.startsWith('replicate-minimax')) {
+      return <Video className={cn("text-primary", compact ? "w-3 h-3" : "w-4 h-4")} />;
+    }
     switch (provider) {
       case 'lovable':
         return <Sparkles className={cn("text-primary", compact ? "w-3 h-3" : "w-4 h-4")} />;
@@ -74,15 +88,19 @@ export function RenderEngineSelector({
     }
   };
 
-  const getProviderColor = (provider: RenderProvider) => {
+  const getProviderColor = (provider: AnyProvider) => {
+    if (provider.startsWith('lovable')) return 'bg-primary/10 text-primary border-primary/30';
+    if (provider.startsWith('replicate')) return 'bg-blue-500/10 text-blue-600 border-blue-500/30';
     switch (provider) {
-      case 'lovable': return 'bg-primary/10 text-primary border-primary/30';
       case 'openai': return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
       case 'stability': return 'bg-purple-500/10 text-purple-600 border-purple-500/30';
-      case 'replicate': return 'bg-blue-500/10 text-blue-600 border-blue-500/30';
       case 'midjourney': return 'bg-rose-500/10 text-rose-600 border-rose-500/30';
       default: return 'bg-secondary text-muted-foreground';
     }
+  };
+
+  const isBuiltIn = (provider: AnyProvider) => {
+    return provider === 'lovable' || provider === 'lovable-veo3';
   };
 
   if (loading) {
@@ -113,7 +131,7 @@ export function RenderEngineSelector({
             <div className="flex items-center gap-2">
               {getProviderIcon(engine.provider)}
               <span className="flex-1">{engine.displayName}</span>
-              {engine.provider === 'lovable' ? (
+              {isBuiltIn(engine.provider) ? (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Built-in</Badge>
               ) : (
                 <Key className="w-3 h-3 text-muted-foreground" />
@@ -143,16 +161,18 @@ export function RenderEngineBadge({
   const provider = engine?.provider || 'lovable';
   const displayName = engine?.displayName || 'Lovable AI';
 
-  const getProviderColor = (p: RenderProvider) => {
+  const getProviderColor = (p: AnyProvider) => {
+    if (p.startsWith('lovable')) return 'bg-primary/10 text-primary';
+    if (p.startsWith('replicate')) return 'bg-blue-500/10 text-blue-600';
     switch (p) {
-      case 'lovable': return 'bg-primary/10 text-primary';
       case 'openai': return 'bg-emerald-500/10 text-emerald-600';
       case 'stability': return 'bg-purple-500/10 text-purple-600';
-      case 'replicate': return 'bg-blue-500/10 text-blue-600';
       case 'midjourney': return 'bg-rose-500/10 text-rose-600';
       default: return 'bg-secondary text-muted-foreground';
     }
   };
+
+  const isBuiltIn = provider === 'lovable' || provider === 'lovable-veo3';
 
   return (
     <Badge 
@@ -163,7 +183,7 @@ export function RenderEngineBadge({
         className
       )}
     >
-      {provider === 'lovable' ? (
+      {isBuiltIn ? (
         <Sparkles className="w-2.5 h-2.5 mr-1" />
       ) : (
         <Zap className="w-2.5 h-2.5 mr-1" />

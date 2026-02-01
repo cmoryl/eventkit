@@ -2,12 +2,13 @@
 // Centralized types for the learning and render engine system
 
 export type RenderProvider = 'lovable' | 'openai' | 'stability' | 'replicate' | 'midjourney';
-export type VideoProvider = 'lovable' | 'replicate';
+export type VideoProvider = 'lovable-veo3' | 'replicate-luma' | 'replicate-minimax';
+export type EngineType = 'image' | 'video';
 
 export interface RenderEngine {
   id: string;
   userId: string;
-  provider: RenderProvider;
+  provider: RenderProvider | VideoProvider;
   displayName: string;
   apiKeyEncrypted?: string;
   isActive: boolean;
@@ -15,6 +16,7 @@ export interface RenderEngine {
   config: RenderEngineConfig;
   createdAt: string;
   updatedAt: string;
+  engineType?: EngineType; // 'image' or 'video'
 }
 
 export interface RenderEngineConfig {
@@ -25,6 +27,10 @@ export interface RenderEngineConfig {
   guidanceScale?: number;
   steps?: number;
   seed?: number;
+  // Video-specific config
+  duration?: number;
+  aspectRatio?: string;
+  resolution?: string;
   [key: string]: unknown;
 }
 
