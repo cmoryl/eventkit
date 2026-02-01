@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { AssetType } from '@/types';
 import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, VenueVideoAnalysis } from '@/types';
+import type { RenderEngine } from '@/services/aiBrain/types';
 import { generatePlaceholderContent, optimizeGenerationStrategy, prioritizeAssets } from '@/services/assetGenerator';
 import { fileToBase64 } from '@/utils';
 
@@ -89,7 +90,8 @@ export const useAIOrchestrator = ({
     vibeImageFile?: File | null,
     masterPatternFile?: File | null,
     venueImageFile?: File | null,
-    venueVideoAnalysisData?: VenueVideoAnalysis | null
+    venueVideoAnalysisData?: VenueVideoAnalysis | null,
+    renderEngine?: RenderEngine
   ) => {
     setIsLoading(true);
     const startTime = Date.now();
@@ -233,7 +235,8 @@ export const useAIOrchestrator = ({
           currentStyleDesc,
           vibeImageBase64,
           masterPatternBase64,
-          venueImageBase64
+          venueImageBase64,
+          renderEngine
         ) as ColorInfo[];
         
         const assetTime = Date.now() - assetStart;
@@ -287,7 +290,8 @@ export const useAIOrchestrator = ({
                 currentStyleDesc,
                 vibeImageBase64,
                 masterPatternBase64,
-                venueImageBase64
+                venueImageBase64,
+                renderEngine
               );
               return { id: asset.id, success: true, content };
             } catch (error) {
