@@ -69,42 +69,47 @@ const IconCard: React.FC<{
       onMouseEnter={() => onHover(asset.id)}
       onMouseLeave={() => onHover(null)}
       onClick={handleClick}
-      whileHover={{ scale: 1.05, y: -6 }}
+      whileHover={{ scale: 1.08, y: -8 }}
       whileTap={isClickable ? { scale: 0.97 } : undefined}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <div className={cn(
         "relative flex flex-col items-center gap-2 px-2 sm:px-3 py-2 sm:py-3 rounded-2xl transition-all duration-300",
-        isHovered ? "bg-card/90 shadow-xl" : "bg-transparent"
+        isHovered ? "bg-card/95 shadow-2xl z-20" : "bg-transparent"
       )}>
         {/* Glow effect */}
         <div className={cn(
-          "absolute inset-0 rounded-2xl opacity-0 blur-xl transition-opacity duration-300 -z-10",
+          "absolute inset-0 rounded-2xl blur-xl transition-opacity duration-300 -z-10",
           `bg-gradient-to-br ${asset.gradient}`,
-          isHovered && "opacity-40"
+          isHovered ? "opacity-50" : "opacity-0"
         )} />
         
-        {/* Image Card */}
-        <div className={cn(
-          "w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shadow-lg transition-all duration-300 relative",
-          isHovered && "scale-105 shadow-xl ring-2 ring-primary/50"
-        )}>
+        {/* Image Card - Larger on hover */}
+        <motion.div 
+          className={cn(
+            "rounded-xl overflow-hidden shadow-lg transition-all duration-300 relative",
+            isHovered 
+              ? "w-28 h-28 sm:w-36 sm:h-36 shadow-2xl ring-2 ring-primary/60" 
+              : "w-20 h-20 sm:w-24 sm:h-24"
+          )}
+          layout
+        >
           <img 
             src={asset.image} 
             alt={asset.title}
             className="w-full h-full object-cover"
           />
-          {/* Gradient overlay */}
+          {/* Gradient overlay - less on hover */}
           <div className={cn(
-            "absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity",
-            isHovered ? "opacity-30" : "opacity-50"
+            "absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity duration-300",
+            isHovered ? "opacity-20" : "opacity-40"
           )} />
-        </div>
+        </motion.div>
         
         {/* Label */}
         <span className={cn(
-          "text-xs sm:text-sm font-medium transition-colors duration-300",
-          isHovered ? "text-foreground" : "text-muted-foreground"
+          "text-xs sm:text-sm font-medium transition-all duration-300",
+          isHovered ? "text-foreground text-sm sm:text-base" : "text-muted-foreground"
         )}>
           {asset.title}
         </span>
@@ -114,7 +119,7 @@ const IconCard: React.FC<{
           <motion.span
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute -bottom-5 text-[10px] text-primary font-medium whitespace-nowrap"
+            className="absolute -bottom-6 text-[10px] text-primary font-medium whitespace-nowrap"
           >
             Open Studio →
           </motion.span>
