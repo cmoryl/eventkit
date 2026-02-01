@@ -24,6 +24,16 @@ interface OnboardingFlowProps {
     venueImage: File | null;
     venueVideoAnalysis: VenueVideoAnalysis | null;
   }) => void;
+  /** Start directly at a specific step (1, 2, or 3) */
+  initialStep?: number;
+  /** Preserve existing event details when adding more assets */
+  initialEventDetails?: EventDetails;
+  /** Preserve existing logos when adding more assets */
+  initialLogos?: LogoAsset[];
+  /** Preserve existing style description when adding more assets */
+  initialStyleDescription?: string;
+  /** Optional callback to cancel and return to studio */
+  onCancel?: () => void;
 }
 
 const STEPS = [
@@ -83,27 +93,39 @@ const itemVariants = {
   }
 };
 
-const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
-  const [step, setStep] = useState(1);
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ 
+  onComplete,
+  initialStep = 1,
+  initialEventDetails,
+  initialLogos,
+  initialStyleDescription,
+  onCancel,
+}) => {
+  const [step, setStep] = useState(initialStep);
   const [direction, setDirection] = useState(1);
-  const [eventDetails, setEventDetails] = useState<EventDetails>({
-    name: '',
-    description: '',
-    date: '',
-    location: '',
-    website: '',
-    email: '',
-    incorporateLocationStyle: false,
-  });
-  const [logos, setLogos] = useState<LogoAsset[]>([]);
+  const [eventDetails, setEventDetails] = useState<EventDetails>(
+    initialEventDetails ?? {
+      name: '',
+      description: '',
+      date: '',
+      location: '',
+      website: '',
+      email: '',
+      incorporateLocationStyle: false,
+    }
+  );
+  const [logos, setLogos] = useState<LogoAsset[]>(initialLogos ?? []);
   const [selectedAssets, setSelectedAssets] = useState<Set<AssetType>>(
     new Set(DEFAULT_QUICK_START_ASSETS)
   );
-  const [styleDescription, setStyleDescription] = useState('');
+  const [styleDescription, setStyleDescription] = useState(initialStyleDescription ?? '');
   const [vibeImage, setVibeImage] = useState<File | null>(null);
   const [masterPattern, setMasterPattern] = useState<File | null>(null);
   const [venueImage, setVenueImage] = useState<File | null>(null);
   const [venueVideoAnalysis, setVenueVideoAnalysis] = useState<VenueVideoAnalysis | null>(null);
+  
+  // Determine if we're in "add more" mode (started at step 3 with existing data)
+  const isAddMoreMode = initialStep === 3 && !!initialEventDetails;
 
   const isStep1Valid = eventDetails.name.trim().length > 0;
   const isStep2Valid = true;
@@ -314,21 +336,33 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <motion.button
-                onClick={handleBack}
-                disabled={step === 1}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-300",
-                  step === 1
-                    ? "opacity-30 cursor-not-allowed text-muted-foreground"
-                    : "text-foreground hover:bg-secondary"
-                )}
-                whileHover={step !== 1 ? { x: -4 } : undefined}
-                whileTap={step !== 1 ? { scale: 0.95 } : undefined}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Back
-              </motion.button>
+              {isAddMoreMode && onCancel ? (
+                <motion.button
+                  onClick={onCancel}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 text-foreground hover:bg-secondary"
+                  whileHover={{ x: -4 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Cancel
+                </motion.button>
+              ) : (
+                <motion.button
+                  onClick={handleBack}
+                  disabled={step === 1}
+                  className={cn(
+                    "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-300",
+                    step === 1
+                      ? "opacity-30 cursor-not-allowed text-muted-foreground"
+                      : "text-foreground hover:bg-secondary"
+                  )}
+                  whileHover={step !== 1 ? { x: -4 } : undefined}
+                  whileTap={step !== 1 ? { scale: 0.95 } : undefined}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back
+                </motion.button>
+              )}
 
               <MagneticButton
                 onClick={handleNext}

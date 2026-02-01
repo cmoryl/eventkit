@@ -117,33 +117,48 @@ const Index: React.FC = () => {
     masterPattern: File | null;
     venueImage: File | null;
     venueVideoAnalysis: VenueVideoAnalysis | null;
-  }) => {
+  }, isAddingMore = false) => {
     pushSnapshot();
-    setEventDetails(data.eventDetails);
-    setLogos(data.logos);
+    
+    // In add-more mode, keep existing event details (they're passed back unchanged)
+    // but update style if changed
+    if (!isAddingMore) {
+      setEventDetails(data.eventDetails);
+      setLogos(data.logos);
+    }
     setStyleDescription(data.styleDescription);
     setVibeImage(data.vibeImage);
     setMasterPattern(data.masterPattern);
     setVenueVideoAnalysis(data.venueVideoAnalysis);
     setView('studio');
 
-    // Create asset placeholders
+    // Create asset placeholders for NEW assets only
     const newAssets: GeneratedAsset[] = [];
 
-    // Add logos first (non-loading)
-    for (const logo of data.logos) {
-      const b64 = await fileToBase64(logo.file);
-      newAssets.push({
-        id: uuidv4(),
-        type: AssetType.Logo,
-        title: logo.name,
-        content: `data:${b64.type};base64,${b64.data}`,
-        isLoading: false,
-      });
+    // Only add logos if not in add-more mode (logos are already in the project)
+    if (!isAddingMore) {
+      for (const logo of data.logos) {
+        const b64 = await fileToBase64(logo.file);
+        newAssets.push({
+          id: uuidv4(),
+          type: AssetType.Logo,
+          title: logo.name,
+          content: `data:${b64.type};base64,${b64.data}`,
+          isLoading: false,
+        });
+      }
     }
 
     // Add selected assets (loading) using asset config
+    // In add-more mode, only add assets that don't already exist
+    const existingTypes = new Set(generatedAssets.map(a => a.type));
+    
     data.selectedAssets.forEach(type => {
+      // Skip if we already have this asset type (unless it's a type that allows duplicates)
+      if (isAddingMore && existingTypes.has(type)) {
+        return;
+      }
+      
       const config = getAssetConfig(type);
       newAssets.push({
         id: uuidv4(),
@@ -154,20 +169,30 @@ const Index: React.FC = () => {
       });
     });
 
-    setGeneratedAssets(newAssets);
-    // Pass vibe image, master pattern, venue image, and video analysis to generation
-    await generateAssets(
-      newAssets.filter(a => a.isLoading), 
-      data.styleDescription,
-      undefined, // paletteOverride
-      data.vibeImage,
-      data.masterPattern,
-      data.venueImage,
-      data.venueVideoAnalysis
-    );
+    if (isAddingMore) {
+      // Append new assets to existing ones
+      setGeneratedAssets(prev => [...prev, ...newAssets]);
+    } else {
+      // Replace all assets (fresh start)
+      setGeneratedAssets(newAssets);
+    }
     
-    // Show generation summary after completion
-    setShowGenerationSummary(true);
+    // Only generate if there are new loading assets
+    const assetsToGenerate = newAssets.filter(a => a.isLoading);
+    if (assetsToGenerate.length > 0) {
+      await generateAssets(
+        assetsToGenerate, 
+        data.styleDescription,
+        undefined, // paletteOverride
+        data.vibeImage,
+        data.masterPattern,
+        data.venueImage,
+        data.venueVideoAnalysis
+      );
+      
+      // Show generation summary after completion
+      setShowGenerationSummary(true);
+    }
   };
 
   const handleDeleteAsset = (id: string) => {
@@ -289,8 +314,17 @@ const Index: React.FC = () => {
     showToast("QR Code added to assets", "success");
   };
 
+  // Track whether we're in "add more" mode vs fresh onboarding
+  const [addMoreMode, setAddMoreMode] = useState(false);
+
   const handleAddMoreAssets = () => {
+    setAddMoreMode(true);
     setView('onboarding');
+  };
+
+  const handleCancelAddMore = () => {
+    setAddMoreMode(false);
+    setView('studio');
   };
 
   const handleRegenerateAsset = async (asset: GeneratedAsset) => {
@@ -496,7 +530,18 @@ const Index: React.FC = () => {
       )}
 
       {view === 'onboarding' && (
-        <OnboardingFlow onComplete={handleOnboardingComplete} />
+        <OnboardingFlow 
+          onComplete={(data) => {
+            const wasAddingMore = addMoreMode;
+            setAddMoreMode(false);
+            handleOnboardingComplete(data, wasAddingMore);
+          }}
+          initialStep={addMoreMode ? 3 : 1}
+          initialEventDetails={addMoreMode ? eventDetails : undefined}
+          initialLogos={addMoreMode ? logos : undefined}
+          initialStyleDescription={addMoreMode ? styleDescription : undefined}
+          onCancel={addMoreMode ? handleCancelAddMore : undefined}
+        />
       )}
 
       {view === 'studio' && (
