@@ -131,7 +131,13 @@ const AdminPromptManager: React.FC = () => {
         if (error) throw error;
         toast.success('Template updated successfully');
       } else {
-        // Create new
+        // Create new - need user_id for RLS
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error('You must be logged in to create templates');
+          return;
+        }
+        
         const { error } = await supabase
           .from('prompt_templates')
           .insert({
@@ -139,7 +145,8 @@ const AdminPromptManager: React.FC = () => {
             asset_type: formData.asset_type,
             prompt_template: formData.prompt_template,
             variables: variablesArray,
-            is_system: true
+            is_system: true,
+            created_by: user.id
           });
 
         if (error) throw error;
