@@ -123,6 +123,14 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         body: { shareToken }
       });
 
+      // Handle the case where BrandHub integration isn't configured
+      if (data?.setupRequired) {
+        toast.info('BrandHub import is not yet available. Please use the brand guide upload or manual editor instead.', { duration: 5000 });
+        setBrandHubUrl('');
+        setIsImportingFromHub(false);
+        return;
+      }
+
       if (error) throw error;
 
       if (data?.brand) {
@@ -156,9 +164,15 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
       } else {
         toast.warning('No brand data found at this share link');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error importing from BrandHub:', error);
-      toast.error('Failed to import from BrandHub. Check the share link and try again.');
+      // Check if the error response indicates setup is required
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.includes('setupRequired') || errorMessage.includes('not yet configured')) {
+        toast.info('BrandHub import is coming soon. Please use the brand guide upload or manual editor.', { duration: 5000 });
+      } else {
+        toast.error('Failed to import from BrandHub. Please use the upload feature instead.');
+      }
     } finally {
       setIsImportingFromHub(false);
     }
