@@ -76,8 +76,8 @@ const PaletteEditorModal: React.FC<PaletteEditorModalProps> = ({ asset, onClose,
 
         <div className="flex-grow p-6 overflow-y-auto space-y-4 custom-scrollbar">
           {localColors.map((color, index) => (
-            <div key={index} className="flex items-center gap-4 bg-secondary/30 p-4 rounded-xl border border-border">
-              <div className="relative w-14 h-14 rounded-lg border border-border flex-shrink-0 shadow-inner" style={{ backgroundColor: color.hex }}>
+            <div key={index} className="flex items-start gap-4 bg-secondary/30 p-4 rounded-xl border border-border">
+              <div className="relative w-16 h-16 rounded-lg border border-border flex-shrink-0 shadow-inner" style={{ backgroundColor: color.hex }}>
                 <input
                   type="color"
                   value={color.hex}
@@ -85,30 +85,57 @@ const PaletteEditorModal: React.FC<PaletteEditorModalProps> = ({ asset, onClose,
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
               </div>
-              <div className="flex-grow min-w-0">
-                <div className="flex items-baseline gap-3 mb-1">
+              <div className="flex-grow min-w-0 space-y-2">
+                <div className="flex items-center gap-3">
                   <input
                     type="text"
                     value={color.hex.toUpperCase()}
                     onChange={e => handleHexChange(index, e.target.value)}
-                    className="bg-transparent font-mono text-lg text-foreground outline-none w-24 uppercase focus:border-b focus:border-primary"
+                    className="bg-transparent font-mono text-lg font-semibold text-foreground outline-none w-24 uppercase focus:border-b focus:border-primary"
                   />
-                  <span className="text-xs text-muted-foreground font-mono truncate" title={color.cmyk}>{color.cmyk}</span>
+                  <span className="text-sm text-muted-foreground">{color.name}</span>
                 </div>
-                <p className="text-sm text-muted-foreground truncate">{color.name}</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  {color.cmyk && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground font-medium w-14">CMYK:</span>
+                      <span className="font-mono text-foreground/80">{color.cmyk}</span>
+                    </div>
+                  )}
+                  {color.pantone && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground font-medium w-14">Pantone:</span>
+                      <span className="font-mono text-foreground/80">{color.pantone}</span>
+                    </div>
+                  )}
+                  {color.rgb && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground font-medium w-14">RGB:</span>
+                      <span className="font-mono text-foreground/80">{color.rgb}</span>
+                    </div>
+                  )}
+                  {color.hsv && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground font-medium w-14">HSV:</span>
+                      <span className="font-mono text-foreground/80">{color.hsv}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <button
-                onClick={() => handleUpdateFromAI(index)}
-                disabled={updatingColorIndex === index}
-                className="px-3 py-2 text-xs font-semibold text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex-shrink-0"
-              >
-                {updatingColorIndex === index ? <Spinner className="w-4 h-4" /> : 'Update Info'}
-              </button>
-              <button onClick={() => handleRemoveColor(index)} className="p-2 text-muted-foreground hover:text-destructive transition-colors flex-shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
+              <div className="flex flex-col gap-2 flex-shrink-0">
+                <button
+                  onClick={() => handleUpdateFromAI(index)}
+                  disabled={updatingColorIndex === index}
+                  className="px-3 py-2 text-xs font-semibold text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {updatingColorIndex === index ? <Spinner className="w-4 h-4" /> : 'Update Info'}
+                </button>
+                <button onClick={() => handleRemoveColor(index)} className="p-2 text-muted-foreground hover:text-destructive transition-colors self-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
             </div>
           ))}
           <button
