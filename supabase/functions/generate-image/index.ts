@@ -28,6 +28,29 @@ interface ImageAnalysis {
   analysisConfidence: number;
 }
 
+// Venue intelligence from AI research (matches frontend VenueIntelligence type)
+interface VenueIntelligence {
+  name: string;
+  fullAddress?: string;
+  city?: string;
+  country?: string;
+  capacity?: string;
+  venueType?: string;
+  description?: string;
+  amenities?: string[];
+  parkingInfo?: string;
+  accessibilityInfo?: string;
+  cateringOptions?: string;
+  technicalSpecs?: string;
+  website?: string;
+  phone?: string;
+  priceRange?: string;
+  bestFor?: string[];
+  nearbyHotels?: string[];
+  localTips?: string;
+  culturalContext?: string;
+}
+
 interface GenerateImageRequest {
   assetType: string;
   eventName: string;
@@ -44,6 +67,7 @@ interface GenerateImageRequest {
   isPrintAsset?: boolean;
   printDPI?: number;
   imageAnalysis?: ImageAnalysis; // Comprehensive analysis from reference image
+  venueIntelligence?: VenueIntelligence; // AI-researched venue data
 }
 
 // Print asset categories for automatic detection
@@ -437,7 +461,8 @@ serve(async (req) => {
       masterPatternBase64,
       venueImageBase64,
       renderMode = 'hyperrealistic',
-      imageAnalysis: providedAnalysis // Comprehensive analysis from reference image
+      imageAnalysis: providedAnalysis, // Comprehensive analysis from reference image
+      venueIntelligence // AI-researched venue intelligence data
     } = body;
 
     // OPTIMIZATION: Perform inline analysis if vibe image exists but no analysis provided
@@ -482,6 +507,50 @@ ${culturalVibes}
 Subtly weave these local influences into the design while maintaining brand consistency.`;
       } else {
         locationContext = `This event is located in ${location}. Consider any local cultural elements that would resonate with attendees.`;
+      }
+    }
+
+    // Build venue intelligence context from AI research
+    let venueIntelligenceContext = '';
+    if (venueIntelligence) {
+      // Use the culturalContext field for design guidance
+      const hasCulturalData = venueIntelligence.culturalContext || venueIntelligence.description;
+      
+      if (hasCulturalData) {
+        venueIntelligenceContext = `
+VENUE INTELLIGENCE - AI-RESEARCHED DESIGN CONTEXT:
+This design is for "${venueIntelligence.name || location}".
+${venueIntelligence.venueType ? `Venue Type: ${venueIntelligence.venueType}` : ''}
+${venueIntelligence.city ? `City: ${venueIntelligence.city}` : ''}
+
+${venueIntelligence.culturalContext ? `CULTURAL & DESIGN CONTEXT:
+${venueIntelligence.culturalContext}
+Incorporate these culturally appropriate design elements and respect the venue's heritage.` : ''}
+
+${venueIntelligence.description ? `VENUE DESCRIPTION:
+${venueIntelligence.description}
+Design should complement this venue's character and atmosphere.` : ''}
+
+${venueIntelligence.bestFor?.length ? `VENUE BEST SUITED FOR: ${venueIntelligence.bestFor.join(', ')}
+Consider these typical use cases when designing.` : ''}
+
+The design should feel like it BELONGS in this specific venue - as if it was custom-designed for this exact space.`;
+      }
+      
+      // Add venue-specific practical context that may influence design
+      if (venueIntelligence.venueType || venueIntelligence.capacity) {
+        venueIntelligenceContext += `
+VENUE ATMOSPHERE:
+${venueIntelligence.venueType ? `This is a ${venueIntelligence.venueType}` : 'This venue'}${venueIntelligence.capacity ? ` with capacity for ${venueIntelligence.capacity}` : ''}.
+${venueIntelligence.priceRange ? `Price range: ${venueIntelligence.priceRange}.` : ''}
+Design should match the expected sophistication and energy level of this type of venue.`;
+      }
+
+      // Add local tips for authentic design elements
+      if (venueIntelligence.localTips) {
+        venueIntelligenceContext += `
+LOCAL DESIGN TIPS:
+${venueIntelligence.localTips}`;
       }
     }
 
@@ -624,6 +693,7 @@ ${styleInstructions}
 ${analysisInstructions}
 ${colorContext}
 ${locationContext}
+${venueIntelligenceContext}
 ${logoInstructions}
 ${vibeInstructions}
 ${patternInstructions}
@@ -640,9 +710,10 @@ ${isPrint ? '- PRINT-OPTIMIZED: CMYK-safe colors, crisp text, production-ready q
 - Maintain visual hierarchy with the event name prominent
 - ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN
 ${imageAnalysis ? '- APPLY ALL DESIGN INTELLIGENCE FROM IMAGE ANALYSIS' : ''}
+${venueIntelligence ? '- APPLY VENUE INTELLIGENCE TO CREATE VENUE-SPECIFIC DESIGN' : ''}
 ${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}`;
 
-    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue]' : ''}`);
+    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}`);
 
     // Collect all reference images in order
     const referenceImages: string[] = [];

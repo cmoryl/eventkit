@@ -358,11 +358,12 @@ const generateImageAsset = async (
       vibeImageBase64,
       masterPatternBase64,
       venueImageBase64,
-      cachedAnalysis // Pass cached analysis to avoid redundant AI call
+      cachedAnalysis, // Pass cached analysis to avoid redundant AI call
+      eventDetails.venueIntelligence // Pass venue intelligence for cultural context
     );
     
     if (aiImage) {
-      console.log(`AI generated image for ${type}${venueImageBase64 ? ' (with venue compositing)' : ''}${cachedAnalysis ? ' (with cached analysis)' : ''}`);
+      console.log(`AI generated image for ${type}${venueImageBase64 ? ' (with venue compositing)' : ''}${cachedAnalysis ? ' (with cached analysis)' : ''}${eventDetails.venueIntelligence ? ' (with venue intelligence)' : ''}`);
       return aiImage;
     }
   } catch (e) {

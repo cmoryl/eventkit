@@ -523,6 +523,9 @@ NOTES:
 • Emergency contact: [TBD]`;
 };
 
+// Import VenueIntelligence from main types
+import type { VenueIntelligence } from '../types';
+
 // Generate AI image for an asset - OPTIMIZED to use cached analysis and pass to backend
 export const generateAssetImage = async (
   assetType: AssetType | string,
@@ -536,7 +539,8 @@ export const generateAssetImage = async (
   vibeImageBase64?: string,
   masterPatternBase64?: string,
   venueImageBase64?: string,
-  preComputedAnalysis?: ImageAnalysis | null // New: pass pre-computed analysis to avoid extra AI call
+  preComputedAnalysis?: ImageAnalysis | null, // Pass pre-computed analysis to avoid extra AI call
+  venueIntelligence?: VenueIntelligence | null // AI-researched venue intelligence
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
@@ -566,6 +570,7 @@ export const generateAssetImage = async (
         masterPatternBase64,
         venueImageBase64,
         imageAnalysis, // Pass analysis to avoid inline re-analysis
+        venueIntelligence, // Pass AI-researched venue data
       },
     });
 
