@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Palette, Printer, Shirt, Share2, Presentation, Building,
   Ticket, UtensilsCrossed, Video, FileText, Camera, Shield, Plus,
-  Grid, List, Sliders, Download, Sparkles, ChevronRight
+  Grid, List, Sliders, Download, Sparkles, ChevronRight, PanelRightOpen, PanelRightClose
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
@@ -19,6 +19,7 @@ import { StudioSidebar } from './StudioSidebar';
 import { StudioAssetGrid } from './StudioAssetGrid';
 import { StudioProductionPanel } from './StudioProductionPanel';
 import { BrandSelector } from './BrandSelector';
+import { BrandsPanel } from './BrandsPanel';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -46,6 +47,7 @@ export const CreationStudio: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showProductionPanel, setShowProductionPanel] = useState(false);
+  const [showBrandsPanel, setShowBrandsPanel] = useState(true);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -193,6 +195,20 @@ export const CreationStudio: React.FC = () => {
         <Sliders className="h-4 w-4 mr-2" />
         Production
       </Button>
+
+      <Button
+        variant={showBrandsPanel ? 'secondary' : 'outline'}
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => setShowBrandsPanel(!showBrandsPanel)}
+        title={showBrandsPanel ? 'Hide Brands Panel' : 'Show Brands Panel'}
+      >
+        {showBrandsPanel ? (
+          <PanelRightClose className="h-4 w-4" />
+        ) : (
+          <PanelRightOpen className="h-4 w-4" />
+        )}
+      </Button>
       
       {selectedAssets.length > 0 && (
         <Button size="sm" className={`bg-gradient-to-r ${studio.gradient}`}>
@@ -272,6 +288,27 @@ export const CreationStudio: React.FC = () => {
             studioGradient={studio.gradient}
           />
         </main>
+
+        {/* Brands Panel */}
+        <AnimatePresence>
+          {showBrandsPanel && (
+            <motion.div
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 288, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <BrandsPanel
+                brands={brands}
+                selectedBrand={selectedBrand}
+                onSelectBrand={setSelectedBrand}
+                onCreateBrand={() => navigate('/admin?tab=brands')}
+                onEditBrand={(brand) => navigate(`/admin?tab=brands&edit=${brand.id}`)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Production Panel */}
         <AnimatePresence>
