@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LandingPage from '../components/landing/LandingPage';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
 import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, QRCodeGenerationParams, PresentationData, VenueVideoAnalysis } from '../types';
+import type { RenderEngine } from '@/services/aiBrain/types';
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
 import StudioHeader from '../components/studio/StudioHeader';
 import AssetGrid from '../components/studio/AssetGrid';
@@ -24,6 +25,7 @@ import EventDashboard from '../components/EventDashboard';
 import AdvancedExportModal from '../components/AdvancedExportModal';
 import BatchPrintExportModal from '../components/BatchPrintExportModal';
 import VenuePreviewGenerator from '../components/VenuePreviewGenerator';
+import RegenerateWithEngineModal from '../components/RegenerateWithEngineModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
@@ -77,6 +79,7 @@ const Index: React.FC = () => {
   const [showBatchPrintExport, setShowBatchPrintExport] = useState(false);
   const [showVenuePreview, setShowVenuePreview] = useState(false);
   const [showGenerationSummary, setShowGenerationSummary] = useState(false);
+  const [regeneratingAsset, setRegeneratingAsset] = useState<GeneratedAsset | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error') => setToastState({ message, type });
 
@@ -107,6 +110,14 @@ const Index: React.FC = () => {
   const { generateAssets, isLoading, generationProgress } = useAIOrchestrator({
     eventDetails, logos, styleImage: null, masterPatternImage: null, colorPalette, setColorPalette, generatedAssets, setGeneratedAssets, ensureProtocol
   });
+
+  // Auto-regenerate for non-logged-in users (skip engine selection modal)
+  useEffect(() => {
+    if (regeneratingAsset && !user) {
+      handleRegenerateAsset(regeneratingAsset);
+      setRegeneratingAsset(null);
+    }
+  }, [regeneratingAsset, user]);
 
   const handleOnboardingComplete = async (data: {
     eventDetails: EventDetails;
@@ -327,14 +338,21 @@ const Index: React.FC = () => {
     setView('studio');
   };
 
-  const handleRegenerateAsset = async (asset: GeneratedAsset) => {
+  // Open regenerate with engine modal instead of immediate regeneration
+  const handleOpenRegenerateModal = (asset: GeneratedAsset) => {
+    setRegeneratingAsset(asset);
+  };
+
+  const handleRegenerateAsset = async (asset: GeneratedAsset, engine?: RenderEngine) => {
     pushSnapshot();
     // Mark asset as loading
     setGeneratedAssets(prev => prev.map(a => 
       a.id === asset.id ? { ...a, isLoading: true } : a
     ));
     
-    // Regenerate
+    // Regenerate - pass engine info for future use with custom engines
+    // TODO: Integrate engine selection into the generateAssets function
+    console.log('Regenerating with engine:', engine?.displayName || 'Lovable AI (Default)');
     await generateAssets([{ ...asset, isLoading: true }], styleDescription);
     showToast(`${asset.title} regenerated`, "success");
   };
@@ -600,7 +618,7 @@ const Index: React.FC = () => {
               onDelete={handleDeleteAsset}
               onDeleteMultiple={handleDeleteMultiple}
               onToggleFavorite={handleToggleFavorite}
-              onRegenerate={handleRegenerateAsset}
+              onRegenerate={handleOpenRegenerateModal}
               onDuplicate={handleDuplicateAsset}
               onMoveToFolder={(assetId, folderId) => {
                 pushSnapshot();
@@ -725,6 +743,17 @@ const Index: React.FC = () => {
         styleDescription={styleDescription}
         generatedAssets={generatedAssets}
       />
+
+      {/* Regenerate With Engine Modal (only for logged-in users) */}
+      {regeneratingAsset && user && (
+        <RegenerateWithEngineModal
+          open={!!regeneratingAsset}
+          onOpenChange={(open) => !open && setRegeneratingAsset(null)}
+          asset={regeneratingAsset}
+          userId={user.id}
+          onRegenerate={handleRegenerateAsset}
+        />
+      )}
 
       {toastState && <Toast message={toastState.message} type={toastState.type} onClose={() => setToastState(null)} />}
     </div>
