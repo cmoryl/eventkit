@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Sparkles, Home, Settings, ChevronDown, LogIn, LogOut,
   User, Shield, Palette, FolderOpen, Bell, HelpCircle,
-  LayoutGrid, Layers
+  LayoutGrid, Layers, Save, Upload, Download, Cloud, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { STUDIO_DEFINITIONS, StudioType } from '@/types/studio.types';
+import { toast } from 'sonner';
 
 interface NavItem {
   id: string;
@@ -30,6 +38,14 @@ interface AppNavHeaderProps {
   onSignIn?: () => void;
   actions?: React.ReactNode;
   transparent?: boolean;
+  // Project controls
+  onSaveProject?: () => void;
+  onLoadProject?: (file: File) => void;
+  onSaveToCloud?: () => void;
+  isSaving?: boolean;
+  isLoadingProject?: boolean;
+  isSavingToCloud?: boolean;
+  showProjectControls?: boolean;
 }
 
 export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
@@ -41,12 +57,20 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   onSignIn,
   actions,
   transparent = false,
+  onSaveProject,
+  onLoadProject,
+  onSaveToCloud,
+  isSaving = false,
+  isLoadingProject = false,
+  isSavingToCloud = false,
+  showProjectControls = false,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, signOut } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showStudiosMenu, setShowStudiosMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
   const avatarUrl = user?.user_metadata?.avatar_url;
@@ -56,6 +80,22 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   const quickStudios = STUDIO_DEFINITIONS.slice(0, 6);
 
   const isActivePath = (path: string) => location.pathname === path;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (!file.name.endsWith('.zip')) {
+        toast.error('Please select a valid project file (.zip)');
+        return;
+      }
+      onLoadProject?.(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleOpenProject = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <header className={cn(
@@ -193,6 +233,60 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
 
           {/* Right: Actions + User */}
           <div className="flex items-center gap-2">
+            {/* Hidden file input for project loading */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept=".zip"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {/* Project Controls */}
+            {showProjectControls && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <FolderOpen className="h-4 w-4" />
+                    <span className="hidden sm:inline">Project</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={handleOpenProject} disabled={isLoadingProject}>
+                    {isLoadingProject ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4 mr-2" />
+                    )}
+                    Open Project (.zip)
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuItem onClick={onSaveProject} disabled={isSaving || !onSaveProject}>
+                    {isSaving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    Save as ZIP
+                  </DropdownMenuItem>
+                  
+                  {isAuthenticated && onSaveToCloud && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={onSaveToCloud} disabled={isSavingToCloud}>
+                        {isSavingToCloud ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Cloud className="h-4 w-4 mr-2" />
+                        )}
+                        Save to Cloud
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            
             {actions}
             
             <ThemeToggle />
