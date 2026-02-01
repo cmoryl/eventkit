@@ -34,6 +34,7 @@ export interface EventDetails {
   venueName?: string;
   venueAddress?: string;
   venuePlaceId?: string;
+  venueIntelligence?: VenueIntelligence;
   // Extended fields for hyper-realistic events
   eventType?: EventType;
   expectedAttendees?: number;
@@ -103,4 +104,26 @@ export interface VenueSearchResult {
   name: string;
   address: string;
   placeId: string;
+}
+
+export interface VenueIntelligence {
+  name: string;
+  fullAddress?: string;
+  city?: string;
+  country?: string;
+  capacity?: string;
+  venueType?: string;
+  description?: string;
+  amenities?: string[];
+  parkingInfo?: string;
+  accessibilityInfo?: string;
+  cateringOptions?: string;
+  technicalSpecs?: string;
+  website?: string;
+  phone?: string;
+  priceRange?: string;
+  bestFor?: string[];
+  nearbyHotels?: string[];
+  localTips?: string;
+  culturalContext?: string;
 }

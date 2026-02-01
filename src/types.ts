@@ -359,6 +359,7 @@ export interface EventDetails {
   venueName?: string;
   venueAddress?: string;
   venuePlaceId?: string;
+  venueIntelligence?: VenueIntelligence;
   // New fields for hyper-realistic events
   eventType?: EventType;
   expectedAttendees?: number;
@@ -377,6 +378,28 @@ export interface EventDetails {
     linkedin?: string;
     facebook?: string;
   };
+}
+
+export interface VenueIntelligence {
+  name: string;
+  fullAddress?: string;
+  city?: string;
+  country?: string;
+  capacity?: string;
+  venueType?: string;
+  description?: string;
+  amenities?: string[];
+  parkingInfo?: string;
+  accessibilityInfo?: string;
+  cateringOptions?: string;
+  technicalSpecs?: string;
+  website?: string;
+  phone?: string;
+  priceRange?: string;
+  bestFor?: string[];
+  nearbyHotels?: string[];
+  localTips?: string;
+  culturalContext?: string;
 }
 
 export interface VenueSearchResult {
