@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import type { EventDetails, LogoAsset } from '../../types';
 import EventTypeSelector from './EventTypeSelector';
-import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, MapPin, Globe, Mail } from 'lucide-react';
+import VenueLocationFinder from '../VenueLocationFinder';
+import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, Globe, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StepOneProps {
@@ -231,17 +232,20 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                Location
+              <label className="block text-sm font-medium text-foreground mb-2">
+                Location / Venue
               </label>
-              <input
-                type="text"
-                name="location"
+              <VenueLocationFinder
                 value={eventDetails.location}
-                onChange={handleChange}
-                placeholder="City, Venue"
-                className="w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all"
+                onChange={(value, venueData) => {
+                  setEventDetails(prev => ({ 
+                    ...prev, 
+                    location: value,
+                    // Store venue intelligence for use in asset generation
+                    venueIntelligence: venueData || prev.venueIntelligence,
+                  }));
+                }}
+                eventType={eventDetails.eventType}
               />
             </div>
           </div>

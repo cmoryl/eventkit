@@ -24,6 +24,7 @@ export {
   type GuestInfo,
   type TimelineItem,
   type VenueSearchResult,
+  type VenueIntelligence,
 } from './event.types';
 
 // Venue types
