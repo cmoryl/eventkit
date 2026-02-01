@@ -14,6 +14,7 @@ interface RecentProject {
   description: string | null;
   updated_at: string;
   generated_assets: unknown;
+  thumbnail_url?: string | null;
 }
 
 interface RecentCreationsSectionProps {
@@ -38,15 +39,34 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
+      // Get recent projects
+      const { data: projects, error: projectsError } = await supabase
         .from('projects')
         .select('id, name, description, updated_at, generated_assets')
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false })
         .limit(4);
 
-      if (error) throw error;
-      setRecentProjects(data || []);
+      if (projectsError) throw projectsError;
+      
+      // For each project, try to get a saved asset thumbnail
+      const projectsWithThumbnails = await Promise.all(
+        (projects || []).map(async (project) => {
+          const { data: assets } = await supabase
+            .from('project_assets')
+            .select('content')
+            .eq('project_id', project.id)
+            .limit(1);
+          
+          const thumbnail = assets?.[0]?.content;
+          return {
+            ...project,
+            thumbnail_url: typeof thumbnail === 'string' && thumbnail.startsWith('http') ? thumbnail : null
+          };
+        })
+      );
+      
+      setRecentProjects(projectsWithThumbnails);
     } catch (error) {
       console.error('Error loading recent projects:', error);
     } finally {
@@ -148,9 +168,19 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
                     onClick={onGetStarted}
                   >
                     {/* Preview Area */}
-                    <div className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
-                      <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+                    <div className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative overflow-hidden">
+                      {project.thumbnail_url ? (
+                        <img 
+                          src={project.thumbnail_url} 
+                          alt={project.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <>
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
+                          <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+                        </>
+                      )}
                       
                       {/* Hover overlay */}
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">

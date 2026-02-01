@@ -8,13 +8,18 @@ import {
   Edit, 
   Maximize2,
   Minimize2,
-  Move
+  Move,
+  Bookmark,
+  Check,
+  Loader2
 } from 'lucide-react';
 import type { GeneratedAsset, ColorInfo, PresentationData } from '../../types';
 import { AssetType } from '../../types';
 import { isImageContent, getImageSrc, isSvgContent } from '../../utils/svgUtils';
 import { AIFeedback } from '../AIFeedback';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface AssetPreviewModalProps {
   asset: GeneratedAsset;
@@ -22,6 +27,7 @@ interface AssetPreviewModalProps {
   onEdit?: (asset: GeneratedAsset) => void;
   onDownload?: (asset: GeneratedAsset) => void;
   generationId?: string | null;
+  projectId?: string | null;
 }
 
 const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
@@ -30,6 +36,7 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
   onEdit,
   onDownload,
   generationId,
+  projectId,
 }) => {
   const { user } = useAuth();
   const [zoom, setZoom] = useState(1);
@@ -37,6 +44,8 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Check content types - now includes SVG
@@ -119,6 +128,75 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  // Save asset to recent creations
+  const handleSaveToRecent = async () => {
+    if (!user || !isImageAsset || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      const content = asset.content as string;
+      
+      // Convert base64 to blob
+      const base64Data = content.split(',')[1];
+      const mimeType = content.match(/data:([^;]+);/)?.[1] || 'image/png';
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
+      
+      // Generate unique filename
+      const ext = mimeType.split('/')[1] || 'png';
+      const fileName = `${user.id}/${Date.now()}-${asset.type.toLowerCase().replace(/_/g, '-')}.${ext}`;
+      
+      // Upload to storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('asset-images')
+        .upload(fileName, blob, { contentType: mimeType });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('asset-images')
+        .getPublicUrl(fileName);
+      
+      const imageUrl = urlData.publicUrl;
+      
+      // Save to project_assets if we have a project
+      if (projectId) {
+        const { error: assetError } = await supabase
+          .from('project_assets')
+          .insert({
+            project_id: projectId,
+            asset_type: asset.type,
+            title: asset.title,
+            content: imageUrl,
+            metadata: {
+              original_content: 'storage',
+              storage_path: fileName,
+              saved_at: new Date().toISOString()
+            }
+          });
+        
+        if (assetError) throw assetError;
+      }
+      
+      setIsSaved(true);
+      toast.success('Asset saved to your creations!');
+      
+      // Reset saved state after 3 seconds
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (error) {
+      console.error('Error saving asset:', error);
+      toast.error('Failed to save asset');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const renderContent = () => {
     // Handle images (including SVG)
@@ -322,6 +400,28 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
               <Maximize2 className="w-5 h-5 text-muted-foreground" />
             )}
           </button>
+
+          {/* Save to Recent Creations - only for authenticated users with images */}
+          {user && isImageAsset && (
+            <button
+              onClick={handleSaveToRecent}
+              disabled={isSaving || isSaved}
+              className={`p-2 rounded-lg transition-colors ${
+                isSaved 
+                  ? 'bg-green-500/20 text-green-500' 
+                  : 'hover:bg-secondary'
+              }`}
+              title={isSaved ? 'Saved!' : 'Save to Recent Creations'}
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+              ) : isSaved ? (
+                <Check className="w-5 h-5" />
+              ) : (
+                <Bookmark className="w-5 h-5 text-muted-foreground" />
+              )}
+            </button>
+          )}
 
           {onDownload && (
             <button
