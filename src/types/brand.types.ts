@@ -1,6 +1,16 @@
 // Brand Intelligence Types for Asset Generation
 // Used to pass comprehensive brand context through the generation pipeline
 
+// Sponsor Logo with tier classification
+export interface SponsorLogo {
+  id: string;
+  name: string;
+  url: string;
+  tier: 'platinum' | 'gold' | 'silver' | 'bronze' | 'partner' | 'media';
+  websiteUrl?: string;
+  placement?: string;
+}
+
 // Imagery organized by type from BrandHub
 export interface BrandImageryLibrary {
   all: string[];
@@ -14,6 +24,21 @@ export interface BrandImageryLibrary {
     social?: string[];
     banners?: string[];
     video?: string[];
+    sponsors?: string[];
+  };
+}
+
+// Sponsor logos organized by tier
+export interface SponsorLogosLibrary {
+  all: SponsorLogo[];
+  allLogoUrls: string[];
+  byTier: {
+    platinum: SponsorLogo[];
+    gold: SponsorLogo[];
+    silver: SponsorLogo[];
+    bronze: SponsorLogo[];
+    partner: SponsorLogo[];
+    media: SponsorLogo[];
   };
 }
 
@@ -83,6 +108,9 @@ export interface BrandContext {
   
   // All Imagery Library from BrandHub
   allImagery?: BrandImageryLibrary;
+  
+  // Sponsor Logos Library
+  sponsorLogos?: SponsorLogosLibrary;
   
   // AI Generation Context
   customPrompts?: Record<string, unknown>;
@@ -166,6 +194,20 @@ export function buildBrandContext(brand: {
         social?: string[];
         banners?: string[];
         video?: string[];
+        sponsors?: string[];
+      };
+    };
+    // Sponsor logos library
+    sponsor_logos?: {
+      all?: SponsorLogo[];
+      allLogoUrls?: string[];
+      byTier?: {
+        platinum?: SponsorLogo[];
+        gold?: SponsorLogo[];
+        silver?: SponsorLogo[];
+        bronze?: SponsorLogo[];
+        partner?: SponsorLogo[];
+        media?: SponsorLogo[];
       };
     };
   };
@@ -241,7 +283,25 @@ export function buildBrandContext(brand: {
     // All imagery library from BrandHub
     allImagery: styles?.all_imagery ? {
       all: styles.all_imagery.all || [],
-      byType: styles.all_imagery.byType || {}
+      byType: {
+        ...styles.all_imagery.byType,
+        // Include sponsor logos in imagery types
+        sponsors: styles.sponsor_logos?.allLogoUrls || styles.all_imagery.byType?.sponsors || []
+      }
+    } : undefined,
+    
+    // Sponsor logos library
+    sponsorLogos: styles?.sponsor_logos ? {
+      all: styles.sponsor_logos.all || [],
+      allLogoUrls: styles.sponsor_logos.allLogoUrls || [],
+      byTier: {
+        platinum: styles.sponsor_logos.byTier?.platinum || [],
+        gold: styles.sponsor_logos.byTier?.gold || [],
+        silver: styles.sponsor_logos.byTier?.silver || [],
+        bronze: styles.sponsor_logos.byTier?.bronze || [],
+        partner: styles.sponsor_logos.byTier?.partner || [],
+        media: styles.sponsor_logos.byTier?.media || [],
+      }
     } : undefined,
     
     customPrompts: customPrompts,
@@ -350,6 +410,26 @@ export function buildBrandStylePrompt(context: BrandContext | null): string {
     parts.push(`AVOID: ${context.restrictedElements.join(', ')}.`);
   }
   
+  // Sponsor logos context (for assets that may include sponsors)
+  if (context.sponsorLogos && context.sponsorLogos.all.length > 0) {
+    const sponsorCount = context.sponsorLogos.all.length;
+    const tierCounts = Object.entries(context.sponsorLogos.byTier)
+      .filter(([_, sponsors]) => sponsors.length > 0)
+      .map(([tier, sponsors]) => `${sponsors.length} ${tier}`)
+      .join(', ');
+    parts.push(`Event sponsors: ${sponsorCount} sponsors (${tierCounts}). Consider sponsor placement and visibility appropriate to tier.`);
+    
+    // Include top-tier sponsor names for recognition
+    const platinumSponsors = context.sponsorLogos.byTier.platinum.map(s => s.name);
+    const goldSponsors = context.sponsorLogos.byTier.gold.map(s => s.name);
+    if (platinumSponsors.length > 0) {
+      parts.push(`Platinum sponsors: ${platinumSponsors.join(', ')}.`);
+    }
+    if (goldSponsors.length > 0) {
+      parts.push(`Gold sponsors: ${goldSponsors.join(', ')}.`);
+    }
+  }
+  
   return parts.join(' ');
 }
 
@@ -375,4 +455,70 @@ export function getBrandColorPalette(context: BrandContext | null): string[] {
   });
   
   return colors;
+}
+
+/**
+ * Get all sponsor logo URLs from brand context
+ * Used for AI training and brand recognition
+ */
+export function getSponsorLogoUrls(context: BrandContext | null): string[] {
+  if (!context?.sponsorLogos) return [];
+  return context.sponsorLogos.allLogoUrls || [];
+}
+
+/**
+ * Get all brand imagery URLs including sponsor logos
+ * Consolidated list for AI analysis and learning
+ */
+export function getAllBrandImagery(context: BrandContext | null): {
+  all: string[];
+  byCategory: Record<string, string[]>;
+} {
+  if (!context) return { all: [], byCategory: {} };
+  
+  const byCategory: Record<string, string[]> = {};
+  const all: string[] = [];
+  
+  // Add main logos
+  if (context.logoUrl) {
+    byCategory.primaryLogos = byCategory.primaryLogos || [];
+    byCategory.primaryLogos.push(context.logoUrl);
+    all.push(context.logoUrl);
+  }
+  if (context.logoMonochromeUrl) {
+    byCategory.primaryLogos = byCategory.primaryLogos || [];
+    byCategory.primaryLogos.push(context.logoMonochromeUrl);
+    all.push(context.logoMonochromeUrl);
+  }
+  if (context.logoReversedUrl) {
+    byCategory.primaryLogos = byCategory.primaryLogos || [];
+    byCategory.primaryLogos.push(context.logoReversedUrl);
+    all.push(context.logoReversedUrl);
+  }
+  
+  // Add all imagery by type
+  if (context.allImagery?.byType) {
+    for (const [type, urls] of Object.entries(context.allImagery.byType)) {
+      if (urls && urls.length > 0) {
+        byCategory[type] = urls;
+        all.push(...urls);
+      }
+    }
+  }
+  
+  // Add sponsor logos
+  if (context.sponsorLogos?.allLogoUrls) {
+    byCategory.sponsors = context.sponsorLogos.allLogoUrls;
+    all.push(...context.sponsorLogos.allLogoUrls);
+  }
+  
+  return { all: [...new Set(all)], byCategory };
+}
+
+/**
+ * Get sponsor information by tier for AI context
+ */
+export function getSponsorsByTier(context: BrandContext | null, tier: SponsorLogo['tier']): SponsorLogo[] {
+  if (!context?.sponsorLogos?.byTier) return [];
+  return context.sponsorLogos.byTier[tier] || [];
 }
