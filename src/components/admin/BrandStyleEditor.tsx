@@ -2,15 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Palette, Type, Sparkles, Save, X, Plus, Trash2, 
-  Image as ImageIcon, Eye, PaintBucket, Wand2, Upload, FileText, Loader2, ExternalLink
+  Image as ImageIcon, Eye, PaintBucket, Wand2, Upload, FileText, Loader2, ExternalLink,
+  Link, RefreshCw, Unlink, Clock, Brain
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { addOrUpdateKnowledge } from '@/services/aiBrain/learningService';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ColorInfo {
   hex: string;
@@ -49,6 +53,9 @@ interface Brand {
   logo_url?: string;
   logo_monochrome_url?: string;
   logo_reversed_url?: string;
+  brandhub_share_token?: string;
+  brandhub_last_synced?: string;
+  brandhub_auto_sync?: boolean;
 }
 
 interface BrandStyleEditorProps {
@@ -80,11 +87,19 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
   onClose,
   onSave
 }) => {
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isParsingGuide, setIsParsingGuide] = useState(false);
   const [uploadedGuideUrl, setUploadedGuideUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // BrandHub link state
+  const [linkedToken, setLinkedToken] = useState<string | null>(brand.brandhub_share_token || null);
+  const [lastSynced, setLastSynced] = useState<string | null>(brand.brandhub_last_synced || null);
+  const [autoSync, setAutoSync] = useState(brand.brandhub_auto_sync || false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  
   const [style, setStyle] = useState<BrandStyle>({
     brand_id: brand.id,
     primary_color: '#6366f1',
@@ -108,20 +123,262 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
   const [brandHubUrl, setBrandHubUrl] = useState('');
   const [isImportingFromHub, setIsImportingFromHub] = useState(false);
 
-  // Import from BrandHub Creator via share URL
+  // Record brand update to AI knowledge base
+  const recordBrandKnowledge = async (brandData: Record<string, unknown>) => {
+    if (!user?.id) return;
+    
+    try {
+      await addOrUpdateKnowledge(
+        user.id,
+        'brand_preference',
+        brand.name,
+        `brand_${brand.id}`,
+        {
+          brandId: brand.id,
+          brandName: brand.name,
+          colors: style.color_palette,
+          fonts: { heading: style.heading_font, body: style.body_font },
+          mood: style.mood_keywords,
+          industry: style.industry,
+          voice: style.brand_voice,
+          imagery: style.imagery_style,
+          customPrompts: style.custom_prompts,
+          lastUpdated: new Date().toISOString(),
+          ...brandData
+        }
+      );
+      console.log('Brand knowledge recorded to AI brain');
+    } catch (error) {
+      console.error('Error recording brand knowledge:', error);
+    }
+  };
+
+  // Sync from linked BrandHub
+  const syncFromBrandHub = async (token?: string) => {
+    const shareToken = token || linkedToken;
+    if (!shareToken) {
+      toast.error('No BrandHub link configured');
+      return;
+    }
+
+    setIsSyncing(true);
+    toast.info('Syncing from BrandHub...', { duration: 3000 });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
+        body: { shareToken }
+      });
+
+      if (data?.success === false || error) {
+        toast.error(data?.error || 'Failed to sync from BrandHub');
+        return;
+      }
+
+      if (data?.brand) {
+        applyBrandHubData(data.brand);
+        
+        // Update last synced timestamp
+        const now = new Date().toISOString();
+        setLastSynced(now);
+        
+        await supabase
+          .from('brands')
+          .update({ 
+            brandhub_last_synced: now,
+            brandhub_share_token: shareToken 
+          })
+          .eq('id', brand.id);
+        
+        // Record to AI knowledge
+        await recordBrandKnowledge({
+          syncedFrom: 'brandhub',
+          syncTimestamp: now,
+          hubBrandName: data.brand.name
+        });
+        
+        toast.success('Brand synced from BrandHub');
+      }
+    } catch (error) {
+      console.error('Error syncing from BrandHub:', error);
+      toast.error('Failed to sync from BrandHub');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Unlink BrandHub connection
+  const unlinkBrandHub = async () => {
+    try {
+      await supabase
+        .from('brands')
+        .update({ 
+          brandhub_share_token: null,
+          brandhub_auto_sync: false 
+        })
+        .eq('id', brand.id);
+      
+      setLinkedToken(null);
+      setAutoSync(false);
+      toast.success('BrandHub link removed');
+    } catch (error) {
+      console.error('Error unlinking BrandHub:', error);
+      toast.error('Failed to unlink BrandHub');
+    }
+  };
+
+  // Toggle auto-sync
+  const toggleAutoSync = async (enabled: boolean) => {
+    try {
+      await supabase
+        .from('brands')
+        .update({ brandhub_auto_sync: enabled })
+        .eq('id', brand.id);
+      
+      setAutoSync(enabled);
+      toast.success(enabled ? 'Auto-sync enabled' : 'Auto-sync disabled');
+    } catch (error) {
+      console.error('Error toggling auto-sync:', error);
+    }
+  };
+
+  // Apply BrandHub data to style state
+  const applyBrandHubData = (hubBrand: Record<string, unknown>) => {
+    const guideData = (hubBrand.guide_data || {}) as Record<string, unknown>;
+    
+    // Extract colors
+    const colors = (hubBrand.colors || guideData.colors || []) as Array<{ hex: string; name?: string; cmyk?: string; pantone?: string; usage?: string }>;
+    const primaryColor = colors[0]?.hex || hubBrand.primary_color as string;
+    const secondaryColor = colors[1]?.hex || hubBrand.secondary_color as string;
+    const accentColor = colors[2]?.hex || hubBrand.accent_color as string;
+    
+    const colorPalette: ColorInfo[] = colors.map(c => ({ 
+      hex: c.hex, 
+      name: c.name || '',
+      cmyk: c.cmyk,
+      pantone: c.pantone,
+      usage: c.usage
+    }));
+    
+    // Extract fonts
+    const fonts = (hubBrand.fonts || guideData.fonts || []) as Array<{ fontFamily?: string; name?: string; usage?: string }>;
+    let headingFont: string | undefined;
+    let bodyFont: string | undefined;
+    let accentFont: string | undefined;
+    
+    if (Array.isArray(fonts) && fonts.length > 0) {
+      const headingEntry = fonts.find(f => 
+        f.name?.toLowerCase().includes('heading') || f.usage?.toLowerCase().includes('headline')
+      );
+      const bodyEntry = fonts.find(f => 
+        f.name?.toLowerCase().includes('body') || f.usage?.toLowerCase().includes('paragraph')
+      );
+      const accentEntry = fonts.find(f => 
+        f.name?.toLowerCase().includes('accent')
+      );
+      
+      headingFont = headingEntry?.fontFamily || fonts[0]?.fontFamily;
+      bodyFont = bodyEntry?.fontFamily || fonts[1]?.fontFamily || fonts[0]?.fontFamily;
+      accentFont = accentEntry?.fontFamily;
+    }
+    
+    // Extract voice & mood
+    const voiceKeywords = hubBrand.voice 
+      ? (Array.isArray(hubBrand.voice) ? hubBrand.voice : [hubBrand.voice])
+      : (hubBrand.brand_voice as string[]) || [];
+    
+    // Extract imagery & patterns
+    const iconography = (guideData.iconography || []) as Array<{ fillMode?: string }>;
+    const iconStyle = iconography.length > 0 
+      ? `${iconography[0]?.fillMode || 'stroke'} style icons`
+      : hubBrand.icon_style as string;
+    
+    const gradients = (guideData.gradients || []) as Array<{ name: string }>;
+    const patternStyle = gradients.length > 0
+      ? gradients.map(g => g.name).join(', ')
+      : hubBrand.pattern_style as string;
+    
+    // Build custom prompts
+    const heroData = (guideData.hero || {}) as Record<string, unknown>;
+    const customPrompts: Record<string, unknown> = {};
+    
+    if (heroData.tagline) customPrompts.tagline = heroData.tagline;
+    if (hubBrand.mission) customPrompts.mission = hubBrand.mission;
+    if (hubBrand.archetype) customPrompts.archetype = hubBrand.archetype;
+    
+    const colorCombinations = ((guideData.colorCombinations || []) as Array<{ status: string }>)
+      .filter(c => c.status === 'approved');
+    if (colorCombinations.length > 0) {
+      customPrompts.approvedColorCombinations = colorCombinations;
+    }
+    
+    if (gradients.length > 0) {
+      customPrompts.gradients = gradients;
+    }
+    
+    // Update state
+    setStyle(prev => ({
+      ...prev,
+      primary_color: primaryColor || prev.primary_color,
+      secondary_color: secondaryColor || prev.secondary_color,
+      accent_color: accentColor || prev.accent_color,
+      color_palette: colorPalette.length > 0 
+        ? [...(prev.color_palette || []), ...colorPalette]
+        : prev.color_palette,
+      heading_font: headingFont || prev.heading_font,
+      body_font: bodyFont || prev.body_font,
+      accent_font: accentFont || prev.accent_font,
+      mood_keywords: (hubBrand.mood_keywords as string[])?.length > 0
+        ? [...new Set([...(prev.mood_keywords || []), ...(hubBrand.mood_keywords as string[])])]
+        : prev.mood_keywords,
+      imagery_style: (hubBrand.imagery_style as string) || prev.imagery_style,
+      industry: (hubBrand.industry as string) || prev.industry,
+      target_audience: (hubBrand.target_audience as string) || prev.target_audience,
+      pattern_style: patternStyle || prev.pattern_style,
+      icon_style: iconStyle || prev.icon_style,
+      brand_voice: voiceKeywords.length > 0
+        ? [...new Set([...(prev.brand_voice || []), ...voiceKeywords])]
+        : prev.brand_voice,
+      custom_prompts: Object.keys(customPrompts).length > 0
+        ? { ...(prev.custom_prompts || {}), ...customPrompts }
+        : prev.custom_prompts
+    }));
+
+    // Update logos
+    const primaryLogo = heroData.logoUrl || hubBrand.logo_url;
+    const brandIcons = (guideData.brandIcons || []) as Array<{ name?: string; url?: string }>;
+    const monochromeIcon = brandIcons.find(icon => 
+      icon.name?.toLowerCase().includes('black') || icon.name?.toLowerCase().includes('mono')
+    );
+    const reversedIcon = brandIcons.find(icon => 
+      icon.name?.toLowerCase().includes('white') || icon.name?.toLowerCase().includes('reversed')
+    );
+    
+    if (primaryLogo || monochromeIcon?.url || reversedIcon?.url) {
+      const logoUpdates: Record<string, string> = {};
+      if (primaryLogo) logoUpdates.logo_url = primaryLogo as string;
+      if (monochromeIcon?.url) logoUpdates.logo_monochrome_url = monochromeIcon.url;
+      if (reversedIcon?.url) logoUpdates.logo_reversed_url = reversedIcon.url;
+      
+      supabase
+        .from('brands')
+        .update(logoUpdates)
+        .eq('id', brand.id)
+        .then(() => console.log('Updated brand logos'));
+    }
+  };
+
+  // Import from BrandHub Creator via share URL and link it
   const handleBrandHubImport = async () => {
     if (!brandHubUrl.trim()) {
       toast.error('Please enter a BrandHub share URL');
       return;
     }
 
-    // Parse the share URL to get the share token
-    // Expected format: https://brandhubcreator.lovable.app/share/[token]
     const urlPattern = /brandhubcreator\.lovable\.app\/share\/([a-zA-Z0-9-]+)/;
     const match = brandHubUrl.match(urlPattern);
     
     if (!match) {
-      toast.error('Invalid BrandHub share URL. Please use a valid share link.');
+      toast.error('Invalid BrandHub share URL');
       return;
     }
 
@@ -130,27 +387,12 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     toast.info('Fetching brand from BrandHub Creator...', { duration: 3000 });
 
     try {
-      // Call our edge function to fetch brand data from BrandHub
       const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
         body: { shareToken }
       });
 
-      // Handle error responses (always 200 but with success: false)
       if (data?.success === false) {
-        // Show the error message and suggestion from the backend
-        if (data.suggestion) {
-          toast.info(data.suggestion, { duration: 6000 });
-        } else {
-          toast.warning(data.error || 'Could not import brand data');
-        }
-        setBrandHubUrl('');
-        setIsImportingFromHub(false);
-        return;
-      }
-
-      // Handle the case where BrandHub integration isn't configured
-      if (data?.setupRequired) {
-        toast.info('BrandHub import is not yet available. Please use the brand guide upload or manual editor instead.', { duration: 5000 });
+        toast.warning(data.error || 'Could not import brand data');
         setBrandHubUrl('');
         setIsImportingFromHub(false);
         return;
@@ -159,192 +401,37 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
       if (error) throw error;
 
       if (data?.brand) {
-        const hubBrand = data.brand;
-        const guideData = hubBrand.guide_data || {};
+        applyBrandHubData(data.brand);
         
-        // Check if it's partial data (only OG meta tags)
-        if (data.partial) {
-          toast.info(data.message || 'Only partial brand data was imported. Consider uploading a PDF for complete extraction.', { duration: 5000 });
-        }
+        // Save the link for future syncs
+        const now = new Date().toISOString();
+        await supabase
+          .from('brands')
+          .update({ 
+            brandhub_share_token: shareToken,
+            brandhub_last_synced: now,
+            brandhub_auto_sync: false
+          })
+          .eq('id', brand.id);
         
-        // === EXTRACT COLORS ===
-        // BrandHub uses: colors array with hex, cmyk, pantone, usage
-        const colors = hubBrand.colors || guideData.colors || [];
-        const primaryColor = colors[0]?.hex || hubBrand.primary_color;
-        const secondaryColor = colors[1]?.hex || hubBrand.secondary_color;
-        const accentColor = colors[2]?.hex || hubBrand.accent_color;
+        setLinkedToken(shareToken);
+        setLastSynced(now);
         
-        // Map full color palette with CMYK and Pantone info
-        const colorPalette: ColorInfo[] = colors.length > 0 
-          ? colors.map((c: { hex: string; name?: string; cmyk?: string; pantone?: string; usage?: string }) => ({ 
-              hex: c.hex, 
-              name: c.name || '',
-              cmyk: c.cmyk,
-              pantone: c.pantone,
-              usage: c.usage
-            }))
-          : hubBrand.color_palette || [];
-        
-        // === EXTRACT FONTS ===
-        // BrandHub returns fonts as an array: [{ fontFamily, name, usage, weight }, ...]
-        const fonts = hubBrand.fonts || guideData.fonts || [];
-        let headingFont: string | undefined;
-        let bodyFont: string | undefined;
-        let accentFont: string | undefined;
-        
-        if (Array.isArray(fonts) && fonts.length > 0) {
-          const headingEntry = fonts.find((f: { name?: string; usage?: string }) => 
-            f.name?.toLowerCase().includes('heading') || f.usage?.toLowerCase().includes('headline')
-          );
-          const bodyEntry = fonts.find((f: { name?: string; usage?: string }) => 
-            f.name?.toLowerCase().includes('body') || f.usage?.toLowerCase().includes('paragraph')
-          );
-          const accentEntry = fonts.find((f: { name?: string; usage?: string }) => 
-            f.name?.toLowerCase().includes('accent') || f.name?.toLowerCase().includes('subhead')
-          );
-          
-          headingFont = headingEntry?.fontFamily || fonts[0]?.fontFamily;
-          bodyFont = bodyEntry?.fontFamily || fonts[1]?.fontFamily || fonts[0]?.fontFamily;
-          accentFont = accentEntry?.fontFamily;
-        } else if (fonts && typeof fonts === 'object') {
-          headingFont = fonts.heading || fonts.primary || hubBrand.heading_font;
-          bodyFont = fonts.body || fonts.secondary || hubBrand.body_font;
-          accentFont = fonts.accent || hubBrand.accent_font;
-        }
-        
-        // === EXTRACT VOICE & MOOD ===
-        const voiceKeywords = hubBrand.voice 
-          ? (Array.isArray(hubBrand.voice) ? hubBrand.voice : [hubBrand.voice])
-          : hubBrand.brand_voice || [];
-          
-        // === EXTRACT IMAGERY & PATTERN STYLE ===
-        // From guide_data iconography and gradients
-        const iconography = guideData.iconography || [];
-        const iconStyle = iconography.length > 0 
-          ? `${iconography[0]?.fillMode || 'stroke'} style icons`
-          : hubBrand.icon_style;
-          
-        const gradients = guideData.gradients || [];
-        const patternStyle = gradients.length > 0
-          ? gradients.map((g: { name: string }) => g.name).join(', ')
-          : hubBrand.pattern_style;
-        
-        // === EXTRACT LOGO URLs ===
-        // From guide_data.hero.logoUrl and guide_data.brandIcons
-        const heroData = guideData.hero || {};
-        const brandIcons = guideData.brandIcons || [];
-        
-        // Find primary, monochrome, and reversed logos
-        const primaryLogo = heroData.logoUrl || hubBrand.logo_url;
-        const monochromeIcon = brandIcons.find((icon: { name?: string }) => 
-          icon.name?.toLowerCase().includes('black') || icon.name?.toLowerCase().includes('mono')
-        );
-        const reversedIcon = brandIcons.find((icon: { name?: string }) => 
-          icon.name?.toLowerCase().includes('white') || icon.name?.toLowerCase().includes('reversed')
-        );
-        
-        // === BUILD CUSTOM PROMPTS FROM GUIDE BRAIN ===
-        // Include tagline, mission, archetype for AI generation context
-        const customPrompts: Record<string, unknown> = {};
-        
-        if (heroData.tagline) customPrompts.tagline = heroData.tagline;
-        if (hubBrand.mission) customPrompts.mission = hubBrand.mission;
-        if (hubBrand.archetype) customPrompts.archetype = hubBrand.archetype;
-        if (hubBrand.tagline) customPrompts.tagline = hubBrand.tagline;
-        
-        // Add color combinations for approved palettes
-        const colorCombinations = guideData.colorCombinations?.filter(
-          (c: { status: string }) => c.status === 'approved'
-        ) || [];
-        if (colorCombinations.length > 0) {
-          customPrompts.approvedColorCombinations = colorCombinations;
-        }
-        
-        // Add gradients for background generation
-        if (gradients.length > 0) {
-          customPrompts.gradients = gradients;
-        }
-        
-        // Add case studies for imagery context
-        const caseStudies = guideData.caseStudies || [];
-        if (caseStudies.length > 0) {
-          customPrompts.caseStudyIndustries = caseStudies.map((c: { industry: string }) => c.industry);
-        }
-        
-        // === UPDATE BRAND STYLE STATE ===
-        setStyle(prev => ({
-          ...prev,
-          primary_color: primaryColor || prev.primary_color,
-          secondary_color: secondaryColor || prev.secondary_color,
-          accent_color: accentColor || prev.accent_color,
-          color_palette: colorPalette.length > 0 
-            ? [...(prev.color_palette || []), ...colorPalette]
-            : prev.color_palette,
-          heading_font: headingFont || prev.heading_font,
-          body_font: bodyFont || prev.body_font,
-          accent_font: accentFont || prev.accent_font,
-          mood_keywords: hubBrand.mood_keywords?.length > 0
-            ? [...new Set([...(prev.mood_keywords || []), ...hubBrand.mood_keywords])]
-            : prev.mood_keywords,
-          imagery_style: hubBrand.imagery_style || prev.imagery_style,
-          industry: hubBrand.industry || prev.industry,
-          target_audience: hubBrand.target_audience || prev.target_audience,
-          pattern_style: patternStyle || prev.pattern_style,
-          icon_style: iconStyle || prev.icon_style,
-          brand_voice: voiceKeywords.length > 0
-            ? [...new Set([...(prev.brand_voice || []), ...voiceKeywords])]
-            : prev.brand_voice,
-          custom_prompts: Object.keys(customPrompts).length > 0
-            ? { ...(prev.custom_prompts || {}), ...customPrompts }
-            : prev.custom_prompts
-        }));
-
-        // === UPDATE BRAND LOGOS ===
-        // Update the parent brand record with logo URLs
-        if (primaryLogo || monochromeIcon?.url || reversedIcon?.url) {
-          try {
-            const logoUpdates: Record<string, string> = {};
-            if (primaryLogo) logoUpdates.logo_url = primaryLogo;
-            if (monochromeIcon?.url) logoUpdates.logo_monochrome_url = monochromeIcon.url;
-            if (reversedIcon?.url) logoUpdates.logo_reversed_url = reversedIcon.url;
-            
-            await supabase
-              .from('brands')
-              .update(logoUpdates)
-              .eq('id', brand.id);
-              
-            console.log('Updated brand logos:', logoUpdates);
-          } catch (logoError) {
-            console.error('Error updating brand logos:', logoError);
-          }
-        }
+        // Record to AI knowledge
+        await recordBrandKnowledge({
+          syncedFrom: 'brandhub',
+          syncTimestamp: now,
+          hubBrandName: data.brand.name
+        });
 
         setBrandHubUrl('');
-        
-        // Build success message
-        const importedItems: string[] = [];
-        if (colorPalette.length > 0) importedItems.push(`${colorPalette.length} colors`);
-        if (headingFont) importedItems.push('fonts');
-        if (voiceKeywords.length > 0) importedItems.push('voice keywords');
-        if (primaryLogo) importedItems.push('logo');
-        if (Object.keys(customPrompts).length > 0) importedItems.push('brand guide context');
-        
-        toast.success(
-          `Imported "${hubBrand.name || 'brand'}" from BrandHub: ${importedItems.join(', ')}`,
-          { duration: 5000 }
-        );
+        toast.success(`Imported and linked "${data.brand.name || 'brand'}" from BrandHub`, { duration: 5000 });
       } else {
         toast.warning('No brand data found at this share link');
       }
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error importing from BrandHub:', error);
-      // Check if the error response indicates setup is required
-      const errorMessage = error instanceof Error ? error.message : '';
-      if (errorMessage.includes('setupRequired') || errorMessage.includes('not yet configured')) {
-        toast.info('BrandHub import is coming soon. Please use the brand guide upload or manual editor.', { duration: 5000 });
-      } else {
-        toast.error('Failed to import from BrandHub. Please use the upload feature instead.');
-      }
+      toast.error('Failed to import from BrandHub');
     } finally {
       setIsImportingFromHub(false);
     }
@@ -433,6 +520,13 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     loadBrandStyle();
   }, [brand.id]);
 
+  // Auto-sync from BrandHub on open if enabled
+  useEffect(() => {
+    if (autoSync && linkedToken && !isLoading) {
+      syncFromBrandHub();
+    }
+  }, [autoSync, linkedToken, isLoading]);
+
   const loadBrandStyle = async () => {
     try {
       const { data, error } = await supabase
@@ -501,6 +595,12 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           .insert(styleData as never);
         if (error) throw error;
       }
+
+      // Record brand knowledge to AI brain for improved generation
+      await recordBrandKnowledge({
+        savedManually: true,
+        savedAt: new Date().toISOString()
+      });
 
       toast.success('Brand style saved successfully');
       onSave();
@@ -656,56 +756,132 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
-                  <ExternalLink className="w-5 h-5 text-violet-500" />
-                  Import from BrandHub Creator
+                  {linkedToken ? (
+                    <Link className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <ExternalLink className="w-5 h-5 text-violet-500" />
+                  )}
+                  {linkedToken ? 'Linked to BrandHub' : 'Import from BrandHub Creator'}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Paste a share link from{' '}
-                  <a 
-                    href="https://brandhubcreator.lovable.app" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-violet-500 hover:underline font-medium"
-                  >
-                    BrandHub Creator
-                  </a>{' '}
-                  to instantly import all brand styles, colors, typography, and guidelines.
-                </p>
                 
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={brandHubUrl}
-                    onChange={(e) => setBrandHubUrl(e.target.value)}
-                    placeholder="https://brandhubcreator.lovable.app/share/..."
-                    className="flex-1"
-                    disabled={isImportingFromHub}
-                  />
-                  <Button
-                    onClick={handleBrandHubImport}
-                    disabled={isImportingFromHub || !brandHubUrl.trim()}
-                    className="gap-2 bg-violet-600 hover:bg-violet-700"
-                  >
-                    {isImportingFromHub ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Importing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Import
-                      </>
+                {linkedToken ? (
+                  // Show linked status and sync controls
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      This brand is linked to BrandHub. Changes made in BrandHub can be synced here.
+                    </p>
+                    
+                    {lastSynced && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        Last synced: {new Date(lastSynced).toLocaleString()}
+                      </div>
                     )}
-                  </Button>
-                </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <Button
+                        onClick={() => syncFromBrandHub()}
+                        disabled={isSyncing}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        {isSyncing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Syncing...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4" />
+                            Sync Now
+                          </>
+                        )}
+                      </Button>
+                      
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={autoSync}
+                          onCheckedChange={toggleAutoSync}
+                          id="auto-sync"
+                        />
+                        <Label htmlFor="auto-sync" className="text-sm cursor-pointer">
+                          Auto-sync on open
+                        </Label>
+                      </div>
+                      
+                      <Button
+                        onClick={unlinkBrandHub}
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 text-destructive hover:text-destructive"
+                      >
+                        <Unlink className="w-4 h-4" />
+                        Unlink
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground bg-violet-500/5 p-2 rounded-lg">
+                      <Brain className="w-4 h-4 text-violet-500" />
+                      Brand updates are recorded to AI knowledge for improved asset generation
+                    </div>
+                  </div>
+                ) : (
+                  // Show import form
+                  <>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Paste a share link from{' '}
+                      <a 
+                        href="https://brandhubcreator.lovable.app" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-violet-500 hover:underline font-medium"
+                      >
+                        BrandHub Creator
+                      </a>{' '}
+                      to import and link brand styles for automatic updates.
+                    </p>
+                    
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={brandHubUrl}
+                        onChange={(e) => setBrandHubUrl(e.target.value)}
+                        placeholder="https://brandhubcreator.lovable.app/share/..."
+                        className="flex-1"
+                        disabled={isImportingFromHub}
+                      />
+                      <Button
+                        onClick={handleBrandHubImport}
+                        disabled={isImportingFromHub || !brandHubUrl.trim()}
+                        className="gap-2 bg-violet-600 hover:bg-violet-700"
+                      >
+                        {isImportingFromHub ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Importing...
+                          </>
+                        ) : (
+                          <>
+                            <Link className="w-4 h-4" />
+                            Import & Link
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
               
               <div className="hidden md:flex items-center justify-center w-20 h-20 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/30">
-                <svg className="w-10 h-10 text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
+                {linkedToken ? (
+                  <RefreshCw className={cn("w-8 h-8 text-violet-500", isSyncing && "animate-spin")} />
+                ) : (
+                  <svg className="w-10 h-10 text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                    <path d="M2 17l10 5 10-5" />
+                    <path d="M2 12l10 5 10-5" />
+                  </svg>
+                )}
               </div>
             </div>
           </section>

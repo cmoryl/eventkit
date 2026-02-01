@@ -247,6 +247,9 @@ export type Database = {
       }
       brands: {
         Row: {
+          brandhub_auto_sync: boolean | null
+          brandhub_last_synced: string | null
+          brandhub_share_token: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -259,6 +262,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brandhub_auto_sync?: boolean | null
+          brandhub_last_synced?: string | null
+          brandhub_share_token?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -271,6 +277,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brandhub_auto_sync?: boolean | null
+          brandhub_last_synced?: string | null
+          brandhub_share_token?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
