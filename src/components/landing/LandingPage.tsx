@@ -40,7 +40,6 @@ const steps = [
   { step: '03', title: 'Generate & Download', description: 'AI creates your complete design kit instantly' },
 ];
 
-
 export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
@@ -81,59 +80,83 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-5xl mx-auto text-center">
+      {/* Unified Hero Section */}
+      <section className="pt-28 sm:pt-32 pb-16 sm:pb-20">
+        {/* Text Content */}
+        <div className="max-w-5xl mx-auto text-center px-6 mb-12 sm:mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
           >
             <Sparkles className="w-4 h-4" />
-            AI-Powered Event Branding
+            100+ Asset Types
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight mb-6"
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-5"
           >
-            Create Stunning
-            <br />
+            Create Stunning{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary">
               Event Design Kits
             </span>
-            <br />
-            in Minutes
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+            className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8"
           >
-            Transform your event vision into a complete, professional branding package. 
-            Upload your logo, describe your style, and let AI do the rest.
+            From banners to merchandise — upload your logo, describe your style, and generate a complete professional branding package in minutes.
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex items-center justify-center"
+            className="flex items-center justify-center mb-2"
           >
             <Button size="lg" onClick={onGetStarted} className="text-lg px-8 py-6 rounded-xl shadow-lg shadow-primary/25">
               Get Started <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </motion.div>
         </div>
-      </section>
 
-      {/* NEW Asset Showcase Section */}
-      <AssetShowcase />
+        {/* Integrated Asset Scroll */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <AssetShowcase embedded />
+        </motion.div>
+
+        {/* Stats Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="flex flex-wrap items-center justify-center gap-6 sm:gap-12 mt-10 sm:mt-14 px-4"
+        >
+          {[
+            { value: 'Print-Ready', label: 'High Resolution' },
+            { value: '<1 min', label: 'Generation Time' },
+            { value: 'AI-Powered', label: 'Smart Generation' },
+          ].map((stat) => (
+            <div key={stat.label} className="text-center">
+              <p className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                {stat.value}
+              </p>
+              <p className="text-xs sm:text-sm text-muted-foreground">{stat.label}</p>
+            </div>
+          ))}
+        </motion.div>
+      </section>
 
       {/* Features Section */}
       <section className="py-20 px-6">
@@ -235,7 +258,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       <footer className="py-8 px-6 border-t border-border">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-            {/* Logo */}
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
                 <Sparkles className="w-3 h-3 text-primary-foreground" />
@@ -243,7 +265,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               <span className="font-medium">EventKit AI</span>
             </div>
 
-            {/* Navigation Links */}
             <nav className="flex items-center gap-6 text-sm">
               <button 
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -259,7 +280,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
               </button>
             </nav>
 
-            {/* Copyright */}
             <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} All rights reserved</p>
           </div>
         </div>
