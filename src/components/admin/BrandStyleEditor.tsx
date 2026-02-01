@@ -93,6 +93,76 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 
   const [newPaletteColor, setNewPaletteColor] = useState({ hex: '#6366f1', name: '' });
   const [newMood, setNewMood] = useState('');
+  const [brandHubUrl, setBrandHubUrl] = useState('');
+  const [isImportingFromHub, setIsImportingFromHub] = useState(false);
+
+  // Import from BrandHub Creator via share URL
+  const handleBrandHubImport = async () => {
+    if (!brandHubUrl.trim()) {
+      toast.error('Please enter a BrandHub share URL');
+      return;
+    }
+
+    // Parse the share URL to get the share token
+    // Expected format: https://brandhubcreator.lovable.app/share/[token]
+    const urlPattern = /brandhubcreator\.lovable\.app\/share\/([a-zA-Z0-9-]+)/;
+    const match = brandHubUrl.match(urlPattern);
+    
+    if (!match) {
+      toast.error('Invalid BrandHub share URL. Please use a valid share link.');
+      return;
+    }
+
+    const shareToken = match[1];
+    setIsImportingFromHub(true);
+    toast.info('Fetching brand from BrandHub Creator...', { duration: 3000 });
+
+    try {
+      // Call our edge function to fetch brand data from BrandHub
+      const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
+        body: { shareToken }
+      });
+
+      if (error) throw error;
+
+      if (data?.brand) {
+        const hubBrand = data.brand;
+        
+        // Map BrandHub data to our style format
+        setStyle(prev => ({
+          ...prev,
+          primary_color: hubBrand.primary_color || prev.primary_color,
+          secondary_color: hubBrand.secondary_color || prev.secondary_color,
+          accent_color: hubBrand.accent_color || prev.accent_color,
+          color_palette: hubBrand.color_palette?.length > 0 
+            ? [...(prev.color_palette || []), ...hubBrand.color_palette]
+            : prev.color_palette,
+          heading_font: hubBrand.heading_font || prev.heading_font,
+          body_font: hubBrand.body_font || prev.body_font,
+          mood_keywords: hubBrand.mood_keywords?.length > 0
+            ? [...new Set([...(prev.mood_keywords || []), ...hubBrand.mood_keywords])]
+            : prev.mood_keywords,
+          imagery_style: hubBrand.imagery_style || prev.imagery_style,
+          industry: hubBrand.industry || prev.industry,
+          target_audience: hubBrand.target_audience || prev.target_audience,
+          pattern_style: hubBrand.pattern_style || prev.pattern_style,
+          brand_voice: hubBrand.brand_voice?.length > 0
+            ? [...new Set([...(prev.brand_voice || []), ...hubBrand.brand_voice])]
+            : prev.brand_voice
+        }));
+
+        setBrandHubUrl('');
+        toast.success(`Imported "${hubBrand.name || 'brand'}" from BrandHub Creator!`);
+      } else {
+        toast.warning('No brand data found at this share link');
+      }
+    } catch (error) {
+      console.error('Error importing from BrandHub:', error);
+      toast.error('Failed to import from BrandHub. Check the share link and try again.');
+    } finally {
+      setIsImportingFromHub(false);
+    }
+  };
 
   // Handle brand guide upload and AI parsing
   const handleBrandGuideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -385,6 +455,65 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
               
               <div className="hidden md:flex items-center justify-center w-20 h-20 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30">
                 <Wand2 className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+          </section>
+
+          {/* BrandHub Creator Integration */}
+          <section className="p-4 rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-fuchsia-500/10 border border-violet-500/20">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
+                  <ExternalLink className="w-5 h-5 text-violet-500" />
+                  Import from BrandHub Creator
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Paste a share link from{' '}
+                  <a 
+                    href="https://brandhubcreator.lovable.app" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-violet-500 hover:underline font-medium"
+                  >
+                    BrandHub Creator
+                  </a>{' '}
+                  to instantly import all brand styles, colors, typography, and guidelines.
+                </p>
+                
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={brandHubUrl}
+                    onChange={(e) => setBrandHubUrl(e.target.value)}
+                    placeholder="https://brandhubcreator.lovable.app/share/..."
+                    className="flex-1"
+                    disabled={isImportingFromHub}
+                  />
+                  <Button
+                    onClick={handleBrandHubImport}
+                    disabled={isImportingFromHub || !brandHubUrl.trim()}
+                    className="gap-2 bg-violet-600 hover:bg-violet-700"
+                  >
+                    {isImportingFromHub ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Import
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="hidden md:flex items-center justify-center w-20 h-20 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-violet-500/30">
+                <svg className="w-10 h-10 text-violet-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                  <path d="M2 17l10 5 10-5" />
+                  <path d="M2 12l10 5 10-5" />
+                </svg>
               </div>
             </div>
           </section>
