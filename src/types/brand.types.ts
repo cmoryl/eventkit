@@ -1,6 +1,22 @@
 // Brand Intelligence Types for Asset Generation
 // Used to pass comprehensive brand context through the generation pipeline
 
+// Imagery organized by type from BrandHub
+export interface BrandImageryLibrary {
+  all: string[];
+  byType: {
+    logos?: string[];
+    brandIcons?: string[];
+    patterns?: string[];
+    photography?: string[];
+    heroImages?: string[];
+    collateral?: string[];
+    social?: string[];
+    banners?: string[];
+    video?: string[];
+  };
+}
+
 export interface BrandContext {
   // Core Identity
   brandName?: string;
@@ -65,6 +81,9 @@ export interface BrandContext {
   logoMonochromeUrl?: string;
   logoReversedUrl?: string;
   
+  // All Imagery Library from BrandHub
+  allImagery?: BrandImageryLibrary;
+  
   // AI Generation Context
   customPrompts?: Record<string, unknown>;
 }
@@ -119,7 +138,7 @@ export function buildBrandContext(brand: {
     industry?: string;
     print_color_mode?: 'CMYK' | 'RGB' | 'Pantone';
     custom_prompts?: Record<string, unknown>;
-    // New comprehensive fields
+    // Comprehensive fields
     photography_style?: string;
     photography_dos?: string[];
     photography_donts?: string[];
@@ -134,6 +153,21 @@ export function buildBrandContext(brand: {
     archetype?: string;
     approved_layouts?: string[];
     restricted_elements?: string[];
+    // All imagery library
+    all_imagery?: {
+      all?: string[];
+      byType?: {
+        logos?: string[];
+        brandIcons?: string[];
+        patterns?: string[];
+        photography?: string[];
+        heroImages?: string[];
+        collateral?: string[];
+        social?: string[];
+        banners?: string[];
+        video?: string[];
+      };
+    };
   };
 }): BrandContext | null {
   if (!brand) return null;
@@ -203,6 +237,12 @@ export function buildBrandContext(brand: {
     logoUrl: brand.logo_url,
     logoMonochromeUrl: brand.logo_monochrome_url,
     logoReversedUrl: brand.logo_reversed_url,
+    
+    // All imagery library from BrandHub
+    allImagery: styles?.all_imagery ? {
+      all: styles.all_imagery.all || [],
+      byType: styles.all_imagery.byType || {}
+    } : undefined,
     
     customPrompts: customPrompts,
   };

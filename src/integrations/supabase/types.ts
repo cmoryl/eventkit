@@ -157,6 +157,7 @@ export type Database = {
         Row: {
           accent_color: string | null
           accent_font: string | null
+          all_imagery: Json | null
           approved_layouts: string[] | null
           archetype: string | null
           body_font: string | null
@@ -198,6 +199,7 @@ export type Database = {
         Insert: {
           accent_color?: string | null
           accent_font?: string | null
+          all_imagery?: Json | null
           approved_layouts?: string[] | null
           archetype?: string | null
           body_font?: string | null
@@ -239,6 +241,7 @@ export type Database = {
         Update: {
           accent_color?: string | null
           accent_font?: string | null
+          all_imagery?: Json | null
           approved_layouts?: string[] | null
           archetype?: string | null
           body_font?: string | null
