@@ -44,6 +44,21 @@ interface BrandStyle {
   cultural_context?: string;
   industry?: string;
   custom_prompts?: Record<string, unknown>;
+  // New comprehensive fields
+  photography_style?: string;
+  photography_dos?: string[];
+  photography_donts?: string[];
+  logo_clear_space?: string;
+  logo_min_size?: string;
+  logo_placement_rules?: string[];
+  logo_backgrounds?: string[];
+  social_handles?: Record<string, string>;
+  hashtags?: string[];
+  tagline?: string;
+  mission?: string;
+  archetype?: string;
+  approved_layouts?: string[];
+  restricted_elements?: string[];
 }
 
 interface Brand {
@@ -115,7 +130,22 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     pattern_style: '',
     target_audience: '',
     cultural_context: '',
-    industry: ''
+    industry: '',
+    // New comprehensive fields
+    photography_style: '',
+    photography_dos: [],
+    photography_donts: [],
+    logo_clear_space: '',
+    logo_min_size: '',
+    logo_placement_rules: [],
+    logo_backgrounds: [],
+    social_handles: {},
+    hashtags: [],
+    tagline: '',
+    mission: '',
+    archetype: '',
+    approved_layouts: [],
+    restricted_elements: []
   });
 
   const [newPaletteColor, setNewPaletteColor] = useState({ hex: '#6366f1', name: '' });
@@ -301,10 +331,6 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     const heroData = (guideData.hero || {}) as Record<string, unknown>;
     const customPrompts: Record<string, unknown> = {};
     
-    if (heroData.tagline) customPrompts.tagline = heroData.tagline;
-    if (hubBrand.mission) customPrompts.mission = hubBrand.mission;
-    if (hubBrand.archetype) customPrompts.archetype = hubBrand.archetype;
-    
     const colorCombinations = ((guideData.colorCombinations || []) as Array<{ status: string }>)
       .filter(c => c.status === 'approved');
     if (colorCombinations.length > 0) {
@@ -314,8 +340,41 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     if (gradients.length > 0) {
       customPrompts.gradients = gradients;
     }
+
+    // ========== NEW COMPREHENSIVE FIELDS ==========
     
-    // Update state
+    // Photography guidelines
+    const photographyData = (guideData.photography || hubBrand.photography || {}) as Record<string, unknown>;
+    const photographyStyle = (photographyData.style || hubBrand.photography_style) as string | undefined;
+    const photographyDos = (photographyData.dos || hubBrand.photography_dos || []) as string[];
+    const photographyDonts = (photographyData.donts || hubBrand.photography_donts || []) as string[];
+    
+    // Logo usage rules
+    const logoRules = (guideData.logoRules || hubBrand.logo_rules || {}) as Record<string, unknown>;
+    const logoClearSpace = (logoRules.clearSpace || hubBrand.logo_clear_space) as string | undefined;
+    const logoMinSize = (logoRules.minSize || hubBrand.logo_min_size) as string | undefined;
+    const logoPlacementRules = (logoRules.placement || hubBrand.logo_placement_rules || []) as string[];
+    const logoBackgrounds = (logoRules.approvedBackgrounds || hubBrand.logo_backgrounds || []) as string[];
+    
+    // Social media data
+    const socialData = (guideData.social || hubBrand.social || {}) as Record<string, unknown>;
+    const socialHandles = (socialData.handles || hubBrand.social_handles || {}) as Record<string, string>;
+    const hashtags = (socialData.hashtags || hubBrand.hashtags || []) as string[];
+    
+    // Brand identity
+    const tagline = (heroData.tagline || hubBrand.tagline) as string | undefined;
+    const mission = (hubBrand.mission || guideData.mission) as string | undefined;
+    const archetype = (hubBrand.archetype || guideData.archetype) as string | undefined;
+    
+    // Layout & restrictions
+    const approvedLayouts = (guideData.approvedLayouts || hubBrand.approved_layouts || []) as string[];
+    const restrictedElements = (guideData.restrictedElements || hubBrand.restricted_elements || []) as string[];
+    
+    // Writing style
+    const writingStyle = (guideData.writingStyle || hubBrand.writing_style) as string | undefined;
+    const toneKeywords = (hubBrand.tone_keywords || guideData.toneKeywords || []) as string[];
+    
+    // Update state with all fields
     setStyle(prev => ({
       ...prev,
       primary_color: primaryColor || prev.primary_color,
@@ -330,6 +389,9 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
       mood_keywords: (hubBrand.mood_keywords as string[])?.length > 0
         ? [...new Set([...(prev.mood_keywords || []), ...(hubBrand.mood_keywords as string[])])]
         : prev.mood_keywords,
+      tone_keywords: toneKeywords.length > 0
+        ? [...new Set([...(prev.tone_keywords || []), ...toneKeywords])]
+        : prev.tone_keywords,
       imagery_style: (hubBrand.imagery_style as string) || prev.imagery_style,
       industry: (hubBrand.industry as string) || prev.industry,
       target_audience: (hubBrand.target_audience as string) || prev.target_audience,
@@ -340,7 +402,38 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         : prev.brand_voice,
       custom_prompts: Object.keys(customPrompts).length > 0
         ? { ...(prev.custom_prompts || {}), ...customPrompts }
-        : prev.custom_prompts
+        : prev.custom_prompts,
+      // New comprehensive fields
+      photography_style: photographyStyle || prev.photography_style,
+      photography_dos: photographyDos.length > 0
+        ? [...new Set([...(prev.photography_dos || []), ...photographyDos])]
+        : prev.photography_dos,
+      photography_donts: photographyDonts.length > 0
+        ? [...new Set([...(prev.photography_donts || []), ...photographyDonts])]
+        : prev.photography_donts,
+      logo_clear_space: logoClearSpace || prev.logo_clear_space,
+      logo_min_size: logoMinSize || prev.logo_min_size,
+      logo_placement_rules: logoPlacementRules.length > 0
+        ? [...new Set([...(prev.logo_placement_rules || []), ...logoPlacementRules])]
+        : prev.logo_placement_rules,
+      logo_backgrounds: logoBackgrounds.length > 0
+        ? [...new Set([...(prev.logo_backgrounds || []), ...logoBackgrounds])]
+        : prev.logo_backgrounds,
+      social_handles: Object.keys(socialHandles).length > 0
+        ? { ...(prev.social_handles || {}), ...socialHandles }
+        : prev.social_handles,
+      hashtags: hashtags.length > 0
+        ? [...new Set([...(prev.hashtags || []), ...hashtags])]
+        : prev.hashtags,
+      tagline: tagline || prev.tagline,
+      mission: mission || prev.mission,
+      archetype: archetype || prev.archetype,
+      approved_layouts: approvedLayouts.length > 0
+        ? [...new Set([...(prev.approved_layouts || []), ...approvedLayouts])]
+        : prev.approved_layouts,
+      restricted_elements: restrictedElements.length > 0
+        ? [...new Set([...(prev.restricted_elements || []), ...restrictedElements])]
+        : prev.restricted_elements
     }));
 
     // Update logos
@@ -548,7 +641,18 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           brand_voice: data.brand_voice || [],
           custom_prompts: (data.custom_prompts && typeof data.custom_prompts === 'object' && !Array.isArray(data.custom_prompts))
             ? (data.custom_prompts as unknown as Record<string, unknown>)
-            : undefined
+            : undefined,
+          // New comprehensive fields with proper type casting
+          photography_dos: data.photography_dos || [],
+          photography_donts: data.photography_donts || [],
+          logo_placement_rules: data.logo_placement_rules || [],
+          logo_backgrounds: data.logo_backgrounds || [],
+          social_handles: (data.social_handles && typeof data.social_handles === 'object' && !Array.isArray(data.social_handles))
+            ? (data.social_handles as unknown as Record<string, string>)
+            : {},
+          hashtags: data.hashtags || [],
+          approved_layouts: data.approved_layouts || [],
+          restricted_elements: data.restricted_elements || []
         });
       }
     } catch (error) {
@@ -580,7 +684,22 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         target_audience: style.target_audience,
         cultural_context: style.cultural_context,
         industry: style.industry,
-        custom_prompts: style.custom_prompts
+        custom_prompts: style.custom_prompts,
+        // New comprehensive fields
+        photography_style: style.photography_style,
+        photography_dos: style.photography_dos,
+        photography_donts: style.photography_donts,
+        logo_clear_space: style.logo_clear_space,
+        logo_min_size: style.logo_min_size,
+        logo_placement_rules: style.logo_placement_rules,
+        logo_backgrounds: style.logo_backgrounds,
+        social_handles: style.social_handles,
+        hashtags: style.hashtags,
+        tagline: style.tagline,
+        mission: style.mission,
+        archetype: style.archetype,
+        approved_layouts: style.approved_layouts,
+        restricted_elements: style.restricted_elements
       };
 
       if (style.id) {
