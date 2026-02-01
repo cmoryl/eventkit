@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Edit, Settings } from 'lucide-react';
+import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Edit, Settings, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -16,6 +16,9 @@ interface Brand {
   logo_url?: string;
   is_default: boolean;
   created_at: string;
+  brandhub_share_token?: string;
+  brandhub_last_synced?: string;
+  brandhub_auto_sync?: boolean;
 }
 
 export const AdminBrandManager: React.FC = () => {
@@ -215,17 +218,23 @@ export const AdminBrandManager: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">{brand.name}</h3>
-                  {brand.is_default && (
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">Default</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground">{brand.name}</h3>
+                    {brand.is_default && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">Default</span>
+                    )}
+                    {brand.brandhub_share_token && (
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-500 flex items-center gap-1">
+                        <Link className="w-3 h-3" />
+                        Linked
+                      </span>
+                    )}
+                  </div>
+                  {brand.description && (
+                    <p className="text-sm text-muted-foreground truncate">{brand.description}</p>
                   )}
                 </div>
-                {brand.description && (
-                  <p className="text-sm text-muted-foreground truncate">{brand.description}</p>
-                )}
-              </div>
 
               <div className="flex items-center gap-1">
                 <Button 
