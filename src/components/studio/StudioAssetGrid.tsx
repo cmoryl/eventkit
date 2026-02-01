@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { AssetGenerationCanvas } from './AssetGenerationCanvas';
 
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
@@ -356,56 +357,29 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string } | null>(null);
   
-  const handleGenerate = async (assetType: string) => {
+  // Full-screen canvas state
+  const [canvasOpen, setCanvasOpen] = useState(false);
+  const [canvasAssetType, setCanvasAssetType] = useState<string | null>(null);
+  
+  // Open full-screen canvas for generation with variations
+  const handleGenerate = (assetType: string) => {
     if (!brand) {
       toast.error('Please select a brand first');
       return;
     }
     
-    setGeneratingAssets(prev => new Set(prev).add(assetType));
-    
-    try {
-      const info = getAssetInfo(assetType);
-      
-      // Build prompt from brand and asset info
-      const colorPalette = brand.styles?.color_palette?.map((c: any) => 
-        typeof c === 'object' ? c.hex || c.color : c
-      ) || [];
-      
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: {
-          assetType,
-          eventName: brand.name,
-          eventDescription: brand.description || `Professional ${info.name} design`,
-          styleDescription: brand.styles?.imagery_style || 'Modern, professional, clean design',
-          colorPalette,
-          logoBase64: brand.logo_url,
-        },
-      });
-      
-      if (error) {
-        throw new Error(error.message || 'Generation failed');
-      }
-      
-      if (data?.imageUrl) {
-        setGeneratedImages(prev => ({
-          ...prev,
-          [assetType]: data.imageUrl
-        }));
-        toast.success(`${info.name} generated successfully!`);
-      } else {
-        throw new Error('No image returned from generation');
-      }
-    } catch (error) {
-      console.error('Generation error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate asset');
-    } finally {
-      setGeneratingAssets(prev => {
-        const next = new Set(prev);
-        next.delete(assetType);
-        return next;
-      });
-    }
+    setCanvasAssetType(assetType);
+    setCanvasOpen(true);
+  };
+
+  // Handle when image is generated and selected from canvas
+  const handleImageFromCanvas = (assetType: string, imageUrl: string) => {
+    setGeneratedImages(prev => ({
+      ...prev,
+      [assetType]: imageUrl
+    }));
+    setCanvasOpen(false);
+    setCanvasAssetType(null);
   };
   
   // Get the image to display - generated takes priority over demo
@@ -416,6 +390,14 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   const handleViewImage = (imageSrc: string, title: string) => {
     setLightboxImage({ src: imageSrc, title });
   };
+
+  // Get info for canvas
+  const getCanvasInfo = () => {
+    if (!canvasAssetType) return null;
+    return getAssetInfo(canvasAssetType);
+  };
+
+  const canvasInfo = getCanvasInfo();
 
   if (viewMode === 'list') {
     return (
@@ -525,6 +507,25 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
             );
           })}
         </div>
+        
+        {/* Full-Screen Generation Canvas (List View) */}
+        {canvasAssetType && canvasInfo && (
+          <AssetGenerationCanvas
+            isOpen={canvasOpen}
+            onClose={() => {
+              setCanvasOpen(false);
+              setCanvasAssetType(null);
+            }}
+            assetType={canvasAssetType}
+            assetName={canvasInfo.name}
+            assetDescription={canvasInfo.description}
+            dimensions={canvasInfo.dimensions}
+            brand={brand}
+            eventName={brand?.name || 'Your Event'}
+            studioGradient={studioGradient}
+            onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
+          />
+        )}
       </>
     );
   }
@@ -716,6 +717,25 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           );
         })}
       </div>
+      
+      {/* Full-Screen Generation Canvas */}
+      {canvasAssetType && canvasInfo && (
+        <AssetGenerationCanvas
+          isOpen={canvasOpen}
+          onClose={() => {
+            setCanvasOpen(false);
+            setCanvasAssetType(null);
+          }}
+          assetType={canvasAssetType}
+          assetName={canvasInfo.name}
+          assetDescription={canvasInfo.description}
+          dimensions={canvasInfo.dimensions}
+          brand={brand}
+          eventName={brand?.name || 'Your Event'}
+          studioGradient={studioGradient}
+          onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
+        />
+      )}
     </>
   );
 };
