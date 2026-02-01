@@ -15,6 +15,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import JSZip from 'jszip';
 import { StudioSidebar } from './StudioSidebar';
 import { StudioAssetGrid } from './StudioAssetGrid';
 import { StudioProductionPanel } from './StudioProductionPanel';
@@ -50,6 +51,12 @@ export const CreationStudio: React.FC = () => {
   const [showBrandsPanel, setShowBrandsPanel] = useState(true);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Project persistence state
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingProject, setIsLoadingProject] = useState(false);
+  const [isSavingToCloud, setIsSavingToCloud] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   
   // Load studio definition
   useEffect(() => {
@@ -143,6 +150,186 @@ export const CreationStudio: React.FC = () => {
     loadBrands();
   }, [user]);
 
+  // Save project as ZIP
+  const handleSaveProject = async () => {
+    if (!studio || !selectedBrand) {
+      toast.error('Please select a brand first');
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      const zip = new JSZip();
+      const assetsFolder = zip.folder("assets");
+      
+      // Save generated images
+      const processedAssets = await Promise.all(
+        Object.entries(generatedImages).map(async ([assetType, imageUrl]) => {
+          if (imageUrl.startsWith('data:')) {
+            const ext = imageUrl.split(';')[0].split('/')[1] || 'png';
+            const filename = `${assetType}.${ext}`;
+            if (assetsFolder) {
+              assetsFolder.file(filename, imageUrl.split(',')[1], { base64: true });
+            }
+            return { assetType, path: `assets/${filename}` };
+          } else if (imageUrl.startsWith('blob:')) {
+            try {
+              const res = await fetch(imageUrl);
+              const blob = await res.blob();
+              const ext = blob.type.split('/')[1] || 'png';
+              const filename = `${assetType}.${ext}`;
+              if (assetsFolder) {
+                assetsFolder.file(filename, blob);
+              }
+              return { assetType, path: `assets/${filename}` };
+            } catch (e) {
+              console.warn("Failed to fetch blob", e);
+              return { assetType, path: imageUrl };
+            }
+          }
+          return { assetType, path: imageUrl };
+        })
+      );
+
+      const projectData = {
+        version: '2.0',
+        studioId: studio.id,
+        brand: selectedBrand ? {
+          id: selectedBrand.id,
+          name: selectedBrand.name,
+          styles: selectedBrand.styles,
+        } : null,
+        generatedAssets: processedAssets,
+        selectedAssets,
+        activeCategory,
+        viewMode,
+        createdAt: new Date().toISOString(),
+      };
+
+      zip.file("project.json", JSON.stringify(projectData, null, 2));
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${selectedBrand?.name || 'project'}_${studio.shortName}_kit.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('Project saved successfully!');
+    } catch (error) {
+      console.error('Save failed:', error);
+      toast.error('Failed to save project');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Load project from ZIP
+  const handleLoadProject = async (file: File) => {
+    setIsLoadingProject(true);
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const projectJson = await zip.file("project.json")?.async("string");
+
+      if (!projectJson) {
+        throw new Error("Invalid project file");
+      }
+
+      const projectData = JSON.parse(projectJson);
+
+      // Navigate to correct studio if different
+      if (projectData.studioId && projectData.studioId !== studioId) {
+        navigate(`/studio/${projectData.studioId}`);
+      }
+
+      // Restore generated images
+      const restoredImages: Record<string, string> = {};
+      if (projectData.generatedAssets) {
+        await Promise.all(projectData.generatedAssets.map(async (asset: { assetType: string; path: string }) => {
+          if (asset.path.startsWith('assets/')) {
+            const assetFile = await zip.file(asset.path)?.async("base64");
+            if (assetFile) {
+              const ext = asset.path.split('.').pop();
+              restoredImages[asset.assetType] = `data:image/${ext};base64,${assetFile}`;
+            }
+          }
+        }));
+      }
+
+      setGeneratedImages(restoredImages);
+      if (projectData.activeCategory) setActiveCategory(projectData.activeCategory);
+      if (projectData.viewMode) setViewMode(projectData.viewMode);
+      if (projectData.selectedAssets) setSelectedAssets(projectData.selectedAssets);
+
+      toast.success('Project loaded successfully!');
+    } catch (error) {
+      console.error('Load failed:', error);
+      toast.error('Failed to load project');
+    } finally {
+      setIsLoadingProject(false);
+    }
+  };
+
+  // Save to cloud
+  const handleSaveToCloud = async () => {
+    if (!user) {
+      toast.error('Please sign in to save to cloud');
+      return;
+    }
+    if (!selectedBrand) {
+      toast.error('Please select a brand first');
+      return;
+    }
+
+    setIsSavingToCloud(true);
+    try {
+      const assetSummary = Object.entries(generatedImages).map(([assetType, imageUrl]) => ({
+        assetType,
+        hasContent: !!imageUrl,
+      }));
+
+      const projectData = {
+        user_id: user.id,
+        name: `${selectedBrand.name} - ${studio?.name || 'Studio'}`,
+        description: `Created in ${studio?.name || 'Studio'}`,
+        event_details: JSON.parse(JSON.stringify({
+          name: selectedBrand.name,
+          studioId: studio?.id,
+        })),
+        generated_assets: JSON.parse(JSON.stringify(assetSummary)),
+      };
+
+      const { data: existingProject } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', projectData.name)
+        .maybeSingle();
+
+      if (existingProject) {
+        const { user_id, ...updateData } = projectData;
+        await supabase
+          .from('projects')
+          .update(updateData)
+          .eq('id', existingProject.id);
+      } else {
+        await supabase
+          .from('projects')
+          .insert([projectData]);
+      }
+
+      toast.success('Project saved to cloud!');
+    } catch (error) {
+      console.error('Cloud save error:', error);
+      toast.error('Failed to save to cloud');
+    } finally {
+      setIsSavingToCloud(false);
+    }
+  };
+
   if (!studio) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -227,6 +414,13 @@ export const CreationStudio: React.FC = () => {
         showStudioNav
         currentStudioId={studio.id}
         actions={studioActions}
+        showProjectControls
+        onSaveProject={handleSaveProject}
+        onLoadProject={handleLoadProject}
+        onSaveToCloud={handleSaveToCloud}
+        isSaving={isSaving}
+        isLoadingProject={isLoadingProject}
+        isSavingToCloud={isSavingToCloud}
       />
 
       <div className="flex">
