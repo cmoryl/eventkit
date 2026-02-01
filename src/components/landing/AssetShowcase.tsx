@@ -111,19 +111,6 @@ const IconCard: React.FC<{
             "absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300 rounded-xl",
             isHovered ? "opacity-10" : "opacity-30"
           )} />
-          
-          {/* Open studio hint on hover */}
-          {isHovered && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl"
-            >
-              <span className="text-white text-xs font-medium px-2 py-1 bg-black/50 rounded-full backdrop-blur-sm">
-                Open Studio
-              </span>
-            </motion.div>
-          )}
         </div>
         
         {/* Label */}
@@ -133,17 +120,6 @@ const IconCard: React.FC<{
         )}>
           {asset.title}
         </span>
-        
-        {/* Click hint */}
-        {isHovered && (
-          <motion.span
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-[10px] text-primary font-medium whitespace-nowrap"
-          >
-            {asset.title} Studio →
-          </motion.span>
-        )}
       </div>
     </motion.div>
   );
