@@ -31,17 +31,19 @@ interface VideoTeaserModalProps {
 const VIDEO_ENGINES = [
   {
     id: 'lovable',
-    name: 'Lovable AI (Veo 3)',
-    description: 'Google Veo 3 powered video generation',
-    badge: 'Default',
+    name: 'Lovable AI (Preview)',
+    description: 'AI-powered animated preview frames. Fast and included.',
+    badge: 'Free',
     requiresKey: false,
+    note: 'Generates high-quality preview images',
   },
   {
     id: 'replicate',
-    name: 'Replicate',
-    description: 'Luma Ray, Minimax, and other video models',
-    badge: 'Custom',
+    name: 'Replicate (Full Video)',
+    description: 'Luma Ray & Minimax for actual MP4 video generation.',
+    badge: 'API Key',
     requiresKey: true,
+    note: 'Generates real video files',
   },
 ];
 
@@ -207,8 +209,10 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Video className="h-5 w-5 text-primary" />
-            AI Video Teaser Generator
-            <Badge variant="secondary" className="ml-2">Veo 3</Badge>
+            AI Video Generator
+            <Badge variant="secondary" className="ml-2">
+              {selectedEngine === 'replicate' ? 'Full Video' : 'Preview'}
+            </Badge>
           </DialogTitle>
         </DialogHeader>
 
@@ -253,13 +257,16 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm">{engine.name}</span>
-                        <Badge variant={engine.badge === 'Default' ? 'default' : 'outline'} className="text-[10px]">
+                        <Badge variant={engine.badge === 'Free' ? 'default' : 'outline'} className="text-[10px]">
                           {engine.badge}
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground">{engine.description}</p>
+                      {'note' in engine && (
+                        <p className="text-[10px] text-primary/70 mt-1">{engine.note}</p>
+                      )}
                       {engine.requiresKey && !canUseReplicate && (
-                        <p className="text-xs text-amber-600 mt-1">Requires Replicate API key</p>
+                        <p className="text-xs text-amber-600 mt-1">Add Replicate engine in settings</p>
                       )}
                     </button>
                   );
@@ -402,12 +409,20 @@ export const VideoTeaserModal: React.FC<VideoTeaserModalProps> = ({
             )}
           </Button>
 
-          {/* Generation Time */}
+          {/* Generation Time & Status */}
           {generationTime && (
-            <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
-              <Clock className="h-3 w-3" />
-              Generated in {(generationTime / 1000).toFixed(1)}s
-            </p>
+            <div className="text-center space-y-1">
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                <Clock className="h-3 w-3" />
+                Generated in {(generationTime / 1000).toFixed(1)}s
+              </p>
+              {videoStatus && !generatedVideo && (
+                <p className="text-xs text-primary">
+                  {videoStatus === 'preview' && '✨ This is an AI-generated preview image'}
+                  {videoStatus === 'thumbnail' && '🖼️ Thumbnail generated'}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Generated Result */}
