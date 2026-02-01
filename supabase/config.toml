@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.generate-venue-preview]
 verify_jwt = false
+
+[functions.verify-admin]
+verify_jwt = false
+
+[functions.refine-prompt]
+verify_jwt = false
