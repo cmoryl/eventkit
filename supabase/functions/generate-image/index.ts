@@ -554,16 +554,39 @@ ${venueIntelligence.localTips}`;
       }
     }
 
-    // Build logo integration instructions
+    // Build logo integration instructions - STRENGTHENED for consistent visibility
     const logoInstructions = logoBase64 
       ? `
-LOGO INTEGRATION - CRITICAL:
-Reference Image #1 is the EVENT LOGO. You MUST:
-1. Incorporate this logo prominently and appropriately into the design
-2. Match the visual style, colors, and aesthetic of the provided logo
-3. Ensure the logo remains clearly visible and is not distorted
-4. Use the logo's color scheme as a guide for the overall design palette
-5. The design should feel like a cohesive extension of the logo's brand identity`
+LOGO INTEGRATION - ABSOLUTELY CRITICAL (HIGHEST PRIORITY):
+Reference Image #1 is the EVENT LOGO. This is the PRIMARY brand element and MUST be treated with utmost importance.
+
+MANDATORY LOGO PLACEMENT REQUIREMENTS:
+1. VISIBILITY: The logo MUST be clearly visible and immediately recognizable in the final design
+2. SIZE: The logo should occupy at least 15-25% of the visual hierarchy - it should NEVER be tiny or hidden
+3. POSITIONING: Place the logo in a prominent position:
+   - For signage/banners: Center or top-center placement preferred
+   - For merchandise: Front and center, appropriately sized for the item
+   - For digital assets: Above the fold, clearly visible
+4. INTEGRITY: The logo MUST remain:
+   - Undistorted (maintain original aspect ratio)
+   - Unobscured (no elements overlapping or competing)
+   - Sharp and crisp (not blurred or pixelated)
+   - Properly contrasted against background (ensure readability)
+5. PROTECTION: Leave adequate clear space around the logo - no text or design elements crowding it
+
+BRAND COHESION REQUIREMENTS:
+6. Extract the logo's color palette and use it as the FOUNDATION for all design choices
+7. Match the logo's visual style (modern, vintage, minimal, bold, etc.) throughout the design
+8. Typography should complement (not compete with) the logo's typographic style
+9. All design elements should feel like natural extensions of the logo's brand identity
+10. The logo is the HERO - everything else supports it
+
+FAILURE CRITERIA - DO NOT:
+- Make the logo too small or insignificant
+- Place the logo in corners where it can be overlooked
+- Use colors that clash with or diminish the logo
+- Apply effects that distort the logo (extreme shadows, warping)
+- Let busy backgrounds make the logo hard to see`
       : '';
 
     // Build vibe/style image instructions
