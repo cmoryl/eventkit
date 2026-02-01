@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Palette, Type, Sparkles, Save, X, Plus, Trash2, 
-  Image as ImageIcon, Eye, PaintBucket, Wand2
+  Image as ImageIcon, Eye, PaintBucket, Wand2, Upload, FileText, Loader2, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -70,6 +70,9 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isParsingGuide, setIsParsingGuide] = useState(false);
+  const [uploadedGuideUrl, setUploadedGuideUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [style, setStyle] = useState<BrandStyle>({
     brand_id: brand.id,
     primary_color: '#6366f1',
@@ -90,6 +93,85 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 
   const [newPaletteColor, setNewPaletteColor] = useState({ hex: '#6366f1', name: '' });
   const [newMood, setNewMood] = useState('');
+
+  // Handle brand guide upload and AI parsing
+  const handleBrandGuideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a PDF or image file');
+      return;
+    }
+
+    // Max 20MB
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('File size must be under 20MB');
+      return;
+    }
+
+    setIsParsingGuide(true);
+    toast.info('Analyzing brand guide with AI...', { duration: 5000 });
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Call AI to analyze the brand guide
+      const { data: analysisResult, error } = await supabase.functions.invoke('analyze-brand-guide', {
+        body: {
+          fileBase64: base64,
+          fileName: file.name,
+          fileType: file.type
+        }
+      });
+
+      if (error) throw error;
+
+      if (analysisResult?.extractedStyle) {
+        const extracted = analysisResult.extractedStyle;
+        
+        // Merge extracted values with current style
+        setStyle(prev => ({
+          ...prev,
+          primary_color: extracted.primary_color || prev.primary_color,
+          secondary_color: extracted.secondary_color || prev.secondary_color,
+          accent_color: extracted.accent_color || prev.accent_color,
+          color_palette: extracted.color_palette?.length > 0 
+            ? [...(prev.color_palette || []), ...extracted.color_palette]
+            : prev.color_palette,
+          heading_font: extracted.heading_font || prev.heading_font,
+          body_font: extracted.body_font || prev.body_font,
+          mood_keywords: extracted.mood_keywords?.length > 0
+            ? [...new Set([...(prev.mood_keywords || []), ...extracted.mood_keywords])]
+            : prev.mood_keywords,
+          imagery_style: extracted.imagery_style || prev.imagery_style,
+          industry: extracted.industry || prev.industry,
+          target_audience: extracted.target_audience || prev.target_audience
+        }));
+
+        setUploadedGuideUrl(file.name);
+        toast.success('Brand guide analyzed! Style settings updated.');
+      } else {
+        toast.warning('Could not extract style information from the document');
+      }
+    } catch (error) {
+      console.error('Error parsing brand guide:', error);
+      toast.error('Failed to analyze brand guide. Please try again.');
+    } finally {
+      setIsParsingGuide(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   useEffect(() => {
     loadBrandStyle();
@@ -242,6 +324,71 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6 space-y-8">
+          {/* Brand Guide Upload Section */}
+          <section className="p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/10 to-secondary/10 border border-primary/20">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-primary" />
+                  Import Brand Guide
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Upload a brand guide PDF or image from{' '}
+                  <a 
+                    href="https://brandhubcreator.lovable.app" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    BrandHub Creator
+                    <ExternalLink className="w-3 h-3" />
+                  </a>{' '}
+                  or any brand kit. AI will extract colors, fonts, and style preferences.
+                </p>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,image/png,image/jpeg,image/jpg"
+                  onChange={handleBrandGuideUpload}
+                  className="hidden"
+                />
+                
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isParsingGuide}
+                    className="gap-2"
+                  >
+                    {isParsingGuide ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4" />
+                        Upload Brand Guide
+                      </>
+                    )}
+                  </Button>
+                  
+                  {uploadedGuideUrl && (
+                    <span className="text-sm text-muted-foreground flex items-center gap-1">
+                      <FileText className="w-4 h-4 text-green-500" />
+                      {uploadedGuideUrl}
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="hidden md:flex items-center justify-center w-20 h-20 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30">
+                <Wand2 className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+          </section>
+
           {/* Colors Section */}
           <section>
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
