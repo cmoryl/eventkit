@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import { 
   Palette, Type, Sparkles, Save, X, Plus, Trash2, 
   Image as ImageIcon, Eye, PaintBucket, Wand2, Upload, FileText, Loader2, ExternalLink,
-  Link, RefreshCw, Unlink, Clock, Brain
+  Link, RefreshCw, Unlink, Clock, Brain, Images
 } from 'lucide-react';
+import { BrandImageryGallery } from './BrandImageryGallery';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1260,6 +1261,25 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
                 placeholder="Describe the visual style for generated imagery (e.g., modern and minimalist with bold typography, abstract geometric patterns...)"
                 rows={3}
                 className="mt-1"
+              />
+            </div>
+          </section>
+
+          {/* Brand Imagery Gallery */}
+          <section>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Images className="w-5 h-5 text-primary" />
+              Brand Imagery Library
+              {style.all_imagery?.all && style.all_imagery.all.length > 0 && (
+                <span className="ml-auto text-sm font-normal text-muted-foreground">
+                  {style.all_imagery.all.length} assets
+                </span>
+              )}
+            </h3>
+            <div className="p-4 rounded-xl bg-secondary/30 border border-border">
+              <BrandImageryGallery 
+                imagery={style.all_imagery}
+                brandName={brand.name}
               />
             </div>
           </section>
