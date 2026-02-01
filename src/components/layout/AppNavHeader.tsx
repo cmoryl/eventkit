@@ -27,6 +27,7 @@ interface AppNavHeaderProps {
   showStudioNav?: boolean;
   currentStudioId?: StudioType;
   onGetStarted?: () => void;
+  onSignIn?: () => void;
   actions?: React.ReactNode;
   transparent?: boolean;
 }
@@ -37,6 +38,7 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   showStudioNav = false,
   currentStudioId,
   onGetStarted,
+  onSignIn,
   actions,
   transparent = false,
 }) => {
@@ -299,9 +301,9 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                   </Button>
                 )}
                 <Button 
-                  onClick={onGetStarted || (() => navigate('/'))} 
+                  onClick={onSignIn || onGetStarted || (() => navigate('/'))} 
                   size="sm" 
-                  variant={onGetStarted ? "ghost" : "default"}
+                  variant="outline"
                 >
                   <LogIn className="w-4 h-4 sm:mr-2" />
                   <span className="hidden sm:inline">Sign In</span>

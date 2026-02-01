@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2, FileText
@@ -10,6 +10,7 @@ import { FeaturedSection } from './FeaturedSection';
 import { AssetType } from '@/types';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { useAuth } from '@/hooks/useAuth';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -52,9 +53,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onAssetClick
 }) => {
   const { user, signOut, isAuthenticated: isLoggedIn } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      {/* Auth Modal */}
+      <AuthModal 
+        open={showAuthModal} 
+        onOpenChange={setShowAuthModal}
+        onAuthSuccess={() => setShowAuthModal(false)}
+      />
       {/* Animated Background */}
       <div className="fixed inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-primary/5" />
@@ -71,7 +79,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </div>
 
       {/* Hero Header */}
-      <AppNavHeader onGetStarted={onGetStarted} />
+      <AppNavHeader 
+        onGetStarted={onGetStarted} 
+        onSignIn={() => setShowAuthModal(true)}
+      />
 
       {/* Unified Hero Section */}
       <section className="pt-28 sm:pt-32 pb-16 sm:pb-20">
