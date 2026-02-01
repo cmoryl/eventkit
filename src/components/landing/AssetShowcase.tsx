@@ -1,43 +1,41 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, Image, Tag, Ticket, Monitor, ShoppingBag, FileText,
   Presentation, Layers, QrCode, Mail, Megaphone, Gift, Camera,
-  MapPin, Calendar, CreditCard, Users
+  MapPin, Calendar, CreditCard, Users, Video, Shield, UtensilsCrossed
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AssetType } from '@/types';
+import { getStudioByAssetType, StudioType } from '@/types/studio.types';
 
 interface ShowcaseAsset {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   gradient: string;
-  assetType: AssetType; // Map to actual AssetType
+  assetType: AssetType;
+  studioId: StudioType;
 }
 
+// Map assets to their studios
 const topRowAssets: ShowcaseAsset[] = [
-  { id: 'banner', icon: Image, title: 'Banners', gradient: 'from-violet-500 to-purple-600', assetType: AssetType.Banner },
-  { id: 'badge', icon: Tag, title: 'Badges', gradient: 'from-cyan-400 to-blue-500', assetType: AssetType.NameTag },
-  { id: 'ticket', icon: Ticket, title: 'Tickets', gradient: 'from-orange-400 to-red-500', assetType: AssetType.TicketDesign },
-  { id: 'tshirt', icon: ShoppingBag, title: 'Merch', gradient: 'from-emerald-400 to-green-500', assetType: AssetType.Tshirt },
-  { id: 'social', icon: Monitor, title: 'Social', gradient: 'from-pink-400 to-rose-500', assetType: AssetType.SocialPost },
-  { id: 'presentation', icon: Presentation, title: 'Decks', gradient: 'from-indigo-400 to-violet-500', assetType: AssetType.Presentation },
-  { id: 'signage', icon: Layers, title: 'Signage', gradient: 'from-amber-400 to-orange-500', assetType: AssetType.EventSignage },
-  { id: 'flyer', icon: FileText, title: 'Flyers', gradient: 'from-teal-400 to-cyan-500', assetType: AssetType.InvitationCard },
-  { id: 'qr', icon: QrCode, title: 'QR Codes', gradient: 'from-slate-400 to-zinc-500', assetType: AssetType.QRCode },
+  { id: 'branding', icon: Sparkles, title: 'Branding', gradient: 'from-violet-500 to-purple-600', assetType: AssetType.Logo, studioId: 'branding' },
+  { id: 'banner', icon: Image, title: 'Print', gradient: 'from-blue-500 to-cyan-500', assetType: AssetType.Banner, studioId: 'print-signage' },
+  { id: 'tshirt', icon: ShoppingBag, title: 'Merch', gradient: 'from-orange-500 to-red-500', assetType: AssetType.Tshirt, studioId: 'merchandise' },
+  { id: 'social', icon: Monitor, title: 'Social', gradient: 'from-pink-500 to-rose-500', assetType: AssetType.SocialPost, studioId: 'social-digital' },
+  { id: 'presentation', icon: Presentation, title: 'Slides', gradient: 'from-emerald-500 to-teal-500', assetType: AssetType.Presentation, studioId: 'presentations' },
+  { id: 'venue', icon: Layers, title: 'Venue', gradient: 'from-indigo-500 to-blue-600', assetType: AssetType.MainStageBackdrop, studioId: 'venue-experience' },
 ];
 
 const bottomRowAssets: ShowcaseAsset[] = [
-  { id: 'email', icon: Mail, title: 'Emails', gradient: 'from-blue-400 to-indigo-500', assetType: AssetType.EmailHeader },
-  { id: 'ads', icon: Megaphone, title: 'Ads', gradient: 'from-rose-400 to-pink-500', assetType: AssetType.LinkedInBanner },
-  { id: 'swag', icon: Gift, title: 'Swag', gradient: 'from-purple-400 to-fuchsia-500', assetType: AssetType.SwagBag },
-  { id: 'photo', icon: Camera, title: 'Backdrops', gradient: 'from-sky-400 to-blue-500', assetType: AssetType.StepAndRepeat },
-  { id: 'maps', icon: MapPin, title: 'Maps', gradient: 'from-green-400 to-emerald-500', assetType: AssetType.FloorPlan },
-  { id: 'schedule', icon: Calendar, title: 'Schedules', gradient: 'from-yellow-400 to-amber-500', assetType: AssetType.AgendaHighlights },
-  { id: 'passes', icon: CreditCard, title: 'Passes', gradient: 'from-red-400 to-orange-500', assetType: AssetType.VIPBadge },
-  { id: 'team', icon: Users, title: 'Team', gradient: 'from-violet-400 to-purple-500', assetType: AssetType.SpeakerIntroCard },
-  { id: 'lanyard', icon: Tag, title: 'Lanyards', gradient: 'from-cyan-400 to-teal-500', assetType: AssetType.Lanyard },
+  { id: 'invites', icon: Ticket, title: 'Invites', gradient: 'from-amber-500 to-yellow-500', assetType: AssetType.InvitationCard, studioId: 'invitations-access' },
+  { id: 'dining', icon: UtensilsCrossed, title: 'Dining', gradient: 'from-lime-500 to-green-500', assetType: AssetType.Menu, studioId: 'hospitality-dining' },
+  { id: 'video', icon: Video, title: 'Video', gradient: 'from-red-500 to-pink-600', assetType: AssetType.VideoTeaser, studioId: 'video-motion' },
+  { id: 'docs', icon: FileText, title: 'Docs', gradient: 'from-slate-500 to-gray-600', assetType: AssetType.ProgramBooklet, studioId: 'documents-forms' },
+  { id: 'photo', icon: Camera, title: 'Photo', gradient: 'from-fuchsia-500 to-purple-600', assetType: AssetType.PhotoBoothFrame, studioId: 'photo-engagement' },
+  { id: 'safety', icon: Shield, title: 'Safety', gradient: 'from-green-500 to-emerald-600', assetType: AssetType.AccessibilitySignage, studioId: 'accessibility-safety' },
 ];
 
 const IconCard: React.FC<{
@@ -45,13 +43,13 @@ const IconCard: React.FC<{
   isHovered: boolean;
   onHover: (id: string | null) => void;
   isClickable: boolean;
-  onClick?: (assetType: AssetType) => void;
+  onClick?: (studioId: StudioType) => void;
 }> = ({ asset, isHovered, onHover, isClickable, onClick }) => {
   const Icon = asset.icon;
   
   const handleClick = () => {
     if (isClickable && onClick) {
-      onClick(asset.assetType);
+      onClick(asset.studioId);
     }
   };
   
@@ -69,7 +67,7 @@ const IconCard: React.FC<{
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <div className={cn(
-        "relative flex flex-col items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl transition-all duration-300",
+        "relative flex flex-col items-center gap-2 px-4 sm:px-5 py-3 sm:py-4 rounded-2xl transition-all duration-300",
         isHovered ? "bg-card/90 shadow-xl" : "bg-transparent"
       )}>
         {/* Glow effect */}
@@ -81,16 +79,16 @@ const IconCard: React.FC<{
         
         {/* Icon */}
         <div className={cn(
-          "w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-transform duration-300",
+          "w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-all duration-300",
           asset.gradient,
           isHovered && "scale-110 shadow-xl"
         )}>
-          <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
         </div>
         
         {/* Label */}
         <span className={cn(
-          "text-xs font-medium transition-colors duration-300",
+          "text-xs sm:text-sm font-medium transition-colors duration-300",
           isHovered ? "text-foreground" : "text-muted-foreground"
         )}>
           {asset.title}
@@ -103,7 +101,7 @@ const IconCard: React.FC<{
             animate={{ opacity: 1, y: 0 }}
             className="absolute -bottom-6 text-[10px] text-primary font-medium whitespace-nowrap"
           >
-            Click to create
+            Open Studio →
           </motion.span>
         )}
       </div>
@@ -118,20 +116,20 @@ const ScrollingRow: React.FC<{
   hoveredId: string | null;
   onHover: (id: string | null) => void;
   isClickable: boolean;
-  onAssetClick?: (assetType: AssetType) => void;
-}> = ({ assets, direction, speed = 30, hoveredId, onHover, isClickable, onAssetClick }) => {
+  onStudioClick?: (studioId: StudioType) => void;
+}> = ({ assets, direction, speed = 30, hoveredId, onHover, isClickable, onStudioClick }) => {
   // Duplicate for seamless loop
   const duplicatedAssets = [...assets, ...assets, ...assets];
   const isPaused = hoveredId !== null;
   
   return (
-    <div className="relative overflow-hidden py-1">
+    <div className="relative overflow-hidden py-2">
       {/* Fade edges */}
-      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
       
       <motion.div
-        className="flex gap-1 sm:gap-2"
+        className="flex gap-2 sm:gap-4"
         animate={{
           x: direction === 'left' 
             ? ['0%', '-33.333%'] 
@@ -156,7 +154,7 @@ const ScrollingRow: React.FC<{
             isHovered={hoveredId === asset.id}
             onHover={onHover}
             isClickable={isClickable}
-            onClick={onAssetClick}
+            onClick={onStudioClick}
           />
         ))}
       </motion.div>
@@ -176,31 +174,36 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
   onAssetClick
 }) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const navigate = useNavigate();
   
-  const isClickable = isAuthenticated && !!onAssetClick;
+  const isClickable = isAuthenticated;
+  
+  const handleStudioClick = (studioId: StudioType) => {
+    navigate(`/studio/${studioId}`);
+  };
 
   // Embedded version (no header, no stats - for use inside hero)
   if (embedded) {
     return (
       <div className="w-full overflow-hidden">
-        <div className="space-y-2 sm:space-y-3 pb-6">
+        <div className="space-y-3 sm:space-y-4 pb-6">
           <ScrollingRow
             assets={topRowAssets}
             direction="left"
-            speed={35}
+            speed={45}
             hoveredId={hoveredId}
             onHover={setHoveredId}
             isClickable={isClickable}
-            onAssetClick={onAssetClick}
+            onStudioClick={handleStudioClick}
           />
           <ScrollingRow
             assets={bottomRowAssets}
             direction="right"
-            speed={40}
+            speed={50}
             hoveredId={hoveredId}
             onHover={setHoveredId}
             isClickable={isClickable}
-            onAssetClick={onAssetClick}
+            onStudioClick={handleStudioClick}
           />
         </div>
         {isClickable && (
@@ -209,7 +212,7 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
             animate={{ opacity: 1 }}
             className="text-center text-xs text-muted-foreground"
           >
-            <span className="text-primary font-medium">Logged in:</span> Click any asset to start creating
+            <span className="text-primary font-medium">✨ Click any studio</span> to start creating
           </motion.p>
         )}
       </div>
@@ -229,10 +232,10 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
           className="text-center mb-12 sm:mb-16 px-4"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-            See What You Can Create
+            12 Professional Studios
           </h2>
           <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-            From digital banners to print-ready merchandise, generate everything your event needs.
+            From branding to video, each studio is a complete production toolkit for your event assets.
           </p>
         </motion.div>
 
@@ -240,20 +243,20 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
           <ScrollingRow
             assets={topRowAssets}
             direction="left"
-            speed={40}
+            speed={50}
             hoveredId={hoveredId}
             onHover={setHoveredId}
             isClickable={isClickable}
-            onAssetClick={onAssetClick}
+            onStudioClick={handleStudioClick}
           />
           <ScrollingRow
             assets={bottomRowAssets}
             direction="right"
-            speed={45}
+            speed={55}
             hoveredId={hoveredId}
             onHover={setHoveredId}
             isClickable={isClickable}
-            onAssetClick={onAssetClick}
+            onStudioClick={handleStudioClick}
           />
         </div>
       </div>
