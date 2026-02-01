@@ -157,6 +157,8 @@ export type Database = {
         Row: {
           accent_color: string | null
           accent_font: string | null
+          approved_layouts: string[] | null
+          archetype: string | null
           body_font: string | null
           brand_id: string
           brand_voice: string[] | null
@@ -164,17 +166,29 @@ export type Database = {
           created_at: string | null
           cultural_context: string | null
           custom_prompts: Json | null
+          hashtags: string[] | null
           heading_font: string | null
           icon_style: string | null
           id: string
           imagery_style: string | null
           industry: string | null
+          logo_backgrounds: string[] | null
+          logo_clear_space: string | null
+          logo_min_size: string | null
+          logo_placement_rules: string[] | null
+          mission: string | null
           mood_keywords: string[] | null
           pattern_style: string | null
+          photography_donts: string[] | null
+          photography_dos: string[] | null
+          photography_style: string | null
           preferred_render_engine: string | null
           primary_color: string | null
           print_color_mode: string | null
+          restricted_elements: string[] | null
           secondary_color: string | null
+          social_handles: Json | null
+          tagline: string | null
           target_audience: string | null
           tone_keywords: string[] | null
           typography_scale: Json | null
@@ -184,6 +198,8 @@ export type Database = {
         Insert: {
           accent_color?: string | null
           accent_font?: string | null
+          approved_layouts?: string[] | null
+          archetype?: string | null
           body_font?: string | null
           brand_id: string
           brand_voice?: string[] | null
@@ -191,17 +207,29 @@ export type Database = {
           created_at?: string | null
           cultural_context?: string | null
           custom_prompts?: Json | null
+          hashtags?: string[] | null
           heading_font?: string | null
           icon_style?: string | null
           id?: string
           imagery_style?: string | null
           industry?: string | null
+          logo_backgrounds?: string[] | null
+          logo_clear_space?: string | null
+          logo_min_size?: string | null
+          logo_placement_rules?: string[] | null
+          mission?: string | null
           mood_keywords?: string[] | null
           pattern_style?: string | null
+          photography_donts?: string[] | null
+          photography_dos?: string[] | null
+          photography_style?: string | null
           preferred_render_engine?: string | null
           primary_color?: string | null
           print_color_mode?: string | null
+          restricted_elements?: string[] | null
           secondary_color?: string | null
+          social_handles?: Json | null
+          tagline?: string | null
           target_audience?: string | null
           tone_keywords?: string[] | null
           typography_scale?: Json | null
@@ -211,6 +239,8 @@ export type Database = {
         Update: {
           accent_color?: string | null
           accent_font?: string | null
+          approved_layouts?: string[] | null
+          archetype?: string | null
           body_font?: string | null
           brand_id?: string
           brand_voice?: string[] | null
@@ -218,17 +248,29 @@ export type Database = {
           created_at?: string | null
           cultural_context?: string | null
           custom_prompts?: Json | null
+          hashtags?: string[] | null
           heading_font?: string | null
           icon_style?: string | null
           id?: string
           imagery_style?: string | null
           industry?: string | null
+          logo_backgrounds?: string[] | null
+          logo_clear_space?: string | null
+          logo_min_size?: string | null
+          logo_placement_rules?: string[] | null
+          mission?: string | null
           mood_keywords?: string[] | null
           pattern_style?: string | null
+          photography_donts?: string[] | null
+          photography_dos?: string[] | null
+          photography_style?: string | null
           preferred_render_engine?: string | null
           primary_color?: string | null
           print_color_mode?: string | null
+          restricted_elements?: string[] | null
           secondary_color?: string | null
+          social_handles?: Json | null
+          tagline?: string | null
           target_audience?: string | null
           tone_keywords?: string[] | null
           typography_scale?: Json | null

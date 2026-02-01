@@ -33,6 +33,25 @@ export interface BrandContext {
   patternStyle?: string;
   iconStyle?: string;
   
+  // Photography Guidelines
+  photographyStyle?: string;
+  photographyDos?: string[];
+  photographyDonts?: string[];
+  
+  // Logo Usage Rules
+  logoClearSpace?: string;
+  logoMinSize?: string;
+  logoPlacementRules?: string[];
+  logoBackgrounds?: string[];
+  
+  // Social Media
+  socialHandles?: Record<string, string>;
+  hashtags?: string[];
+  
+  // Layout & Restrictions
+  approvedLayouts?: string[];
+  restrictedElements?: string[];
+  
   // Cultural & Audience
   targetAudience?: string;
   culturalContext?: string;
@@ -100,6 +119,21 @@ export function buildBrandContext(brand: {
     industry?: string;
     print_color_mode?: 'CMYK' | 'RGB' | 'Pantone';
     custom_prompts?: Record<string, unknown>;
+    // New comprehensive fields
+    photography_style?: string;
+    photography_dos?: string[];
+    photography_donts?: string[];
+    logo_clear_space?: string;
+    logo_min_size?: string;
+    logo_placement_rules?: string[];
+    logo_backgrounds?: string[];
+    social_handles?: Record<string, string>;
+    hashtags?: string[];
+    tagline?: string;
+    mission?: string;
+    archetype?: string;
+    approved_layouts?: string[];
+    restricted_elements?: string[];
   };
 }): BrandContext | null {
   if (!brand) return null;
@@ -109,9 +143,10 @@ export function buildBrandContext(brand: {
   
   return {
     brandName: brand.name,
-    tagline: customPrompts.tagline as string | undefined,
-    mission: customPrompts.mission as string | undefined,
-    archetype: customPrompts.archetype as string | undefined,
+    // Identity - prefer direct fields, fallback to custom_prompts for legacy
+    tagline: styles?.tagline || (customPrompts.tagline as string | undefined),
+    mission: styles?.mission || (customPrompts.mission as string | undefined),
+    archetype: styles?.archetype || (customPrompts.archetype as string | undefined),
     
     primaryColor: styles?.primary_color,
     secondaryColor: styles?.secondary_color,
@@ -139,6 +174,25 @@ export function buildBrandContext(brand: {
     imageryStyle: styles?.imagery_style,
     patternStyle: styles?.pattern_style,
     iconStyle: styles?.icon_style,
+    
+    // Photography guidelines
+    photographyStyle: styles?.photography_style,
+    photographyDos: styles?.photography_dos || [],
+    photographyDonts: styles?.photography_donts || [],
+    
+    // Logo usage rules
+    logoClearSpace: styles?.logo_clear_space,
+    logoMinSize: styles?.logo_min_size,
+    logoPlacementRules: styles?.logo_placement_rules || [],
+    logoBackgrounds: styles?.logo_backgrounds || [],
+    
+    // Social media
+    socialHandles: styles?.social_handles,
+    hashtags: styles?.hashtags || [],
+    
+    // Layout & restrictions
+    approvedLayouts: styles?.approved_layouts || [],
+    restrictedElements: styles?.restricted_elements || [],
     
     targetAudience: styles?.target_audience,
     culturalContext: styles?.cultural_context,
@@ -168,6 +222,11 @@ export function buildBrandStylePrompt(context: BrandContext | null): string {
     parts.push(`Brand archetype: ${context.archetype}.`);
   }
   
+  // Mission for context
+  if (context.mission) {
+    parts.push(`Brand mission: ${context.mission}.`);
+  }
+  
   // Visual mood
   if (context.moodKeywords && context.moodKeywords.length > 0) {
     parts.push(`Visual mood: ${context.moodKeywords.join(', ')}.`);
@@ -176,6 +235,17 @@ export function buildBrandStylePrompt(context: BrandContext | null): string {
   // Imagery style
   if (context.imageryStyle) {
     parts.push(`Imagery style: ${context.imageryStyle}.`);
+  }
+  
+  // Photography guidelines
+  if (context.photographyStyle) {
+    parts.push(`Photography style: ${context.photographyStyle}.`);
+  }
+  if (context.photographyDos && context.photographyDos.length > 0) {
+    parts.push(`Photography DO: ${context.photographyDos.join('; ')}.`);
+  }
+  if (context.photographyDonts && context.photographyDonts.length > 0) {
+    parts.push(`Photography DON'T: ${context.photographyDonts.join('; ')}.`);
   }
   
   // Typography guidance
@@ -190,6 +260,14 @@ export function buildBrandStylePrompt(context: BrandContext | null): string {
   }
   if (context.iconStyle) {
     parts.push(`Icon style: ${context.iconStyle}.`);
+  }
+  
+  // Logo placement rules
+  if (context.logoPlacementRules && context.logoPlacementRules.length > 0) {
+    parts.push(`Logo placement: ${context.logoPlacementRules.join('; ')}.`);
+  }
+  if (context.logoBackgrounds && context.logoBackgrounds.length > 0) {
+    parts.push(`Approved logo backgrounds: ${context.logoBackgrounds.join(', ')}.`);
   }
   
   // Industry context
@@ -212,6 +290,11 @@ export function buildBrandStylePrompt(context: BrandContext | null): string {
     parts.push(`Tone: ${context.toneKeywords.join(', ')}.`);
   }
   
+  // Writing style
+  if (context.writingStyle) {
+    parts.push(`Writing style: ${context.writingStyle}.`);
+  }
+  
   // Cultural context
   if (context.culturalContext) {
     parts.push(`Cultural context: ${context.culturalContext}.`);
@@ -220,6 +303,11 @@ export function buildBrandStylePrompt(context: BrandContext | null): string {
   // Tagline for inspiration
   if (context.tagline) {
     parts.push(`Brand tagline for inspiration: "${context.tagline}".`);
+  }
+  
+  // Restricted elements (what NOT to include)
+  if (context.restrictedElements && context.restrictedElements.length > 0) {
+    parts.push(`AVOID: ${context.restrictedElements.join(', ')}.`);
   }
   
   return parts.join(' ');
