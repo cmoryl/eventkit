@@ -9,6 +9,7 @@ import AssetGrid from '../components/studio/AssetGrid';
 import AssetPreviewModal from '../components/studio/AssetPreviewModal';
 import AssetDownloadModal from '../components/studio/AssetDownloadModal';
 import GenerationLoader from '../components/GenerationLoader';
+import GenerationSummary from '../components/GenerationSummary';
 import Toast from '../components/Toast';
 import ImageEditorModal from '../components/ImageEditorModal';
 import PaletteEditorModal from '../components/PaletteEditorModal';
@@ -75,6 +76,7 @@ const Index: React.FC = () => {
   const [showAdvancedExport, setShowAdvancedExport] = useState(false);
   const [showBatchPrintExport, setShowBatchPrintExport] = useState(false);
   const [showVenuePreview, setShowVenuePreview] = useState(false);
+  const [showGenerationSummary, setShowGenerationSummary] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => setToastState({ message, type });
 
@@ -163,6 +165,9 @@ const Index: React.FC = () => {
       data.venueImage,
       data.venueVideoAnalysis
     );
+    
+    // Show generation summary after completion
+    setShowGenerationSummary(true);
   };
 
   const handleDeleteAsset = (id: string) => {
@@ -530,6 +535,14 @@ const Index: React.FC = () => {
                 progress={generationProgress}
                 assets={generatedAssets}
                 insights={insights}
+              />
+            )}
+            
+            {/* Generation Summary - shows after generation completes */}
+            {showGenerationSummary && !isLoading && (
+              <GenerationSummary
+                progress={generationProgress}
+                onDismiss={() => setShowGenerationSummary(false)}
               />
             )}
 
