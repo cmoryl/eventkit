@@ -1,20 +1,20 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useSpring, useTransform } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import { 
   Sparkles, Image, Tag, Ticket, Monitor, ShoppingBag, FileText,
-  Presentation, X, ChevronRight, Layers, Wand2
+  Presentation, Layers, ChevronLeft, ChevronRight, Play, Pause
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface ShowcaseAsset {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   category: string;
-  description: string;
+  tagline: string;
   gradient: string;
-  dimensions: string;
-  features: string[];
+  bgPattern: string;
 }
 
 const showcaseAssets: ShowcaseAsset[] = [
@@ -23,335 +23,203 @@ const showcaseAssets: ShowcaseAsset[] = [
     icon: Image, 
     title: 'Event Banners',
     category: 'Digital',
-    description: 'Eye-catching hero banners for websites, social media, and digital displays.',
-    gradient: 'from-violet-500 to-purple-600',
-    dimensions: '1920×1080',
-    features: ['Web-optimized', 'Social ready', 'Multiple sizes']
+    tagline: 'Hero graphics that captivate',
+    gradient: 'from-violet-500 via-purple-500 to-fuchsia-500',
+    bgPattern: 'radial-gradient(circle at 30% 70%, rgba(139,92,246,0.3) 0%, transparent 50%)'
   },
   { 
     id: 'badge',
     icon: Tag, 
     title: 'VIP Badges',
     category: 'Print',
-    description: 'Professional name badges with QR codes and custom branding.',
-    gradient: 'from-cyan-400 to-blue-500',
-    dimensions: '3.5×2"',
-    features: ['Print-ready', 'QR support', 'Double-sided']
+    tagline: 'Professional name tags with style',
+    gradient: 'from-cyan-400 via-blue-500 to-indigo-500',
+    bgPattern: 'radial-gradient(circle at 70% 30%, rgba(34,211,238,0.3) 0%, transparent 50%)'
   },
   { 
     id: 'ticket',
     icon: Ticket, 
     title: 'Event Tickets',
     category: 'Print',
-    description: 'Scannable tickets with tear-off stubs and security features.',
-    gradient: 'from-orange-400 to-red-500',
-    dimensions: '6×2"',
-    features: ['Barcodes', 'Tear-off stub', 'Numbered']
+    tagline: 'Scannable & stunning',
+    gradient: 'from-orange-400 via-red-500 to-pink-500',
+    bgPattern: 'radial-gradient(circle at 50% 50%, rgba(251,146,60,0.3) 0%, transparent 50%)'
   },
   { 
     id: 'tshirt',
     icon: ShoppingBag, 
     title: 'Merchandise',
     category: 'Apparel',
-    description: 'T-shirts, hats, and swag items with your event branding.',
-    gradient: 'from-emerald-400 to-green-500',
-    dimensions: 'Various',
-    features: ['Screen-print', 'DTG ready', 'Embroidery']
+    tagline: 'Wearable brand moments',
+    gradient: 'from-emerald-400 via-green-500 to-teal-500',
+    bgPattern: 'radial-gradient(circle at 30% 30%, rgba(52,211,153,0.3) 0%, transparent 50%)'
   },
   { 
     id: 'social',
     icon: Monitor, 
     title: 'Social Posts',
     category: 'Digital',
-    description: 'Platform-optimized posts for Instagram, Twitter, LinkedIn, and more.',
-    gradient: 'from-pink-400 to-rose-500',
-    dimensions: '1080×1080',
-    features: ['Story format', 'Feed posts', 'Reels covers']
+    tagline: 'Scroll-stopping content',
+    gradient: 'from-pink-400 via-rose-500 to-red-500',
+    bgPattern: 'radial-gradient(circle at 70% 70%, rgba(244,114,182,0.3) 0%, transparent 50%)'
   },
   { 
     id: 'presentation',
     icon: Presentation, 
     title: 'Pitch Decks',
     category: 'Digital',
-    description: 'Branded presentation templates for sponsors and stakeholders.',
-    gradient: 'from-indigo-400 to-violet-500',
-    dimensions: '16:9',
-    features: ['PowerPoint', 'Google Slides', 'Keynote']
+    tagline: 'Presentations that persuade',
+    gradient: 'from-indigo-400 via-violet-500 to-purple-500',
+    bgPattern: 'radial-gradient(circle at 50% 30%, rgba(129,140,248,0.3) 0%, transparent 50%)'
   },
   { 
     id: 'signage',
     icon: Layers, 
     title: 'Event Signage',
     category: 'Print',
-    description: 'Wayfinding signs, banners, and backdrops for your venue.',
-    gradient: 'from-amber-400 to-orange-500',
-    dimensions: 'Custom',
-    features: ['Large format', 'Vinyl ready', 'Roll-up']
+    tagline: 'Wayfinding with impact',
+    gradient: 'from-amber-400 via-orange-500 to-red-500',
+    bgPattern: 'radial-gradient(circle at 30% 50%, rgba(251,191,36,0.3) 0%, transparent 50%)'
   },
   { 
     id: 'flyer',
     icon: FileText, 
     title: 'Flyers & Posters',
     category: 'Print',
-    description: 'Promotional materials for marketing and on-site distribution.',
-    gradient: 'from-teal-400 to-cyan-500',
-    dimensions: '8.5×11"',
-    features: ['Bleed ready', 'CMYK', 'Multiple sizes']
+    tagline: 'Print that pops',
+    gradient: 'from-teal-400 via-cyan-500 to-blue-500',
+    bgPattern: 'radial-gradient(circle at 70% 50%, rgba(45,212,191,0.3) 0%, transparent 50%)'
   },
 ];
 
-// Physics constants for magnetic effect
-const MAGNETIC_STRENGTH = 0.15;
-const DAMPING = 0.92;
-
-interface AssetNodeProps {
+const CarouselCard: React.FC<{
   asset: ShowcaseAsset;
-  index: number;
-  mousePosition: { x: number; y: number };
-  containerRef: React.RefObject<HTMLDivElement>;
-  isSelected: string | null;
-  onSelect: (id: string) => void;
-}
-
-const AssetNode: React.FC<AssetNodeProps> = ({ 
-  asset, 
-  index, 
-  mousePosition, 
-  containerRef,
-  isSelected,
-  onSelect 
-}) => {
-  const nodeRef = useRef<HTMLDivElement>(null);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  
-  // Calculate grid position (responsive)
-  const cols = 4;
-  const row = Math.floor(index / cols);
-  const col = index % cols;
-  
-  // Spring animation for smooth movement
-  const springX = useSpring(0, { stiffness: 150, damping: 20 });
-  const springY = useSpring(0, { stiffness: 150, damping: 20 });
-  const springScale = useSpring(1, { stiffness: 300, damping: 25 });
-  const springRotate = useSpring(0, { stiffness: 200, damping: 20 });
-
-  useEffect(() => {
-    if (!nodeRef.current || !containerRef.current || isSelected) return;
-    
-    const nodeRect = nodeRef.current.getBoundingClientRect();
-    const containerRect = containerRef.current.getBoundingClientRect();
-    
-    const nodeCenterX = nodeRect.left + nodeRect.width / 2 - containerRect.left;
-    const nodeCenterY = nodeRect.top + nodeRect.height / 2 - containerRect.top;
-    
-    const dx = mousePosition.x - nodeCenterX;
-    const dy = mousePosition.y - nodeCenterY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    
-    // Magnetic attraction based on distance
-    const maxDistance = 300;
-    if (distance < maxDistance && distance > 0) {
-      const force = (1 - distance / maxDistance) * MAGNETIC_STRENGTH;
-      const offsetX = dx * force * 0.5;
-      const offsetY = dy * force * 0.5;
-      const rotation = (dx * force * 0.1);
-      
-      springX.set(offsetX);
-      springY.set(offsetY);
-      springRotate.set(rotation);
-    } else {
-      springX.set(0);
-      springY.set(0);
-      springRotate.set(0);
-    }
-  }, [mousePosition, isSelected]);
-
-  useEffect(() => {
-    springScale.set(isHovered ? 1.08 : 1);
-  }, [isHovered]);
-
+  position: number; // -3 to 3, 0 being center
+  onClick: () => void;
+}> = ({ asset, position, onClick }) => {
   const Icon = asset.icon;
-  const isThisSelected = isSelected === asset.id;
+  const isCenter = position === 0;
+  const isVisible = Math.abs(position) <= 2;
+  
+  // Calculate 3D transforms based on position
+  const translateZ = isCenter ? 100 : Math.abs(position) === 1 ? 50 : 0;
+  const translateX = position * 120;
+  const rotateY = position * -25;
+  const scale = isCenter ? 1.15 : Math.abs(position) === 1 ? 0.9 : 0.75;
+  const opacity = isCenter ? 1 : Math.abs(position) === 1 ? 0.7 : 0.4;
+  const blur = isCenter ? 0 : Math.abs(position) * 2;
+
+  if (!isVisible) return null;
 
   return (
     <motion.div
-      ref={nodeRef}
-      className={cn(
-        "relative cursor-pointer select-none",
-        isSelected && !isThisSelected && "opacity-30 pointer-events-none"
-      )}
+      className="absolute left-1/2 top-1/2 cursor-pointer"
       style={{
-        x: springX,
-        y: springY,
-        scale: springScale,
-        rotateY: springRotate,
+        transformStyle: 'preserve-3d',
+        perspective: '1000px',
       }}
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: index * 0.08, type: 'spring', stiffness: 100 }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onSelect(asset.id)}
-    >
-      <div className={cn(
-        "group relative rounded-2xl p-1 transition-all duration-300",
-        isHovered && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
-      )}>
-        {/* Glow effect */}
-        <div className={cn(
-          "absolute -inset-2 rounded-3xl opacity-0 blur-xl transition-opacity duration-500",
-          `bg-gradient-to-br ${asset.gradient}`,
-          isHovered && "opacity-40"
-        )} />
-        
-        {/* Card */}
-        <div className="relative rounded-xl bg-card/95 backdrop-blur-sm border border-border/50 p-4 overflow-hidden">
-          {/* Animated gradient background on hover */}
-          <motion.div 
-            className={cn(
-              "absolute inset-0 opacity-0 transition-opacity duration-500",
-              `bg-gradient-to-br ${asset.gradient}`
-            )}
-            animate={{ opacity: isHovered ? 0.08 : 0 }}
-          />
-          
-          {/* Icon */}
-          <div className={cn(
-            "relative w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-xl bg-gradient-to-br flex items-center justify-center mb-3 transition-transform duration-300",
-            asset.gradient,
-            isHovered && "scale-110"
-          )}>
-            <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-lg" />
-            
-            {/* Shine effect */}
-            <motion.div
-              className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/0 via-white/30 to-white/0"
-              initial={{ x: '-100%', opacity: 0 }}
-              animate={isHovered ? { x: '100%', opacity: 1 } : { x: '-100%', opacity: 0 }}
-              transition={{ duration: 0.6 }}
-            />
-          </div>
-          
-          {/* Text */}
-          <div className="relative text-center">
-            <p className="text-sm font-semibold text-foreground mb-0.5">{asset.title}</p>
-            <p className="text-xs text-muted-foreground">{asset.category}</p>
-          </div>
-          
-          {/* Expand indicator */}
-          <motion.div
-            className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-            animate={isHovered ? { scale: [1, 1.2, 1] } : {}}
-            transition={{ duration: 0.5, repeat: Infinity }}
-          >
-            <ChevronRight className="w-4 h-4 text-primary" />
-          </motion.div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const ExpandedAssetView: React.FC<{
-  asset: ShowcaseAsset;
-  onClose: () => void;
-}> = ({ asset, onClose }) => {
-  const Icon = asset.icon;
-  
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md"
-      onClick={onClose}
+      animate={{
+        x: translateX,
+        z: translateZ,
+        rotateY: rotateY,
+        scale: scale,
+        opacity: opacity,
+        filter: `blur(${blur}px)`,
+      }}
+      transition={{
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+      }}
+      onClick={onClick}
+      whileHover={isCenter ? { scale: 1.2 } : {}}
     >
       <motion.div
-        initial={{ scale: 0.8, y: 50, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        className="relative w-full max-w-lg"
-        onClick={(e) => e.stopPropagation()}
+        className="relative -translate-x-1/2 -translate-y-1/2 w-48 sm:w-56 md:w-64"
+        whileHover={isCenter ? { y: -10 } : {}}
+        transition={{ type: 'spring', stiffness: 400 }}
       >
-        {/* Glow */}
-        <div className={cn(
-          "absolute -inset-4 rounded-3xl blur-2xl opacity-50",
-          `bg-gradient-to-br ${asset.gradient}`
-        )} />
+        {/* Glow effect for center card */}
+        {isCenter && (
+          <motion.div
+            className={cn(
+              "absolute -inset-4 rounded-3xl blur-2xl",
+              `bg-gradient-to-br ${asset.gradient}`
+            )}
+            animate={{ opacity: [0.4, 0.6, 0.4] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        )}
         
         {/* Card */}
-        <div className="relative rounded-2xl bg-card border border-border p-6 shadow-2xl">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-muted/50 hover:bg-muted transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-          
-          {/* Header */}
-          <div className="flex items-start gap-4 mb-6">
-            <div className={cn(
-              "w-16 h-16 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0",
-              asset.gradient
-            )}>
-              <Icon className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold mb-1">{asset.title}</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                  {asset.category}
-                </span>
-                <span className="text-xs text-muted-foreground">{asset.dimensions}</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Description */}
-          <p className="text-muted-foreground mb-6">{asset.description}</p>
-          
-          {/* Features */}
-          <div className="space-y-2 mb-6">
-            <p className="text-sm font-medium">Features included:</p>
-            <div className="flex flex-wrap gap-2">
-              {asset.features.map((feature) => (
-                <span 
-                  key={feature}
-                  className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground border border-border"
-                >
-                  {feature}
-                </span>
-              ))}
-            </div>
-          </div>
-          
-          {/* Preview mockup */}
+        <div 
+          className={cn(
+            "relative rounded-2xl border overflow-hidden transition-all duration-300",
+            isCenter 
+              ? "bg-card/95 border-primary/30 shadow-2xl" 
+              : "bg-card/80 border-border/50 shadow-lg"
+          )}
+          style={{ background: asset.bgPattern }}
+        >
+          {/* Gradient overlay */}
           <div className={cn(
-            "rounded-xl p-8 flex items-center justify-center bg-gradient-to-br",
-            asset.gradient,
-            "bg-opacity-10"
-          )}>
-            <motion.div
-              animate={{ 
-                rotateY: [0, 5, 0, -5, 0],
-                scale: [1, 1.02, 1]
-              }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              className="text-center"
-            >
-              <div className={cn(
-                "w-20 h-20 mx-auto rounded-xl bg-gradient-to-br flex items-center justify-center mb-3",
+            "absolute inset-0 opacity-10 bg-gradient-to-br",
+            asset.gradient
+          )} />
+          
+          {/* Content */}
+          <div className="relative p-6">
+            {/* Icon */}
+            <motion.div 
+              className={cn(
+                "w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-br flex items-center justify-center mb-4 shadow-lg",
                 asset.gradient
-              )}>
-                <Icon className="w-10 h-10 text-white" />
-              </div>
-              <p className="text-sm font-medium">Sample {asset.title}</p>
-              <p className="text-xs text-muted-foreground">AI-generated preview</p>
+              )}
+              animate={isCenter ? { 
+                rotateZ: [0, 5, -5, 0],
+                scale: [1, 1.05, 1]
+              } : {}}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Icon className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md" />
             </motion.div>
+            
+            {/* Text */}
+            <div className="text-center">
+              <span className={cn(
+                "inline-block text-xs px-2 py-0.5 rounded-full mb-2 font-medium",
+                isCenter 
+                  ? "bg-primary/20 text-primary" 
+                  : "bg-muted text-muted-foreground"
+              )}>
+                {asset.category}
+              </span>
+              <h3 className={cn(
+                "font-bold mb-1 transition-colors",
+                isCenter ? "text-lg text-foreground" : "text-base text-foreground/80"
+              )}>
+                {asset.title}
+              </h3>
+              <p className={cn(
+                "text-sm transition-colors",
+                isCenter ? "text-muted-foreground" : "text-muted-foreground/60"
+              )}>
+                {asset.tagline}
+              </p>
+            </div>
+            
+            {/* Center card badge */}
+            {isCenter && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute -top-1 -right-1"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-4 h-4 text-primary-foreground" />
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </motion.div>
@@ -359,86 +227,115 @@ const ExpandedAssetView: React.FC<{
   );
 };
 
-const InteractiveHint: React.FC = () => (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 1 }}
-    className="flex items-center justify-center gap-2 text-sm text-muted-foreground mt-8"
-  >
-    <motion.div
-      animate={{ scale: [1, 1.2, 1] }}
-      transition={{ duration: 2, repeat: Infinity }}
-    >
-      <Wand2 className="w-4 h-4" />
-    </motion.div>
-    <span>Move your cursor to interact • Click to explore</span>
-  </motion.div>
+const ProgressDots: React.FC<{
+  total: number;
+  current: number;
+  onSelect: (index: number) => void;
+}> = ({ total, current, onSelect }) => (
+  <div className="flex items-center justify-center gap-2 mt-8">
+    {Array.from({ length: total }).map((_, i) => (
+      <button
+        key={i}
+        onClick={() => onSelect(i)}
+        className={cn(
+          "transition-all duration-300 rounded-full",
+          i === current 
+            ? "w-8 h-2 bg-primary" 
+            : "w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+        )}
+      />
+    ))}
+  </div>
 );
 
-const StatsRow: React.FC = () => {
-  const stats = [
-    { value: '100+', label: 'Asset Types' },
-    { value: 'Print-Ready', label: 'High Resolution' },
-    { value: '<1 min', label: 'Generation Time' },
-  ];
-
+const StatsCounter: React.FC<{ value: string; label: string; delay: number }> = ({ 
+  value, 
+  label, 
+  delay 
+}) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ delay: 0.6 }}
-      className="flex flex-wrap items-center justify-center gap-8 sm:gap-16 mt-16"
+      transition={{ delay }}
+      className="text-center"
     >
-      {stats.map((stat, i) => (
-        <motion.div
-          key={stat.label}
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.7 + i * 0.1 }}
-          whileHover={{ scale: 1.05 }}
-          className="text-center group cursor-default"
-        >
-          <p className="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent group-hover:from-accent group-hover:to-primary transition-all duration-500">
-            {stat.value}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-        </motion.div>
-      ))}
+      <motion.div
+        className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto]"
+        animate={{ backgroundPosition: ['0%', '100%', '0%'] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
+      >
+        {value}
+      </motion.div>
+      <p className="text-sm text-muted-foreground mt-1">{label}</p>
     </motion.div>
   );
 };
 
 export const AssetShowcase: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
-  
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    setMousePosition({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
-  }, []);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [direction, setDirection] = useState(0);
+  const autoPlayRef = useRef<NodeJS.Timeout>();
 
-  const handleSelect = (id: string) => {
-    setSelectedAsset(id);
+  const totalAssets = showcaseAssets.length;
+
+  // Auto-play carousel
+  useEffect(() => {
+    if (isAutoPlaying) {
+      autoPlayRef.current = setInterval(() => {
+        setDirection(1);
+        setCurrentIndex((prev) => (prev + 1) % totalAssets);
+      }, 3000);
+    }
+    return () => {
+      if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+    };
+  }, [isAutoPlaying, totalAssets]);
+
+  const goToSlide = (index: number) => {
+    setDirection(index > currentIndex ? 1 : -1);
+    setCurrentIndex(index);
+    setIsAutoPlaying(false);
   };
 
-  const handleClose = () => {
-    setSelectedAsset(null);
+  const goNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev + 1) % totalAssets);
+    setIsAutoPlaying(false);
   };
 
-  const selectedAssetData = showcaseAssets.find(a => a.id === selectedAsset);
+  const goPrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev - 1 + totalAssets) % totalAssets);
+    setIsAutoPlaying(false);
+  };
+
+  // Calculate position for each card relative to current
+  const getPosition = (index: number) => {
+    let pos = index - currentIndex;
+    if (pos > totalAssets / 2) pos -= totalAssets;
+    if (pos < -totalAssets / 2) pos += totalAssets;
+    return pos;
+  };
 
   return (
     <section className="py-20 sm:py-28 px-4 sm:px-6 overflow-hidden relative">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/5 to-background pointer-events-none" />
+      {/* Ambient background */}
+      <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background to-muted/20" />
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-[100px]"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        <motion.div
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-accent/5 blur-[100px]"
+          animate={{ scale: [1.2, 1, 1.2], opacity: [0.5, 0.3, 0.5] }}
+          transition={{ duration: 10, repeat: Infinity }}
+        />
+      </div>
       
       <div className="max-w-6xl mx-auto relative">
         {/* Header */}
@@ -446,17 +343,17 @@ export const AssetShowcase: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12 sm:mb-16"
+          className="text-center mb-16"
         >
           <motion.div
-            initial={{ scale: 0 }}
-            whileInView={{ scale: 1 }}
+            initial={{ scale: 0, rotate: -180 }}
+            whileInView={{ scale: 1, rotate: 0 }}
             viewport={{ once: true }}
             transition={{ type: 'spring', delay: 0.1 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
           >
             <Sparkles className="w-4 h-4" />
-            Interactive Showcase
+            Explore Assets
           </motion.div>
           
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 tracking-tight">
@@ -467,53 +364,78 @@ export const AssetShowcase: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Interactive Grid */}
-        <div 
-          ref={containerRef}
-          className="relative"
-          onMouseMove={handleMouseMove}
-        >
-          {/* Ambient cursor glow */}
-          <motion.div
-            className="absolute w-64 h-64 rounded-full bg-primary/10 blur-3xl pointer-events-none -z-10"
-            animate={{
-              x: mousePosition.x - 128,
-              y: mousePosition.y - 128,
-            }}
-            transition={{ type: 'spring', stiffness: 100, damping: 30 }}
-          />
+        {/* 3D Carousel */}
+        <div className="relative h-[350px] sm:h-[400px] md:h-[450px]" style={{ perspective: '1200px' }}>
+          {/* Navigation buttons */}
+          <button
+            onClick={goPrev}
+            className="absolute left-2 sm:left-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg hover:bg-card hover:scale-110 transition-all"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={goNext}
+            className="absolute right-2 sm:right-8 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-card/80 backdrop-blur-sm border border-border shadow-lg hover:bg-card hover:scale-110 transition-all"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
           
-          {/* Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {showcaseAssets.map((asset, i) => (
-              <AssetNode
+          {/* Cards */}
+          <div 
+            className="relative w-full h-full"
+            style={{ transformStyle: 'preserve-3d' }}
+          >
+            {showcaseAssets.map((asset, index) => (
+              <CarouselCard
                 key={asset.id}
                 asset={asset}
-                index={i}
-                mousePosition={mousePosition}
-                containerRef={containerRef}
-                isSelected={selectedAsset}
-                onSelect={handleSelect}
+                position={getPosition(index)}
+                onClick={() => goToSlide(index)}
               />
             ))}
           </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-col items-center gap-4">
+          {/* Play/Pause */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+            className="gap-2"
+          >
+            {isAutoPlaying ? (
+              <>
+                <Pause className="w-4 h-4" /> Pause
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4" /> Auto-play
+              </>
+            )}
+          </Button>
           
-          <InteractiveHint />
+          {/* Progress dots */}
+          <ProgressDots
+            total={totalAssets}
+            current={currentIndex}
+            onSelect={goToSlide}
+          />
         </div>
 
         {/* Stats */}
-        <StatsRow />
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="flex flex-wrap items-center justify-center gap-10 sm:gap-16 mt-16"
+        >
+          <StatsCounter value="100+" label="Asset Types" delay={0.5} />
+          <StatsCounter value="Print-Ready" label="High Resolution" delay={0.6} />
+          <StatsCounter value="<1 min" label="Generation Time" delay={0.7} />
+        </motion.div>
       </div>
-
-      {/* Expanded View Modal */}
-      <AnimatePresence>
-        {selectedAssetData && (
-          <ExpandedAssetView 
-            asset={selectedAssetData} 
-            onClose={handleClose} 
-          />
-        )}
-      </AnimatePresence>
     </section>
   );
 };
