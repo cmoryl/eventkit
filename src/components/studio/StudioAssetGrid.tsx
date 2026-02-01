@@ -21,7 +21,7 @@ import demoVideo from '@/assets/demos/demo-video.jpg';
 import demoDocuments from '@/assets/demos/demo-documents.jpg';
 import demoPhoto from '@/assets/demos/demo-photo.jpg';
 import demoSafety from '@/assets/demos/demo-safety.jpg';
-// New hyper-realistic demo images
+// Hyper-realistic demo images - batch 1
 import demoSwagBag from '@/assets/demos/demo-swag-bag.jpg';
 import demoLanyard from '@/assets/demos/demo-lanyard.jpg';
 import demoHat from '@/assets/demos/demo-hat.jpg';
@@ -34,6 +34,25 @@ import demoCertificate from '@/assets/demos/demo-certificate.jpg';
 import demoFloorDecal from '@/assets/demos/demo-floor-decal.jpg';
 import demoRollupBanner from '@/assets/demos/demo-rollup-banner.jpg';
 import demoWristband from '@/assets/demos/demo-wristband.jpg';
+// Hyper-realistic demo images - batch 2
+import demoNameTagFront from '@/assets/demos/demo-name-tag-front.jpg';
+import demoEventSignage from '@/assets/demos/demo-event-signage.jpg';
+import demoHangingSignage from '@/assets/demos/demo-hanging-signage.jpg';
+import demoSocialStory from '@/assets/demos/demo-social-story.jpg';
+import demoEmailHeader from '@/assets/demos/demo-email-header.jpg';
+import demoYoutubeThumbnail from '@/assets/demos/demo-youtube-thumbnail.jpg';
+import demoPodcastCover from '@/assets/demos/demo-podcast-cover.jpg';
+import demoZoomBackground from '@/assets/demos/demo-zoom-background.jpg';
+import demoStepRepeat from '@/assets/demos/demo-step-repeat.jpg';
+import demoTableNumber from '@/assets/demos/demo-table-number.jpg';
+import demoRegistrationCounter from '@/assets/demos/demo-registration-counter.jpg';
+import demoKiosk from '@/assets/demos/demo-kiosk.jpg';
+import demoBackstagePass from '@/assets/demos/demo-backstage-pass.jpg';
+import demoRsvpCard from '@/assets/demos/demo-rsvp-card.jpg';
+import demoTableTent from '@/assets/demos/demo-table-tent.jpg';
+import demoProgramBooklet from '@/assets/demos/demo-program-booklet.jpg';
+import demoPhotoBoothFrame from '@/assets/demos/demo-photo-booth-frame.jpg';
+import demoAnimatedLogo from '@/assets/demos/demo-animated-logo.jpg';
 
 interface StudioAssetGridProps {
   assetTypes: string[];
@@ -57,15 +76,15 @@ const assetDisplayInfo: Record<string, { name: string; description: string; dime
   
   // Print & Signage
   'BANNER': { name: 'Event Banner', description: 'Large format display banner', dimensions: '96×36 in', demoImage: demoBanner },
-  'NAME_TAG': { name: 'Name Badge', description: 'Attendee name badge front', dimensions: '4×3 in', demoImage: demoNameTag },
+  'NAME_TAG': { name: 'Name Badge', description: 'Attendee name badge front', dimensions: '4×3 in', demoImage: demoNameTagFront },
   'NAME_TAG_BACK': { name: 'Badge Back', description: 'Name badge back with info', dimensions: '4×3 in', demoImage: demoNameTag },
-  'EVENT_SIGNAGE': { name: 'Event Signage', description: 'General event signage', dimensions: '24×36 in', demoImage: demoBanner },
-  'HANGING_SIGNAGE': { name: 'Hanging Sign', description: 'Overhead directional sign', dimensions: '48×24 in', demoImage: demoBanner },
+  'EVENT_SIGNAGE': { name: 'Event Signage', description: 'General event signage', dimensions: '24×36 in', demoImage: demoEventSignage },
+  'HANGING_SIGNAGE': { name: 'Hanging Sign', description: 'Overhead directional sign', dimensions: '48×24 in', demoImage: demoHangingSignage },
   'OUTDOOR_SIGNAGE': { name: 'Outdoor Sign', description: 'Weather-resistant signage', dimensions: '48×36 in', demoImage: demoBanner },
-  'DOOR_SIGNAGE': { name: 'Door Sign', description: 'Room identification sign', dimensions: '8×10 in', demoImage: demoBanner },
-  'EASEL_SIGNAGE': { name: 'Easel Sign', description: 'Stand-mounted display', dimensions: '22×28 in', demoImage: demoBanner },
-  'LOCATION_SIGNAGE': { name: 'Location Sign', description: 'Wayfinding signage', dimensions: '24×18 in', demoImage: demoBanner },
-  'ROOM_SIGNAGE': { name: 'Room Sign', description: 'Room identifier', dimensions: '11×8.5 in', demoImage: demoBanner },
+  'DOOR_SIGNAGE': { name: 'Door Sign', description: 'Room identification sign', dimensions: '8×10 in', demoImage: demoEventSignage },
+  'EASEL_SIGNAGE': { name: 'Easel Sign', description: 'Stand-mounted display', dimensions: '22×28 in', demoImage: demoEventSignage },
+  'LOCATION_SIGNAGE': { name: 'Location Sign', description: 'Wayfinding signage', dimensions: '24×18 in', demoImage: demoEventSignage },
+  'ROOM_SIGNAGE': { name: 'Room Sign', description: 'Room identifier', dimensions: '11×8.5 in', demoImage: demoEventSignage },
   'STAND_UP_PILLAR_BANNER': { name: 'Pillar Banner', description: 'Stand-up retractable banner', dimensions: '33×80 in', demoImage: demoRollupBanner },
   'FEATHER_FLAG': { name: 'Feather Flag', description: 'Outdoor feather banner', dimensions: '15×68 in', demoImage: demoBanner },
   'TEARDROP_FLAG': { name: 'Teardrop Flag', description: 'Teardrop-shaped flag', dimensions: '24×66 in', demoImage: demoBanner },
@@ -84,16 +103,16 @@ const assetDisplayInfo: Record<string, { name: string; description: string; dime
   
   // Social & Digital
   'SOCIAL_POST': { name: 'Social Post', description: 'Square social media post', dimensions: '1080×1080', demoImage: demoSocialPost },
-  'SOCIAL_STORY': { name: 'Social Story', description: 'Vertical story format', dimensions: '1080×1920', demoImage: demoSocialPost },
-  'EMAIL_HEADER': { name: 'Email Header', description: 'Email banner image', dimensions: '600×200', demoImage: demoSocialPost },
-  'LINKEDIN_BANNER': { name: 'LinkedIn Banner', description: 'LinkedIn cover image', dimensions: '1584×396', demoImage: demoSocialPost },
-  'TWITTER_HEADER': { name: 'Twitter Header', description: 'Twitter/X cover', dimensions: '1500×500', demoImage: demoSocialPost },
-  'YOUTUBE_THUMBNAIL': { name: 'YouTube Thumbnail', description: 'Video thumbnail', dimensions: '1280×720', demoImage: demoSocialPost },
-  'PODCAST_COVER': { name: 'Podcast Cover', description: 'Podcast artwork', dimensions: '3000×3000', demoImage: demoSocialPost },
-  'ZOOM_BACKGROUND': { name: 'Zoom Background', description: 'Virtual meeting background', dimensions: '1920×1080', demoImage: demoStageBackdrop },
+  'SOCIAL_STORY': { name: 'Social Story', description: 'Vertical story format', dimensions: '1080×1920', demoImage: demoSocialStory },
+  'EMAIL_HEADER': { name: 'Email Header', description: 'Email banner image', dimensions: '600×200', demoImage: demoEmailHeader },
+  'LINKEDIN_BANNER': { name: 'LinkedIn Banner', description: 'LinkedIn cover image', dimensions: '1584×396', demoImage: demoEmailHeader },
+  'TWITTER_HEADER': { name: 'Twitter Header', description: 'Twitter/X cover', dimensions: '1500×500', demoImage: demoEmailHeader },
+  'YOUTUBE_THUMBNAIL': { name: 'YouTube Thumbnail', description: 'Video thumbnail', dimensions: '1280×720', demoImage: demoYoutubeThumbnail },
+  'PODCAST_COVER': { name: 'Podcast Cover', description: 'Podcast artwork', dimensions: '3000×3000', demoImage: demoPodcastCover },
+  'ZOOM_BACKGROUND': { name: 'Zoom Background', description: 'Virtual meeting background', dimensions: '1920×1080', demoImage: demoZoomBackground },
   'APP_ICON': { name: 'App Icon', description: 'Mobile app icon', dimensions: '1024×1024', demoImage: demoLogo },
   'FAVICON': { name: 'Favicon', description: 'Browser tab icon', dimensions: '32×32', demoImage: demoLogo },
-  'EVENT_APP_SPLASH': { name: 'App Splash', description: 'Event app splash screen', dimensions: '1242×2688', demoImage: demoSocialPost },
+  'EVENT_APP_SPLASH': { name: 'App Splash', description: 'Event app splash screen', dimensions: '1242×2688', demoImage: demoSocialStory },
   
   // Presentations
   'PRESENTATION_SLIDE': { name: 'Slide Template', description: 'Presentation slides', dimensions: '1920×1080', demoImage: demoPresentation },
@@ -103,28 +122,28 @@ const assetDisplayInfo: Record<string, { name: string; description: string; dime
   // Venue & Experience
   'BACK_WALL': { name: 'Back Wall', description: 'Stage backdrop panel', dimensions: '20×10 ft', demoImage: demoStageBackdrop },
   'MAIN_STAGE_BACKDROP': { name: 'Stage Backdrop', description: 'Main stage design', dimensions: '40×20 ft', demoImage: demoStageBackdrop },
-  'REGISTRATION_COUNTER': { name: 'Registration Counter', description: 'Check-in desk graphic', dimensions: '10×3 ft', demoImage: demoStageBackdrop },
-  'REGISTRATION_BACK_WALL': { name: 'Registration Wall', description: 'Registration backdrop', dimensions: '20×8 ft', demoImage: demoStageBackdrop },
-  'KIOSK': { name: 'Info Kiosk', description: 'Interactive kiosk design', dimensions: '1080×1920', demoImage: demoStageBackdrop },
-  'STEP_AND_REPEAT': { name: 'Step & Repeat', description: 'Photo backdrop', dimensions: '8×8 ft', demoImage: demoPhoto },
+  'REGISTRATION_COUNTER': { name: 'Registration Counter', description: 'Check-in desk graphic', dimensions: '10×3 ft', demoImage: demoRegistrationCounter },
+  'REGISTRATION_BACK_WALL': { name: 'Registration Wall', description: 'Registration backdrop', dimensions: '20×8 ft', demoImage: demoRegistrationCounter },
+  'KIOSK': { name: 'Info Kiosk', description: 'Interactive kiosk design', dimensions: '1080×1920', demoImage: demoKiosk },
+  'STEP_AND_REPEAT': { name: 'Step & Repeat', description: 'Photo backdrop', dimensions: '8×8 ft', demoImage: demoStepRepeat },
   'FLOOR_DECAL': { name: 'Floor Decal', description: 'Floor graphic', dimensions: '48×48 in', demoImage: demoFloorDecal },
   'ELEVATOR_WRAP': { name: 'Elevator Wrap', description: 'Elevator door graphic', dimensions: '72×84 in', demoImage: demoStageBackdrop },
   'COLUMN_WRAP': { name: 'Column Wrap', description: 'Pillar wrap design', dimensions: '24×96 in', demoImage: demoStageBackdrop },
-  'CEILING_HANGER': { name: 'Ceiling Banner', description: 'Overhead hanging sign', dimensions: '36×36 in', demoImage: demoBanner },
+  'CEILING_HANGER': { name: 'Ceiling Banner', description: 'Overhead hanging sign', dimensions: '36×36 in', demoImage: demoHangingSignage },
   
   // Invitations & Access
   'INVITATION_CARD': { name: 'Invitation', description: 'Event invitation card', dimensions: '5×7 in', demoImage: demoInvitation },
-  'RSVP_CARD': { name: 'RSVP Card', description: 'Response card', dimensions: '4×6 in', demoImage: demoInvitation },
+  'RSVP_CARD': { name: 'RSVP Card', description: 'Response card', dimensions: '4×6 in', demoImage: demoRsvpCard },
   'TICKET_DESIGN': { name: 'Event Ticket', description: 'Admission ticket', dimensions: '5.5×2 in', demoImage: demoTicket },
   'VIP_BADGE': { name: 'VIP Badge', description: 'VIP access credential', dimensions: '4×6 in', demoImage: demoVipPass },
-  'BACKSTAGE_PASS': { name: 'Backstage Pass', description: 'Backstage access', dimensions: '4×6 in', demoImage: demoVipPass },
+  'BACKSTAGE_PASS': { name: 'Backstage Pass', description: 'Backstage access', dimensions: '4×6 in', demoImage: demoBackstagePass },
   'PARKING_PASS': { name: 'Parking Pass', description: 'Vehicle permit', dimensions: '4×6 in', demoImage: demoTicket },
   'WRISTBAND_DESIGN': { name: 'Wristband', description: 'Access wristband', dimensions: '10×0.75 in', demoImage: demoWristband },
   
   // Hospitality & Dining
   'PLACE_CARD': { name: 'Place Card', description: 'Table seat card', dimensions: '3.5×2 in', demoImage: demoPlaceCard },
-  'TABLE_NUMBER': { name: 'Table Number', description: 'Table identifier', dimensions: '4×6 in', demoImage: demoPlaceCard },
-  'TABLE_TENT': { name: 'Table Tent', description: 'Tabletop tent card', dimensions: '4×6 in', demoImage: demoPlaceCard },
+  'TABLE_NUMBER': { name: 'Table Number', description: 'Table identifier', dimensions: '4×6 in', demoImage: demoTableNumber },
+  'TABLE_TENT': { name: 'Table Tent', description: 'Tabletop tent card', dimensions: '4×6 in', demoImage: demoTableTent },
   'COASTER_DESIGN': { name: 'Coaster', description: 'Beverage coaster', dimensions: '4×4 in', demoImage: demoCoaster },
   'NAPKIN_DESIGN': { name: 'Napkin Print', description: 'Custom napkin design', dimensions: '5×5 in', demoImage: demoPlaceCard },
   'BAR_MENU': { name: 'Bar Menu', description: 'Beverage menu', dimensions: '4×9 in', demoImage: demoMenu },
@@ -133,13 +152,13 @@ const assetDisplayInfo: Record<string, { name: string; description: string; dime
   
   // Video & Motion
   'VIDEO_TEASER': { name: 'Video Teaser', description: 'Promotional video', dimensions: '1920×1080', demoImage: demoVideo },
-  'ANIMATED_LOGO': { name: 'Animated Logo', description: 'Motion logo', dimensions: '1080×1080', demoImage: demoVideo },
+  'ANIMATED_LOGO': { name: 'Animated Logo', description: 'Motion logo', dimensions: '1080×1080', demoImage: demoAnimatedLogo },
   'MOTION_GRAPHIC': { name: 'Motion Graphic', description: 'Animated graphics', dimensions: '1920×1080', demoImage: demoVideo },
   'COUNTDOWN_TIMER': { name: 'Countdown', description: 'Event countdown', dimensions: '1920×1080', demoImage: demoVideo },
   'DIGITAL_SIGNAGE_LOOP': { name: 'Signage Loop', description: 'Digital display loop', dimensions: '1920×1080', demoImage: demoVideo },
   
   // Documents & Forms
-  'PROGRAM_BOOKLET': { name: 'Program', description: 'Event program booklet', dimensions: '5.5×8.5 in', demoImage: demoDocuments },
+  'PROGRAM_BOOKLET': { name: 'Program', description: 'Event program booklet', dimensions: '5.5×8.5 in', demoImage: demoProgramBooklet },
   'PRESS_RELEASE': { name: 'Press Release', description: 'Media announcement', dimensions: '8.5×11 in', demoImage: demoDocuments },
   'MEDIA_KIT': { name: 'Media Kit', description: 'Press materials', dimensions: 'Multi-page', demoImage: demoDocuments },
   'SPONSOR_PACKAGE': { name: 'Sponsor Package', description: 'Sponsorship deck', dimensions: '16:9', demoImage: demoDocuments },
@@ -149,8 +168,8 @@ const assetDisplayInfo: Record<string, { name: string; description: string; dime
   
   // Photo & Engagement
   'PHOTO_FRAME': { name: 'Photo Frame', description: 'Shareable frame overlay', dimensions: '1080×1080', demoImage: demoPhoto },
-  'SELFIE_STATION': { name: 'Selfie Station', description: 'Photo booth backdrop', dimensions: '8×8 ft', demoImage: demoPhoto },
-  'PHOTO_BOOTH_FRAME': { name: 'Booth Frame', description: 'Photo booth frame', dimensions: '8×10 in', demoImage: demoPhoto },
+  'SELFIE_STATION': { name: 'Selfie Station', description: 'Photo booth backdrop', dimensions: '8×8 ft', demoImage: demoStepRepeat },
+  'PHOTO_BOOTH_FRAME': { name: 'Booth Frame', description: 'Photo booth frame', dimensions: '8×10 in', demoImage: demoPhotoBoothFrame },
   
   // Accessibility & Safety
   'ADA_SIGNAGE': { name: 'ADA Sign', description: 'Accessibility signage', dimensions: '8×8 in', demoImage: demoSafety },
