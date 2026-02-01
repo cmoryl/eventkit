@@ -1,5 +1,5 @@
 // Render Engine Settings Modal
-// Allows users to configure and manage AI render engines
+// Allows users to configure and manage AI image and video generation engines
 
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -29,11 +29,14 @@ import {
   Clock,
   Shield,
   Eye,
-  EyeOff
+  EyeOff,
+  Video,
+  Image as ImageIcon
 } from 'lucide-react';
-import type { RenderEngine, RenderProvider } from '@/services/aiBrain/types';
+import type { RenderEngine, RenderProvider, VideoProvider } from '@/services/aiBrain/types';
 import {
   getAllProviders,
+  getAllVideoProviders,
   getUserRenderEngines,
   addRenderEngine,
   deleteRenderEngine,
@@ -74,6 +77,7 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
   const [isValidated, setIsValidated] = useState(false);
 
   const providers = getAllProviders();
+  const videoProviders = getAllVideoProviders();
 
   useEffect(() => {
     if (open && userId) {
@@ -235,14 +239,24 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
             Render Engine Settings
           </DialogTitle>
           <DialogDescription>
-            Configure AI image generation providers. Add your own API keys to use different engines.
+            Configure AI image and video generation providers. Add your own API keys to use different engines.
           </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="engines" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="engines">My Engines</TabsTrigger>
-            <TabsTrigger value="add">Add Engine</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="engines" className="flex items-center gap-1.5">
+              <ImageIcon className="h-3.5 w-3.5" />
+              Image
+            </TabsTrigger>
+            <TabsTrigger value="video" className="flex items-center gap-1.5">
+              <Video className="h-3.5 w-3.5" />
+              Video
+            </TabsTrigger>
+            <TabsTrigger value="add" className="flex items-center gap-1.5">
+              <Plus className="h-3.5 w-3.5" />
+              Add
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="engines" className="space-y-4 mt-4">
@@ -334,6 +348,102 @@ export function RenderEngineSettings({ open, onOpenChange, userId }: RenderEngin
                   </CardHeader>
                 </Card>
               ))
+            )}
+          </TabsContent>
+
+          {/* Video Engines Tab */}
+          <TabsContent value="video" className="space-y-4 mt-4">
+            {/* Default Lovable Veo 3 Engine */}
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Video className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">Lovable AI (Veo 3)</CardTitle>
+                    <Badge variant="secondary" className="text-xs">Built-in</Badge>
+                  </div>
+                  <Badge variant="default" className="bg-primary">
+                    <Star className="h-3 w-3 mr-1" />
+                    Default
+                  </Badge>
+                </div>
+                <CardDescription className="text-sm">
+                  Powered by Google Veo 3. Creates cinematic 5-10 second video clips.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* Video Provider Info Cards */}
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-muted-foreground">Available Video Providers</h4>
+              {videoProviders.filter(p => p.id !== 'lovable-veo3').map((provider) => (
+                <Card key={provider.id} className="border-dashed">
+                  <CardHeader className="pb-2 pt-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Video className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">{provider.name}</CardTitle>
+                        <Badge variant="outline" className="text-[10px]">
+                          <Key className="h-2.5 w-2.5 mr-1" />
+                          Requires API Key
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardDescription className="text-xs">
+                      {provider.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0 pb-3">
+                    <div className="flex flex-wrap gap-1">
+                      {provider.models.map((model) => (
+                        <Badge key={model} variant="outline" className="text-[10px]">
+                          {model}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="p-3 rounded-lg bg-muted/50 border border-border">
+              <p className="text-xs text-muted-foreground flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  To use Luma Ray or Minimax video models, add a Replicate API key in the "Add" tab. 
+                  These engines will automatically appear here once configured.
+                </span>
+              </p>
+            </div>
+
+            {/* Show user's video engines if any */}
+            {engines.filter(e => e.engineType === 'video').length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium">My Video Engines</h4>
+                {engines.filter(e => e.engineType === 'video').map((engine) => (
+                  <Card key={engine.id}>
+                    <CardHeader className="pb-2 pt-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Video className="h-4 w-4 text-muted-foreground" />
+                          <CardTitle className="text-sm">{engine.displayName}</CardTitle>
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {engine.provider}
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive h-7 w-7 p-0"
+                          onClick={() => handleDeleteEngine(engine.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
             )}
           </TabsContent>
 

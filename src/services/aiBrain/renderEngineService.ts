@@ -1,49 +1,98 @@
 // Render Engine Service
-// Manages multiple AI image generation providers
+// Manages multiple AI image and video generation providers
 
 import { supabase } from '@/integrations/supabase/client';
-import type { RenderEngine, RenderProvider, RenderEngineConfig } from './types';
+import type { RenderEngine, RenderProvider, RenderEngineConfig, VideoProvider, EngineType } from './types';
 import type { TablesInsert, Json } from '@/integrations/supabase/types';
 
-const PROVIDER_INFO: Record<RenderProvider, { name: string; description: string; requiresKey: boolean; models: string[] }> = {
+interface ProviderInfo {
+  name: string;
+  description: string;
+  requiresKey: boolean;
+  models: string[];
+  type: EngineType;
+}
+
+const IMAGE_PROVIDER_INFO: Record<RenderProvider, ProviderInfo> = {
   lovable: {
     name: 'Lovable AI',
     description: 'Built-in AI powered by Google Gemini. Fast (Nano Banana) or high-quality (Pro) modes.',
     requiresKey: false,
     models: ['gemini-2.5-flash-image (Fast)', 'gemini-3-pro-image-preview (Quality)'],
+    type: 'image',
   },
   openai: {
     name: 'OpenAI DALL-E',
     description: 'OpenAI\'s image generation models including DALL-E 3.',
     requiresKey: true,
     models: ['dall-e-3', 'dall-e-2'],
+    type: 'image',
   },
   stability: {
     name: 'Stability AI',
     description: 'Stable Diffusion models for high-quality image generation.',
     requiresKey: true,
     models: ['stable-diffusion-xl-1024-v1-0', 'stable-diffusion-v1-6'],
+    type: 'image',
   },
   replicate: {
     name: 'Replicate',
     description: 'Access various open-source models via Replicate API.',
     requiresKey: true,
     models: ['flux-pro', 'flux-schnell', 'sdxl'],
+    type: 'image',
   },
   midjourney: {
     name: 'Midjourney Style',
     description: 'Midjourney-style image generation via Replicate (requires Replicate API key).',
     requiresKey: true,
     models: ['openjourney', 'sdxl-lightning'],
+    type: 'image',
   },
 };
 
-export const getProviderInfo = (provider: RenderProvider) => PROVIDER_INFO[provider];
+const VIDEO_PROVIDER_INFO: Record<VideoProvider, ProviderInfo> = {
+  'lovable-veo3': {
+    name: 'Lovable AI (Veo 3)',
+    description: 'Google Veo 3 powered video generation. Creates cinematic 5-10 second clips.',
+    requiresKey: false,
+    models: ['veo-3', 'veo-3-fast'],
+    type: 'video',
+  },
+  'replicate-luma': {
+    name: 'Luma Ray',
+    description: 'Luma\'s Ray model for high-quality video generation via Replicate.',
+    requiresKey: true,
+    models: ['luma/ray'],
+    type: 'video',
+  },
+  'replicate-minimax': {
+    name: 'Minimax Video',
+    description: 'Minimax video generation model for text-to-video via Replicate.',
+    requiresKey: true,
+    models: ['minimax/video-01'],
+    type: 'video',
+  },
+};
 
-export const getAllProviders = () => Object.entries(PROVIDER_INFO).map(([key, value]) => ({
+export const getProviderInfo = (provider: RenderProvider | VideoProvider) => {
+  return IMAGE_PROVIDER_INFO[provider as RenderProvider] || VIDEO_PROVIDER_INFO[provider as VideoProvider];
+};
+
+export const getAllProviders = () => Object.entries(IMAGE_PROVIDER_INFO).map(([key, value]) => ({
   id: key as RenderProvider,
   ...value,
 }));
+
+export const getAllVideoProviders = () => Object.entries(VIDEO_PROVIDER_INFO).map(([key, value]) => ({
+  id: key as VideoProvider,
+  ...value,
+}));
+
+export const getAllEngineProviders = () => [
+  ...getAllProviders(),
+  ...getAllVideoProviders(),
+];
 
 export const getUserRenderEngines = async (userId: string): Promise<RenderEngine[]> => {
   const { data, error } = await supabase
