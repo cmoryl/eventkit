@@ -24,6 +24,22 @@ interface ColorInfo {
   usage?: string;
 }
 
+// Imagery organized by type from BrandHub
+interface BrandImagery {
+  all: string[];
+  byType: {
+    logos?: string[];
+    brandIcons?: string[];
+    patterns?: string[];
+    photography?: string[];
+    heroImages?: string[];
+    collateral?: string[];
+    social?: string[];
+    banners?: string[];
+    video?: string[];
+  };
+}
+
 interface BrandStyle {
   id?: string;
   brand_id: string;
@@ -44,7 +60,7 @@ interface BrandStyle {
   cultural_context?: string;
   industry?: string;
   custom_prompts?: Record<string, unknown>;
-  // New comprehensive fields
+  // Comprehensive fields
   photography_style?: string;
   photography_dos?: string[];
   photography_donts?: string[];
@@ -59,6 +75,8 @@ interface BrandStyle {
   archetype?: string;
   approved_layouts?: string[];
   restricted_elements?: string[];
+  // All imagery from BrandHub
+  all_imagery?: BrandImagery;
 }
 
 interface Brand {
@@ -374,6 +392,23 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     const writingStyle = (guideData.writingStyle || hubBrand.writing_style) as string | undefined;
     const toneKeywords = (hubBrand.tone_keywords || guideData.toneKeywords || []) as string[];
     
+    // ========== ALL IMAGERY FROM BRANDHUB ==========
+    const allImageryData = (hubBrand.allImagery || {}) as { all?: string[]; byType?: Record<string, string[]> };
+    const allImagery: BrandImagery = {
+      all: allImageryData.all || [],
+      byType: {
+        logos: allImageryData.byType?.logos || [],
+        brandIcons: allImageryData.byType?.brandIcons || [],
+        patterns: allImageryData.byType?.patterns || [],
+        photography: allImageryData.byType?.photography || [],
+        heroImages: allImageryData.byType?.heroImages || [],
+        collateral: allImageryData.byType?.collateral || [],
+        social: allImageryData.byType?.social || [],
+        banners: allImageryData.byType?.banners || [],
+        video: allImageryData.byType?.video || []
+      }
+    };
+    
     // Update state with all fields
     setStyle(prev => ({
       ...prev,
@@ -433,7 +468,9 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         : prev.approved_layouts,
       restricted_elements: restrictedElements.length > 0
         ? [...new Set([...(prev.restricted_elements || []), ...restrictedElements])]
-        : prev.restricted_elements
+        : prev.restricted_elements,
+      // All imagery from BrandHub
+      all_imagery: allImagery.all.length > 0 ? allImagery : prev.all_imagery
     }));
 
     // Update logos
@@ -652,7 +689,11 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
             : {},
           hashtags: data.hashtags || [],
           approved_layouts: data.approved_layouts || [],
-          restricted_elements: data.restricted_elements || []
+          restricted_elements: data.restricted_elements || [],
+          // All imagery from BrandHub
+          all_imagery: (data.all_imagery && typeof data.all_imagery === 'object' && !Array.isArray(data.all_imagery))
+            ? (data.all_imagery as unknown as BrandImagery)
+            : { all: [], byType: {} }
         });
       }
     } catch (error) {
@@ -699,7 +740,9 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         mission: style.mission,
         archetype: style.archetype,
         approved_layouts: style.approved_layouts,
-        restricted_elements: style.restricted_elements
+        restricted_elements: style.restricted_elements,
+        // All imagery from BrandHub
+        all_imagery: style.all_imagery
       };
 
       if (style.id) {
