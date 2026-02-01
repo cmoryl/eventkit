@@ -54,7 +54,7 @@ const IconCard: React.FC<{
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <div className={cn(
-        "relative flex flex-col items-center gap-2 px-4 py-3 rounded-2xl transition-all duration-300",
+        "relative flex flex-col items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 rounded-2xl transition-all duration-300",
         isHovered ? "bg-card/90 shadow-xl" : "bg-transparent"
       )}>
         {/* Glow effect */}
@@ -66,16 +66,16 @@ const IconCard: React.FC<{
         
         {/* Icon */}
         <div className={cn(
-          "w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-transform duration-300",
+          "w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg transition-transform duration-300",
           asset.gradient,
           isHovered && "scale-110 shadow-xl"
         )}>
-          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+          <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
         </div>
         
         {/* Label */}
         <span className={cn(
-          "text-xs sm:text-sm font-medium transition-colors duration-300",
+          "text-xs font-medium transition-colors duration-300",
           isHovered ? "text-foreground" : "text-muted-foreground"
         )}>
           {asset.title}
@@ -91,19 +91,19 @@ const ScrollingRow: React.FC<{
   speed?: number;
   hoveredId: string | null;
   onHover: (id: string | null) => void;
-  isPaused: boolean;
-}> = ({ assets, direction, speed = 30, hoveredId, onHover, isPaused }) => {
+}> = ({ assets, direction, speed = 30, hoveredId, onHover }) => {
   // Duplicate for seamless loop
   const duplicatedAssets = [...assets, ...assets, ...assets];
+  const isPaused = hoveredId !== null;
   
   return (
-    <div className="relative overflow-hidden py-2">
+    <div className="relative overflow-hidden py-1">
       {/* Fade edges */}
-      <div className="absolute left-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
-      <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+      <div className="absolute left-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-16 sm:w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
       
       <motion.div
-        className="flex gap-2 sm:gap-4"
+        className="flex gap-1 sm:gap-2"
         animate={{
           x: direction === 'left' 
             ? ['0%', '-33.333%'] 
@@ -134,49 +134,49 @@ const ScrollingRow: React.FC<{
   );
 };
 
-const StatPill: React.FC<{ value: string; label: string }> = ({ value, label }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.8 }}
-    whileInView={{ opacity: 1, scale: 1 }}
-    viewport={{ once: true }}
-    whileHover={{ scale: 1.05 }}
-    className="flex items-center gap-3 px-5 py-3 rounded-full bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg"
-  >
-    <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-      {value}
-    </span>
-    <span className="text-sm text-muted-foreground">{label}</span>
-  </motion.div>
-);
+interface AssetShowcaseProps {
+  embedded?: boolean;
+}
 
-export const AssetShowcase: React.FC = () => {
+export const AssetShowcase: React.FC<AssetShowcaseProps> = ({ embedded = false }) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const isPaused = hoveredId !== null;
 
+  // Embedded version (no header, no stats - for use inside hero)
+  if (embedded) {
+    return (
+      <div className="w-full overflow-hidden">
+        <div className="space-y-2 sm:space-y-3">
+          <ScrollingRow
+            assets={topRowAssets}
+            direction="left"
+            speed={35}
+            hoveredId={hoveredId}
+            onHover={setHoveredId}
+          />
+          <ScrollingRow
+            assets={bottomRowAssets}
+            direction="right"
+            speed={40}
+            hoveredId={hoveredId}
+            onHover={setHoveredId}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Full standalone version
   return (
     <section className="py-20 sm:py-28 overflow-hidden relative">
-      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background pointer-events-none" />
       
       <div className="relative">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-12 sm:mb-16 px-4"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            whileInView={{ scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ type: 'spring', delay: 0.1 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-6"
-          >
-            <Sparkles className="w-4 h-4" />
-            100+ Asset Types
-          </motion.div>
-          
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 tracking-tight">
             See What You Can Create
           </h2>
@@ -185,7 +185,6 @@ export const AssetShowcase: React.FC = () => {
           </p>
         </motion.div>
 
-        {/* Scrolling Rows */}
         <div className="space-y-4 sm:space-y-6">
           <ScrollingRow
             assets={topRowAssets}
@@ -193,7 +192,6 @@ export const AssetShowcase: React.FC = () => {
             speed={40}
             hoveredId={hoveredId}
             onHover={setHoveredId}
-            isPaused={isPaused}
           />
           <ScrollingRow
             assets={bottomRowAssets}
@@ -201,33 +199,8 @@ export const AssetShowcase: React.FC = () => {
             speed={45}
             hoveredId={hoveredId}
             onHover={setHoveredId}
-            isPaused={isPaused}
           />
         </div>
-
-        {/* Hover instruction */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
-          className="text-center text-sm text-muted-foreground mt-8"
-        >
-          Hover to pause • Explore asset types
-        </motion.p>
-
-        {/* Stats Pills */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-12 px-4"
-        >
-          <StatPill value="100+" label="Asset Types" />
-          <StatPill value="Print-Ready" label="High Resolution" />
-          <StatPill value="<1 min" label="Generation Time" />
-        </motion.div>
       </div>
     </section>
   );
