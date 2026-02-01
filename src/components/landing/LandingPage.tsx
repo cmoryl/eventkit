@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { AssetShowcase } from './AssetShowcase';
 import { AssetType } from '@/types';
+import { UserAdminDropdown } from './UserAdminDropdown';
+import { useAuth } from '@/hooks/useAuth';
 
 interface LandingPageProps {
   onGetStarted: () => void;
@@ -48,6 +50,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   isAuthenticated = false,
   onAssetClick
 }) => {
+  const { user, signOut, isAuthenticated: isLoggedIn } = useAuth();
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-hidden">
       {/* Animated Background */}
@@ -80,9 +84,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </motion.div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button onClick={onGetStarted} className="hidden sm:flex">
-              Get Started <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
+            {isLoggedIn && user ? (
+              <UserAdminDropdown user={user} onSignOut={signOut} />
+            ) : (
+              <Button onClick={onGetStarted} className="hidden sm:flex">
+                Get Started <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
       </header>
