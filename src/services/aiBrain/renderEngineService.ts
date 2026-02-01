@@ -53,22 +53,22 @@ const IMAGE_PROVIDER_INFO: Record<RenderProvider, ProviderInfo> = {
 
 const VIDEO_PROVIDER_INFO: Record<VideoProvider, ProviderInfo> = {
   'lovable-veo3': {
-    name: 'Lovable AI (Veo 3)',
-    description: 'Google Veo 3 powered video generation. Creates cinematic 5-10 second clips.',
+    name: 'Lovable AI (Preview)',
+    description: 'AI-powered animated preview frames using Gemini. Fast and included with your plan.',
     requiresKey: false,
-    models: ['veo-3', 'veo-3-fast'],
+    models: ['gemini-3-pro-image-preview'],
     type: 'video',
   },
   'replicate-luma': {
     name: 'Luma Ray',
-    description: 'Luma\'s Ray model for high-quality video generation via Replicate.',
+    description: 'Luma\'s Ray model for high-quality image-to-video generation.',
     requiresKey: true,
     models: ['luma/ray'],
     type: 'video',
   },
   'replicate-minimax': {
     name: 'Minimax Video',
-    description: 'Minimax video generation model for text-to-video via Replicate.',
+    description: 'Minimax video-01 model for text-to-video generation.',
     requiresKey: true,
     models: ['minimax/video-01'],
     type: 'video',
