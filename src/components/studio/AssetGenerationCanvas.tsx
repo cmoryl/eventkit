@@ -407,39 +407,122 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                 )}
 
                 {/* Content */}
-                <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 relative">
+                <div className="aspect-square relative overflow-hidden">
                   {variation.status === 'pending' && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-muted-foreground text-sm">Waiting...</div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-card via-muted/50 to-card">
+                      {/* Subtle grid pattern */}
+                      <div 
+                        className="absolute inset-0 opacity-[0.03]"
+                        style={{
+                          backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), 
+                                           linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
+                          backgroundSize: '20px 20px'
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex gap-1">
+                            {[0, 1, 2].map((i) => (
+                              <motion.div
+                                key={i}
+                                className="w-2 h-2 rounded-full bg-muted-foreground/30"
+                                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                                transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground/60">In queue</span>
+                        </div>
+                      </div>
                     </div>
                   )}
 
                   {variation.status === 'generating' && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted to-muted/80">
-                      {/* Shimmer effect */}
-                      <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background">
+                      {/* Animated mesh gradient background */}
+                      <div className="absolute inset-0">
                         <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                          animate={{ x: ['-100%', '100%'] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                          className={cn("absolute w-[200%] h-[200%] -left-1/2 -top-1/2 bg-gradient-conic from-primary/20 via-transparent via-30% to-accent/20 to-70%")}
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                          style={{ filter: 'blur(40px)' }}
                         />
                       </div>
                       
-                      <div className="relative text-center">
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                          className="w-12 h-12 rounded-full border-2 border-primary/30 border-t-primary mx-auto"
-                        />
-                        <motion.div
-                          className="absolute inset-0 flex items-center justify-center"
-                          animate={{ scale: [0.9, 1.1, 0.9] }}
+                      {/* Floating particles */}
+                      <div className="absolute inset-0">
+                        {[...Array(6)].map((_, i) => (
+                          <motion.div
+                            key={i}
+                            className={cn(
+                              "absolute w-1 h-1 rounded-full",
+                              i % 2 === 0 ? "bg-primary/40" : "bg-accent/40"
+                            )}
+                            style={{
+                              left: `${20 + (i * 12)}%`,
+                              top: `${30 + (i * 8) % 40}%`,
+                            }}
+                            animate={{
+                              y: [-10, 10, -10],
+                              x: [-5, 5, -5],
+                              opacity: [0.3, 0.8, 0.3],
+                              scale: [1, 1.5, 1],
+                            }}
+                            transition={{
+                              duration: 2 + i * 0.5,
+                              repeat: Infinity,
+                              delay: i * 0.3,
+                            }}
+                          />
+                        ))}
+                      </div>
+                      
+                      {/* Center content */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative">
+                          {/* Outer ring */}
+                          <motion.div
+                            className="w-20 h-20 rounded-full border border-primary/20"
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          />
+                          
+                          {/* Middle ring - rotating */}
+                          <motion.div
+                            className="absolute inset-2 rounded-full border-2 border-dashed border-primary/30"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                          />
+                          
+                          {/* Inner core */}
+                          <motion.div
+                            className={cn("absolute inset-4 rounded-full bg-gradient-to-br shadow-lg", studioGradient)}
+                            animate={{ scale: [0.9, 1.1, 0.9] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                          >
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Sparkles className="h-5 w-5 text-white" />
+                            </div>
+                          </motion.div>
+                        </div>
+                      </div>
+                      
+                      {/* Bottom label */}
+                      <div className="absolute bottom-4 left-0 right-0 text-center">
+                        <motion.p 
+                          className="text-sm font-medium text-foreground/80"
+                          animate={{ opacity: [0.6, 1, 0.6] }}
                           transition={{ duration: 1.5, repeat: Infinity }}
                         >
-                          <Sparkles className="h-5 w-5 text-primary" />
-                        </motion.div>
-                        <p className="mt-3 text-sm text-muted-foreground">Creating...</p>
+                          Creating design...
+                        </motion.p>
                       </div>
+                      
+                      {/* Corner accents */}
+                      <div className="absolute top-3 left-3 w-4 h-4 border-l-2 border-t-2 border-primary/30 rounded-tl" />
+                      <div className="absolute top-3 right-3 w-4 h-4 border-r-2 border-t-2 border-primary/30 rounded-tr" />
+                      <div className="absolute bottom-3 left-3 w-4 h-4 border-l-2 border-b-2 border-primary/30 rounded-bl" />
+                      <div className="absolute bottom-3 right-3 w-4 h-4 border-r-2 border-b-2 border-primary/30 rounded-br" />
                     </div>
                   )}
 
@@ -452,8 +535,10 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                   )}
 
                   {variation.status === 'error' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-destructive/10">
-                      <X className="h-8 w-8 text-destructive" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-destructive/5 to-destructive/10">
+                      <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                        <X className="h-6 w-6 text-destructive" />
+                      </div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -461,8 +546,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                           e.stopPropagation();
                           handleRegenerateVariation(variation.id);
                         }}
+                        className="gap-1.5"
                       >
-                        <RefreshCw className="h-4 w-4 mr-1" />
+                        <RefreshCw className="h-3.5 w-3.5" />
                         Retry
                       </Button>
                     </div>
