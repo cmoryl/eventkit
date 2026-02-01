@@ -350,10 +350,18 @@ const Index: React.FC = () => {
       a.id === asset.id ? { ...a, isLoading: true } : a
     ));
     
-    // Regenerate - pass engine info for future use with custom engines
-    // TODO: Integrate engine selection into the generateAssets function
+    // Regenerate with the selected engine
     console.log('Regenerating with engine:', engine?.displayName || 'Lovable AI (Default)');
-    await generateAssets([{ ...asset, isLoading: true }], styleDescription);
+    await generateAssets(
+      [{ ...asset, isLoading: true }], 
+      styleDescription,
+      undefined,  // paletteOverride
+      vibeImage,  // vibeImageFile
+      masterPattern,  // masterPatternFile  
+      null,  // venueImageFile
+      venueVideoAnalysis,  // venueVideoAnalysisData
+      engine  // renderEngine
+    );
     showToast(`${asset.title} regenerated`, "success");
   };
   // Save project to cloud

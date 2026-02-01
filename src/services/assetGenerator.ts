@@ -1,5 +1,6 @@
 import { AssetType } from '../types';
 import type { EventDetails, ColorInfo } from '../types';
+import type { RenderEngine } from './aiBrain/types';
 import { getAssetConfig } from '../config/assetConfig';
 import { renderAsset } from './canvasRenderer';
 import { 
@@ -17,6 +18,7 @@ import {
   prioritizeAssets,
   clearGenerationCache 
 } from './generationOptimizer';
+import { generateWithEngine, supportsCustomEngine } from './renderEngineGenerator';
 
 // Re-export optimizer utilities for use in components
 export { 
@@ -284,7 +286,8 @@ const generateImageAsset = async (
   styleDescription?: string,
   vibeImageBase64?: string,
   masterPatternBase64?: string,
-  venueImageBase64?: string
+  venueImageBase64?: string,
+  renderEngine?: RenderEngine
 ): Promise<string> => {
   // Build enhanced style description incorporating vibe and pattern references
   let enhancedStyleDesc = styleDescription || `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`;
@@ -312,7 +315,36 @@ const generateImageAsset = async (
     }
   }
 
-  // Try AI image generation first for supported types
+  // If a custom render engine is specified, use it first
+  if (renderEngine && supportsCustomEngine(type)) {
+    try {
+      console.log(`Using custom render engine: ${renderEngine.displayName}`);
+      const result = await generateWithEngine({
+        engine: renderEngine,
+        assetType: type,
+        eventName: eventDetails.name,
+        eventDescription: eventDetails.description,
+        styleDescription: enhancedStyleDesc,
+        colorPalette: colorPalette.map(c => c.hex),
+        logoBase64: logoDataUrl,
+        location: eventDetails.location,
+        incorporateLocationStyle: eventDetails.incorporateLocationStyle,
+        vibeImageBase64,
+        masterPatternBase64,
+        venueImageBase64,
+      });
+      
+      if (result.success && result.imageUrl) {
+        console.log(`Custom engine generated image for ${type} in ${result.generationTimeMs}ms`);
+        return result.imageUrl;
+      }
+      console.warn('Custom engine generation failed:', result.error);
+    } catch (e) {
+      console.warn('Custom engine generation exception:', e);
+    }
+  }
+
+  // Try default AI image generation (Lovable AI) for supported types
   try {
     const aiImage = await generateAssetImage(
       type,
@@ -519,7 +551,8 @@ export const generatePlaceholderContent = async (
   styleDescription?: string,
   vibeImageBase64?: string,
   masterPatternBase64?: string,
-  venueImageBase64?: string
+  venueImageBase64?: string,
+  renderEngine?: RenderEngine
 ): Promise<string | string[] | ColorInfo[]> => {
   // Simulate AI delay
   await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
@@ -604,7 +637,7 @@ Use the Color Palette asset for complete color specifications including CMYK for
 - Consistent color grading aligned with brand palette`;
 
     default:
-      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl, styleDescription, vibeImageBase64, masterPatternBase64, venueImageBase64);
+      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl, styleDescription, vibeImageBase64, masterPatternBase64, venueImageBase64, renderEngine);
   }
 };
 
