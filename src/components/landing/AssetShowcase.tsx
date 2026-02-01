@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { AssetType } from '@/types';
 import { StudioType } from '@/types/studio.types';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 
 // Import studio images
 import studioBrandingImg from '@/assets/studios/studio-branding.jpg';
@@ -28,7 +29,15 @@ interface ShowcaseAsset {
   studioId: StudioType;
 }
 
-// Map assets to their studios with images
+// Import demo images for additional variety
+import demoBanner from '@/assets/demos/demo-banner.jpg';
+import demoNameTag from '@/assets/demos/demo-name-tag.jpg';
+import demoSocialPost from '@/assets/demos/demo-social-post.jpg';
+import demoTshirt from '@/assets/demos/demo-tshirt.jpg';
+import demoTicket from '@/assets/demos/demo-ticket.jpg';
+import demoPlaceCard from '@/assets/demos/demo-place-card.jpg';
+
+// Map assets to their studios with images - expanded with more variety
 const topRowAssets: ShowcaseAsset[] = [
   { id: 'branding', image: studioBrandingImg, title: 'Branding', gradient: 'from-violet-500 to-purple-600', assetType: AssetType.Logo, studioId: 'branding' },
   { id: 'banner', image: studioPrintImg, title: 'Print', gradient: 'from-blue-500 to-cyan-500', assetType: AssetType.Banner, studioId: 'print-signage' },
@@ -36,6 +45,9 @@ const topRowAssets: ShowcaseAsset[] = [
   { id: 'social', image: studioSocialImg, title: 'Social', gradient: 'from-pink-500 to-rose-500', assetType: AssetType.SocialPost, studioId: 'social-digital' },
   { id: 'presentation', image: studioPresentationsImg, title: 'Slides', gradient: 'from-emerald-500 to-teal-500', assetType: AssetType.Presentation, studioId: 'presentations' },
   { id: 'venue', image: studioVenueImg, title: 'Venue', gradient: 'from-indigo-500 to-blue-600', assetType: AssetType.MainStageBackdrop, studioId: 'venue-experience' },
+  // Additional assets for variety
+  { id: 'banners', image: demoBanner, title: 'Banners', gradient: 'from-cyan-500 to-blue-600', assetType: AssetType.Banner, studioId: 'print-signage' },
+  { id: 'nametags', image: demoNameTag, title: 'Badges', gradient: 'from-purple-500 to-indigo-500', assetType: AssetType.NameTag, studioId: 'print-signage' },
 ];
 
 const bottomRowAssets: ShowcaseAsset[] = [
@@ -45,6 +57,9 @@ const bottomRowAssets: ShowcaseAsset[] = [
   { id: 'docs', image: studioDocsImg, title: 'Docs', gradient: 'from-slate-500 to-gray-600', assetType: AssetType.ProgramBooklet, studioId: 'documents-forms' },
   { id: 'photo', image: studioPhotoImg, title: 'Photo', gradient: 'from-fuchsia-500 to-purple-600', assetType: AssetType.PhotoBoothFrame, studioId: 'photo-engagement' },
   { id: 'safety', image: studioSafetyImg, title: 'Safety', gradient: 'from-green-500 to-emerald-600', assetType: AssetType.AccessibilitySignage, studioId: 'accessibility-safety' },
+  // Additional assets for variety
+  { id: 'tickets', image: demoTicket, title: 'Tickets', gradient: 'from-yellow-500 to-orange-500', assetType: AssetType.TicketDesign, studioId: 'invitations-access' },
+  { id: 'placecards', image: demoPlaceCard, title: 'Seating', gradient: 'from-teal-500 to-cyan-500', assetType: AssetType.PlaceCard, studioId: 'hospitality-dining' },
 ];
 
 const IconCard: React.FC<{
@@ -53,10 +68,18 @@ const IconCard: React.FC<{
   onHover: (id: string | null) => void;
   isClickable: boolean;
   onClick?: (studioId: StudioType) => void;
-}> = ({ asset, isHovered, onHover, isClickable, onClick }) => {
+  onImageClick?: (imageSrc: string, title: string) => void;
+}> = ({ asset, isHovered, onHover, isClickable, onClick, onImageClick }) => {
   const handleClick = () => {
     if (isClickable && onClick) {
       onClick(asset.studioId);
+    }
+  };
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onImageClick) {
+      onImageClick(asset.image, asset.title);
     }
   };
   
@@ -69,12 +92,12 @@ const IconCard: React.FC<{
       onMouseEnter={() => onHover(asset.id)}
       onMouseLeave={() => onHover(null)}
       onClick={handleClick}
-      whileHover={{ scale: 1.08, y: -8 }}
+      whileHover={{ scale: 1.05, y: -6 }}
       whileTap={isClickable ? { scale: 0.97 } : undefined}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <div className={cn(
-        "relative flex flex-col items-center gap-2 px-2 sm:px-3 py-2 sm:py-3 rounded-2xl transition-all duration-300",
+        "relative flex flex-col items-center gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-2xl transition-all duration-300",
         isHovered ? "bg-card/95 shadow-2xl z-20" : "bg-transparent"
       )}>
         {/* Glow effect */}
@@ -84,31 +107,44 @@ const IconCard: React.FC<{
           isHovered ? "opacity-50" : "opacity-0"
         )} />
         
-        {/* Image Card - Larger on hover */}
-        <motion.div 
+        {/* Image Card - Fixed sizing with proper overflow visible */}
+        <div 
           className={cn(
-            "rounded-xl overflow-hidden shadow-lg transition-all duration-300 relative",
+            "relative rounded-xl shadow-lg transition-all duration-300 overflow-visible",
             isHovered 
-              ? "w-28 h-28 sm:w-36 sm:h-36 shadow-2xl ring-2 ring-primary/60" 
+              ? "w-32 h-32 sm:w-40 sm:h-40 shadow-2xl ring-2 ring-primary/60" 
               : "w-20 h-20 sm:w-24 sm:h-24"
           )}
-          layout
+          onClick={handleImageClick}
         >
           <img 
             src={asset.image} 
             alt={asset.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover rounded-xl"
           />
           {/* Gradient overlay - less on hover */}
           <div className={cn(
-            "absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent transition-opacity duration-300",
-            isHovered ? "opacity-20" : "opacity-40"
+            "absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300 rounded-xl",
+            isHovered ? "opacity-10" : "opacity-30"
           )} />
-        </motion.div>
+          
+          {/* View larger hint on hover */}
+          {isHovered && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-xl"
+            >
+              <span className="text-white text-xs font-medium px-2 py-1 bg-black/50 rounded-full backdrop-blur-sm">
+                Click to view
+              </span>
+            </motion.div>
+          )}
+        </div>
         
         {/* Label */}
         <span className={cn(
-          "text-xs sm:text-sm font-medium transition-all duration-300",
+          "text-xs sm:text-sm font-medium transition-all duration-300 mt-1",
           isHovered ? "text-foreground text-sm sm:text-base" : "text-muted-foreground"
         )}>
           {asset.title}
@@ -119,7 +155,7 @@ const IconCard: React.FC<{
           <motion.span
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute -bottom-6 text-[10px] text-primary font-medium whitespace-nowrap"
+            className="text-[10px] text-primary font-medium whitespace-nowrap"
           >
             Open Studio →
           </motion.span>
@@ -137,19 +173,20 @@ const ScrollingRow: React.FC<{
   onHover: (id: string | null) => void;
   isClickable: boolean;
   onStudioClick?: (studioId: StudioType) => void;
-}> = ({ assets, direction, speed = 30, hoveredId, onHover, isClickable, onStudioClick }) => {
+  onImageClick?: (imageSrc: string, title: string) => void;
+}> = ({ assets, direction, speed = 30, hoveredId, onHover, isClickable, onStudioClick, onImageClick }) => {
   // Duplicate for seamless loop
   const duplicatedAssets = [...assets, ...assets, ...assets];
   const isPaused = hoveredId !== null;
   
   return (
-    <div className="relative overflow-hidden py-2">
+    <div className="relative overflow-hidden py-4">
       {/* Fade edges */}
       <div className="absolute left-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
       <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-32 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
       
       <motion.div
-        className="flex gap-2 sm:gap-4"
+        className="flex gap-3 sm:gap-5"
         animate={{
           x: direction === 'left' 
             ? ['0%', '-33.333%'] 
@@ -175,6 +212,7 @@ const ScrollingRow: React.FC<{
             onHover={onHover}
             isClickable={isClickable}
             onClick={onStudioClick}
+            onImageClick={onImageClick}
           />
         ))}
       </motion.div>
@@ -194,6 +232,7 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
   onAssetClick
 }) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string } | null>(null);
   const navigate = useNavigate();
   
   const isClickable = isAuthenticated;
@@ -202,84 +241,108 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
     navigate(`/studio/${studioId}`);
   };
 
+  const handleImageClick = (imageSrc: string, title: string) => {
+    setLightboxImage({ src: imageSrc, title });
+  };
+
   // Embedded version (no header, no stats - for use inside hero)
   if (embedded) {
     return (
-      <div className="w-full overflow-hidden">
-        <div className="space-y-3 sm:space-y-4 pb-6">
-          <ScrollingRow
-            assets={topRowAssets}
-            direction="left"
-            speed={45}
-            hoveredId={hoveredId}
-            onHover={setHoveredId}
-            isClickable={isClickable}
-            onStudioClick={handleStudioClick}
-          />
-          <ScrollingRow
-            assets={bottomRowAssets}
-            direction="right"
-            speed={50}
-            hoveredId={hoveredId}
-            onHover={setHoveredId}
-            isClickable={isClickable}
-            onStudioClick={handleStudioClick}
-          />
+      <>
+        <ImageLightbox
+          isOpen={!!lightboxImage}
+          onClose={() => setLightboxImage(null)}
+          imageSrc={lightboxImage?.src || ''}
+          title={lightboxImage?.title}
+        />
+        <div className="w-full overflow-hidden">
+          <div className="space-y-4 sm:space-y-5 pb-6">
+            <ScrollingRow
+              assets={topRowAssets}
+              direction="left"
+              speed={50}
+              hoveredId={hoveredId}
+              onHover={setHoveredId}
+              isClickable={isClickable}
+              onStudioClick={handleStudioClick}
+              onImageClick={handleImageClick}
+            />
+            <ScrollingRow
+              assets={bottomRowAssets}
+              direction="right"
+              speed={55}
+              hoveredId={hoveredId}
+              onHover={setHoveredId}
+              isClickable={isClickable}
+              onStudioClick={handleStudioClick}
+              onImageClick={handleImageClick}
+            />
+          </div>
+          {isClickable && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center text-xs text-muted-foreground"
+            >
+              <span className="text-primary font-medium">✨ Click any studio</span> to start creating
+            </motion.p>
+          )}
         </div>
-        {isClickable && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center text-xs text-muted-foreground"
-          >
-            <span className="text-primary font-medium">✨ Click any studio</span> to start creating
-          </motion.p>
-        )}
-      </div>
+      </>
     );
   }
 
   // Full standalone version
   return (
-    <section className="py-20 sm:py-28 overflow-hidden relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background pointer-events-none" />
-      
-      <div className="relative">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-12 sm:mb-16 px-4"
-        >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-            12 Professional Studios
-          </h2>
-          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
-            From branding to video, each studio is a complete production toolkit for your event assets.
-          </p>
-        </motion.div>
+    <>
+      <ImageLightbox
+        isOpen={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+        imageSrc={lightboxImage?.src || ''}
+        title={lightboxImage?.title}
+      />
+      <section className="py-20 sm:py-28 overflow-hidden relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/10 to-background pointer-events-none" />
+        
+        <div className="relative">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 sm:mb-16 px-4"
+          >
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+              16 Asset Categories
+            </h2>
+            <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
+              From branding to video, each studio is a complete production toolkit for your event assets.
+            </p>
+          </motion.div>
 
-        <div className="space-y-4 sm:space-y-6">
-          <ScrollingRow
-            assets={topRowAssets}
-            direction="left"
-            speed={50}
-            hoveredId={hoveredId}
-            onHover={setHoveredId}
-            isClickable={isClickable}
-            onStudioClick={handleStudioClick}
-          />
-          <ScrollingRow
-            assets={bottomRowAssets}
-            direction="right"
-            speed={55}
-            hoveredId={hoveredId}
-            onHover={setHoveredId}
-            isClickable={isClickable}
-            onStudioClick={handleStudioClick}
-          />
+          <div className="space-y-4 sm:space-y-6">
+            <ScrollingRow
+              assets={topRowAssets}
+              direction="left"
+              speed={55}
+              hoveredId={hoveredId}
+              onHover={setHoveredId}
+              isClickable={isClickable}
+              onStudioClick={handleStudioClick}
+              onImageClick={handleImageClick}
+            />
+            <ScrollingRow
+              assets={bottomRowAssets}
+              direction="right"
+              speed={60}
+              hoveredId={hoveredId}
+              onHover={setHoveredId}
+              isClickable={isClickable}
+              onStudioClick={handleStudioClick}
+              onImageClick={handleImageClick}
+            />
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };

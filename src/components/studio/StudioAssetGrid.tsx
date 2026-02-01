@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical } from 'lucide-react';
+import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 
 // Demo imagery imports
 import demoBanner from '@/assets/demos/demo-banner.jpg';
@@ -162,6 +163,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   studioGradient
 }) => {
   const [generatingAssets, setGeneratingAssets] = useState<Set<string>>(new Set());
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string } | null>(null);
   
   const handleGenerate = async (assetType: string) => {
     setGeneratingAssets(prev => new Set(prev).add(assetType));
@@ -176,153 +178,89 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
     });
   };
 
+  const handleViewImage = (imageSrc: string, title: string) => {
+    setLightboxImage({ src: imageSrc, title });
+  };
+
   if (viewMode === 'list') {
     return (
-      <div className="space-y-2">
-        {assetTypes.map((assetType, index) => {
-          const info = getAssetInfo(assetType);
-          const isSelected = selectedAssets.includes(assetType);
-          const isGenerating = generatingAssets.has(assetType);
-          
-          return (
-            <motion.div
-              key={assetType}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.03 }}
-              className={cn(
-                "flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group",
-                isSelected
-                  ? "border-primary bg-primary/5"
-                  : "border-border bg-card hover:border-primary/50 hover:bg-card/80"
-              )}
-              onClick={() => onSelectAsset(assetType)}
-            >
-              <div 
+      <>
+        <ImageLightbox
+          isOpen={!!lightboxImage}
+          onClose={() => setLightboxImage(null)}
+          imageSrc={lightboxImage?.src || ''}
+          title={lightboxImage?.title}
+        />
+        <div className="space-y-2">
+          {assetTypes.map((assetType, index) => {
+            const info = getAssetInfo(assetType);
+            const isSelected = selectedAssets.includes(assetType);
+            const isGenerating = generatingAssets.has(assetType);
+            
+            return (
+              <motion.div
+                key={assetType}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.03 }}
                 className={cn(
-                  "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                  isSelected 
-                    ? "border-primary bg-primary" 
-                    : "border-muted-foreground/30 group-hover:border-primary/50"
+                  "flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer group",
+                  isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:border-primary/50 hover:bg-card/80"
                 )}
+                onClick={() => onSelectAsset(assetType)}
               >
-                {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-              </div>
-              
-              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
-                {info.demoImage ? (
-                  <img 
-                    src={info.demoImage} 
-                    alt={info.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex-1">
-                <h3 className="font-semibold text-foreground">{info.name}</h3>
-                <p className="text-sm text-muted-foreground">{info.description}</p>
-              </div>
-              
-              <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                {info.dimensions}
-              </div>
-              
-              <Button
-                size="sm"
-                className={cn("bg-gradient-to-r", studioGradient)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleGenerate(assetType);
-                }}
-                disabled={isGenerating}
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-1" />
-                    Generate
-                  </>
-                )}
-              </Button>
-            </motion.div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {assetTypes.map((assetType, index) => {
-        const info = getAssetInfo(assetType);
-        const isSelected = selectedAssets.includes(assetType);
-        const isGenerating = generatingAssets.has(assetType);
-        
-        return (
-          <motion.div
-            key={assetType}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: index * 0.03 }}
-            className={cn(
-              "group relative rounded-xl border overflow-hidden transition-all cursor-pointer",
-              isSelected
-                ? "border-primary ring-2 ring-primary/20"
-                : "border-border hover:border-primary/50"
-            )}
-            onClick={() => onSelectAsset(assetType)}
-          >
-            {/* Selection Checkbox */}
-            <div 
-              className={cn(
-                "absolute top-3 left-3 z-10 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                isSelected 
-                  ? "border-primary bg-primary" 
-                  : "border-white/50 bg-black/20 group-hover:border-white"
-              )}
-            >
-              {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-            </div>
-            
-            {/* More Options */}
-            <button 
-              className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 text-white/70 hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-            
-            {/* Preview Area with Demo Image */}
-            <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 relative overflow-hidden">
-              {info.demoImage ? (
-                <img 
-                  src={info.demoImage} 
-                  alt={info.name}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-              ) : (
-                <>
-                  <div className={cn(
-                    "absolute inset-0 bg-gradient-to-br opacity-10",
-                    studioGradient
-                  )} />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
-                  </div>
-                </>
-              )}
-              
-              {/* Generate Overlay */}
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                <div 
+                  className={cn(
+                    "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                    isSelected 
+                      ? "border-primary bg-primary" 
+                      : "border-muted-foreground/30 group-hover:border-primary/50"
+                  )}
+                >
+                  {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
+                </div>
+                
+                <div 
+                  className="w-16 h-16 rounded-lg overflow-hidden bg-muted relative group/image cursor-zoom-in"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (info.demoImage) {
+                      handleViewImage(info.demoImage, info.name);
+                    }
+                  }}
+                >
+                  {info.demoImage ? (
+                    <>
+                      <img 
+                        src={info.demoImage} 
+                        alt={info.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity">
+                        <ZoomIn className="w-4 h-4 text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground">{info.name}</h3>
+                  <p className="text-sm text-muted-foreground">{info.description}</p>
+                </div>
+                
+                <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                  {info.dimensions}
+                </div>
+                
                 <Button
                   size="sm"
-                  className={cn("bg-gradient-to-r shadow-lg", studioGradient)}
+                  className={cn("bg-gradient-to-r", studioGradient)}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleGenerate(assetType);
@@ -338,32 +276,143 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                     </>
                   )}
                 </Button>
+              </motion.div>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <ImageLightbox
+        isOpen={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+        imageSrc={lightboxImage?.src || ''}
+        title={lightboxImage?.title}
+      />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {assetTypes.map((assetType, index) => {
+          const info = getAssetInfo(assetType);
+          const isSelected = selectedAssets.includes(assetType);
+          const isGenerating = generatingAssets.has(assetType);
+          
+          return (
+            <motion.div
+              key={assetType}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.03 }}
+              className={cn(
+                "group relative rounded-xl border overflow-hidden transition-all cursor-pointer",
+                isSelected
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-border hover:border-primary/50"
+              )}
+              onClick={() => onSelectAsset(assetType)}
+            >
+              {/* Selection Checkbox */}
+              <div 
+                className={cn(
+                  "absolute top-3 left-3 z-10 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                  isSelected 
+                    ? "border-primary bg-primary" 
+                    : "border-white/50 bg-black/20 group-hover:border-white"
+                )}
+              >
+                {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
               </div>
               
-              {/* Loading Overlay */}
-              {isGenerating && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                  <div className="text-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-white mx-auto mb-2" />
-                    <p className="text-xs text-white/80">Generating...</p>
-                  </div>
-                </div>
+              {/* View Larger Button */}
+              {info.demoImage && (
+                <button 
+                  className="absolute top-3 right-10 z-10 p-1.5 rounded-lg bg-black/20 text-white/70 hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewImage(info.demoImage!, info.name);
+                  }}
+                  title="View larger"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
               )}
-            </div>
-            
-            {/* Info */}
-            <div className="p-3 bg-card">
-              <h3 className="font-medium text-sm text-foreground truncate">{info.name}</h3>
-              <div className="flex items-center justify-between mt-1">
-                <p className="text-xs text-muted-foreground truncate">{info.description}</p>
+              
+              {/* More Options */}
+              <button 
+                className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-black/20 text-white/70 hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100 transition-all"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </button>
+              
+              {/* Preview Area with Demo Image */}
+              <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 relative overflow-hidden">
+                {info.demoImage ? (
+                  <img 
+                    src={info.demoImage} 
+                    alt={info.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                ) : (
+                  <>
+                    <div className={cn(
+                      "absolute inset-0 bg-gradient-to-br opacity-10",
+                      studioGradient
+                    )} />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
+                    </div>
+                  </>
+                )}
+                
+                {/* Generate Overlay */}
+                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                  <Button
+                    size="sm"
+                    className={cn("bg-gradient-to-r shadow-lg", studioGradient)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGenerate(assetType);
+                    }}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        Generate
+                      </>
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Loading Overlay */}
+                {isGenerating && (
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-white mx-auto mb-2" />
+                      <p className="text-xs text-white/80">Generating...</p>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="mt-2 text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded inline-block">
-                {info.dimensions}
+              
+              {/* Info */}
+              <div className="p-3 bg-card">
+                <h3 className="font-medium text-sm text-foreground truncate">{info.name}</h3>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-muted-foreground truncate">{info.description}</p>
+                </div>
+                <div className="mt-2 text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded inline-block">
+                  {info.dimensions}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        );
-      })}
-    </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </>
   );
 };
