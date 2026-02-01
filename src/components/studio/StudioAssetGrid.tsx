@@ -115,6 +115,54 @@ import demoHealthScreening from '@/assets/demos/demo-health-screening.jpg';
 import demoCrowdControl from '@/assets/demos/demo-crowd-control.jpg';
 import demoSlogans from '@/assets/demos/demo-slogans.jpg';
 
+// Hyper-realistic demo images - Batch 9 (Accessibility & Safety NEW)
+import demoAccessibilitySignage from '@/assets/demos/demo-accessibility-signage.jpg';
+import demoVolunteerVest from '@/assets/demos/demo-volunteer-vest.jpg';
+import demoSecurityBadge from '@/assets/demos/demo-security-badge.jpg';
+import demoMediaCredential from '@/assets/demos/demo-media-credential.jpg';
+import demoFloorPlan from '@/assets/demos/demo-floor-plan.jpg';
+import demoWifiSign from '@/assets/demos/demo-wifi-sign.jpg';
+import demoQrCode from '@/assets/demos/demo-qr-code.jpg';
+import demoAgendaHighlights from '@/assets/demos/demo-agenda-highlights.jpg';
+
+// Hyper-realistic demo images - Batch 10 (Photo & Engagement NEW)
+import demoPhotoBoothProps from '@/assets/demos/demo-photo-booth-props.jpg';
+import demoNetworkingBingo from '@/assets/demos/demo-networking-bingo.jpg';
+import demoScavengerHunt from '@/assets/demos/demo-scavenger-hunt.jpg';
+import demoPollCard from '@/assets/demos/demo-poll-card.jpg';
+import demoSpeakerIntro from '@/assets/demos/demo-speaker-intro.jpg';
+import demoBreakoutSession from '@/assets/demos/demo-breakout-session.jpg';
+import demoSelfieFrame from '@/assets/demos/demo-selfie-frame.jpg';
+
+// Hyper-realistic demo images - Batch 11 (Venue & Experience NEW)
+import demoTableRunner from '@/assets/demos/demo-table-runner.jpg';
+import demoTablecloth from '@/assets/demos/demo-tablecloth.jpg';
+import demoCocktailNapkin from '@/assets/demos/demo-cocktail-napkin.jpg';
+import demoEscalatorGraphics from '@/assets/demos/demo-escalator-graphics.jpg';
+import demoStairGraphics from '@/assets/demos/demo-stair-graphics.jpg';
+import demoWindowCling from '@/assets/demos/demo-window-cling.jpg';
+import demoAFrame from '@/assets/demos/demo-a-frame.jpg';
+import demoLoadingDock from '@/assets/demos/demo-loading-dock.jpg';
+import demoVipLounge from '@/assets/demos/demo-vip-lounge.jpg';
+import demoGreenRoom from '@/assets/demos/demo-green-room.jpg';
+import demoShuttleSignage from '@/assets/demos/demo-shuttle-signage.jpg';
+import demoGiftBox from '@/assets/demos/demo-gift-box.jpg';
+import demoMatchbook from '@/assets/demos/demo-matchbook.jpg';
+import demoEnvelope from '@/assets/demos/demo-envelope.jpg';
+import demoLiveStreamOverlay from '@/assets/demos/demo-live-stream-overlay.jpg';
+import demoHybridEvent from '@/assets/demos/demo-hybrid-event.jpg';
+import demoArMarker from '@/assets/demos/demo-ar-marker.jpg';
+import demoFeedbackKiosk from '@/assets/demos/demo-feedback-kiosk.jpg';
+import demoVenueTour3d from '@/assets/demos/demo-venue-tour-3d.jpg';
+import demoSeatingChart from '@/assets/demos/demo-seating-chart.jpg';
+import demoSocialProfile from '@/assets/demos/demo-social-profile.jpg';
+import demoGlassDoor from '@/assets/demos/demo-glass-door.jpg';
+import demoGlassDoubleDoor from '@/assets/demos/demo-glass-double-door.jpg';
+import demoRotatingDoor from '@/assets/demos/demo-rotating-door.jpg';
+import demoPortableBillboard from '@/assets/demos/demo-portable-billboard.jpg';
+import demoWelcomeCounter from '@/assets/demos/demo-welcome-counter.jpg';
+import demoTechCounter from '@/assets/demos/demo-tech-counter.jpg';
+
 interface StudioAssetGridProps {
   assetTypes: string[];
   brand: Brand | null;
@@ -231,13 +279,58 @@ const assetDisplayInfo: Record<string, { name: string; description: string; dime
   'PHOTO_FRAME': { name: 'Photo Frame', description: 'Shareable frame overlay', dimensions: '1080×1080', demoImage: demoPhotoFrame },
   'SELFIE_STATION': { name: 'Selfie Station', description: 'Photo booth backdrop', dimensions: '8×8 ft', demoImage: demoSelfieStation },
   'PHOTO_BOOTH_FRAME': { name: 'Booth Frame', description: 'Photo booth frame', dimensions: '8×10 in', demoImage: demoPhotoBoothFrame },
+  'PHOTO_BOOTH_PROPS': { name: 'Photo Props', description: 'Printable photo props', dimensions: '11×17 in', demoImage: demoPhotoBoothProps },
+  'NETWORKING_BINGO': { name: 'Networking Bingo', description: 'Icebreaker game card', dimensions: '5.5×5.5 in', demoImage: demoNetworkingBingo },
+  'SCAVENGER_HUNT_CARD': { name: 'Scavenger Hunt', description: 'Activity checklist', dimensions: '5.5×8.5 in', demoImage: demoScavengerHunt },
+  'POLL_CARD': { name: 'Poll Card', description: 'Audience voting card', dimensions: '4×6 in', demoImage: demoPollCard },
+  'SPEAKER_INTRO_CARD': { name: 'Speaker Card', description: 'Presenter intro card', dimensions: '5×7 in', demoImage: demoSpeakerIntro },
+  'BREAKOUT_SESSION_SIGN': { name: 'Breakout Sign', description: 'Session room sign', dimensions: '11×17 in', demoImage: demoBreakoutSession },
   
   // Accessibility & Safety
   'ADA_SIGNAGE': { name: 'ADA Sign', description: 'Accessibility signage', dimensions: '8×8 in', demoImage: demoAdaSignage },
-  'ACCESSIBILITY_SIGNAGE': { name: 'Accessibility Sign', description: 'Accessibility signage', dimensions: '8×8 in', demoImage: demoAdaSignage },
+  'ACCESSIBILITY_SIGNAGE': { name: 'Accessibility Sign', description: 'ADA compliant signage', dimensions: '8×8 in', demoImage: demoAccessibilitySignage },
   'EMERGENCY_EXIT': { name: 'Exit Sign', description: 'Emergency exit marker', dimensions: '12×6 in', demoImage: demoEmergencyExit },
+  'EMERGENCY_GUIDE': { name: 'Emergency Guide', description: 'Safety procedures', dimensions: '8.5×11 in', demoImage: demoEmergencyExit },
   'HEALTH_SCREENING': { name: 'Health Sign', description: 'Health protocol sign', dimensions: '11×17 in', demoImage: demoHealthScreening },
   'CROWD_CONTROL': { name: 'Crowd Sign', description: 'Crowd management', dimensions: '24×36 in', demoImage: demoCrowdControl },
+  'WIFI_SIGN': { name: 'WiFi Sign', description: 'Network credentials', dimensions: '8.5×11 in', demoImage: demoWifiSign },
+  'QR_CODE': { name: 'QR Code', description: 'Branded scannable code', dimensions: '4×4 in', demoImage: demoQrCode },
+  'AGENDA_HIGHLIGHTS': { name: 'Agenda Card', description: 'Key session times', dimensions: '5×7 in', demoImage: demoAgendaHighlights },
+  'FLOOR_PLAN': { name: 'Floor Plan', description: 'Venue layout map', dimensions: '24×36 in', demoImage: demoFloorPlan },
+  'VOLUNTEER_VEST': { name: 'Volunteer Vest', description: 'Staff identification', dimensions: '12×16 in', demoImage: demoVolunteerVest },
+  'SECURITY_BADGE': { name: 'Security Badge', description: 'Security credential', dimensions: '4×3 in', demoImage: demoSecurityBadge },
+  'MEDIA_CREDENTIAL': { name: 'Media Pass', description: 'Press credential', dimensions: '4×3 in', demoImage: demoMediaCredential },
+  
+  // Additional Venue & Experience
+  'TABLE_RUNNER': { name: 'Table Runner', description: 'Branded table runner', dimensions: '12×72 in', demoImage: demoTableRunner },
+  'TABLECLOTH_DESIGN': { name: 'Tablecloth', description: 'Full table covering', dimensions: '90×132 in', demoImage: demoTablecloth },
+  'COCKTAIL_NAPKIN': { name: 'Cocktail Napkin', description: 'Beverage napkin', dimensions: '4.75×4.75 in', demoImage: demoCocktailNapkin },
+  'ESCALATOR_GRAPHICS': { name: 'Escalator Graphics', description: 'Side panel wrap', dimensions: '96×30 in', demoImage: demoEscalatorGraphics },
+  'STAIRS': { name: 'Stair Graphics', description: 'Stair riser decals', dimensions: '48×8 in', demoImage: demoStairGraphics },
+  'WINDOW_CLING': { name: 'Window Cling', description: 'Glass door graphic', dimensions: '24×36 in', demoImage: demoWindowCling },
+  'A_FRAME_SIGN': { name: 'A-Frame Sign', description: 'Sidewalk sign', dimensions: '24×36 in', demoImage: demoAFrame },
+  'LOADING_DOCK_SIGNAGE': { name: 'Loading Dock', description: 'Vendor access sign', dimensions: '24×18 in', demoImage: demoLoadingDock },
+  'VIP_LOUNGE_SIGNAGE': { name: 'VIP Lounge', description: 'VIP area signage', dimensions: '18×24 in', demoImage: demoVipLounge },
+  'GREEN_ROOM_SIGNAGE': { name: 'Green Room', description: 'Speaker area sign', dimensions: '11×8.5 in', demoImage: demoGreenRoom },
+  'SHUTTLE_SIGNAGE': { name: 'Shuttle Sign', description: 'Transport pickup', dimensions: '18×24 in', demoImage: demoShuttleSignage },
+  'GIFT_BOX_PACKAGING': { name: 'Gift Box', description: 'Swag box packaging', dimensions: '6×6×4 in', demoImage: demoGiftBox },
+  'MATCHBOOK_DESIGN': { name: 'Matchbook', description: 'Branded matchbook', dimensions: '2.5×1.5 in', demoImage: demoMatchbook },
+  'ENVELOPE_DESIGN': { name: 'Envelope', description: 'Invitation envelope', dimensions: '9.5×4.125 in', demoImage: demoEnvelope },
+  'PORTABLE_BILLBOARD': { name: 'A-Board', description: 'Sandwich board', dimensions: '24×36 in', demoImage: demoPortableBillboard },
+  'WELCOME_COUNTER': { name: 'Welcome Counter', description: 'Info desk wrap', dimensions: '48×36 in', demoImage: demoWelcomeCounter },
+  'TECHNOLOGY_COUNTER': { name: 'Tech Counter', description: 'Demo desk wrap', dimensions: '60×36 in', demoImage: demoTechCounter },
+  'GLASS_DOOR': { name: 'Glass Door', description: 'Door decal', dimensions: '36×84 in', demoImage: demoGlassDoor },
+  'GLASS_DOUBLE_DOOR': { name: 'Double Door', description: 'Double door decal', dimensions: '72×84 in', demoImage: demoGlassDoubleDoor },
+  'GLASS_ROTATING_DOOR': { name: 'Revolving Door', description: 'Rotating door wrap', dimensions: '30×84 in', demoImage: demoRotatingDoor },
+  
+  // Digital & Virtual
+  'AR_MARKER': { name: 'AR Marker', description: 'Augmented reality trigger', dimensions: '4×4 in', demoImage: demoArMarker },
+  'FEEDBACK_KIOSK': { name: 'Feedback Kiosk', description: 'Survey screen UI', dimensions: '1080×1920', demoImage: demoFeedbackKiosk },
+  'VENUE_TOUR_3D': { name: '3D Venue Tour', description: 'Virtual walkthrough', dimensions: '1920×1080', demoImage: demoVenueTour3d },
+  'SEATING_CHART': { name: 'Seating Chart', description: 'Guest assignments', dimensions: '24×36 in', demoImage: demoSeatingChart },
+  'SOCIAL_PROFILE': { name: 'Profile Image', description: 'Social avatar', dimensions: '400×400', demoImage: demoSocialProfile },
+  'HYBRID_EVENT_SCREEN': { name: 'Hybrid Screen', description: 'In-person + virtual', dimensions: '1920×1080', demoImage: demoHybridEvent },
+  'PHOTOREALISTIC_SHOT': { name: 'Mockup Shot', description: 'Real-world preview', dimensions: '1920×1080', demoImage: demoVenueTour3d },
 };
 
 const getAssetInfo = (assetType: string) => {
