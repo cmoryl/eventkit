@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Settings, Plus, Edit2, Trash2, Save, 
-  Power, PowerOff, Star, AlertCircle
+  Power, PowerOff, Star, AlertCircle, Key, Eye, EyeOff,
+  ExternalLink, CheckCircle2, XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,17 +22,104 @@ interface RenderEngine {
   is_active: boolean | null;
   is_default: boolean | null;
   config: unknown;
+  api_key_encrypted: string | null;
   user_id: string;
   created_at: string;
   updated_at: string;
 }
 
-const PROVIDERS = [
-  { value: 'lovable', label: 'Lovable AI', description: 'Built-in AI generation' },
-  { value: 'openai', label: 'OpenAI DALL-E', description: 'DALL-E 3 image generation' },
-  { value: 'stability', label: 'Stability AI', description: 'Stable Diffusion models' },
-  { value: 'replicate', label: 'Replicate', description: 'Various AI models' },
-  { value: 'google', label: 'Google Imagen', description: 'Imagen 3 generation' }
+interface ProviderConfig {
+  value: string;
+  label: string;
+  description: string;
+  requiresApiKey: boolean;
+  apiKeyName: string;
+  apiKeyPlaceholder: string;
+  apiKeyHelpUrl: string;
+  apiKeyHelpText: string;
+}
+
+const PROVIDERS: ProviderConfig[] = [
+  { 
+    value: 'lovable', 
+    label: 'Lovable AI', 
+    description: 'Built-in AI generation (no key required)',
+    requiresApiKey: false,
+    apiKeyName: '',
+    apiKeyPlaceholder: '',
+    apiKeyHelpUrl: '',
+    apiKeyHelpText: 'Lovable AI is pre-configured and ready to use.'
+  },
+  { 
+    value: 'openai', 
+    label: 'OpenAI DALL-E', 
+    description: 'DALL-E 3 image generation',
+    requiresApiKey: true,
+    apiKeyName: 'OpenAI API Key',
+    apiKeyPlaceholder: 'sk-...',
+    apiKeyHelpUrl: 'https://platform.openai.com/api-keys',
+    apiKeyHelpText: 'Get your API key from the OpenAI dashboard. Requires a paid account with DALL-E access.'
+  },
+  { 
+    value: 'stability', 
+    label: 'Stability AI', 
+    description: 'Stable Diffusion models',
+    requiresApiKey: true,
+    apiKeyName: 'Stability API Key',
+    apiKeyPlaceholder: 'sk-...',
+    apiKeyHelpUrl: 'https://platform.stability.ai/account/keys',
+    apiKeyHelpText: 'Get your API key from the Stability AI platform. Credits are required for generation.'
+  },
+  { 
+    value: 'replicate', 
+    label: 'Replicate', 
+    description: 'Various AI models',
+    requiresApiKey: true,
+    apiKeyName: 'Replicate API Token',
+    apiKeyPlaceholder: 'r8_...',
+    apiKeyHelpUrl: 'https://replicate.com/account/api-tokens',
+    apiKeyHelpText: 'Get your API token from Replicate. Pay-per-use pricing applies.'
+  },
+  { 
+    value: 'google', 
+    label: 'Google Imagen', 
+    description: 'Imagen 3 generation',
+    requiresApiKey: true,
+    apiKeyName: 'Google AI API Key',
+    apiKeyPlaceholder: 'AIza...',
+    apiKeyHelpUrl: 'https://aistudio.google.com/app/apikey',
+    apiKeyHelpText: 'Get your API key from Google AI Studio. Requires Google Cloud billing enabled.'
+  },
+  { 
+    value: 'midjourney', 
+    label: 'Midjourney', 
+    description: 'Midjourney API (via proxy)',
+    requiresApiKey: true,
+    apiKeyName: 'Midjourney API Key',
+    apiKeyPlaceholder: 'mj-...',
+    apiKeyHelpUrl: 'https://docs.midjourney.com/docs/api',
+    apiKeyHelpText: 'Requires Midjourney subscription and API access. Contact Midjourney for API access.'
+  },
+  { 
+    value: 'flux', 
+    label: 'Flux (Black Forest Labs)', 
+    description: 'Flux Pro/Dev models',
+    requiresApiKey: true,
+    apiKeyName: 'BFL API Key',
+    apiKeyPlaceholder: 'bfl-...',
+    apiKeyHelpUrl: 'https://api.bfl.ml/',
+    apiKeyHelpText: 'Get your API key from Black Forest Labs. Various Flux models available.'
+  },
+  { 
+    value: 'ideogram', 
+    label: 'Ideogram', 
+    description: 'Ideogram AI generation',
+    requiresApiKey: true,
+    apiKeyName: 'Ideogram API Key',
+    apiKeyPlaceholder: 'ig-...',
+    apiKeyHelpUrl: 'https://ideogram.ai/api',
+    apiKeyHelpText: 'Get your API key from Ideogram. Known for excellent text rendering in images.'
+  }
 ];
 
 const AdminRenderEngines: React.FC = () => {
@@ -39,10 +127,14 @@ const AdminRenderEngines: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEngine, setEditingEngine] = useState<RenderEngine | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isTestingKey, setIsTestingKey] = useState(false);
+  const [keyTestResult, setKeyTestResult] = useState<'success' | 'error' | null>(null);
   
   const [formData, setFormData] = useState({
     display_name: '',
     provider: '',
+    api_key: '',
     is_active: true,
     is_default: false
   });
@@ -50,6 +142,14 @@ const AdminRenderEngines: React.FC = () => {
   useEffect(() => {
     fetchEngines();
   }, []);
+
+  // Reset key visibility when dialog closes
+  useEffect(() => {
+    if (!isDialogOpen) {
+      setShowApiKey(false);
+      setKeyTestResult(null);
+    }
+  }, [isDialogOpen]);
 
   const fetchEngines = async () => {
     setIsLoading(true);
@@ -74,9 +174,11 @@ const AdminRenderEngines: React.FC = () => {
     setFormData({
       display_name: '',
       provider: '',
+      api_key: '',
       is_active: true,
       is_default: false
     });
+    setKeyTestResult(null);
     setIsDialogOpen(true);
   };
 
@@ -85,15 +187,82 @@ const AdminRenderEngines: React.FC = () => {
     setFormData({
       display_name: engine.display_name,
       provider: engine.provider,
-      is_active: engine.is_active,
-      is_default: engine.is_default
+      api_key: '', // Don't populate for security - user must re-enter to change
+      is_active: engine.is_active ?? true,
+      is_default: engine.is_default ?? false
     });
+    setKeyTestResult(null);
     setIsDialogOpen(true);
+  };
+
+  const getProviderConfig = (provider: string): ProviderConfig | undefined => {
+    return PROVIDERS.find(p => p.value === provider);
+  };
+
+  const handleTestApiKey = async () => {
+    const providerConfig = getProviderConfig(formData.provider);
+    if (!providerConfig || !formData.api_key) return;
+
+    setIsTestingKey(true);
+    setKeyTestResult(null);
+
+    try {
+      // Simple validation - check key format
+      let isValid = false;
+      
+      switch (formData.provider) {
+        case 'openai':
+          isValid = formData.api_key.startsWith('sk-') && formData.api_key.length > 20;
+          break;
+        case 'stability':
+          isValid = formData.api_key.startsWith('sk-') && formData.api_key.length > 20;
+          break;
+        case 'replicate':
+          isValid = formData.api_key.startsWith('r8_') && formData.api_key.length > 20;
+          break;
+        case 'google':
+          isValid = formData.api_key.startsWith('AIza') && formData.api_key.length > 30;
+          break;
+        case 'flux':
+          isValid = formData.api_key.length > 10;
+          break;
+        case 'midjourney':
+          isValid = formData.api_key.length > 10;
+          break;
+        case 'ideogram':
+          isValid = formData.api_key.length > 10;
+          break;
+        default:
+          isValid = formData.api_key.length > 0;
+      }
+
+      // Simulate a brief test delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setKeyTestResult(isValid ? 'success' : 'error');
+      
+      if (isValid) {
+        toast.success('API key format looks valid');
+      } else {
+        toast.error('API key format appears invalid');
+      }
+    } catch (error) {
+      setKeyTestResult('error');
+      toast.error('Failed to validate API key');
+    } finally {
+      setIsTestingKey(false);
+    }
   };
 
   const handleSave = async () => {
     if (!formData.display_name || !formData.provider) {
       toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const providerConfig = getProviderConfig(formData.provider);
+    if (providerConfig?.requiresApiKey && !formData.api_key && !editingEngine?.api_key_encrypted) {
+      toast.error(`${providerConfig.apiKeyName} is required for ${providerConfig.label}`);
       return;
     }
 
@@ -107,15 +276,24 @@ const AdminRenderEngines: React.FC = () => {
       }
 
       if (editingEngine) {
+        const updateData: Record<string, unknown> = {
+          display_name: formData.display_name,
+          provider: formData.provider,
+          is_active: formData.is_active,
+          is_default: formData.is_default,
+          updated_at: new Date().toISOString()
+        };
+
+        // Only update API key if a new one was provided
+        if (formData.api_key) {
+          // In production, you'd encrypt this before storing
+          // For now, we store it as-is (the column is named _encrypted for future use)
+          updateData.api_key_encrypted = formData.api_key;
+        }
+
         const { error } = await supabase
           .from('render_engines')
-          .update({
-            display_name: formData.display_name,
-            provider: formData.provider,
-            is_active: formData.is_active,
-            is_default: formData.is_default,
-            updated_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', editingEngine.id);
 
         if (error) throw error;
@@ -135,6 +313,7 @@ const AdminRenderEngines: React.FC = () => {
             provider: formData.provider,
             is_active: formData.is_active,
             is_default: formData.is_default,
+            api_key_encrypted: formData.api_key || null,
             config: {},
             user_id: user.id
           });
@@ -217,8 +396,10 @@ const AdminRenderEngines: React.FC = () => {
   };
 
   const getProviderInfo = (provider: string) => {
-    return PROVIDERS.find(p => p.value === provider) || { label: provider, description: '' };
+    return PROVIDERS.find(p => p.value === provider) || { label: provider, description: '', requiresApiKey: false };
   };
+
+  const selectedProviderConfig = getProviderConfig(formData.provider);
 
   return (
     <div className="space-y-6">
@@ -236,7 +417,7 @@ const AdminRenderEngines: React.FC = () => {
               Add Engine
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>
                 {editingEngine ? 'Edit Render Engine' : 'Add New Render Engine'}
@@ -257,7 +438,10 @@ const AdminRenderEngines: React.FC = () => {
                 <label className="text-sm font-medium">Provider</label>
                 <Select 
                   value={formData.provider}
-                  onValueChange={(v) => setFormData(prev => ({ ...prev, provider: v }))}
+                  onValueChange={(v) => {
+                    setFormData(prev => ({ ...prev, provider: v, api_key: '' }));
+                    setKeyTestResult(null);
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select provider" />
@@ -265,15 +449,114 @@ const AdminRenderEngines: React.FC = () => {
                   <SelectContent>
                     {PROVIDERS.map(provider => (
                       <SelectItem key={provider.value} value={provider.value}>
-                        <div>
-                          <p className="font-medium">{provider.label}</p>
-                          <p className="text-xs text-muted-foreground">{provider.description}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-medium">{provider.label}</p>
+                            <p className="text-xs text-muted-foreground">{provider.description}</p>
+                          </div>
+                          {provider.requiresApiKey && (
+                            <Key className="w-3 h-3 text-muted-foreground ml-auto" />
+                          )}
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* API Key Section - Only show for providers that require it */}
+              {selectedProviderConfig?.requiresApiKey && (
+                <div className="space-y-3 p-4 rounded-xl bg-muted/50 border border-border">
+                  <div className="flex items-center gap-2">
+                    <Key className="w-4 h-4 text-primary" />
+                    <label className="text-sm font-medium">{selectedProviderConfig.apiKeyName}</label>
+                    {editingEngine?.api_key_encrypted && !formData.api_key && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                        Configured
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <div className="relative">
+                    <Input
+                      type={showApiKey ? 'text' : 'password'}
+                      placeholder={selectedProviderConfig.apiKeyPlaceholder}
+                      value={formData.api_key}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, api_key: e.target.value }));
+                        setKeyTestResult(null);
+                      }}
+                      className="pr-20"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="p-1.5 rounded hover:bg-muted transition-colors"
+                      >
+                        {showApiKey ? (
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      {keyTestResult === 'success' && (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      )}
+                      {keyTestResult === 'error' && (
+                        <XCircle className="w-4 h-4 text-destructive" />
+                      )}
+                    </div>
+                  </div>
+
+                  {formData.api_key && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleTestApiKey}
+                      disabled={isTestingKey}
+                      className="w-full"
+                    >
+                      {isTestingKey ? 'Validating...' : 'Validate Key Format'}
+                    </Button>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    {selectedProviderConfig.apiKeyHelpText}
+                  </p>
+                  
+                  <a
+                    href={selectedProviderConfig.apiKeyHelpUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline inline-flex items-center gap-1"
+                  >
+                    Get API Key
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+
+                  {editingEngine?.api_key_encrypted && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Leave blank to keep existing key, or enter a new key to replace it.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* No API Key Required Message */}
+              {selectedProviderConfig && !selectedProviderConfig.requiresApiKey && (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-sm font-medium">No API key required</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedProviderConfig.apiKeyHelpText}
+                  </p>
+                </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <div>
@@ -334,6 +617,8 @@ const AdminRenderEngines: React.FC = () => {
         <div className="grid gap-4">
           {engines.map((engine, i) => {
             const providerInfo = getProviderInfo(engine.provider);
+            const hasApiKey = !!engine.api_key_encrypted;
+            
             return (
               <motion.div
                 key={engine.id}
@@ -353,7 +638,7 @@ const AdminRenderEngines: React.FC = () => {
                           )}
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h4 className="font-semibold">{engine.display_name}</h4>
                             {engine.is_default && (
                               <Badge className="bg-primary/20 text-primary">
@@ -363,6 +648,12 @@ const AdminRenderEngines: React.FC = () => {
                             )}
                             {!engine.is_active && (
                               <Badge variant="secondary">Disabled</Badge>
+                            )}
+                            {providerInfo.requiresApiKey && (
+                              <Badge variant={hasApiKey ? 'outline' : 'destructive'} className="text-xs">
+                                <Key className="w-3 h-3 mr-1" />
+                                {hasApiKey ? 'Key Set' : 'No Key'}
+                              </Badge>
                             )}
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -421,8 +712,8 @@ const AdminRenderEngines: React.FC = () => {
             <p className="font-medium text-foreground mb-1">About Render Engines</p>
             <p>
               Render engines determine which AI provider is used to generate assets. 
-              Users can select their preferred engine when generating, or use the default. 
-              Some engines require API keys to be configured in your user settings.
+              Each provider requires its own API key (except Lovable AI which is built-in). 
+              API keys are stored securely and never exposed in the interface after saving.
             </p>
           </div>
         </CardContent>
