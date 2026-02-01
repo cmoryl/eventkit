@@ -155,16 +155,65 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         }
         
         // Map BrandHub data to our style format
+        // BrandHub uses: colors, fonts, logo_url, tagline, voice, mission
+        // We use: primary_color, secondary_color, color_palette, heading_font, body_font, etc.
+        
+        // Extract colors from BrandHub format
+        const colors = hubBrand.colors || [];
+        const primaryColor = colors[0]?.hex || hubBrand.primary_color;
+        const secondaryColor = colors[1]?.hex || hubBrand.secondary_color;
+        const accentColor = colors[2]?.hex || hubBrand.accent_color;
+        
+        // Map color palette
+        const colorPalette = colors.length > 0 
+          ? colors.map((c: { hex: string; name?: string }) => ({ hex: c.hex, name: c.name || '' }))
+          : hubBrand.color_palette;
+        
+        // Extract fonts from BrandHub format
+        // BrandHub returns fonts as an array: [{ fontFamily, name, usage, weight }, ...]
+        const fonts = hubBrand.fonts || [];
+        let headingFont: string | undefined;
+        let bodyFont: string | undefined;
+        let accentFont: string | undefined;
+        
+        if (Array.isArray(fonts)) {
+          // Find fonts by their usage/name
+          const headingEntry = fonts.find((f: { name?: string; usage?: string }) => 
+            f.name?.toLowerCase().includes('heading') || f.usage?.toLowerCase().includes('headline')
+          );
+          const bodyEntry = fonts.find((f: { name?: string; usage?: string }) => 
+            f.name?.toLowerCase().includes('body') || f.usage?.toLowerCase().includes('paragraph')
+          );
+          const accentEntry = fonts.find((f: { name?: string; usage?: string }) => 
+            f.name?.toLowerCase().includes('accent') || f.name?.toLowerCase().includes('subhead')
+          );
+          
+          headingFont = headingEntry?.fontFamily || fonts[0]?.fontFamily;
+          bodyFont = bodyEntry?.fontFamily || fonts[1]?.fontFamily || fonts[0]?.fontFamily;
+          accentFont = accentEntry?.fontFamily;
+        } else {
+          // Fallback for object format
+          headingFont = fonts.heading || fonts.primary || hubBrand.heading_font;
+          bodyFont = fonts.body || fonts.secondary || hubBrand.body_font;
+          accentFont = fonts.accent || hubBrand.accent_font;
+        }
+        
+        // Extract voice/mood
+        const voiceKeywords = hubBrand.voice 
+          ? (Array.isArray(hubBrand.voice) ? hubBrand.voice : [hubBrand.voice])
+          : hubBrand.brand_voice;
+        
         setStyle(prev => ({
           ...prev,
-          primary_color: hubBrand.primary_color || prev.primary_color,
-          secondary_color: hubBrand.secondary_color || prev.secondary_color,
-          accent_color: hubBrand.accent_color || prev.accent_color,
-          color_palette: hubBrand.color_palette?.length > 0 
-            ? [...(prev.color_palette || []), ...hubBrand.color_palette]
+          primary_color: primaryColor || prev.primary_color,
+          secondary_color: secondaryColor || prev.secondary_color,
+          accent_color: accentColor || prev.accent_color,
+          color_palette: colorPalette?.length > 0 
+            ? [...(prev.color_palette || []), ...colorPalette]
             : prev.color_palette,
-          heading_font: hubBrand.heading_font || prev.heading_font,
-          body_font: hubBrand.body_font || prev.body_font,
+          heading_font: headingFont || prev.heading_font,
+          body_font: bodyFont || prev.body_font,
+          accent_font: accentFont || prev.accent_font,
           mood_keywords: hubBrand.mood_keywords?.length > 0
             ? [...new Set([...(prev.mood_keywords || []), ...hubBrand.mood_keywords])]
             : prev.mood_keywords,
@@ -172,8 +221,8 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           industry: hubBrand.industry || prev.industry,
           target_audience: hubBrand.target_audience || prev.target_audience,
           pattern_style: hubBrand.pattern_style || prev.pattern_style,
-          brand_voice: hubBrand.brand_voice?.length > 0
-            ? [...new Set([...(prev.brand_voice || []), ...hubBrand.brand_voice])]
+          brand_voice: voiceKeywords?.length > 0
+            ? [...new Set([...(prev.brand_voice || []), ...voiceKeywords])]
             : prev.brand_voice
         }));
 
