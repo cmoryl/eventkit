@@ -123,6 +123,19 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         body: { shareToken }
       });
 
+      // Handle error responses (always 200 but with success: false)
+      if (data?.success === false) {
+        // Show the error message and suggestion from the backend
+        if (data.suggestion) {
+          toast.info(data.suggestion, { duration: 6000 });
+        } else {
+          toast.warning(data.error || 'Could not import brand data');
+        }
+        setBrandHubUrl('');
+        setIsImportingFromHub(false);
+        return;
+      }
+
       // Handle the case where BrandHub integration isn't configured
       if (data?.setupRequired) {
         toast.info('BrandHub import is not yet available. Please use the brand guide upload or manual editor instead.', { duration: 5000 });
@@ -135,6 +148,11 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 
       if (data?.brand) {
         const hubBrand = data.brand;
+        
+        // Check if it's partial data (only OG meta tags)
+        if (data.partial) {
+          toast.info(data.message || 'Only partial brand data was imported. Consider uploading a PDF for complete extraction.', { duration: 5000 });
+        }
         
         // Map BrandHub data to our style format
         setStyle(prev => ({
