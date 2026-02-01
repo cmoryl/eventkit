@@ -14,7 +14,10 @@ import {
   getBestPromptTemplate, 
   buildPromptFromTemplate,
   getLearnedInsights,
-  applyLearnedInsights 
+  applyLearnedInsights,
+  recordSponsorLogoAnalysis,
+  getSponsorKnowledge,
+  buildSponsorAwarePrompt
 } from './learningService';
 
 /**

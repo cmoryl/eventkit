@@ -264,6 +264,88 @@ export const applyLearnedInsights = (
   return enhancedPrompt;
 };
 
+// ============ SPONSOR LOGO LEARNING ============
+
+export const recordSponsorLogoAnalysis = async (
+  userId: string,
+  sponsorData: {
+    id: string;
+    name: string;
+    tier: string;
+    logoUrl: string;
+    brandId?: string;
+  },
+  analysisResult?: {
+    dominantColors?: string[];
+    styleKeywords?: string[];
+    industry?: string;
+  }
+): Promise<boolean> => {
+  const key = `sponsor_${sponsorData.id}`;
+  
+  return await addOrUpdateKnowledge(
+    userId,
+    'sponsor_recognition',
+    sponsorData.tier,
+    key,
+    {
+      sponsorId: sponsorData.id,
+      name: sponsorData.name,
+      tier: sponsorData.tier,
+      logoUrl: sponsorData.logoUrl,
+      brandId: sponsorData.brandId,
+      analysis: analysisResult || {},
+      learnedAt: new Date().toISOString(),
+    }
+  );
+};
+
+export const getSponsorKnowledge = async (
+  userId: string,
+  tier?: string
+): Promise<AIKnowledge[]> => {
+  return await getKnowledge(userId, 'sponsor_recognition', tier);
+};
+
+export const buildSponsorAwarePrompt = (
+  basePrompt: string,
+  sponsorKnowledge: AIKnowledge[]
+): string => {
+  if (sponsorKnowledge.length === 0) return basePrompt;
+  
+  // Group by tier for hierarchical importance
+  const byTier: Record<string, AIKnowledge[]> = {};
+  sponsorKnowledge.forEach(k => {
+    const tier = k.category || 'other';
+    byTier[tier] = byTier[tier] || [];
+    byTier[tier].push(k);
+  });
+  
+  let enhancedPrompt = basePrompt;
+  
+  // Add sponsor context based on learned patterns
+  const tierOrder = ['platinum', 'gold', 'silver', 'bronze', 'partner', 'media'];
+  const sponsorParts: string[] = [];
+  
+  tierOrder.forEach(tier => {
+    if (byTier[tier] && byTier[tier].length > 0) {
+      const names = byTier[tier]
+        .map(k => (k.value as { name?: string }).name)
+        .filter(Boolean)
+        .slice(0, 5);
+      if (names.length > 0) {
+        sponsorParts.push(`${tier}: ${names.join(', ')}`);
+      }
+    }
+  });
+  
+  if (sponsorParts.length > 0) {
+    enhancedPrompt += ` Event sponsors by tier: ${sponsorParts.join('; ')}.`;
+  }
+  
+  return enhancedPrompt;
+};
+
 // ============ INTERNAL HELPERS ============
 
 async function updateKnowledgeFromFeedback(

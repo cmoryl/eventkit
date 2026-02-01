@@ -64,7 +64,7 @@ export interface AIFeedback {
 export interface AIKnowledge {
   id: string;
   userId?: string;
-  knowledgeType: 'style_preference' | 'prompt_pattern' | 'asset_template' | 'cultural_mapping' | 'brand_preference';
+  knowledgeType: 'style_preference' | 'prompt_pattern' | 'asset_template' | 'cultural_mapping' | 'brand_preference' | 'sponsor_recognition';
   category?: string;
   key: string;
   value: Record<string, unknown>;
