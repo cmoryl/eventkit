@@ -132,6 +132,10 @@ export enum AssetType {
   HybridEventScreen = 'HYBRID_EVENT_SCREEN',
   ZoomBackground = 'ZOOM_BACKGROUND',
   WebinarSlide = 'WEBINAR_SLIDE',
+  // Sponsor-specific assets
+  SponsorWall = 'SPONSOR_WALL',
+  SponsorBanner = 'SPONSOR_BANNER',
+  SponsorGrid = 'SPONSOR_GRID',
 }
 
 export interface LogoAsset {

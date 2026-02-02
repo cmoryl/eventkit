@@ -6,6 +6,7 @@ import type { EventDetails, ColorInfo } from '../types';
 import { AssetType } from '../types';
 import type { BrandContext } from '../types/brand.types';
 import { buildBrandStylePrompt, getBrandColorPalette } from '../types/brand.types';
+import { buildSponsorWallPrompt } from './sponsorWallGenerator';
 
 interface PromptTemplate {
   id: string;
@@ -229,7 +230,7 @@ export async function buildAssetPrompt(
     incrementTemplateUsage(template.id);
   } else {
     // Fallback to a generic prompt if no template exists
-    prompt = buildFallbackPrompt(assetType, variables);
+    prompt = buildFallbackPrompt(assetType, variables, brandContext);
   }
   
   // Append brand context as additional guidance
@@ -273,8 +274,24 @@ async function incrementTemplateUsage(templateId: string): Promise<void> {
 /**
  * Build a fallback prompt when no template exists
  */
-function buildFallbackPrompt(assetType: AssetType, variables: TemplateVariables): string {
+function buildFallbackPrompt(assetType: AssetType, variables: TemplateVariables, brandContext?: BrandContext | null): string {
   const assetName = assetType.toString().replace(/_/g, ' ').toLowerCase();
+  
+  // Special handling for sponsor assets
+  if (assetType === AssetType.SponsorWall || 
+      assetType === AssetType.SponsorBanner || 
+      assetType === AssetType.SponsorGrid) {
+    const sponsorAssetType = assetType === AssetType.SponsorWall ? 'wall' 
+      : assetType === AssetType.SponsorBanner ? 'banner' 
+      : 'grid';
+    
+    return buildSponsorWallPrompt(
+      variables.eventName,
+      brandContext?.sponsorLogos,
+      variables.style || variables.mood || 'professional corporate design',
+      sponsorAssetType
+    );
+  }
   
   return `Create a professional ${assetName} design for "${variables.eventName}". 
 ${variables.eventDescription ? `Event description: ${variables.eventDescription}.` : ''}
@@ -298,4 +315,15 @@ export function clearTemplateCache(): void {
 export async function prefetchTemplates(assetTypes: AssetType[]): Promise<void> {
   const promises = assetTypes.map(type => fetchPromptTemplate(type));
   await Promise.all(promises);
+}
+
+/**
+ * Check if an asset type is a sponsor-related asset
+ */
+export function isSponsorAsset(assetType: AssetType): boolean {
+  return [
+    AssetType.SponsorWall,
+    AssetType.SponsorBanner,
+    AssetType.SponsorGrid,
+  ].includes(assetType);
 }
