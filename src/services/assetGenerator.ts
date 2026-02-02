@@ -20,6 +20,7 @@ import {
   clearGenerationCache 
 } from './generationOptimizer';
 import { generateWithEngine, supportsCustomEngine } from './renderEngineGenerator';
+import { handleAIError, parseAIError } from './aiErrorHandler';
 
 // Re-export optimizer utilities for use in components
 export { 
@@ -27,6 +28,9 @@ export {
   prioritizeAssets, 
   clearGenerationCache 
 };
+
+// Re-export error handler for components
+export { handleAIError, parseAIError } from './aiErrorHandler';
 
 
 // Design tokens for consistent generation
@@ -343,6 +347,12 @@ const generateImageAsset = async (
       }
       console.warn('Custom engine generation failed:', result.error);
     } catch (e) {
+      // Parse error for potential rate limit/payment issues
+      const aiError = parseAIError(e);
+      if (aiError.type === 'PAYMENT_REQUIRED') {
+        handleAIError(e);
+        throw e; // Re-throw to stop generation
+      }
       console.warn('Custom engine generation exception:', e);
     }
   }
@@ -373,6 +383,13 @@ const generateImageAsset = async (
       return aiImage;
     }
   } catch (e) {
+    // Parse error for specific handling
+    const aiError = parseAIError(e);
+    if (aiError.type === 'PAYMENT_REQUIRED') {
+      // Show toast and stop - don't fall back
+      handleAIError(e);
+      throw e;
+    }
     console.warn('AI image generation failed, using canvas renderer:', e);
   }
   

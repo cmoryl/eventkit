@@ -20,6 +20,7 @@ import {
   getSponsorKnowledge,
   buildSponsorAwarePrompt
 } from './learningService';
+import { parseAIError, handleAIError, type AIError } from '../aiErrorHandler';
 
 /**
  * AI Brain - The central intelligence for asset generation
@@ -189,14 +190,17 @@ export class AIBrain {
     });
 
     if (error) {
-      // Handle rate limits
-      if (error.message?.includes('429')) {
-        return { success: false, error: 'Rate limit exceeded. Please try again in a moment.' };
+      // Parse error for consistent handling
+      const aiError = parseAIError(error);
+      
+      if (aiError.type === 'RATE_LIMIT') {
+        return { success: false, error: aiError.userMessage };
       }
-      if (error.message?.includes('402')) {
-        return { success: false, error: 'AI credits exhausted. Please add credits.' };
+      if (aiError.type === 'PAYMENT_REQUIRED') {
+        handleAIError(error); // Show toast for payment issues
+        return { success: false, error: aiError.userMessage };
       }
-      return { success: false, error: error.message };
+      return { success: false, error: aiError.message };
     }
 
     return { success: true, imageUrl: data?.imageUrl };
