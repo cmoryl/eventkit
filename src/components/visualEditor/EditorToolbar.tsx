@@ -1,0 +1,197 @@
+// Editor Toolbar - Main toolbar with tools and actions
+import React from 'react';
+import { 
+  MousePointer2, Hand, Type, Square, Undo2, Redo2, 
+  ZoomIn, ZoomOut, Maximize2, Download, Save, Settings,
+  Minus, Plus, Grid3X3
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+
+interface EditorToolbarProps {
+  activeTool: 'select' | 'pan' | 'text' | 'shape';
+  onToolChange: (tool: 'select' | 'pan' | 'text' | 'shape') => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  onExport: () => void;
+  onSave: () => void;
+  showGrid?: boolean;
+  onToggleGrid?: () => void;
+}
+
+interface ToolButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  shortcut?: string;
+  isActive?: boolean;
+  onClick: () => void;
+  disabled?: boolean;
+}
+
+const ToolButton: React.FC<ToolButtonProps> = ({ 
+  icon, label, shortcut, isActive, onClick, disabled 
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        size="sm"
+        variant={isActive ? 'default' : 'ghost'}
+        className={cn(
+          'h-9 w-9 p-0',
+          isActive && 'bg-primary text-primary-foreground'
+        )}
+        onClick={onClick}
+        disabled={disabled}
+      >
+        {icon}
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent side="bottom" className="flex items-center gap-2">
+      <span>{label}</span>
+      {shortcut && <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded">{shortcut}</kbd>}
+    </TooltipContent>
+  </Tooltip>
+);
+
+export const EditorToolbar: React.FC<EditorToolbarProps> = ({
+  activeTool,
+  onToolChange,
+  zoom,
+  onZoomChange,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  onExport,
+  onSave,
+  showGrid,
+  onToggleGrid
+}) => {
+  const zoomPresets = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+
+  return (
+    <div className="h-12 border-b bg-background flex items-center px-3 gap-1">
+      {/* Tool Selection */}
+      <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
+        <ToolButton
+          icon={<MousePointer2 className="h-4 w-4" />}
+          label="Select"
+          shortcut="V"
+          isActive={activeTool === 'select'}
+          onClick={() => onToolChange('select')}
+        />
+        <ToolButton
+          icon={<Hand className="h-4 w-4" />}
+          label="Pan"
+          shortcut="H"
+          isActive={activeTool === 'pan'}
+          onClick={() => onToolChange('pan')}
+        />
+        <ToolButton
+          icon={<Type className="h-4 w-4" />}
+          label="Text"
+          shortcut="T"
+          isActive={activeTool === 'text'}
+          onClick={() => onToolChange('text')}
+        />
+        <ToolButton
+          icon={<Square className="h-4 w-4" />}
+          label="Shape"
+          shortcut="R"
+          isActive={activeTool === 'shape'}
+          onClick={() => onToolChange('shape')}
+        />
+      </div>
+
+      <Separator orientation="vertical" className="h-6 mx-2" />
+
+      {/* Undo/Redo */}
+      <div className="flex items-center gap-0.5">
+        <ToolButton
+          icon={<Undo2 className="h-4 w-4" />}
+          label="Undo"
+          shortcut="⌘Z"
+          onClick={onUndo}
+          disabled={!canUndo}
+        />
+        <ToolButton
+          icon={<Redo2 className="h-4 w-4" />}
+          label="Redo"
+          shortcut="⌘⇧Z"
+          onClick={onRedo}
+          disabled={!canRedo}
+        />
+      </div>
+
+      <Separator orientation="vertical" className="h-6 mx-2" />
+
+      {/* Zoom Controls */}
+      <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 w-8 p-0"
+          onClick={() => onZoomChange(Math.max(0.1, zoom - 0.25))}
+          disabled={zoom <= 0.1}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <button
+          className="h-8 px-2 text-sm font-medium hover:bg-background rounded transition-colors min-w-[60px]"
+          onClick={() => onZoomChange(1)}
+        >
+          {Math.round(zoom * 100)}%
+        </button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 w-8 p-0"
+          onClick={() => onZoomChange(Math.min(5, zoom + 0.25))}
+          disabled={zoom >= 5}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-8 w-8 p-0"
+          onClick={() => onZoomChange(1)}
+        >
+          <Maximize2 className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Grid Toggle */}
+      {onToggleGrid && (
+        <ToolButton
+          icon={<Grid3X3 className="h-4 w-4" />}
+          label="Toggle Grid"
+          shortcut="G"
+          isActive={showGrid}
+          onClick={onToggleGrid}
+        />
+      )}
+
+      <Separator orientation="vertical" className="h-6 mx-2" />
+
+      {/* Actions */}
+      <Button size="sm" variant="outline" className="gap-2" onClick={onSave}>
+        <Save className="h-4 w-4" />
+        Save
+      </Button>
+      <Button size="sm" className="gap-2" onClick={onExport}>
+        <Download className="h-4 w-4" />
+        Export
+      </Button>
+    </div>
+  );
+};

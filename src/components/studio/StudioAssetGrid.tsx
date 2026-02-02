@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil } from 'lucide-react';
+import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil, Edit3 } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AssetGenerationCanvas } from './AssetGenerationCanvas';
 import { TemplateWorkflowModal } from './TemplateWorkflowModal';
-
+import { VisualEditor } from '@/components/visualEditor';
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
 import demoNameTag from '@/assets/demos/demo-name-tag.jpg';
@@ -367,6 +367,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   const [templateAssetType, setTemplateAssetType] = useState<string | null>(null);
   const [templateAssetName, setTemplateAssetName] = useState<string>('');
   
+  // Visual editor state
+  const [visualEditorOpen, setVisualEditorOpen] = useState(false);
+  const [visualEditorAssetType, setVisualEditorAssetType] = useState<string | null>(null);
+  const [visualEditorAssetName, setVisualEditorAssetName] = useState<string>('');
+  
   // Open full-screen canvas for generation with variations
   const handleGenerate = (assetType: string) => {
     if (!brand) {
@@ -383,6 +388,30 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
     setTemplateAssetType(assetType);
     setTemplateAssetName(assetName);
     setTemplateModalOpen(true);
+  };
+  
+  // Open visual editor (Canva-style)
+  const handleOpenVisualEditor = (assetType: string, assetName: string) => {
+    setVisualEditorAssetType(assetType);
+    setVisualEditorAssetName(assetName);
+    setVisualEditorOpen(true);
+  };
+  
+  // Get dimensions for visual editor
+  const getEditorDimensions = (assetType: string): { width: number; height: number } => {
+    const info = getAssetInfo(assetType);
+    const dims = info.dimensions || '1080×1080';
+    
+    // Parse dimensions - handle various formats
+    if (dims.includes('×')) {
+      const [w, h] = dims.split('×').map(d => parseInt(d.replace(/[^\d]/g, '')) || 1080);
+      // Scale down large physical dimensions (inches to pixels approximation)
+      if (dims.includes('in') || dims.includes('ft')) {
+        return { width: Math.min(w * 100, 2000), height: Math.min(h * 100, 2000) };
+      }
+      return { width: w, height: h };
+    }
+    return { width: 1080, height: 1080 };
   };
 
   // Handle when image is generated and selected from canvas
@@ -510,11 +539,24 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                     className="gap-1"
                     onClick={(e) => {
                       e.stopPropagation();
+                      handleOpenVisualEditor(assetType, info.name);
+                    }}
+                    title="Open Visual Editor (Canva-style)"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    Design
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
                       handleOpenTemplate(assetType, info.name);
                     }}
                   >
                     <Pencil className="w-3.5 h-3.5" />
-                    Edit
+                    Template
                   </Button>
                   <Button
                     size="sm"
@@ -556,6 +598,30 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
             eventName={brand?.name || 'Your Event'}
             studioGradient={studioGradient}
             onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
+          />
+        )}
+        
+        {/* Visual Editor (List View) */}
+        {visualEditorAssetType && (
+          <VisualEditor
+            isOpen={visualEditorOpen}
+            onClose={() => {
+              setVisualEditorOpen(false);
+              setVisualEditorAssetType(null);
+            }}
+            assetType={visualEditorAssetType}
+            assetName={visualEditorAssetName}
+            initialWidth={getEditorDimensions(visualEditorAssetType).width}
+            initialHeight={getEditorDimensions(visualEditorAssetType).height}
+            brandColors={brand?.styles?.color_palette?.map((c: any) => c.hex) || undefined}
+            onSave={(state) => {
+              toast.success('Design saved!');
+              console.log('Saved state:', state);
+            }}
+            onExport={(state) => {
+              toast.success('Exporting design...');
+              console.log('Export state:', state);
+            }}
           />
         )}
       </>
@@ -691,14 +757,27 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                       className="shadow-lg pointer-events-auto gap-1"
                       onClick={(e) => {
                         e.stopPropagation();
+                        handleOpenVisualEditor(assetType, info.name);
+                      }}
+                      title="Open Visual Editor"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      Design
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="shadow-lg pointer-events-auto gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         handleOpenTemplate(assetType, info.name);
                       }}
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                      Edit
+                      Template
                     </Button>
                   </div>
-                  <p className="text-xs text-white/70">Click card for AI generation</p>
+                  <p className="text-xs text-white/70">Choose your editing mode</p>
                 </div>
                 
                 {/* Loading Overlay with Enhanced Animation */}
@@ -800,6 +879,30 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           assetType={templateAssetType}
           assetName={templateAssetName}
           brand={brand}
+        />
+      )}
+      
+      {/* Visual Editor (Grid View) */}
+      {visualEditorAssetType && (
+        <VisualEditor
+          isOpen={visualEditorOpen}
+          onClose={() => {
+            setVisualEditorOpen(false);
+            setVisualEditorAssetType(null);
+          }}
+          assetType={visualEditorAssetType}
+          assetName={visualEditorAssetName}
+          initialWidth={getEditorDimensions(visualEditorAssetType).width}
+          initialHeight={getEditorDimensions(visualEditorAssetType).height}
+          brandColors={brand?.styles?.color_palette?.map((c: any) => c.hex) || undefined}
+          onSave={(state) => {
+            toast.success('Design saved!');
+            console.log('Saved state:', state);
+          }}
+          onExport={(state) => {
+            toast.success('Exporting design...');
+            console.log('Export state:', state);
+          }}
         />
       )}
     </>
