@@ -18,6 +18,7 @@ import {
   type AssetBriefData 
 } from '@/services/aiBrain/learningService';
 import { useAuth } from '@/hooks/useAuth';
+import { useActiveBrand } from '@/hooks/useActiveBrand';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -54,6 +55,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   onImageGenerated
 }) => {
   const { user } = useAuth();
+  const { activeBrand, isThemeApplied } = useActiveBrand();
   const [variations, setVariations] = useState<GenerationVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,6 +64,12 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [generationPhase, setGenerationPhase] = useState<'idle' | 'brief' | 'generating' | 'complete'>('idle');
   const [currentBrief, setCurrentBrief] = useState<AssetBrief | null>(null);
   const [showBriefModal, setShowBriefModal] = useState(false);
+
+  // Get brand colors for accents
+  const brandPrimary = brand?.styles?.primary_color || activeBrand?.styles?.primary_color;
+  const brandSecondary = brand?.styles?.secondary_color || activeBrand?.styles?.secondary_color;
+  const brandAccent = brand?.styles?.accent_color || activeBrand?.styles?.accent_color;
+  const hasBrandColors = brandPrimary || brandSecondary || brandAccent;
 
   // Initialize when opened - show brief modal first
   useEffect(() => {
@@ -392,6 +400,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     );
   }
 
+  // Dynamic brand gradient style
+  const brandGradientStyle = hasBrandColors 
+    ? { 
+        background: `linear-gradient(135deg, ${brandPrimary || 'hsl(var(--primary))'}, ${brandAccent || brandSecondary || 'hsl(var(--accent))'})` 
+      }
+    : undefined;
+
   return (
     <AnimatePresence>
       <motion.div
@@ -400,15 +415,32 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 bg-background"
       >
+        {/* Brand Color Accent Bar */}
+        {hasBrandColors && (
+          <div 
+            className="h-1 w-full"
+            style={brandGradientStyle}
+          />
+        )}
+
         {/* Header */}
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm">
+        <header className={cn(
+          "h-16 border-b border-border flex items-center justify-between px-6 bg-card/50 backdrop-blur-sm",
+          hasBrandColors && "border-b-0"
+        )}>
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={onClose}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
             
             <div className="flex items-center gap-2">
-              <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center", studioGradient)}>
+              <div 
+                className={cn(
+                  "w-10 h-10 rounded-xl flex items-center justify-center",
+                  !hasBrandColors && `bg-gradient-to-br ${studioGradient}`
+                )}
+                style={hasBrandColors ? brandGradientStyle : undefined}
+              >
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               <div>
@@ -419,13 +451,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
           </div>
           
           <div className="flex items-center gap-3">
-            {brand && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-lg">
-                <div 
-                  className="w-4 h-4 rounded-full" 
-                  style={{ backgroundColor: brand.styles?.primary_color || '#6366f1' }} 
-                />
-                <span className="text-sm font-medium">{brand.name}</span>
+            {/* Brand Color Palette Pills */}
+            {hasBrandColors && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 rounded-lg border border-border/50">
+                {[brandPrimary, brandSecondary, brandAccent].filter(Boolean).map((color, i) => (
+                  <div
+                    key={i}
+                    className="w-4 h-4 rounded-full border border-white/20 shadow-sm"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+                <span className="text-xs text-muted-foreground ml-1.5">
+                  {brand?.name || activeBrand?.name || 'Brand'}
+                </span>
               </div>
             )}
             
@@ -435,6 +474,10 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               onClick={handleRegenerateAll}
               disabled={isGenerating}
               className="gap-2"
+              style={hasBrandColors ? { 
+                borderColor: `${brandPrimary}40`,
+                color: brandPrimary
+              } : undefined}
             >
               <RefreshCw className={cn("h-4 w-4", isGenerating && "animate-spin")} />
               Regenerate All
@@ -447,7 +490,10 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 h-[calc(100vh-4rem)] overflow-auto p-8">
+        <main className={cn(
+          "flex-1 overflow-auto p-8",
+          hasBrandColors ? "h-[calc(100vh-4.25rem)]" : "h-[calc(100vh-4rem)]"
+        )}>
           {/* Generation Progress */}
           {generationPhase === 'generating' && (
             <motion.div 
@@ -457,13 +503,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             >
               <div className="max-w-xl mx-auto text-center space-y-4">
                 <div className="flex items-center justify-center gap-3 text-lg font-medium">
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <Loader2 
+                    className="h-5 w-5 animate-spin" 
+                    style={{ color: brandPrimary || 'hsl(var(--primary))' }}
+                  />
                   Generating {VARIATION_COUNT} variations...
                 </div>
                 
                 <div className="relative h-2 bg-muted rounded-full overflow-hidden">
                   <motion.div 
-                    className={cn("h-full bg-gradient-to-r rounded-full", studioGradient)}
+                    className={cn(
+                      "h-full rounded-full",
+                      !hasBrandColors && `bg-gradient-to-r ${studioGradient}`
+                    )}
+                    style={hasBrandColors ? brandGradientStyle : undefined}
                     initial={{ width: 0 }}
                     animate={{ width: `${progressPercent}%` }}
                     transition={{ duration: 0.3 }}

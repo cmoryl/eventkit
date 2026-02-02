@@ -11,15 +11,24 @@ import {
   Move,
   Bookmark,
   Check,
-  Loader2
+  Loader2,
+  Palette
 } from 'lucide-react';
 import type { GeneratedAsset, ColorInfo, PresentationData } from '../../types';
 import { AssetType } from '../../types';
 import { isImageContent, getImageSrc, isSvgContent } from '../../utils/svgUtils';
 import { AIFeedback } from '../AIFeedback';
 import { useAuth } from '@/hooks/useAuth';
+import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+interface BrandStyles {
+  primary_color?: string;
+  secondary_color?: string;
+  accent_color?: string;
+}
 
 interface AssetPreviewModalProps {
   asset: GeneratedAsset;
@@ -28,6 +37,7 @@ interface AssetPreviewModalProps {
   onDownload?: (asset: GeneratedAsset) => void;
   generationId?: string | null;
   projectId?: string | null;
+  brandStyles?: BrandStyles;
 }
 
 const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
@@ -37,12 +47,27 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
   onDownload,
   generationId,
   projectId,
+  brandStyles,
 }) => {
   const { user } = useAuth();
+  const { activeBrand } = useActiveBrand();
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // Get brand colors - prefer passed props, fallback to active brand
+  const brandPrimary = brandStyles?.primary_color || activeBrand?.styles?.primary_color;
+  const brandSecondary = brandStyles?.secondary_color || activeBrand?.styles?.secondary_color;
+  const brandAccent = brandStyles?.accent_color || activeBrand?.styles?.accent_color;
+  const hasBrandColors = brandPrimary || brandSecondary || brandAccent;
+  
+  // Dynamic brand gradient
+  const brandGradientStyle = hasBrandColors 
+    ? { 
+        background: `linear-gradient(135deg, ${brandPrimary || 'hsl(var(--primary))'}, ${brandAccent || brandSecondary || 'hsl(var(--accent))'})` 
+      }
+    : undefined;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -341,13 +366,50 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
       ref={containerRef}
       className="fixed inset-0 bg-background/95 backdrop-blur-md flex flex-col z-50 animate-fade-in"
     >
+      {/* Brand Color Accent Bar */}
+      {hasBrandColors && (
+        <div 
+          className="h-1 w-full flex-shrink-0"
+          style={brandGradientStyle}
+        />
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b border-border">
+      <div className={cn(
+        "flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm",
+        hasBrandColors ? "border-b-0" : "border-b border-border"
+      )}>
         <div className="flex items-center gap-4">
           <h2 className="text-lg font-semibold text-foreground">{asset.title}</h2>
-          <span className="px-2.5 py-1 text-xs font-medium bg-secondary rounded-full text-muted-foreground">
+          <span 
+            className={cn(
+              "px-2.5 py-1 text-xs font-medium rounded-full",
+              hasBrandColors 
+                ? "text-white" 
+                : "bg-secondary text-muted-foreground"
+            )}
+            style={hasBrandColors ? { 
+              backgroundColor: `${brandPrimary}20`,
+              color: brandPrimary,
+              border: `1px solid ${brandPrimary}40`
+            } : undefined}
+          >
             {asset.type.replace(/_/g, ' ')}
           </span>
+          
+          {/* Brand Color Pills */}
+          {hasBrandColors && (
+            <div className="flex items-center gap-1 ml-2">
+              {[brandPrimary, brandSecondary, brandAccent].filter(Boolean).map((color, i) => (
+                <div
+                  key={i}
+                  className="w-3 h-3 rounded-full border border-white/20 shadow-sm"
+                  style={{ backgroundColor: color }}
+                  title={color}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -460,7 +522,18 @@ const AssetPreviewModal: React.FC<AssetPreviewModalProps> = ({
 
       {/* Footer hints */}
       {isImageAsset && (
-        <div className="p-3 bg-card/50 border-t border-border flex items-center justify-between">
+        <div className={cn(
+          "p-3 bg-card/50 flex items-center justify-between",
+          hasBrandColors ? "border-t-0" : "border-t border-border"
+        )}>
+          {/* Brand accent bottom border */}
+          {hasBrandColors && (
+            <div 
+              className="absolute bottom-0 left-0 right-0 h-0.5"
+              style={brandGradientStyle}
+            />
+          )}
+          
           <div className="flex items-center gap-6 text-xs text-muted-foreground">
             <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">+</kbd> / <kbd className="px-1.5 py-0.5 bg-secondary rounded">-</kbd> Zoom</span>
             <span><kbd className="px-1.5 py-0.5 bg-secondary rounded">0</kbd> Reset</span>
