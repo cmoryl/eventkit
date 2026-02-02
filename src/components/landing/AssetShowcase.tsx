@@ -35,6 +35,20 @@ import demoSocialPost from '@/assets/demos/demo-social-post.jpg';
 import demoTshirt from '@/assets/demos/demo-tshirt.jpg';
 import demoTicket from '@/assets/demos/demo-ticket.jpg';
 import demoPlaceCard from '@/assets/demos/demo-place-card.jpg';
+import demoLanyard from '@/assets/demos/demo-lanyard.jpg';
+import demoRollupBanner from '@/assets/demos/demo-rollup-banner.jpg';
+import demoStepRepeat from '@/assets/demos/demo-step-repeat.jpg';
+import demoInvitation from '@/assets/demos/demo-invitation.jpg';
+import demoMenu from '@/assets/demos/demo-menu.jpg';
+import demoCertificate from '@/assets/demos/demo-certificate.jpg';
+import demoWristband from '@/assets/demos/demo-wristband.jpg';
+import demoSponsorWall from '@/assets/demos/demo-sponsor-wall.jpg';
+import demoFloorDecal from '@/assets/demos/demo-floor-decal.jpg';
+import demoTableTent from '@/assets/demos/demo-table-tent.jpg';
+import demoPhotoBoothFrame from '@/assets/demos/demo-photo-booth-frame.jpg';
+import demoLinkedinBanner from '@/assets/demos/demo-linkedin-banner.jpg';
+import demoZoomBackground from '@/assets/demos/demo-zoom-background.jpg';
+import demoSwagBag from '@/assets/demos/demo-swag-bag.jpg';
 
 // Map assets to their studios with images - expanded with more variety
 const topRowAssets: ShowcaseAsset[] = [
@@ -47,6 +61,10 @@ const topRowAssets: ShowcaseAsset[] = [
   // Additional assets for variety
   { id: 'banners', image: demoBanner, title: 'Banners', gradient: 'from-cyan-500 to-blue-600', assetType: AssetType.Banner, studioId: 'print-signage' },
   { id: 'nametags', image: demoNameTag, title: 'Badges', gradient: 'from-purple-500 to-indigo-500', assetType: AssetType.NameTag, studioId: 'print-signage' },
+  { id: 'lanyards', image: demoLanyard, title: 'Lanyards', gradient: 'from-sky-500 to-blue-500', assetType: AssetType.Lanyard, studioId: 'merchandise' },
+  { id: 'rollup', image: demoRollupBanner, title: 'Roll-Ups', gradient: 'from-amber-500 to-orange-500', assetType: AssetType.StandUpPillarBanner, studioId: 'print-signage' },
+  { id: 'steprepeat', image: demoStepRepeat, title: 'Step & Repeat', gradient: 'from-fuchsia-500 to-pink-500', assetType: AssetType.StepAndRepeat, studioId: 'venue-experience' },
+  { id: 'sponsorwall', image: demoSponsorWall, title: 'Sponsors', gradient: 'from-slate-500 to-zinc-600', assetType: AssetType.SponsorWall, studioId: 'venue-experience' },
 ];
 
 const bottomRowAssets: ShowcaseAsset[] = [
@@ -59,6 +77,16 @@ const bottomRowAssets: ShowcaseAsset[] = [
   // Additional assets for variety
   { id: 'tickets', image: demoTicket, title: 'Tickets', gradient: 'from-yellow-500 to-orange-500', assetType: AssetType.TicketDesign, studioId: 'invitations-access' },
   { id: 'placecards', image: demoPlaceCard, title: 'Seating', gradient: 'from-teal-500 to-cyan-500', assetType: AssetType.PlaceCard, studioId: 'hospitality-dining' },
+  { id: 'invitation', image: demoInvitation, title: 'RSVP', gradient: 'from-rose-500 to-pink-500', assetType: AssetType.InvitationCard, studioId: 'invitations-access' },
+  { id: 'menus', image: demoMenu, title: 'Menus', gradient: 'from-emerald-500 to-green-500', assetType: AssetType.Menu, studioId: 'hospitality-dining' },
+  { id: 'certificates', image: demoCertificate, title: 'Certificates', gradient: 'from-amber-400 to-yellow-500', assetType: AssetType.CertificateAward, studioId: 'documents-forms' },
+  { id: 'wristbands', image: demoWristband, title: 'Wristbands', gradient: 'from-violet-500 to-purple-500', assetType: AssetType.WristbandDesign, studioId: 'invitations-access' },
+  { id: 'floordecal', image: demoFloorDecal, title: 'Floor Decals', gradient: 'from-blue-500 to-indigo-500', assetType: AssetType.FloorDecal, studioId: 'venue-experience' },
+  { id: 'tabletent', image: demoTableTent, title: 'Table Tents', gradient: 'from-orange-400 to-red-500', assetType: AssetType.TableTent, studioId: 'hospitality-dining' },
+  { id: 'photoframe', image: demoPhotoBoothFrame, title: 'Photo Frames', gradient: 'from-pink-400 to-rose-500', assetType: AssetType.PhotoBoothFrame, studioId: 'photo-engagement' },
+  { id: 'linkedin', image: demoLinkedinBanner, title: 'LinkedIn', gradient: 'from-blue-600 to-blue-800', assetType: AssetType.LinkedInBanner, studioId: 'social-digital' },
+  { id: 'zoom', image: demoZoomBackground, title: 'Zoom BG', gradient: 'from-cyan-400 to-blue-500', assetType: AssetType.ZoomBackground, studioId: 'social-digital' },
+  { id: 'swagbag', image: demoSwagBag, title: 'Swag Bags', gradient: 'from-purple-400 to-indigo-500', assetType: AssetType.SwagBag, studioId: 'merchandise' },
 ];
 
 const IconCard: React.FC<{
