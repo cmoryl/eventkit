@@ -2,13 +2,33 @@ import React, { useEffect, useState, useMemo } from 'react';
 import type { GeneratedAsset } from '../types';
 import type { LearnedInsight } from '@/services/aiBrain/types';
 import type { GenerationProgressInfo } from '@/hooks/useAIOrchestrator';
-import { Sparkles, Check, Loader2, Brain, Clock, Zap, Activity } from 'lucide-react';
+import { useRealtimeProgress, type RealtimeProgressData } from '@/hooks/useRealtimeProgress';
+import { Sparkles, Check, Loader2, Brain, Clock, Zap, Activity, Wifi, WifiOff } from 'lucide-react';
 import LearnedInsightsDisplay from './LearnedInsightsDisplay';
 
 interface GenerationLoaderProps {
   progress: GenerationProgressInfo;
   assets?: GeneratedAsset[];
   insights?: LearnedInsight[];
+}
+
+// Merge local progress with realtime data (realtime takes precedence when available)
+function mergeProgress(
+  local: GenerationProgressInfo, 
+  realtime: RealtimeProgressData | null
+): GenerationProgressInfo {
+  if (!realtime) return local;
+  
+  return {
+    ...local,
+    current: realtime.completed_assets,
+    total: realtime.total_assets,
+    completedAICalls: realtime.completed_ai_calls,
+    estimatedAICalls: realtime.estimated_ai_calls,
+    estimatedSecondsRemaining: realtime.estimated_seconds_remaining,
+    currentAssetName: realtime.current_asset_name || local.currentAssetName,
+    phase: realtime.phase as GenerationProgressInfo['phase'],
+  };
 }
 
 const GENERATION_TIPS = [
@@ -39,9 +59,21 @@ const getPhaseLabel = (phase: GenerationProgressInfo['phase']): string => {
   }
 };
 
-const GenerationLoader: React.FC<GenerationLoaderProps> = ({ progress, assets, insights }) => {
+const GenerationLoader: React.FC<GenerationLoaderProps> = ({ progress: localProgress, assets, insights }) => {
   const [tipIndex, setTipIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  
+  // Subscribe to realtime progress updates
+  const { progress: realtimeProgress, isSubscribed } = useRealtimeProgress({
+    sessionId: localProgress.sessionId,
+    enabled: !!localProgress.sessionId
+  });
+  
+  // Merge local and realtime progress
+  const progress = useMemo(() => 
+    mergeProgress(localProgress, realtimeProgress),
+    [localProgress, realtimeProgress]
+  );
   
   const percentage = progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0;
   const circumference = 2 * Math.PI * 90;
@@ -136,7 +168,24 @@ const GenerationLoader: React.FC<GenerationLoaderProps> = ({ progress, assets, i
         </p>
 
         {/* Stats row */}
-        <div className="flex items-center gap-6 mt-4">
+        <div className="flex items-center gap-4 mt-4 flex-wrap justify-center">
+          {/* Realtime indicator */}
+          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg ${
+            isSubscribed ? 'bg-success/10 text-success' : 'bg-secondary/50 text-muted-foreground'
+          }`}>
+            {isSubscribed ? (
+              <>
+                <Wifi className="w-4 h-4" />
+                <span className="text-sm font-medium">Live</span>
+              </>
+            ) : (
+              <>
+                <WifiOff className="w-4 h-4" />
+                <span className="text-sm font-medium">Local</span>
+              </>
+            )}
+          </div>
+          
           {/* Time remaining */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
             <Clock className="w-4 h-4 text-muted-foreground" />

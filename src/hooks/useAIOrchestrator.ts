@@ -4,6 +4,8 @@ import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, VenueVideoAnal
 import type { RenderEngine } from '@/services/aiBrain/types';
 import { generatePlaceholderContent, optimizeGenerationStrategy, prioritizeAssets } from '@/services/assetGenerator';
 import { fileToBase64 } from '@/utils';
+import { progressPublisher } from '@/services/progressPublisher';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UseAIOrchestratorProps {
   eventDetails: EventDetails;
@@ -26,6 +28,7 @@ interface GenerationResult {
 
 // Enhanced progress info with time estimates
 export interface GenerationProgressInfo {
+  sessionId: string | null;
   current: number;
   total: number;
   estimatedAICalls: number;
@@ -69,6 +72,7 @@ export const useAIOrchestrator = ({
 }: UseAIOrchestratorProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [generationProgress, setGenerationProgress] = useState<GenerationProgressInfo>({
+    sessionId: null,
     current: 0,
     total: 0,
     estimatedAICalls: 0,
@@ -110,7 +114,20 @@ export const useAIOrchestrator = ({
     // Calculate initial time estimate
     const initialEstimate = assetTypes.reduce((sum, type) => sum + getEstimatedTimeForAsset(type), 0);
     
-    setGenerationProgress({
+    // Start realtime progress session if user is authenticated
+    let sessionId: string | null = null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        sessionId = await progressPublisher.startSession(user.id);
+        console.log('Started realtime progress session:', sessionId);
+      }
+    } catch (err) {
+      console.warn('Failed to start progress session (non-blocking):', err);
+    }
+    
+    const initialProgress: GenerationProgressInfo = {
+      sessionId,
       current: 0,
       total: assetsToGenerate.filter(a => a.isLoading).length,
       estimatedAICalls: strategy.estimatedAICalls,
@@ -120,7 +137,21 @@ export const useAIOrchestrator = ({
       estimatedSecondsRemaining: Math.ceil(initialEstimate / 1000),
       currentAssetName: 'Preparing...',
       phase: 'preparing'
-    });
+    };
+    
+    setGenerationProgress(initialProgress);
+    
+    // Publish initial progress
+    if (progressPublisher.isActive()) {
+      progressPublisher.updateProgress({
+        totalAssets: initialProgress.total,
+        completedAssets: 0,
+        phase: 'preparing',
+        estimatedSecondsRemaining: initialProgress.estimatedSecondsRemaining,
+        estimatedAICalls: strategy.estimatedAICalls,
+        completedAICalls: 0
+      });
+    }
     
     // Prepare base64 images in parallel
     const [primaryLogoBase64, vibeImageBase64, masterPatternBase64, venueImageBase64] = await Promise.all([
@@ -199,6 +230,18 @@ export const useAIOrchestrator = ({
         phase: 'analyzing',
         currentAssetName: 'Analyzing reference image...'
       }));
+      
+      if (progressPublisher.isActive()) {
+        progressPublisher.updateProgress({
+          totalAssets: initialProgress.total,
+          completedAssets: 0,
+          phase: 'analyzing',
+          currentAssetName: 'Analyzing reference image...',
+          estimatedSecondsRemaining: initialProgress.estimatedSecondsRemaining,
+          estimatedAICalls: strategy.estimatedAICalls,
+          completedAICalls: 0
+        });
+      }
     }
 
     try {
@@ -213,6 +256,18 @@ export const useAIOrchestrator = ({
         phase: 'generating',
         currentAssetName: 'Starting generation...'
       }));
+      
+      if (progressPublisher.isActive()) {
+        progressPublisher.updateProgress({
+          totalAssets: total,
+          completedAssets: 0,
+          phase: 'generating',
+          currentAssetName: 'Starting generation...',
+          estimatedSecondsRemaining: initialProgress.estimatedSecondsRemaining,
+          estimatedAICalls: strategy.estimatedAICalls,
+          completedAICalls: 0
+        });
+      }
 
       // Get or generate color palette first
       let currentPalette = paletteOverride || colorPalette;
@@ -252,13 +307,27 @@ export const useAIOrchestrator = ({
         // Update progress with timing info
         const avgTime = timingHistory.current.reduce((a, b) => a + b, 0) / timingHistory.current.length;
         const remaining = total - 1;
+        const estimatedSecondsRemaining = Math.ceil((remaining * avgTime) / 1000);
+        
         setGenerationProgress(prev => ({
           ...prev,
           current: 1,
           completedAICalls,
           averageTimePerAsset: avgTime,
-          estimatedSecondsRemaining: Math.ceil((remaining * avgTime) / 1000)
+          estimatedSecondsRemaining
         }));
+        
+        if (progressPublisher.isActive()) {
+          progressPublisher.updateProgress({
+            totalAssets: total,
+            completedAssets: 1,
+            phase: 'generating',
+            currentAssetName: 'Color Palette',
+            estimatedSecondsRemaining,
+            estimatedAICalls: strategy.estimatedAICalls,
+            completedAICalls
+          });
+        }
       }
 
       // Generate other assets in parallel batches
@@ -332,13 +401,27 @@ export const useAIOrchestrator = ({
         // Update progress with improved time estimates
         const avgTime = timingHistory.current.slice(-5).reduce((a, b) => a + b, 0) / Math.min(5, timingHistory.current.length);
         const remaining = total - completedCount;
+        const estimatedSecondsRemaining = Math.max(0, Math.ceil((remaining * avgTime) / 1000));
+        
         setGenerationProgress(prev => ({
           ...prev,
           current: completedCount,
           completedAICalls,
           averageTimePerAsset: avgTime,
-          estimatedSecondsRemaining: Math.max(0, Math.ceil((remaining * avgTime) / 1000))
+          estimatedSecondsRemaining
         }));
+        
+        if (progressPublisher.isActive()) {
+          progressPublisher.updateProgress({
+            totalAssets: total,
+            completedAssets: completedCount,
+            phase: 'generating',
+            currentAssetName: batchNames,
+            estimatedSecondsRemaining,
+            estimatedAICalls: strategy.estimatedAICalls,
+            completedAICalls
+          });
+        }
       }
       
       // Mark complete
@@ -348,12 +431,41 @@ export const useAIOrchestrator = ({
         estimatedSecondsRemaining: 0,
         currentAssetName: 'Complete!'
       }));
+      
+      if (progressPublisher.isActive()) {
+        progressPublisher.updateProgress({
+          totalAssets: total,
+          completedAssets: completedCount,
+          phase: 'complete',
+          currentAssetName: 'Complete!',
+          estimatedSecondsRemaining: 0,
+          estimatedAICalls: strategy.estimatedAICalls,
+          completedAICalls
+        });
+      }
 
     } catch (error) {
       console.error("Generation failed:", error);
+      
+      if (progressPublisher.isActive()) {
+        progressPublisher.updateProgress({
+          totalAssets: initialProgress.total,
+          completedAssets: generationProgress.current,
+          phase: 'complete',
+          errorMessage: error instanceof Error ? error.message : 'Generation failed',
+          estimatedSecondsRemaining: 0,
+          estimatedAICalls: strategy.estimatedAICalls,
+          completedAICalls: generationProgress.completedAICalls
+        });
+      }
     } finally {
       setIsLoading(false);
       timingHistory.current = []; // Reset for next generation
+      
+      // End the progress session
+      if (progressPublisher.isActive()) {
+        await progressPublisher.endSession();
+      }
     }
   };
 

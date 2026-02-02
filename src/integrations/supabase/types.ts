@@ -362,6 +362,60 @@ export type Database = {
         }
         Relationships: []
       }
+      generation_progress: {
+        Row: {
+          completed_ai_calls: number
+          completed_assets: number
+          completed_at: string | null
+          current_asset_name: string | null
+          current_asset_type: string | null
+          error_message: string | null
+          estimated_ai_calls: number
+          estimated_seconds_remaining: number | null
+          id: string
+          phase: string
+          session_id: string
+          started_at: string
+          total_assets: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_ai_calls?: number
+          completed_assets?: number
+          completed_at?: string | null
+          current_asset_name?: string | null
+          current_asset_type?: string | null
+          error_message?: string | null
+          estimated_ai_calls?: number
+          estimated_seconds_remaining?: number | null
+          id?: string
+          phase?: string
+          session_id: string
+          started_at?: string
+          total_assets?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_ai_calls?: number
+          completed_assets?: number
+          completed_at?: string | null
+          current_asset_name?: string | null
+          current_asset_type?: string | null
+          error_message?: string | null
+          estimated_ai_calls?: number
+          estimated_seconds_remaining?: number | null
+          id?: string
+          phase?: string
+          session_id?: string
+          started_at?: string
+          total_assets?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hero_content: {
         Row: {
           badge_text: string | null
