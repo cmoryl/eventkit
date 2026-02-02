@@ -1,9 +1,11 @@
-// Visual Editor Canvas - Main canvas component with pan/zoom
+// Visual Editor Canvas - Main canvas component with pan/zoom and drag-drop upload
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import { CanvasElementRenderer } from './CanvasElementRenderer';
-import type { CanvasState, Position, SelectionBox } from '@/types/visualEditor.types';
+import type { CanvasState, CanvasElement, Position, SelectionBox } from '@/types/visualEditor.types';
 
 interface EditorCanvasProps {
   state: CanvasState;
@@ -17,8 +19,13 @@ interface EditorCanvasProps {
   onPanChange: (pan: Position) => void;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onAddElement: (element: Partial<CanvasElement>) => void;
   activeTool: 'select' | 'pan' | 'text' | 'shape';
 }
+
+// Maximum file size: 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   state,
@@ -32,6 +39,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   onPanChange,
   onDragStart,
   onDragEnd,
+  onAddElement,
   activeTool
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,10 +47,134 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
   const [isPanning, setIsPanning] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
   const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const { width, height, background, elements, selectedIds, zoom, pan } = state;
+
+  // Process dropped image file
+  const processImageFile = useCallback((file: File, dropPosition?: Position): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        reject(new Error('Please drop a valid image file (JPG, PNG, GIF, WebP, or SVG)'));
+        return;
+      }
+      
+      if (file.size > MAX_FILE_SIZE) {
+        reject(new Error('Image must be less than 5MB'));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        
+        // Get image dimensions
+        const img = new window.Image();
+        img.onload = () => {
+          // Scale down if too large (max 600px on any side for dropped images)
+          const maxDimension = 600;
+          let scaledWidth = img.naturalWidth;
+          let scaledHeight = img.naturalHeight;
+          
+          if (scaledWidth > maxDimension || scaledHeight > maxDimension) {
+            const scale = maxDimension / Math.max(scaledWidth, scaledHeight);
+            scaledWidth = Math.round(scaledWidth * scale);
+            scaledHeight = Math.round(scaledHeight * scale);
+          }
+          
+          // Calculate position - center at drop point if provided
+          const position = dropPosition 
+            ? { x: dropPosition.x - scaledWidth / 2, y: dropPosition.y - scaledHeight / 2 }
+            : { x: (width - scaledWidth) / 2, y: (height - scaledHeight) / 2 };
+          
+          onAddElement({
+            type: 'image',
+            name: file.name.replace(/\.[^/.]+$/, ''),
+            src: dataUrl,
+            size: { width: scaledWidth, height: scaledHeight },
+            position
+          });
+          
+          resolve();
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = dataUrl;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }, [width, height, onAddElement]);
+
+  // Handle drag over
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Check if files are being dragged
+    if (e.dataTransfer.types.includes('Files')) {
+      setIsDragOver(true);
+      e.dataTransfer.dropEffect = 'copy';
+    }
+  }, []);
+
+  // Handle drag leave
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Only set to false if leaving the container (not entering a child)
+    if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  // Handle drop
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      ACCEPTED_IMAGE_TYPES.includes(file.type)
+    );
+    
+    if (files.length === 0) {
+      toast.error('Please drop image files (JPG, PNG, GIF, WebP, or SVG)');
+      return;
+    }
+    
+    // Calculate drop position on canvas
+    const rect = canvasRef.current?.getBoundingClientRect();
+    let dropPosition: Position | undefined;
+    
+    if (rect) {
+      dropPosition = {
+        x: (e.clientX - rect.left) / zoom,
+        y: (e.clientY - rect.top) / zoom
+      };
+    }
+    
+    // Process all dropped files
+    let successCount = 0;
+    for (const file of files) {
+      try {
+        await processImageFile(file, dropPosition);
+        successCount++;
+        // Offset position for multiple files
+        if (dropPosition) {
+          dropPosition = { x: dropPosition.x + 30, y: dropPosition.y + 30 };
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to add image');
+      }
+    }
+    
+    if (successCount > 0) {
+      toast.success(`Added ${successCount} image${successCount > 1 ? 's' : ''} to canvas`);
+    }
+  }, [zoom, processImageFile]);
 
   // Handle wheel for zoom
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -184,7 +316,30 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = ({
       onWheel={handleWheel}
       onClick={handleCanvasClick}
       onMouseDown={handleMouseDown}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
+      {/* Drag overlay */}
+      {isDragOver && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="absolute inset-0 bg-primary/10 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none"
+        >
+          <div className="bg-background/90 backdrop-blur-sm rounded-xl p-8 shadow-2xl border-2 border-dashed border-primary flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <Upload className="h-8 w-8 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-lg">Drop images here</p>
+              <p className="text-sm text-muted-foreground">JPG, PNG, GIF, WebP, or SVG</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Canvas wrapper for pan/zoom */}
       <div
         className="absolute inset-0 flex items-center justify-center"
