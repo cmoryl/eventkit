@@ -21,7 +21,7 @@ import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
 import { useAuth } from '@/hooks/useAuth';
 
 const Admin: React.FC = () => {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -29,13 +29,35 @@ const Admin: React.FC = () => {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'prompts');
   const navigate = useNavigate();
 
-  // Check if already authenticated in session
+  // Check if already authenticated in session or pre-approved
   useEffect(() => {
     const adminAuth = sessionStorage.getItem('admin_authenticated');
     if (adminAuth === 'true') {
       setIsAdminAuthenticated(true);
+      return;
     }
-  }, []);
+
+    // Check if user is pre-approved admin
+    const checkPreApproved = async () => {
+      if (!user?.email) return;
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('verify-admin', {
+          body: { email: user.email }
+        });
+
+        if (!error && data?.success && data?.preApproved) {
+          setIsAdminAuthenticated(true);
+          sessionStorage.setItem('admin_authenticated', 'true');
+          toast.success('Welcome back, Admin');
+        }
+      } catch (error) {
+        console.error('Pre-approval check failed:', error);
+      }
+    };
+
+    checkPreApproved();
+  }, [user?.email]);
 
   // Handle tab from URL params
   useEffect(() => {

@@ -5,6 +5,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Pre-approved admin emails (master accounts)
+const PRE_APPROVED_ADMINS = [
+  'cmoryl@transperfect.com',
+];
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -12,7 +17,15 @@ serve(async (req) => {
   }
 
   try {
-    const { password } = await req.json();
+    const { password, email } = await req.json();
+
+    // Check if email is pre-approved (no password needed)
+    if (email && PRE_APPROVED_ADMINS.includes(email.toLowerCase())) {
+      return new Response(
+        JSON.stringify({ success: true, preApproved: true }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!password) {
       return new Response(
