@@ -197,6 +197,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             onPanChange={setPan}
             onDragStart={() => setIsDragging(true)}
             onDragEnd={() => setIsDragging(false)}
+            onAddElement={handleAddElement}
             activeTool={activeTool}
           />
 
