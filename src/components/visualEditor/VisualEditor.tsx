@@ -1,9 +1,10 @@
-// Visual Editor - Main component combining all parts
+// Visual Editor - Main component combining all parts with advanced graphic designer features
 import React, { useState, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, Sparkles, Layers, LayoutTemplate } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Sparkles, Layers, LayoutTemplate, Download, Brain, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useVisualEditor } from '@/hooks/useVisualEditor';
 import { EditorToolbar } from './EditorToolbar';
 import { EditorCanvas } from './EditorCanvas';
@@ -11,6 +12,10 @@ import { ElementSidebar } from './ElementSidebar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { LayerPanel } from './LayerPanel';
 import { TemplateGallery } from './TemplateGallery';
+import { AdvancedExportPanel, ExportOptions } from './AdvancedExportPanel';
+import { AIDesignToolsPanel } from './AIDesignToolsPanel';
+import { CollaborationPanel } from './CollaborationPanel';
+import { toast } from 'sonner';
 import type { CanvasElement, CanvasState } from '@/types/visualEditor.types';
 
 interface VisualEditorProps {
@@ -24,6 +29,7 @@ interface VisualEditorProps {
   onSave?: (state: CanvasState) => void;
   onExport?: (state: CanvasState) => void;
   showTemplatesOnOpen?: boolean;
+  designId?: string;
 }
 
 export const VisualEditor: React.FC<VisualEditorProps> = ({
@@ -36,10 +42,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   brandColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
   onSave,
   onExport,
-  showTemplatesOnOpen = true
+  showTemplatesOnOpen = true,
+  designId
 }) => {
   const [showLayers, setShowLayers] = useState(true);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [showExportPanel, setShowExportPanel] = useState(false);
+  const [showAITools, setShowAITools] = useState(false);
+  const [showCollaboration, setShowCollaboration] = useState(false);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [hasSelectedTemplate, setHasSelectedTemplate] = useState(false);
 
@@ -94,10 +104,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
   const handleSave = useCallback(() => {
     onSave?.(state);
+    toast.success('Design saved successfully!');
   }, [state, onSave]);
 
   const handleExport = useCallback(() => {
+    setShowExportPanel(true);
+  }, []);
+
+  const handleAdvancedExport = useCallback((options: ExportOptions) => {
+    console.log('Exporting with options:', options);
     onExport?.(state);
+    toast.success(`Exporting as ${options.format.toUpperCase()} (${options.colorMode.toUpperCase()})`);
   }, [state, onExport]);
 
   const handleSelectTemplate = useCallback((templateState: CanvasState) => {
@@ -110,6 +127,10 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     setHasSelectedTemplate(true);
     setShowTemplateGallery(false);
   }, []);
+
+  const handleApplyAISuggestion = useCallback((updates: Partial<CanvasState>) => {
+    loadState({ ...state, ...updates });
+  }, [state, loadState]);
 
   if (!isOpen) return null;
 
@@ -137,28 +158,86 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2"
-              onClick={() => setShowTemplateGallery(true)}
-            >
-              <LayoutTemplate className="h-4 w-4" />
-              Templates
-            </Button>
-            <Button
-              size="sm"
-              variant={showLayers ? 'secondary' : 'ghost'}
-              className="gap-2"
-              onClick={() => setShowLayers(!showLayers)}
-            >
-              <Layers className="h-4 w-4" />
-              Layers
-            </Button>
-            <Button size="sm" variant="outline" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              AI Assist
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setShowTemplateGallery(true)}
+                >
+                  <LayoutTemplate className="h-4 w-4" />
+                  Templates
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Browse design templates</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant={showLayers ? 'secondary' : 'ghost'}
+                  className="gap-2"
+                  onClick={() => setShowLayers(!showLayers)}
+                >
+                  <Layers className="h-4 w-4" />
+                  Layers
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Toggle layer panel</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  size="sm" 
+                  variant={showAITools ? 'secondary' : 'outline'}
+                  className="gap-2"
+                  onClick={() => {
+                    setShowAITools(!showAITools);
+                    if (!showAITools) setShowCollaboration(false);
+                  }}
+                >
+                  <Brain className="h-4 w-4" />
+                  AI Tools
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>AI-powered design assistance</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  size="sm" 
+                  variant={showCollaboration ? 'secondary' : 'outline'}
+                  className="gap-2"
+                  onClick={() => {
+                    setShowCollaboration(!showCollaboration);
+                    if (!showCollaboration) setShowAITools(false);
+                  }}
+                >
+                  <Users className="h-4 w-4" />
+                  Collaborate
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Comments, history & sharing</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  size="sm" 
+                  variant="default"
+                  className="gap-2"
+                  onClick={handleExport}
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Advanced export options</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
@@ -202,7 +281,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           />
 
           {/* Layer Panel (optional) */}
-          {showLayers && (
+          {showLayers && !showAITools && !showCollaboration && (
             <LayerPanel
               elements={state.elements}
               selectedIds={state.selectedIds}
@@ -214,13 +293,40 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           )}
 
           {/* Properties Panel */}
-          <PropertiesPanel
-            selectedElements={selectedElements}
-            onUpdateElement={updateElement}
-            onDeleteElements={deleteElements}
-            onDuplicateElements={duplicateElements}
-            onReorderElement={reorderElement}
-          />
+          {!showAITools && !showCollaboration && (
+            <PropertiesPanel
+              selectedElements={selectedElements}
+              onUpdateElement={updateElement}
+              onDeleteElements={deleteElements}
+              onDuplicateElements={duplicateElements}
+              onReorderElement={reorderElement}
+            />
+          )}
+
+          {/* AI Design Tools Panel */}
+          <AnimatePresence>
+            {showAITools && (
+              <AIDesignToolsPanel
+                isOpen={showAITools}
+                onClose={() => setShowAITools(false)}
+                canvasState={state}
+                onApplySuggestion={handleApplyAISuggestion}
+                onAddElement={handleAddElement}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Collaboration Panel */}
+          <AnimatePresence>
+            {showCollaboration && (
+              <CollaborationPanel
+                isOpen={showCollaboration}
+                onClose={() => setShowCollaboration(false)}
+                designId={designId}
+                designName={assetName}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Template Gallery Modal */}
@@ -228,6 +334,14 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
           isOpen={showTemplateGallery}
           onClose={handleSkipTemplates}
           onSelectTemplate={handleSelectTemplate}
+        />
+
+        {/* Advanced Export Panel */}
+        <AdvancedExportPanel
+          isOpen={showExportPanel}
+          onClose={() => setShowExportPanel(false)}
+          canvasState={state}
+          onExport={handleAdvancedExport}
         />
       </motion.div>
     </TooltipProvider>
