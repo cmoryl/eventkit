@@ -9,7 +9,7 @@ import {
   getCachedPalette, 
   cachePalette 
 } from './generationOptimizer';
-
+import { parseAIError, handleAIError, type AIError } from './aiErrorHandler';
 // Flag to determine if we should use AI or fallback to local generation
 const USE_AI_GENERATION = true;
 const COLOR_NAMES: Record<string, string> = {
@@ -588,11 +588,21 @@ export const generateAssetImage = async (
     });
 
     if (error) {
-      // Handle rate limits gracefully
-      if (error.message?.includes('429') || error.message?.includes('rate limit')) {
+      // Parse the error for better handling
+      const aiError = parseAIError(error);
+      
+      // Handle specific error types
+      if (aiError.type === 'RATE_LIMIT') {
         console.warn('AI image generation rate limited, falling back to canvas');
         return null;
       }
+      
+      if (aiError.type === 'PAYMENT_REQUIRED') {
+        // Show toast for payment errors - this is important for users to know
+        handleAIError(error);
+        return null;
+      }
+      
       throw error;
     }
     
@@ -601,11 +611,18 @@ export const generateAssetImage = async (
     }
     
     if (data?.error) {
+      // Parse backend error message for specific handling
+      const aiError = parseAIError(data.error);
+      if (aiError.type === 'RATE_LIMIT' || aiError.type === 'PAYMENT_REQUIRED') {
+        handleAIError(data.error);
+      }
       console.warn('AI image generation returned error:', data.error);
       return null;
     }
   } catch (e) {
-    console.warn('AI image generation failed:', e);
+    // Parse error but don't show toast by default (let caller decide)
+    const aiError = parseAIError(e);
+    console.warn(`AI image generation failed (${aiError.type}):`, aiError.message);
   }
 
   return null;
