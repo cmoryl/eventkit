@@ -9,6 +9,12 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandStyleEditor } from './BrandStyleEditor';
 
+interface BrandStyle {
+  primary_color?: string;
+  secondary_color?: string;
+  accent_color?: string;
+}
+
 interface Brand {
   id: string;
   name: string;
@@ -19,6 +25,7 @@ interface Brand {
   brandhub_share_token?: string;
   brandhub_last_synced?: string;
   brandhub_auto_sync?: boolean;
+  brand_styles?: BrandStyle[];
 }
 
 export const AdminBrandManager: React.FC = () => {
@@ -46,7 +53,7 @@ export const AdminBrandManager: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('brands')
-        .select('*')
+        .select('*, brand_styles(primary_color, secondary_color, accent_color)')
         .order('is_default', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -210,31 +217,65 @@ export const AdminBrandManager: React.FC = () => {
               animate={{ opacity: 1 }}
               className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:border-primary/50 transition-all"
             >
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+              <div 
+                className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden"
+                style={{
+                  background: brand.brand_styles?.[0]?.primary_color 
+                    ? `linear-gradient(135deg, ${brand.brand_styles[0].primary_color}, ${brand.brand_styles[0].accent_color || brand.brand_styles[0].secondary_color || brand.brand_styles[0].primary_color})`
+                    : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
+                }}
+              >
                 {brand.logo_url ? (
-                  <img src={brand.logo_url} alt={brand.name} className="w-full h-full object-cover rounded-lg" />
+                  <img src={brand.logo_url} alt={brand.name} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-lg font-bold text-white">{brand.name.charAt(0)}</span>
                 )}
               </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-foreground">{brand.name}</h3>
-                    {brand.is_default && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">Default</span>
-                    )}
-                    {brand.brandhub_share_token && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-500 flex items-center gap-1">
-                        <Link className="w-3 h-3" />
-                        Linked
-                      </span>
-                    )}
-                  </div>
-                  {brand.description && (
-                    <p className="text-sm text-muted-foreground truncate">{brand.description}</p>
+              {/* Color Bar */}
+              {brand.brand_styles?.[0] && (brand.brand_styles[0].primary_color || brand.brand_styles[0].secondary_color || brand.brand_styles[0].accent_color) && (
+                <div className="flex gap-1 flex-shrink-0">
+                  {brand.brand_styles[0].primary_color && (
+                    <div 
+                      className="w-4 h-8 rounded-sm border border-border" 
+                      style={{ backgroundColor: brand.brand_styles[0].primary_color }}
+                      title="Primary"
+                    />
+                  )}
+                  {brand.brand_styles[0].secondary_color && (
+                    <div 
+                      className="w-4 h-8 rounded-sm border border-border" 
+                      style={{ backgroundColor: brand.brand_styles[0].secondary_color }}
+                      title="Secondary"
+                    />
+                  )}
+                  {brand.brand_styles[0].accent_color && (
+                    <div 
+                      className="w-4 h-8 rounded-sm border border-border" 
+                      style={{ backgroundColor: brand.brand_styles[0].accent_color }}
+                      title="Accent"
+                    />
                   )}
                 </div>
+              )}
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">{brand.name}</h3>
+                  {brand.is_default && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary">Default</span>
+                  )}
+                  {brand.brandhub_share_token && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-500 flex items-center gap-1">
+                      <Link className="w-3 h-3" />
+                      Linked
+                    </span>
+                  )}
+                </div>
+                {brand.description && (
+                  <p className="text-sm text-muted-foreground truncate">{brand.description}</p>
+                )}
+              </div>
 
               <div className="flex items-center gap-1">
                 <Button 
