@@ -40,6 +40,7 @@ interface ActiveBrandIndicatorProps {
   onResetTheme?: () => void;
   isThemeApplied?: boolean;
   savedBrandId?: string | null;
+  projectBrandId?: string | null;
   variant?: 'compact' | 'full';
   className?: string;
 }
@@ -52,12 +53,14 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
   onResetTheme,
   isThemeApplied = false,
   savedBrandId,
+  projectBrandId,
   variant = 'compact',
   className
 }) => {
   if (!activeBrand) return null;
 
   const isSavedBrand = savedBrandId === activeBrand.id;
+  const isProjectBrand = projectBrandId === activeBrand.id;
 
   const brandColors = activeBrand.styles 
     ? [
@@ -130,10 +133,12 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
                     animate={{ scale: 1 }}
                     className={cn(
                       "flex items-center justify-center",
-                      isSavedBrand ? "text-emerald-500" : "text-amber-500"
+                      isProjectBrand ? "text-blue-500" : isSavedBrand ? "text-emerald-500" : "text-amber-500"
                     )}
                   >
-                    {isSavedBrand ? (
+                    {isProjectBrand ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : isSavedBrand ? (
                       <CheckCircle2 className="w-3.5 h-3.5" />
                     ) : (
                       <Circle className="w-3.5 h-3.5" />
@@ -141,7 +146,11 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
                   </motion.div>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs">
-                  {isSavedBrand ? 'Theme saved to profile' : 'Theme applied (not saved)'}
+                  {isProjectBrand 
+                    ? 'Project brand' 
+                    : isSavedBrand 
+                      ? 'Theme saved to profile' 
+                      : 'Theme applied (not saved)'}
                 </TooltipContent>
               </Tooltip>
             )}
@@ -178,12 +187,25 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
             </div>
           </div>
 
-            {/* Saved Status Badge */}
-            {isSavedBrand && (
-              <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                  Saved to profile
+            {/* Saved/Project Status Badge */}
+            {(isSavedBrand || isProjectBrand) && (
+              <div className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded-md border",
+                isProjectBrand 
+                  ? "bg-blue-500/10 border-blue-500/20" 
+                  : "bg-emerald-500/10 border-emerald-500/20"
+              )}>
+                <CheckCircle2 className={cn(
+                  "w-3.5 h-3.5",
+                  isProjectBrand ? "text-blue-500" : "text-emerald-500"
+                )} />
+                <span className={cn(
+                  "text-xs font-medium",
+                  isProjectBrand 
+                    ? "text-blue-600 dark:text-blue-400" 
+                    : "text-emerald-600 dark:text-emerald-400"
+                )}>
+                  {isProjectBrand ? 'Project brand' : 'Saved to profile'}
                 </span>
               </div>
             )}
@@ -257,7 +279,7 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
                     )}
                     <span className="flex-1 truncate">{brand.name}</span>
                     
-                    {/* Saved indicator */}
+                    {/* Saved/Project indicator */}
                     {isSaved && (
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -268,8 +290,18 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
                         </TooltipContent>
                       </Tooltip>
                     )}
+                    {brand.id === projectBrandId && !isSaved && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="text-xs">
+                          Project brand
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                     
-                    {brand.is_default && !isSaved && (
+                    {brand.is_default && !isSaved && brand.id !== projectBrandId && (
                       <span className="text-[10px] text-muted-foreground">Default</span>
                     )}
                     {brand.id === activeBrand.id && (
