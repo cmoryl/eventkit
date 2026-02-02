@@ -34,7 +34,8 @@ const categoryIcons: Record<VendorTemplate['category'], React.ElementType> = {
   specialty: Package,
   trade: Printer,
   signage: MapPin,
-  apparel: Package
+  apparel: Package,
+  promo: Sparkles
 };
 
 const categoryLabels: Record<VendorTemplate['category'], string> = {
@@ -44,7 +45,8 @@ const categoryLabels: Record<VendorTemplate['category'], string> = {
   specialty: 'Specialty Printing',
   trade: 'Trade Printers',
   signage: 'Signs & Banners',
-  apparel: 'Apparel & Merch'
+  apparel: 'Apparel & Merch',
+  promo: 'Promotional Products'
 };
 
 const VendorSelector: React.FC<VendorSelectorProps> = ({
@@ -66,7 +68,7 @@ const VendorSelector: React.FC<VendorSelectorProps> = ({
     return acc;
   }, {} as Record<VendorTemplate['category'], VendorTemplate[]>);
 
-  const categories: VendorTemplate['category'][] = ['online', 'trade', 'signage', 'apparel', 'local', 'premium', 'specialty'];
+  const categories: VendorTemplate['category'][] = ['online', 'trade', 'signage', 'apparel', 'promo', 'local', 'premium', 'specialty'];
 
   return (
     <div className="space-y-3">
