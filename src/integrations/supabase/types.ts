@@ -724,6 +724,48 @@ export type Database = {
         }
         Relationships: []
       }
+      queue_analytics: {
+        Row: {
+          asset_type: string
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          job_id: string
+          render_engine: string | null
+          retry_count: number | null
+          session_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          asset_type: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_id: string
+          render_engine?: string | null
+          retry_count?: number | null
+          session_id?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          asset_type?: string
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          job_id?: string
+          render_engine?: string | null
+          retry_count?: number | null
+          session_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       render_engines: {
         Row: {
           api_key_encrypted: string | null

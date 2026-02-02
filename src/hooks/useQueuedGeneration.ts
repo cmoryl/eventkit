@@ -13,6 +13,8 @@ import {
   getStoredPendingJobs,
   getQueueSummary,
 } from '@/services/queuePersistence';
+import { recordJobAnalytics } from '@/services/queueAnalyticsService';
+import { supabase } from '@/integrations/supabase/client';
 import type { GeneratedAsset, ColorInfo, EventDetails } from '@/types';
 import type { RenderEngine } from '@/services/aiBrain/types';
 import { generatePlaceholderContent } from '@/services/assetGenerator';
@@ -129,6 +131,25 @@ export function useQueuedGeneration({
           if (event.job) {
             completedCountRef.current++;
             
+            // Calculate duration
+            const durationMs = event.job.startedAt 
+              ? Date.now() - event.job.startedAt 
+              : undefined;
+            
+            // Record analytics
+            supabase.auth.getUser().then(({ data: { user } }) => {
+              if (user) {
+                recordJobAnalytics({
+                  userId: user.id,
+                  assetType: event.job!.assetType,
+                  jobId: event.job!.id,
+                  status: 'completed',
+                  durationMs,
+                  retryCount: event.job!.retryCount,
+                });
+              }
+            });
+            
             // Update the asset with the result
             setGeneratedAssets(prev => prev.map(asset =>
               asset.id === event.job!.assetId
@@ -157,6 +178,26 @@ export function useQueuedGeneration({
         case 'job-failed':
           if (event.job) {
             failedCountRef.current++;
+            
+            // Calculate duration
+            const failedDurationMs = event.job.startedAt 
+              ? Date.now() - event.job.startedAt 
+              : undefined;
+            
+            // Record analytics for failed job
+            supabase.auth.getUser().then(({ data: { user } }) => {
+              if (user) {
+                recordJobAnalytics({
+                  userId: user.id,
+                  assetType: event.job!.assetType,
+                  jobId: event.job!.id,
+                  status: 'failed',
+                  durationMs: failedDurationMs,
+                  retryCount: event.job!.retryCount,
+                  errorMessage: event.job!.error,
+                });
+              }
+            });
             
             setGeneratedAssets(prev => prev.map(asset =>
               asset.id === event.job!.assetId
