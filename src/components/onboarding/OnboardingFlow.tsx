@@ -230,62 +230,162 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         {/* Breadcrumb Navigation */}
         <motion.div variants={itemVariants} className="mb-6">
           <Breadcrumb>
-            <BreadcrumbList>
+            <BreadcrumbList className="flex-wrap">
               <BreadcrumbItem>
-                <BreadcrumbLink href="/" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
-                  <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">Home</span>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                {step === 1 ? (
-                  <BreadcrumbPage className="flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-violet-500" />
-                    Event Details
-                  </BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink 
-                    onClick={() => { setDirection(-1); setStep(1); }}
-                    className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span className="hidden sm:inline">Event Details</span>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <BreadcrumbLink href="/" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-200">
+                    <Home className="w-4 h-4" />
+                    <span className="hidden sm:inline">Home</span>
                   </BreadcrumbLink>
-                )}
+                </motion.div>
               </BreadcrumbItem>
-              {step >= 2 && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    {step === 2 ? (
-                      <BreadcrumbPage className="flex items-center gap-1.5">
-                        <Palette className="w-4 h-4 text-pink-500" />
-                        Style & Vibe
+              <BreadcrumbSeparator>
+                <motion.div
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                </motion.div>
+              </BreadcrumbSeparator>
+              <BreadcrumbItem>
+                <AnimatePresence mode="wait">
+                  {step === 1 ? (
+                    <motion.div
+                      key="step1-active"
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <BreadcrumbPage className="flex items-center gap-1.5 font-medium">
+                        <motion.div
+                          animate={{ rotate: [0, 15, -15, 0] }}
+                          transition={{ duration: 0.5, delay: 0.2 }}
+                        >
+                          <Sparkles className="w-4 h-4 text-violet-500" />
+                        </motion.div>
+                        Event Details
                       </BreadcrumbPage>
-                    ) : (
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="step1-link"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      whileHover={{ scale: 1.05, x: 2 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="cursor-pointer"
+                    >
                       <BreadcrumbLink 
-                        onClick={() => { setDirection(-1); setStep(2); }}
-                        className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                        onClick={() => { setDirection(-1); setStep(1); }}
+                        className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-200"
                       >
-                        <Palette className="w-4 h-4" />
-                        <span className="hidden sm:inline">Style & Vibe</span>
+                        <Sparkles className="w-4 h-4" />
+                        <span className="hidden sm:inline">Event Details</span>
                       </BreadcrumbLink>
-                    )}
-                  </BreadcrumbItem>
-                </>
-              )}
-              {step >= 3 && (
-                <>
-                  <BreadcrumbSeparator />
-                  <BreadcrumbItem>
-                    <BreadcrumbPage className="flex items-center gap-1.5">
-                      <Layers className="w-4 h-4 text-cyan-500" />
-                      Select Assets
-                    </BreadcrumbPage>
-                  </BreadcrumbItem>
-                </>
-              )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </BreadcrumbItem>
+              <AnimatePresence>
+                {step >= 2 && (
+                  <motion.div
+                    className="contents"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                  >
+                    <BreadcrumbSeparator>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.2, delay: 0.1 }}
+                      >
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </motion.div>
+                    </BreadcrumbSeparator>
+                    <BreadcrumbItem>
+                      <AnimatePresence mode="wait">
+                        {step === 2 ? (
+                          <motion.div
+                            key="step2-active"
+                            initial={{ opacity: 0, y: -5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 5 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <BreadcrumbPage className="flex items-center gap-1.5 font-medium">
+                              <motion.div
+                                animate={{ rotate: [0, 360] }}
+                                transition={{ duration: 0.6, delay: 0.2 }}
+                              >
+                                <Palette className="w-4 h-4 text-pink-500" />
+                              </motion.div>
+                              Style & Vibe
+                            </BreadcrumbPage>
+                          </motion.div>
+                        ) : (
+                          <motion.div
+                            key="step2-link"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            whileHover={{ scale: 1.05, x: 2 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="cursor-pointer"
+                          >
+                            <BreadcrumbLink 
+                              onClick={() => { setDirection(-1); setStep(2); }}
+                              className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors duration-200"
+                            >
+                              <Palette className="w-4 h-4" />
+                              <span className="hidden sm:inline">Style & Vibe</span>
+                            </BreadcrumbLink>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </BreadcrumbItem>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <AnimatePresence>
+                {step >= 3 && (
+                  <motion.div
+                    className="contents"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.3, ease: "easeOut", delay: 0.1 }}
+                  >
+                    <BreadcrumbSeparator>
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ duration: 0.2, delay: 0.15 }}
+                      >
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </motion.div>
+                    </BreadcrumbSeparator>
+                    <BreadcrumbItem>
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2, delay: 0.2 }}
+                      >
+                        <BreadcrumbPage className="flex items-center gap-1.5 font-medium">
+                          <motion.div
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 0.4, delay: 0.3 }}
+                          >
+                            <Layers className="w-4 h-4 text-cyan-500" />
+                          </motion.div>
+                          Select Assets
+                        </BreadcrumbPage>
+                      </motion.div>
+                    </BreadcrumbItem>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </BreadcrumbList>
           </Breadcrumb>
         </motion.div>
