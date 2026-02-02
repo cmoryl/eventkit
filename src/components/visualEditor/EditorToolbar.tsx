@@ -2,12 +2,18 @@
 import React from 'react';
 import { 
   MousePointer2, Hand, Type, Square, Undo2, Redo2, 
-  ZoomIn, ZoomOut, Maximize2, Download, Save, Settings,
-  Minus, Plus, Grid3X3
+  ZoomIn, ZoomOut, Maximize2, Download, Save, Grid3X3,
+  ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 interface EditorToolbarProps {
@@ -73,7 +79,15 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   showGrid,
   onToggleGrid
 }) => {
-  const zoomPresets = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3];
+  const zoomPresets = [
+    { value: 0.25, label: '25%' },
+    { value: 0.5, label: '50%' },
+    { value: 0.75, label: '75%' },
+    { value: 1, label: '100%' },
+    { value: 1.5, label: '150%' },
+    { value: 2, label: '200%' },
+    { value: 3, label: '300%' },
+  ];
 
   return (
     <div className="h-12 border-b bg-background flex items-center px-3 gap-1">
@@ -147,19 +161,29 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
           </TooltipTrigger>
           <TooltipContent>Zoom Out</TooltipContent>
         </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-3 min-w-[60px] font-medium"
-              onClick={() => onZoomChange(1)}
+              className="h-8 px-2 min-w-[70px] font-medium gap-1"
             >
               {Math.round(zoom * 100)}%
+              <ChevronDown className="h-3 w-3 opacity-50" />
             </Button>
-          </TooltipTrigger>
-          <TooltipContent>Reset to 100%</TooltipContent>
-        </Tooltip>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" className="min-w-[100px]">
+            {zoomPresets.map((preset) => (
+              <DropdownMenuItem
+                key={preset.value}
+                onClick={() => onZoomChange(preset.value)}
+                className={zoom === preset.value ? 'bg-accent' : ''}
+              >
+                {preset.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
