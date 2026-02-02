@@ -1,9 +1,10 @@
 // Active Brand Indicator - Shows the currently active brand with quick actions
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, ChevronDown, Check, PaintBucket, RotateCcw, CheckCircle2, Circle } from 'lucide-react';
+import { Palette, ChevronDown, Check, PaintBucket, RotateCcw, CheckCircle2, Circle, Settings2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,6 +58,8 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
   variant = 'compact',
   className
 }) => {
+  const [showThemeSettings, setShowThemeSettings] = useState(false);
+
   if (!activeBrand) return null;
 
   const isSavedBrand = savedBrandId === activeBrand.id;
@@ -240,6 +243,10 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
                   <span>Reset to Default Theme</span>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem onClick={() => setShowThemeSettings(true)} className="gap-2">
+                <Settings2 className="w-4 h-4" />
+                <span>View Theme Settings</span>
+              </DropdownMenuItem>
             </div>
             <DropdownMenuSeparator />
           </>
@@ -314,6 +321,150 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Theme Settings Modal */}
+      <Dialog open={showThemeSettings} onOpenChange={setShowThemeSettings}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Palette className="w-5 h-5 text-primary" />
+              Brand Theme Settings
+            </DialogTitle>
+            <DialogDescription>
+              Current theme configuration for {activeBrand.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Brand Info */}
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              {activeBrand.logo_url ? (
+                <img 
+                  src={activeBrand.logo_url} 
+                  alt={activeBrand.name}
+                  className="w-12 h-12 rounded-lg object-cover"
+                />
+              ) : (
+                <div 
+                  className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-bold text-white"
+                  style={{ 
+                    background: activeBrand.styles?.primary_color 
+                      ? `linear-gradient(135deg, ${activeBrand.styles.primary_color}, ${activeBrand.styles.accent_color || activeBrand.styles.primary_color})`
+                      : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
+                  }}
+                >
+                  {activeBrand.name.charAt(0)}
+                </div>
+              )}
+              <div>
+                <p className="font-semibold">{activeBrand.name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {isProjectBrand ? 'Project brand' : isSavedBrand ? 'Saved to profile' : 'Active brand'}
+                </p>
+              </div>
+            </div>
+
+            {/* Color Palette */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Color Palette</p>
+              <div className="grid grid-cols-3 gap-2">
+                {activeBrand.styles?.primary_color && (
+                  <div className="space-y-1">
+                    <div 
+                      className="h-12 rounded-lg border border-border shadow-sm"
+                      style={{ backgroundColor: activeBrand.styles.primary_color }}
+                    />
+                    <p className="text-xs text-center text-muted-foreground">Primary</p>
+                    <p className="text-xs text-center font-mono">{activeBrand.styles.primary_color}</p>
+                  </div>
+                )}
+                {activeBrand.styles?.secondary_color && (
+                  <div className="space-y-1">
+                    <div 
+                      className="h-12 rounded-lg border border-border shadow-sm"
+                      style={{ backgroundColor: activeBrand.styles.secondary_color }}
+                    />
+                    <p className="text-xs text-center text-muted-foreground">Secondary</p>
+                    <p className="text-xs text-center font-mono">{activeBrand.styles.secondary_color}</p>
+                  </div>
+                )}
+                {activeBrand.styles?.accent_color && (
+                  <div className="space-y-1">
+                    <div 
+                      className="h-12 rounded-lg border border-border shadow-sm"
+                      style={{ backgroundColor: activeBrand.styles.accent_color }}
+                    />
+                    <p className="text-xs text-center text-muted-foreground">Accent</p>
+                    <p className="text-xs text-center font-mono">{activeBrand.styles.accent_color}</p>
+                  </div>
+                )}
+              </div>
+              {!activeBrand.styles?.primary_color && !activeBrand.styles?.secondary_color && !activeBrand.styles?.accent_color && (
+                <p className="text-sm text-muted-foreground italic">No custom colors defined</p>
+              )}
+            </div>
+
+            {/* Theme Status */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Theme Status</p>
+              <div className="flex flex-wrap gap-2">
+                <div className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
+                  isThemeApplied 
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {isThemeApplied ? <CheckCircle2 className="w-3 h-3" /> : <Circle className="w-3 h-3" />}
+                  {isThemeApplied ? 'Applied to UI' : 'Not applied'}
+                </div>
+                {isSavedBrand && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Saved to profile
+                  </div>
+                )}
+                {isProjectBrand && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Project brand
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-2">
+              {onApplyTheme && (
+                <Button 
+                  onClick={() => {
+                    onApplyTheme();
+                    setShowThemeSettings(false);
+                  }}
+                  size="sm"
+                  className="flex-1 gap-2"
+                >
+                  <PaintBucket className="w-4 h-4" />
+                  Apply Theme
+                </Button>
+              )}
+              {onResetTheme && isThemeApplied && (
+                <Button 
+                  onClick={() => {
+                    onResetTheme();
+                    setShowThemeSettings(false);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset
+                </Button>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 };
