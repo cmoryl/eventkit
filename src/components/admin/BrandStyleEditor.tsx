@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { 
   Palette, Type, Sparkles, Save, X, Plus, Trash2, 
   Image as ImageIcon, Eye, PaintBucket, Wand2, Upload, FileText, Loader2, ExternalLink,
-  Link, RefreshCw, Unlink, Clock, Brain, Images
+  Link, RefreshCw, Unlink, Clock, Brain, Images, RotateCcw
 } from 'lucide-react';
 import { BrandImageryGallery } from './BrandImageryGallery';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { addOrUpdateKnowledge } from '@/services/aiBrain/learningService';
 import { useAuth } from '@/hooks/useAuth';
+import { applyBrandTheme, resetBrandTheme, isBrandThemeApplied } from '@/services/brandThemeService';
 
 interface ColorInfo {
   hex: string;
@@ -224,7 +225,7 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
       }
 
       if (data?.brand) {
-        applyBrandHubData(data.brand);
+        const extractedColors = applyBrandHubData(data.brand);
         
         // Update last synced timestamp
         const now = new Date().toISOString();
@@ -244,6 +245,9 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           syncTimestamp: now,
           hubBrandName: data.brand.name
         });
+        
+        // Apply brand colors to UI theme using extracted values
+        applyBrandTheme(extractedColors);
         
         toast.success('Brand synced from BrandHub');
       }
@@ -290,8 +294,8 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     }
   };
 
-  // Apply BrandHub data to style state
-  const applyBrandHubData = (hubBrand: Record<string, unknown>) => {
+  // Apply BrandHub data to style state and return extracted colors for theming
+  const applyBrandHubData = (hubBrand: Record<string, unknown>): { primary_color?: string; secondary_color?: string; accent_color?: string; color_palette?: ColorInfo[] } => {
     const guideData = (hubBrand.guide_data || {}) as Record<string, unknown>;
     
     // Extract colors
@@ -496,6 +500,14 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         .eq('id', brand.id)
         .then(() => console.log('Updated brand logos'));
     }
+    
+    // Return extracted colors for immediate theming
+    return {
+      primary_color: primaryColor,
+      secondary_color: secondaryColor,
+      accent_color: accentColor,
+      color_palette: colorPalette
+    };
   };
 
   // Import from BrandHub Creator via share URL and link it
@@ -532,7 +544,7 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
       if (error) throw error;
 
       if (data?.brand) {
-        applyBrandHubData(data.brand);
+        const extractedColors = applyBrandHubData(data.brand);
         
         // Save the link for future syncs
         const now = new Date().toISOString();
@@ -556,6 +568,10 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         });
 
         setBrandHubUrl('');
+        
+        // Apply brand colors to UI theme using extracted values
+        applyBrandTheme(extractedColors);
+        
         toast.success(`Imported and linked "${data.brand.name || 'brand'}" from BrandHub`, { duration: 5000 });
       } else {
         toast.warning('No brand data found at this share link');
@@ -630,6 +646,14 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           industry: extracted.industry || prev.industry,
           target_audience: extracted.target_audience || prev.target_audience
         }));
+
+        // Apply brand colors to UI theme
+        applyBrandTheme({
+          primary_color: extracted.primary_color,
+          secondary_color: extracted.secondary_color,
+          accent_color: extracted.accent_color,
+          color_palette: extracted.color_palette
+        });
 
         setUploadedGuideUrl(file.name);
         toast.success('Brand guide analyzed! Style settings updated.');
@@ -961,6 +985,33 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
                           </>
                         )}
                       </Button>
+                      
+                      <Button
+                        onClick={() => applyBrandTheme({
+                          primary_color: style.primary_color,
+                          secondary_color: style.secondary_color,
+                          accent_color: style.accent_color,
+                          color_palette: style.color_palette
+                        })}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                      >
+                        <PaintBucket className="w-4 h-4" />
+                        Apply to UI
+                      </Button>
+                      
+                      {isBrandThemeApplied() && (
+                        <Button
+                          onClick={() => resetBrandTheme()}
+                          variant="ghost"
+                          size="sm"
+                          className="gap-2"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          Reset Theme
+                        </Button>
+                      )}
                       
                       <div className="flex items-center gap-2">
                         <Switch
