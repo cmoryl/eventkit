@@ -89,8 +89,25 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   const avatarUrl = user?.user_metadata?.avatar_url;
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
-  // All studios for nav dropdown
-  const allStudios = STUDIO_DEFINITIONS;
+  // Group studios by category for dropdown
+  const studioGroups = [
+    {
+      label: 'Brand & Identity',
+      studios: STUDIO_DEFINITIONS.filter(s => ['branding', 'presentations', 'documents-forms'].includes(s.id))
+    },
+    {
+      label: 'Print & Physical',
+      studios: STUDIO_DEFINITIONS.filter(s => ['print-signage', 'merchandise', 'venue-experience'].includes(s.id))
+    },
+    {
+      label: 'Digital & Social',
+      studios: STUDIO_DEFINITIONS.filter(s => ['social-digital', 'video-motion', 'photo-engagement'].includes(s.id))
+    },
+    {
+      label: 'Events & Hospitality',
+      studios: STUDIO_DEFINITIONS.filter(s => ['invitations-access', 'hospitality-dining', 'accessibility-safety'].includes(s.id))
+    }
+  ];
 
   const isActivePath = (path: string) => location.pathname === path;
 
@@ -205,36 +222,40 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                       >
                         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
                         
-                        <div className="p-3">
-                          <p className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                            Creation Studios
-                          </p>
-                          
-                          <div className="grid grid-cols-3 gap-1.5 mt-1">
-                            {allStudios.map((studio) => (
-                              <button
-                                key={studio.id}
-                                onClick={() => {
-                                  navigate(studio.route);
-                                  setShowStudiosMenu(false);
-                                }}
-                                className={cn(
-                                  "flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-center transition-all group",
-                                  currentStudioId === studio.id
-                                    ? "bg-primary/10 text-primary ring-1 ring-primary/20"
-                                    : "text-foreground hover:bg-muted"
-                                )}
-                              >
-                                <div className={cn(
-                                  "w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow",
-                                  studio.gradient
-                                )}>
-                                  <Sparkles className="w-5 h-5 text-white" />
-                                </div>
-                                <span className="text-xs font-medium leading-tight">{studio.shortName}</span>
-                              </button>
-                            ))}
-                          </div>
+                        <div className="p-3 max-h-[70vh] overflow-y-auto">
+                          {studioGroups.map((group, groupIndex) => (
+                            <div key={group.label} className={cn(groupIndex > 0 && "mt-3 pt-3 border-t border-border/50")}>
+                              <p className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                {group.label}
+                              </p>
+                              
+                              <div className="grid grid-cols-3 gap-1 mt-1">
+                                {group.studios.map((studio) => (
+                                  <button
+                                    key={studio.id}
+                                    onClick={() => {
+                                      navigate(studio.route);
+                                      setShowStudiosMenu(false);
+                                    }}
+                                    className={cn(
+                                      "flex flex-col items-center gap-1 px-2 py-2.5 rounded-lg text-center transition-all group",
+                                      currentStudioId === studio.id
+                                        ? "bg-primary/10 text-primary ring-1 ring-primary/20"
+                                        : "text-foreground hover:bg-muted"
+                                    )}
+                                  >
+                                    <div className={cn(
+                                      "w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow",
+                                      studio.gradient
+                                    )}>
+                                      <Sparkles className="w-4 h-4 text-white" />
+                                    </div>
+                                    <span className="text-[11px] font-medium leading-tight">{studio.shortName}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </motion.div>
                     </>
