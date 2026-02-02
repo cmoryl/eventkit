@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Sparkles, RefreshCw, Check, ArrowLeft, Loader2, 
-  Wand2, Download, ChevronRight, Palette, ZoomIn
+  Wand2, Download, ChevronRight, Palette, ZoomIn, ZoomOut, Maximize2, Minus, Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -64,6 +64,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [generationPhase, setGenerationPhase] = useState<'idle' | 'brief' | 'generating' | 'complete'>('idle');
   const [currentBrief, setCurrentBrief] = useState<AssetBrief | null>(null);
   const [showBriefModal, setShowBriefModal] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(100); // Zoom percentage
 
   // Get brand colors for accents
   const brandPrimary = brand?.styles?.primary_color || activeBrand?.styles?.primary_color;
@@ -680,6 +681,42 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                       Variation {variations.findIndex(v => v.id === selectedVariation) + 1}
                     </span>
                   </div>
+                  
+                  {/* Zoom Controls */}
+                  <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setZoomLevel(prev => Math.max(25, prev - 25))}
+                      disabled={zoomLevel <= 25}
+                      title="Zoom out"
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </Button>
+                    <span className="text-xs font-medium w-12 text-center">{zoomLevel}%</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setZoomLevel(prev => Math.min(200, prev + 25))}
+                      disabled={zoomLevel >= 200}
+                      title="Zoom in"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                    <div className="w-px h-4 bg-border mx-1" />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      onClick={() => setZoomLevel(100)}
+                      title="Fit to window"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  
                   <div className="flex items-center gap-2">
                     <Button
                       size="sm"
@@ -724,15 +761,28 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                     const variation = variations.find(v => v.id === selectedVariation);
                     if (variation?.imageUrl) {
                       return (
-                        <motion.img
+                        <motion.div
                           key={variation.imageUrl}
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          src={variation.imageUrl}
-                          alt="Preview"
-                          className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-                          style={{ maxHeight: 'calc(100vh - 280px)' }}
-                        />
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="relative"
+                          style={{ 
+                            transform: `scale(${zoomLevel / 100})`,
+                            transformOrigin: 'center center',
+                            transition: 'transform 0.2s ease-out'
+                          }}
+                        >
+                          <img
+                            src={variation.imageUrl}
+                            alt="Preview"
+                            className="max-w-none object-contain rounded-lg shadow-2xl"
+                            style={{ 
+                              maxHeight: zoomLevel === 100 ? 'calc(100vh - 280px)' : 'none',
+                              maxWidth: zoomLevel === 100 ? '100%' : 'none'
+                            }}
+                            draggable={false}
+                          />
+                        </motion.div>
                       );
                     }
                     return null;
