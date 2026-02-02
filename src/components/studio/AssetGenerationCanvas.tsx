@@ -10,6 +10,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import { AIImageEditModal } from '@/components/AIImageEditModal';
+import { AssetBriefModal, type AssetBrief } from './AssetBriefModal';
+import { 
+  recordBriefPreference, 
+  getBriefPreference,
+  buildPromptFromBrief,
+  type AssetBriefData 
+} from '@/services/aiBrain/learningService';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -45,27 +53,59 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   studioGradient = 'from-primary to-accent',
   onImageGenerated
 }) => {
+  const { user } = useAuth();
   const [variations, setVariations] = useState<GenerationVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
   const [editingImageUrl, setEditingImageUrl] = useState<string | null>(null);
-  const [generationPhase, setGenerationPhase] = useState<'idle' | 'generating' | 'complete'>('idle');
+  const [generationPhase, setGenerationPhase] = useState<'idle' | 'brief' | 'generating' | 'complete'>('idle');
+  const [currentBrief, setCurrentBrief] = useState<AssetBrief | null>(null);
+  const [showBriefModal, setShowBriefModal] = useState(false);
 
-  // Initialize variations when opened
+  // Initialize when opened - show brief modal first
   useEffect(() => {
     if (isOpen) {
-      initializeAndGenerate();
+      // Show brief modal before generation
+      setShowBriefModal(true);
+      setGenerationPhase('brief');
     } else {
       // Reset state when closed
       setVariations([]);
       setSelectedVariation(null);
       setGenerationPhase('idle');
       setShowEditor(false);
+      setShowBriefModal(false);
+      setCurrentBrief(null);
     }
   }, [isOpen, assetType]);
 
-  const initializeAndGenerate = async () => {
+  // Handle brief submission
+  const handleBriefSubmit = async (brief: AssetBrief) => {
+    setCurrentBrief(brief);
+    setShowBriefModal(false);
+    
+    // Record brief preference for AI learning
+    if (user?.id) {
+      const briefData: AssetBriefData = {
+        customContent: brief.customContent,
+        stylePreset: brief.stylePreset,
+        customStyleDescription: brief.customStyleDescription,
+        colorMood: brief.colorMood,
+        layoutStyle: brief.layoutStyle,
+        typographyStyle: brief.typographyStyle,
+        imageryStyle: brief.imageryStyle,
+        additionalNotes: brief.additionalNotes,
+        referencePrompt: brief.referencePrompt,
+      };
+      recordBriefPreference(user.id, assetType, briefData).catch(console.error);
+    }
+    
+    // Start generation with brief
+    initializeAndGenerateWithBrief(brief);
+  };
+
+  const initializeAndGenerateWithBrief = async (brief: AssetBrief) => {
     // Create initial variation slots
     const initialVariations: GenerationVariation[] = Array.from({ length: VARIATION_COUNT }, (_, i) => ({
       id: `var-${i}`,
@@ -76,13 +116,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     setGenerationPhase('generating');
     setIsGenerating(true);
 
-    // Generate all variations in parallel with slight style variations
-    const styleVariants = [
-      'modern and minimalist with clean lines',
-      'bold and dynamic with vibrant energy',
-      'elegant and sophisticated with premium feel',
-      'creative and artistic with unique flair'
-    ];
+    // Generate all variations in parallel with style variations based on brief
+    const styleVariants = getStyleVariantsFromBrief(brief);
 
     const generatePromises = initialVariations.map(async (variation, index) => {
       // Update to generating status
@@ -91,7 +126,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       ));
 
       try {
-        const prompt = buildPrompt(styleVariants[index]);
+        const prompt = buildPromptWithBrief(brief, styleVariants[index]);
         
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: {
@@ -111,7 +146,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               brandVoice: brand.styles?.brand_voice,
               customPrompts: brand.styles?.custom_prompts
             } : null,
-            dimensions: parseDimensions(dimensions)
+            dimensions: parseDimensions(dimensions),
+            customContent: brief.customContent
           }
         });
 
@@ -139,7 +175,74 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     setGenerationPhase('complete');
   };
 
+  // Get style variants based on brief preferences
+  const getStyleVariantsFromBrief = (brief: AssetBrief): string[] => {
+    const baseStyle = {
+      modern: 'modern and minimalist',
+      classic: 'classic and timeless',
+      bold: 'bold and impactful',
+      minimal: 'minimal and clean',
+      playful: 'playful and energetic',
+      premium: 'premium and sophisticated',
+      custom: brief.customStyleDescription || 'creative',
+    }[brief.stylePreset] || 'professional';
+
+    const colorStyle = {
+      vibrant: 'vibrant saturated colors',
+      muted: 'muted subtle tones',
+      monochrome: 'monochromatic palette',
+      'brand-only': 'strict brand colors',
+      custom: 'custom color palette',
+    }[brief.colorMood] || '';
+
+    const layoutStyle = {
+      centered: 'centered balanced composition',
+      asymmetric: 'dynamic asymmetric layout',
+      grid: 'structured grid-based layout',
+      organic: 'organic flowing composition',
+      'ai-decide': '',
+    }[brief.layoutStyle] || '';
+
+    // Create 4 variations with slight modifications
+    return [
+      `${baseStyle} with ${colorStyle}, ${layoutStyle}`,
+      `${baseStyle} with ${colorStyle}, emphasizing visual hierarchy`,
+      `${baseStyle} with ${colorStyle}, focus on typography and clarity`,
+      `${baseStyle} with ${colorStyle}, creative artistic interpretation`,
+    ];
+  };
+
+  const buildPromptWithBrief = (brief: AssetBrief, styleVariant: string): string => {
+    const briefData: AssetBriefData = {
+      customContent: brief.customContent,
+      stylePreset: brief.stylePreset,
+      customStyleDescription: brief.customStyleDescription,
+      colorMood: brief.colorMood,
+      layoutStyle: brief.layoutStyle,
+      typographyStyle: brief.typographyStyle,
+      imageryStyle: brief.imageryStyle,
+      additionalNotes: brief.additionalNotes,
+      referencePrompt: brief.referencePrompt,
+    };
+    
+    let prompt = buildPromptFromBrief(assetName, eventName, briefData, brand?.styles as Record<string, unknown>);
+    
+    // Add variation-specific style
+    prompt += ` Variation emphasis: ${styleVariant}.`;
+    
+    if (assetDescription) {
+      prompt += ` ${assetDescription}`;
+    }
+    
+    return prompt;
+  };
+
+  // Legacy function for regeneration without brief
   const buildPrompt = (styleVariant: string): string => {
+    if (currentBrief) {
+      return buildPromptWithBrief(currentBrief, styleVariant);
+    }
+    
     let prompt = `Create a professional ${assetName} for "${eventName}". Style: ${styleVariant}.`;
     
     if (brand?.styles) {
@@ -153,6 +256,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       prompt += ` ${assetDescription}`;
     }
     
+    return prompt;
+  };
     return prompt;
   };
 
@@ -244,7 +349,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   };
 
   const handleRegenerateAll = () => {
-    initializeAndGenerate();
+    if (currentBrief) {
+      initializeAndGenerateWithBrief(currentBrief);
+    } else {
+      // Fallback - show brief modal again
+      setShowBriefModal(true);
+      setGenerationPhase('brief');
+    }
   };
 
   const handleUseSelected = () => {
@@ -260,6 +371,22 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const progressPercent = (completedCount / VARIATION_COUNT) * 100;
 
   if (!isOpen) return null;
+
+  // Show brief modal first
+  if (showBriefModal) {
+    return (
+      <AssetBriefModal
+        isOpen={showBriefModal}
+        onClose={onClose}
+        onSubmit={handleBriefSubmit}
+        assetType={assetType}
+        assetName={assetName}
+        brand={brand}
+        eventName={eventName}
+        studioGradient={studioGradient}
+      />
+    );
+  }
 
   return (
     <AnimatePresence>

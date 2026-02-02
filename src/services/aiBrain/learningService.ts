@@ -417,6 +417,222 @@ async function updateKnowledgeFromFeedback(
   }
 }
 
+// ============ ASSET BRIEF LEARNING ============
+
+export interface AssetBriefData {
+  customContent: Record<string, string>;
+  stylePreset: string;
+  customStyleDescription?: string;
+  colorMood: string;
+  layoutStyle: string;
+  typographyStyle: string;
+  imageryStyle: string;
+  additionalNotes?: string;
+  referencePrompt?: string;
+}
+
+/**
+ * Record brief preferences for AI learning
+ */
+export const recordBriefPreference = async (
+  userId: string,
+  assetType: string,
+  brief: AssetBriefData
+): Promise<boolean> => {
+  const key = `brief_${assetType}`;
+  
+  return addOrUpdateKnowledge(
+    userId,
+    'brief_preference',
+    assetType,
+    key,
+    {
+      stylePreset: brief.stylePreset,
+      colorMood: brief.colorMood,
+      layoutStyle: brief.layoutStyle,
+      typographyStyle: brief.typographyStyle,
+      imageryStyle: brief.imageryStyle,
+      hasCustomContent: Object.keys(brief.customContent).length > 0,
+      contentFields: Object.keys(brief.customContent),
+      lastUsed: new Date().toISOString(),
+    }
+  );
+};
+
+/**
+ * Get user's preferred brief settings for an asset type
+ */
+export const getBriefPreference = async (
+  userId: string,
+  assetType: string
+): Promise<AssetBriefData | null> => {
+  const key = `brief_${assetType}`;
+  
+  const { data, error } = await supabase
+    .from('ai_knowledge')
+    .select('value')
+    .eq('user_id', userId)
+    .eq('knowledge_type', 'brief_preference')
+    .eq('key', key)
+    .single();
+  
+  if (error || !data?.value) return null;
+  
+  const value = data.value as Record<string, unknown>;
+  
+  return {
+    customContent: {},
+    stylePreset: (value.stylePreset as string) || 'modern',
+    colorMood: (value.colorMood as string) || 'vibrant',
+    layoutStyle: (value.layoutStyle as string) || 'ai-decide',
+    typographyStyle: (value.typographyStyle as string) || 'modern-sans',
+    imageryStyle: (value.imageryStyle as string) || 'photographic',
+  };
+};
+
+/**
+ * Get most common brief preferences across all asset types for a user
+ */
+export const getUserBriefTrends = async (
+  userId: string
+): Promise<Record<string, string>> => {
+  const { data, error } = await supabase
+    .from('ai_knowledge')
+    .select('value')
+    .eq('user_id', userId)
+    .eq('knowledge_type', 'brief_preference')
+    .order('usage_count', { ascending: false })
+    .limit(10);
+  
+  if (error || !data?.length) return {};
+  
+  // Count occurrences of each preference
+  const counts: Record<string, Record<string, number>> = {
+    stylePreset: {},
+    colorMood: {},
+    layoutStyle: {},
+    imageryStyle: {},
+  };
+  
+  data.forEach(row => {
+    const value = row.value as Record<string, unknown>;
+    Object.keys(counts).forEach(pref => {
+      const val = value[pref] as string;
+      if (val) {
+        counts[pref][val] = (counts[pref][val] || 0) + 1;
+      }
+    });
+  });
+  
+  // Get most common for each
+  const trends: Record<string, string> = {};
+  Object.entries(counts).forEach(([pref, valCounts]) => {
+    const sorted = Object.entries(valCounts).sort((a, b) => b[1] - a[1]);
+    if (sorted.length > 0) {
+      trends[pref] = sorted[0][0];
+    }
+  });
+  
+  return trends;
+};
+
+/**
+ * Build enhanced prompt from brief preferences
+ */
+export const buildPromptFromBrief = (
+  assetName: string,
+  eventName: string,
+  brief: AssetBriefData,
+  brandContext?: Record<string, unknown>
+): string => {
+  const parts: string[] = [];
+  
+  // Base asset request
+  parts.push(`Create a professional ${assetName} for "${eventName}".`);
+  
+  // Style preset
+  const styleDescriptions: Record<string, string> = {
+    modern: 'Modern and contemporary with clean lines and minimalist aesthetic',
+    classic: 'Timeless and sophisticated with elegant traditional elements',
+    bold: 'Bold and impactful with high contrast and dynamic energy',
+    minimal: 'Minimalist and uncluttered with essential elements only',
+    playful: 'Fun and energetic with playful visual elements',
+    premium: 'Luxury and high-end with premium sophisticated feel',
+  };
+  if (brief.stylePreset && styleDescriptions[brief.stylePreset]) {
+    parts.push(`Style: ${styleDescriptions[brief.stylePreset]}.`);
+  } else if (brief.customStyleDescription) {
+    parts.push(`Style: ${brief.customStyleDescription}.`);
+  }
+  
+  // Color mood
+  const colorDescriptions: Record<string, string> = {
+    vibrant: 'Use vibrant, saturated colors with high energy',
+    muted: 'Use muted, desaturated tones for a subtle refined look',
+    monochrome: 'Use monochromatic color scheme for elegant simplicity',
+    'brand-only': 'Strictly use brand colors only',
+  };
+  if (brief.colorMood && colorDescriptions[brief.colorMood]) {
+    parts.push(colorDescriptions[brief.colorMood] + '.');
+  }
+  
+  // Layout
+  const layoutDescriptions: Record<string, string> = {
+    centered: 'Centered, balanced composition',
+    asymmetric: 'Dynamic asymmetric layout for visual interest',
+    grid: 'Structured grid-based layout',
+    organic: 'Organic, flowing composition',
+  };
+  if (brief.layoutStyle && layoutDescriptions[brief.layoutStyle]) {
+    parts.push(`Layout: ${layoutDescriptions[brief.layoutStyle]}.`);
+  }
+  
+  // Imagery
+  const imageryDescriptions: Record<string, string> = {
+    photographic: 'Include photorealistic imagery',
+    illustrated: 'Use illustration style graphics',
+    abstract: 'Feature abstract visual elements',
+    geometric: 'Incorporate geometric patterns and shapes',
+    mixed: 'Blend multiple visual styles',
+    none: 'Focus on typography and minimal graphics, no imagery',
+  };
+  if (brief.imageryStyle && imageryDescriptions[brief.imageryStyle]) {
+    parts.push(imageryDescriptions[brief.imageryStyle] + '.');
+  }
+  
+  // Custom content
+  const contentEntries = Object.entries(brief.customContent).filter(([, v]) => v);
+  if (contentEntries.length > 0) {
+    parts.push('Include this content:');
+    contentEntries.forEach(([key, value]) => {
+      const label = key.replace(/([A-Z])/g, ' $1').toLowerCase();
+      parts.push(`- ${label}: "${value}"`);
+    });
+  }
+  
+  // Additional notes
+  if (brief.additionalNotes) {
+    parts.push(`Additional requirements: ${brief.additionalNotes}`);
+  }
+  
+  // Reference
+  if (brief.referencePrompt) {
+    parts.push(`Reference style: ${brief.referencePrompt}`);
+  }
+  
+  // Brand context
+  if (brandContext) {
+    if (brandContext.mood) {
+      parts.push(`Brand mood: ${Array.isArray(brandContext.mood) ? brandContext.mood.join(', ') : brandContext.mood}.`);
+    }
+    if (brandContext.industry) {
+      parts.push(`Industry: ${brandContext.industry}.`);
+    }
+  }
+  
+  return parts.join(' ');
+};
+
 function hashPrompt(prompt: string): string {
   // Simple hash for prompt identification
   let hash = 0;
