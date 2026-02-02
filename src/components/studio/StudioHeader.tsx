@@ -27,11 +27,14 @@ import {
   Settings,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '../ThemeToggle';
 import { RenderEngineSettings } from '../RenderEngineSettings';
 import { ApiSettingsModal } from '../settings/ApiSettingsModal';
 import { useApiSettings } from '@/hooks/useApiSettings';
+import { ActiveBrandIndicator } from '@/components/brand/ActiveBrandIndicator';
+import { BrandColorBar } from '@/components/brand/BrandColorBar';
 
 interface StudioHeaderProps {
   eventName: string;
@@ -91,6 +94,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onOpenRenderEngineSettings,
 }) => {
   const { user, isAuthenticated, signOut } = useAuth();
+  const { activeBrand, brands, setActiveBrand, applyBrandToUI, resetUITheme, isThemeApplied } = useActiveBrand();
   const { configuredKeysCount } = useApiSettings();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showRenderSettings, setShowRenderSettings] = useState(false);
@@ -129,8 +133,13 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
       animate={{ y: 0, opacity: 1 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >
-      {/* Gradient accent line */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
+      {/* Brand-aware gradient accent line */}
+      <BrandColorBar 
+        primaryColor={activeBrand?.styles?.primary_color}
+        secondaryColor={activeBrand?.styles?.secondary_color}
+        accentColor={activeBrand?.styles?.accent_color}
+        position="top"
+      />
       
       <div className="container mx-auto px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between gap-4">
@@ -205,6 +214,19 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
                 </span>
               )}
             </motion.button>
+
+            {/* Active Brand Indicator */}
+            {isAuthenticated && activeBrand && (
+              <ActiveBrandIndicator
+                activeBrand={activeBrand}
+                brands={brands}
+                onSelectBrand={setActiveBrand}
+                onApplyTheme={() => applyBrandToUI()}
+                onResetTheme={resetUITheme}
+                isThemeApplied={isThemeApplied}
+                variant="full"
+              />
+            )}
 
             {/* Theme Toggle */}
             <ThemeToggle />
