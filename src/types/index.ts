@@ -52,3 +52,20 @@ export {
   type PresentationData,
   type PdfExportOptions,
 } from './presentation.types';
+
+// Brand types
+export {
+  type SponsorLogo,
+  type SponsorLogosLibrary,
+  type BrandImageryLibrary,
+  type BrandContext,
+  type BrandColor,
+  type ColorCombination,
+  type BrandGradient,
+  buildBrandContext,
+  buildBrandStylePrompt,
+  getBrandColorPalette,
+  getSponsorLogoUrls,
+  getAllBrandImagery,
+  getSponsorsByTier,
+} from './brand.types';

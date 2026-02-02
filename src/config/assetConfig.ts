@@ -1848,6 +1848,57 @@ export const ASSET_CONFIGS: AssetConfig[] = [
     pixelHeight: 1080,
     aspectRatio: '16:9',
   },
+  
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SPONSOR ASSETS
+  // ═══════════════════════════════════════════════════════════════════════════
+  {
+    type: AssetType.SponsorWall,
+    title: 'Sponsor Wall',
+    description: 'Large format sponsor wall with logos arranged by tier (platinum, gold, silver, bronze)',
+    category: 'experience',
+    icon: 'LayoutGrid',
+    printSpec: {
+      widthInches: 120,
+      heightInches: 72,
+      dpi: 150,
+      bleedInches: 0.5,
+      colorMode: 'CMYK',
+      fileFormat: 'PDF',
+      notes: '10ft x 6ft sponsor wall, logos auto-arranged by tier prominence',
+    },
+    aspectRatio: '5:3',
+    requiresLogo: true,
+  },
+  {
+    type: AssetType.SponsorBanner,
+    title: 'Sponsor Banner',
+    description: 'Horizontal banner showcasing event sponsors by tier',
+    category: 'print',
+    icon: 'RectangleHorizontal',
+    printSpec: {
+      widthInches: 96,
+      heightInches: 24,
+      dpi: 150,
+      bleedInches: 0.5,
+      colorMode: 'CMYK',
+      fileFormat: 'PDF',
+      notes: '8ft x 2ft sponsor banner, tier-based logo sizing',
+    },
+    aspectRatio: '4:1',
+    requiresLogo: true,
+  },
+  {
+    type: AssetType.SponsorGrid,
+    title: 'Sponsor Grid',
+    description: 'Digital sponsor showcase for screens and presentations',
+    category: 'digital',
+    icon: 'Grid3x3',
+    pixelWidth: 1920,
+    pixelHeight: 1080,
+    aspectRatio: '16:9',
+    requiresLogo: true,
+  },
 ];
 
 // Helper functions
