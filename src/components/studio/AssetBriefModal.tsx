@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, ArrowRight, Palette, Type, ImageIcon, Wand2, 
-  ChevronDown, ChevronUp, Lightbulb, Zap, X, Settings2, ALargeSmall
+  ChevronDown, ChevronUp, Lightbulb, Zap, X, Settings2, ALargeSmall, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AssetType } from '@/types';
 import { Brand } from '@/types/studio.types';
 import AssetSpecificFields from '@/components/AssetSpecificFields';
+import { useGoogleFonts } from '@/hooks/useGoogleFonts';
 
 // Google Fonts configuration for high-quality typography
 export interface GoogleFontSelection {
@@ -215,6 +216,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
   eventName = 'Your Event',
   studioGradient = 'from-primary to-accent'
 }) => {
+  const { loadFont, loadFonts, isFontLoaded } = useGoogleFonts();
   const [brief, setBrief] = useState<AssetBrief>({
     customContent: {},
     stylePreset: 'modern',
@@ -230,6 +232,51 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
     new Set(['content', 'style'])
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [loadingFonts, setLoadingFonts] = useState<Set<string>>(new Set());
+
+  // Preload all font pairing fonts when typography section is expanded
+  useEffect(() => {
+    if (expandedSections.has('typography')) {
+      const allFonts = FONT_PAIRINGS.flatMap(p => [p.heading, p.body]);
+      const uniqueFonts = [...new Set(allFonts)];
+      loadFonts(uniqueFonts).catch(console.error);
+    }
+  }, [expandedSections, loadFonts]);
+
+  // Load custom fonts when selected
+  useEffect(() => {
+    if (brief.customFonts?.heading) {
+      setLoadingFonts(prev => new Set([...prev, brief.customFonts!.heading]));
+      loadFont(brief.customFonts.heading)
+        .then(() => setLoadingFonts(prev => {
+          const next = new Set(prev);
+          next.delete(brief.customFonts!.heading);
+          return next;
+        }))
+        .catch(console.error);
+    }
+    if (brief.customFonts?.body) {
+      setLoadingFonts(prev => new Set([...prev, brief.customFonts!.body]));
+      loadFont(brief.customFonts.body)
+        .then(() => setLoadingFonts(prev => {
+          const next = new Set(prev);
+          next.delete(brief.customFonts!.body);
+          return next;
+        }))
+        .catch(console.error);
+    }
+  }, [brief.customFonts, loadFont]);
+
+  // Get all unique fonts for the current view
+  const allDisplayFonts = useMemo(() => {
+    const fonts = new Set<string>();
+    GOOGLE_FONTS.display.forEach(f => fonts.add(f.name));
+    GOOGLE_FONTS.body.forEach(f => fonts.add(f.name));
+    GOOGLE_FONTS.elegant.forEach(f => fonts.add(f.name));
+    GOOGLE_FONTS.modern.forEach(f => fonts.add(f.name));
+    GOOGLE_FONTS.script.forEach(f => fonts.add(f.name));
+    return Array.from(fonts);
+  }, []);
 
   // Reset brief when asset type changes
   useEffect(() => {
@@ -564,48 +611,118 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                     className="overflow-hidden"
                   >
                     <div className="pt-2 pb-4 px-1 space-y-4">
-                      {/* Font Pairing Presets */}
+                      {/* Font Pairing Presets with Live Preview */}
                       <div>
                         <label className="text-sm font-medium text-muted-foreground mb-2 block">
                           Font Pairing (Google Fonts)
                         </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {FONT_PAIRINGS.map(pairing => (
-                            <button
-                              key={pairing.id}
-                              onClick={() => setBrief(prev => ({ 
-                                ...prev, 
-                                fontPairing: pairing.id,
-                                typographyStyle: 'custom',
-                                customFonts: { heading: pairing.heading, body: pairing.body }
-                              }))}
-                              className={cn(
-                                "p-3 rounded-xl border-2 text-left transition-all",
-                                brief.fontPairing === pairing.id
-                                  ? "border-primary bg-primary/10"
-                                  : "border-border hover:border-muted-foreground/50"
-                              )}
-                            >
-                              <div className="space-y-1">
-                                <span 
-                                  className="text-sm font-semibold block"
-                                  style={{ fontFamily: `'${pairing.heading}', sans-serif` }}
-                                >
-                                  {pairing.name}
-                                </span>
-                                <div className="flex flex-col">
-                                  <span className="text-[10px] text-muted-foreground">
-                                    H: {pairing.heading}
-                                  </span>
-                                  <span className="text-[10px] text-muted-foreground">
-                                    B: {pairing.body}
-                                  </span>
+                        <div className="grid grid-cols-2 gap-3">
+                          {FONT_PAIRINGS.map(pairing => {
+                            const headingLoaded = isFontLoaded(pairing.heading);
+                            const bodyLoaded = isFontLoaded(pairing.body);
+                            const isLoading = !headingLoaded || !bodyLoaded;
+                            
+                            return (
+                              <button
+                                key={pairing.id}
+                                onClick={() => setBrief(prev => ({ 
+                                  ...prev, 
+                                  fontPairing: pairing.id,
+                                  typographyStyle: 'custom',
+                                  customFonts: { heading: pairing.heading, body: pairing.body }
+                                }))}
+                                className={cn(
+                                  "p-3 rounded-xl border-2 text-left transition-all group",
+                                  brief.fontPairing === pairing.id
+                                    ? "border-primary bg-primary/10"
+                                    : "border-border hover:border-muted-foreground/50 hover:bg-muted/30"
+                                )}
+                              >
+                                <div className="space-y-2">
+                                  {/* Live Font Preview */}
+                                  <div className="min-h-[48px] flex flex-col justify-center">
+                                    {isLoading ? (
+                                      <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        <span className="text-xs">Loading fonts...</span>
+                                      </div>
+                                    ) : (
+                                      <>
+                                        <span 
+                                          className="text-base font-bold block leading-tight"
+                                          style={{ fontFamily: `'${pairing.heading}', sans-serif` }}
+                                        >
+                                          {eventName || 'Event Title'}
+                                        </span>
+                                        <span 
+                                          className="text-xs text-muted-foreground leading-snug"
+                                          style={{ fontFamily: `'${pairing.body}', sans-serif` }}
+                                        >
+                                          Sample body text preview
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Font names */}
+                                  <div className="pt-2 border-t border-border/50 flex flex-col">
+                                    <span className="text-[10px] font-medium text-foreground/70">
+                                      {pairing.name}
+                                    </span>
+                                    <div className="flex gap-2 text-[9px] text-muted-foreground">
+                                      <span>H: {pairing.heading}</span>
+                                      <span>•</span>
+                                      <span>B: {pairing.body}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </button>
-                          ))}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
+
+                      {/* Live Preview Panel */}
+                      {brief.customFonts && (
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border">
+                          <label className="text-xs font-medium text-muted-foreground mb-3 block">
+                            Live Preview
+                          </label>
+                          <div className="bg-background rounded-lg p-4 shadow-sm border border-border/50">
+                            {loadingFonts.has(brief.customFonts.heading) || loadingFonts.has(brief.customFonts.body) ? (
+                              <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span className="text-sm">Loading fonts...</span>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <h3 
+                                  className={cn(
+                                    "text-xl leading-tight",
+                                    brief.fontWeight === 'light' && 'font-light',
+                                    brief.fontWeight === 'regular' && 'font-semibold',
+                                    brief.fontWeight === 'medium' && 'font-bold',
+                                    brief.fontWeight === 'bold' && 'font-black',
+                                  )}
+                                  style={{ fontFamily: `'${brief.customFonts.heading}', sans-serif` }}
+                                >
+                                  {eventName || 'Your Event Title'}
+                                </h3>
+                                <p 
+                                  className="text-sm text-muted-foreground leading-relaxed"
+                                  style={{ fontFamily: `'${brief.customFonts.body}', sans-serif` }}
+                                >
+                                  This is how your body text will appear. The quick brown fox jumps over the lazy dog.
+                                </p>
+                                <div className="flex gap-4 pt-2 text-xs text-muted-foreground/70">
+                                  <span>Heading: {brief.customFonts.heading}</span>
+                                  <span>Body: {brief.customFonts.body}</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Font Weight */}
                       <div>
