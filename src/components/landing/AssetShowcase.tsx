@@ -113,11 +113,11 @@ const IconCard: React.FC<{
         "relative flex flex-col items-center gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-2xl transition-all duration-300",
         isHovered ? "bg-card/95 shadow-2xl z-20" : "bg-transparent"
       )}>
-        {/* Glow effect */}
+        {/* Glow effect - subtle */}
         <div className={cn(
           "absolute inset-0 rounded-2xl blur-xl transition-opacity duration-300 -z-10",
           `bg-gradient-to-br ${asset.gradient}`,
-          isHovered ? "opacity-50" : "opacity-0"
+          isHovered ? "opacity-20" : "opacity-0"
         )} />
         
         {/* Image Card - Fixed sizing with proper overflow visible */}
