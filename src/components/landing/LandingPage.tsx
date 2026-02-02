@@ -26,7 +26,7 @@ const defaultHeroContent: HeroContent = {
   headline_start: 'Create Stunning',
   headline_highlight: 'Event Design Kits',
   description: 'From banners to merchandise — upload your logo, describe your style, and generate a complete professional branding package in minutes.',
-  cta_text: 'Get Started'
+  cta_text: 'Start a New Event Kit'
 };
 
 interface LandingPageProps {

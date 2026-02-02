@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { AnimatedGradientBg } from '../animations/GlowingOrb';
 import { MagneticButton } from '../animations/InteractiveCard';
 import { ThemeToggle } from '../ThemeToggle';
+import onboardingHeroImage from '@/assets/onboarding-hero.jpg';
 
 interface OnboardingFlowProps {
   onComplete: (data: {
@@ -186,14 +187,30 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 sm:py-12 overflow-hidden relative">
+    <div className="min-h-screen overflow-hidden relative">
       <AnimatedGradientBg />
+      
+      {/* Hero Image Section */}
+      <div className="relative w-full h-48 sm:h-64 lg:h-80 overflow-hidden">
+        <motion.img
+          src={onboardingHeroImage}
+          alt="Event Design Kit Preview"
+          className="w-full h-full object-cover object-center"
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        />
+        {/* Gradient overlay for smooth transition */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+      </div>
       
       {/* Theme Toggle - Fixed position */}
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
       
+      <div className="flex items-center justify-center px-4 py-8 sm:py-12">
       <motion.div 
         className="w-full max-w-4xl"
         variants={containerVariants}
@@ -453,6 +470,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           />
         )}
       </motion.div>
+      </div>
     </div>
   );
 };
