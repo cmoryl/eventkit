@@ -6,6 +6,13 @@ import {
   QueueEvent,
   GenerationPriority 
 } from '@/services/generationQueue';
+import {
+  debouncedSaveQueueState,
+  forceSaveQueueState,
+  clearQueueState,
+  getStoredPendingJobs,
+  getQueueSummary,
+} from '@/services/queuePersistence';
 import type { GeneratedAsset, ColorInfo, EventDetails } from '@/types';
 import type { RenderEngine } from '@/services/aiBrain/types';
 import { generatePlaceholderContent } from '@/services/assetGenerator';
@@ -86,12 +93,17 @@ export function useQueuedGeneration({
     setJobs([...currentJobs]);
   }, []);
 
-  // Handle queue events
+  // Handle queue events and persistence
   useEffect(() => {
     const unsubscribe = generationQueue.subscribe((event: QueueEvent) => {
       switch (event.type) {
         case 'job-added':
           updateStats();
+          // Save queue state on changes
+          debouncedSaveQueueState(
+            generationQueue.getJobs(),
+            generationQueue.getContextInfo() || undefined
+          );
           break;
           
         case 'job-started':
@@ -103,6 +115,10 @@ export function useQueuedGeneration({
             ));
           }
           updateStats();
+          debouncedSaveQueueState(
+            generationQueue.getJobs(),
+            generationQueue.getContextInfo() || undefined
+          );
           break;
           
         case 'job-completed':
@@ -122,6 +138,10 @@ export function useQueuedGeneration({
             }
           }
           updateStats();
+          debouncedSaveQueueState(
+            generationQueue.getJobs(),
+            generationQueue.getContextInfo() || undefined
+          );
           break;
           
         case 'job-failed':
@@ -135,6 +155,10 @@ export function useQueuedGeneration({
             ));
           }
           updateStats();
+          debouncedSaveQueueState(
+            generationQueue.getJobs(),
+            generationQueue.getContextInfo() || undefined
+          );
           break;
           
         case 'job-retrying':
@@ -143,6 +167,8 @@ export function useQueuedGeneration({
           
         case 'queue-empty':
           updateStats();
+          // Clear persisted state when queue is empty
+          clearQueueState();
           break;
           
         case 'queue-paused':
@@ -152,7 +178,22 @@ export function useQueuedGeneration({
       }
     });
 
-    return () => unsubscribe();
+    // Save queue state on page unload
+    const handleBeforeUnload = () => {
+      if (generationQueue.hasPendingWork()) {
+        forceSaveQueueState(
+          generationQueue.getJobs(),
+          generationQueue.getContextInfo() || undefined
+        );
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [updateStats, setGeneratedAssets, setColorPalette]);
 
   // Start queued generation for assets
@@ -249,11 +290,53 @@ export function useQueuedGeneration({
   // Clear queue state
   const clearQueue = useCallback(() => {
     generationQueue.clear();
+    clearQueueState();
     completedCountRef.current = 0;
     failedCountRef.current = 0;
     totalJobsRef.current = 0;
     updateStats();
   }, [updateStats]);
+
+  // Restore queue from persisted state
+  const restoreQueue = useCallback((
+    setAssetsFn: React.Dispatch<React.SetStateAction<GeneratedAsset[]>>
+  ) => {
+    const storedJobs = getStoredPendingJobs();
+    if (storedJobs.length === 0) return false;
+
+    // Create asset placeholders for restored jobs
+    const restoredAssets: GeneratedAsset[] = storedJobs.map(job => ({
+      id: job.assetId,
+      type: job.assetType,
+      title: job.assetTitle,
+      content: undefined,
+      isLoading: true,
+    }));
+
+    setAssetsFn(prev => {
+      // Merge with existing assets (avoid duplicates)
+      const existingIds = new Set(prev.map(a => a.id));
+      const newAssets = restoredAssets.filter(a => !existingIds.has(a.id));
+      return [...prev, ...newAssets];
+    });
+
+    // Restore jobs to queue
+    generationQueue.restoreJobs(storedJobs);
+    totalJobsRef.current = storedJobs.length;
+    updateStats();
+
+    return true;
+  }, [updateStats]);
+
+  // Check for restorable queue
+  const checkRestorableQueue = useCallback(() => {
+    return getQueueSummary();
+  }, []);
+
+  // Discard stored queue
+  const discardStoredQueue = useCallback(() => {
+    clearQueueState();
+  }, []);
 
   return {
     jobs,
@@ -265,6 +348,9 @@ export function useQueuedGeneration({
     resumeQueue,
     cancelAll,
     clearQueue,
+    restoreQueue,
+    checkRestorableQueue,
+    discardStoredQueue,
     isProcessing: stats.processing > 0 || stats.pending > 0,
   };
 }
