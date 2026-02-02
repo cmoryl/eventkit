@@ -138,11 +138,17 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
             >
               {/* Custom Logo */}
               {logoType === 'custom' && effectiveLogoUrl ? (
-                <img src={effectiveLogoUrl} alt="Logo" className="h-10 object-contain" />
+                <img 
+                  src={effectiveLogoUrl} 
+                  alt="Logo" 
+                  className="max-h-8 max-w-[140px] w-auto h-auto object-contain" 
+                />
               ) : logoType === 'icon-only' && effectiveIconUrl ? (
-                <div className="w-10 h-10 rounded-xl overflow-hidden bg-background flex items-center justify-center">
-                  <img src={effectiveIconUrl} alt="Logo" className="w-8 h-8 object-contain" />
-                </div>
+                <img 
+                  src={effectiveIconUrl} 
+                  alt="Logo" 
+                  className="max-h-8 max-w-[100px] w-auto h-auto object-contain" 
+                />
               ) : (
                 /* Default EventKIT Logo */
                 <>
