@@ -6,5 +6,6 @@ export * from './badgeTemplates';
 export * from './signageTemplates';
 export * from './merchandiseTemplates';
 export * from './socialTemplates';
+export * from './localVendorTemplates';
 export * from './allTemplates';
 export * from './templateHelpers';
