@@ -14,6 +14,7 @@ import {
   Zap
 } from 'lucide-react';
 import { GenerationJob, JobStatus, GenerationPriority } from '@/services/generationQueue';
+import { NotificationToggle } from '@/components/NotificationToggle';
 import { cn } from '@/lib/utils';
 
 interface GenerationQueueStatusProps {
@@ -102,7 +103,8 @@ export const GenerationQueueStatus: React.FC<GenerationQueueStatusProps> = ({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Generation Queue</h3>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <NotificationToggle />
             {stats.isPaused ? (
               <Button variant="ghost" size="sm" onClick={onResume}>
                 <Play className="w-4 h-4 mr-1" />

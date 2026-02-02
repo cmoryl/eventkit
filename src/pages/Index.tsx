@@ -32,6 +32,7 @@ import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
 import { useQueuedGeneration } from '../hooks/useQueuedGeneration';
+import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from '../hooks/useAuth';
 import { useAIBrain } from '../hooks/useAIBrain';
 import { fileToBase64, downloadAllAssets } from '../utils';
@@ -47,6 +48,7 @@ const ensureProtocol = (url: string) => url && !url.match(/^[a-zA-Z]+:\/\//) ? `
 const Index: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { insights, isReady: isBrainReady } = useAIBrain();
+  const { notifyGenerationComplete, notifyAssetComplete } = useNotifications();
   
   const [view, setView] = useState<'landing' | 'onboarding' | 'studio'>('landing');
   const [eventDetails, setEventDetails] = useState<EventDetails>({
@@ -154,6 +156,8 @@ const Index: React.FC = () => {
     setGeneratedAssets,
     logoBase64: primaryLogoBase64,
     styleDesc: styleDescription,
+    onGenerationComplete: notifyGenerationComplete,
+    onAssetComplete: notifyAssetComplete,
   });
 
   // Track whether to use queue mode (for larger batches)
