@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn } from 'lucide-react';
+import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -503,24 +503,38 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                   {info.dimensions}
                 </div>
                 
-                <Button
-                  size="sm"
-                  className={cn("bg-gradient-to-r", studioGradient)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleGenerate(assetType);
-                  }}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-1" />
-                      Open Studio
-                    </>
-                  )}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenTemplate(assetType, info.name);
+                    }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={cn("bg-gradient-to-r", studioGradient)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGenerate(assetType);
+                    }}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        AI Studio
+                      </>
+                    )}
+                  </Button>
+                </div>
               </motion.div>
             );
           })}
@@ -651,26 +665,40 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                 })()}
                 
                 {/* Open Studio Overlay - Click anywhere opens the studio */}
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-                  <Button
-                    size="sm"
-                    className={cn("bg-gradient-to-r shadow-lg pointer-events-auto", studioGradient)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGenerate(assetType);
-                    }}
-                    disabled={isGenerating}
-                  >
-                    {isGenerating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-1" />
-                        Open Studio
-                      </>
-                    )}
-                  </Button>
-                  <p className="text-xs text-white/70">Click card to edit</p>
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      className={cn("bg-gradient-to-r shadow-lg pointer-events-auto", studioGradient)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGenerate(assetType);
+                      }}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 mr-1" />
+                          AI Studio
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="shadow-lg pointer-events-auto gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenTemplate(assetType, info.name);
+                      }}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </Button>
+                  </div>
+                  <p className="text-xs text-white/70">Click card for AI generation</p>
                 </div>
                 
                 {/* Loading Overlay with Enhanced Animation */}
