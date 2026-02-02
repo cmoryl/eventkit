@@ -439,15 +439,20 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                     ? "border-primary bg-primary/5"
                     : "border-border bg-card hover:border-primary/50 hover:bg-card/80"
                 )}
-                onClick={() => onSelectAsset(assetType)}
+                onClick={() => handleGenerate(assetType)}
               >
                 <div 
                   className={cn(
-                    "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                    "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer hover:scale-110",
                     isSelected 
                       ? "border-primary bg-primary" 
                       : "border-muted-foreground/30 group-hover:border-primary/50"
                   )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectAsset(assetType);
+                  }}
+                  title={isSelected ? "Deselect" : "Select for batch actions"}
                 >
                   {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
                 </div>
@@ -512,7 +517,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4 mr-1" />
-                      Generate
+                      Open Studio
                     </>
                   )}
                 </Button>
@@ -569,16 +574,21 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                   ? "border-primary ring-2 ring-primary/20"
                   : "border-border hover:border-primary/50"
               )}
-              onClick={() => onSelectAsset(assetType)}
+              onClick={() => handleGenerate(assetType)}
             >
-              {/* Selection Checkbox */}
+              {/* Selection Checkbox - stops propagation to allow selection without opening editor */}
               <div 
                 className={cn(
-                  "absolute top-3 left-3 z-10 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                  "absolute top-3 left-3 z-10 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all cursor-pointer hover:scale-110",
                   isSelected 
                     ? "border-primary bg-primary" 
                     : "border-white/50 bg-black/20 group-hover:border-white"
                 )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectAsset(assetType);
+                }}
+                title={isSelected ? "Deselect" : "Select for batch actions"}
               >
                 {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
               </div>
@@ -640,11 +650,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                   );
                 })()}
                 
-                {/* Generate Overlay */}
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                {/* Open Studio Overlay - Click anywhere opens the studio */}
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
                   <Button
                     size="sm"
-                    className={cn("bg-gradient-to-r shadow-lg", studioGradient)}
+                    className={cn("bg-gradient-to-r shadow-lg pointer-events-auto", studioGradient)}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleGenerate(assetType);
@@ -656,10 +666,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                     ) : (
                       <>
                         <Sparkles className="w-4 h-4 mr-1" />
-                        Generate
+                        Open Studio
                       </>
                     )}
                   </Button>
+                  <p className="text-xs text-white/70">Click card to edit</p>
                 </div>
                 
                 {/* Loading Overlay with Enhanced Animation */}
