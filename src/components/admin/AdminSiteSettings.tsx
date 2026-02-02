@@ -235,288 +235,301 @@ export const AdminSiteSettings: React.FC = () => {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Image className="w-5 h-5" />
-            Application Logo
-          </CardTitle>
-          <CardDescription>
-            Upload custom logos for light and dark modes. SVG files are supported for crisp display at any size.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Logo Type Selection */}
-          <div className="space-y-3">
-            <Label>Logo Display Style</Label>
-            <RadioGroup 
-              value={selectedType} 
-              onValueChange={(v) => setSelectedType(v as 'default' | 'custom' | 'icon-only')}
-              className="grid grid-cols-3 gap-4"
-            >
-              <Label
-                htmlFor="default"
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  selectedType === 'default' 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-muted-foreground/50'
-                }`}
-              >
-                <RadioGroupItem value="default" id="default" className="sr-only" />
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <Sparkles className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <span className="font-medium text-sm">Default</span>
-                <span className="text-xs text-muted-foreground text-center">EventKIT branding</span>
-              </Label>
-
-              <Label
-                htmlFor="custom"
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  selectedType === 'custom' 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-muted-foreground/50'
-                }`}
-              >
-                <RadioGroupItem value="custom" id="custom" className="sr-only" />
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                  {previewUrl ? (
-                    <img src={previewUrl} alt="Custom logo" className="w-full h-full object-contain" />
-                  ) : (
-                    <Upload className="w-6 h-6 text-muted-foreground" />
-                  )}
-                </div>
-                <span className="font-medium text-sm">Custom Logo</span>
-                <span className="text-xs text-muted-foreground text-center">Your brand logo</span>
-              </Label>
-
-              <Label
-                htmlFor="icon-only"
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  selectedType === 'icon-only' 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border hover:border-muted-foreground/50'
-                }`}
-              >
-                <RadioGroupItem value="icon-only" id="icon-only" className="sr-only" />
-                <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                  {previewIconUrl ? (
-                    <img src={previewIconUrl} alt="Icon" className="w-8 h-8 object-contain" />
-                  ) : (
-                    <Image className="w-6 h-6 text-muted-foreground" />
-                  )}
-                </div>
-                <span className="font-medium text-sm">Icon Only</span>
-                <span className="text-xs text-muted-foreground text-center">Square icon/symbol</span>
-              </Label>
-            </RadioGroup>
-          </div>
-
-          {/* Custom Logo Upload - Light & Dark */}
-          {selectedType === 'custom' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-4"
-            >
-              <Tabs defaultValue="light" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="light" className="gap-2">
-                    <Sun className="w-4 h-4" />
-                    Light Mode
-                  </TabsTrigger>
-                  <TabsTrigger value="dark" className="gap-2">
-                    <Moon className="w-4 h-4" />
-                    Dark Mode
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="light" className="mt-4">
-                  {renderUploadBox(
-                    previewUrl,
-                    () => logoInputRef.current?.click(),
-                    () => setPreviewUrl(null),
-                    logoInputRef,
-                    (e) => handleLogoUpload(e, 'logo'),
-                    'Logo for Light Mode (Recommended: 200×50px or wider)'
-                  )}
-                </TabsContent>
-                <TabsContent value="dark" className="mt-4">
-                  {renderUploadBox(
-                    previewUrlDark,
-                    () => logoDarkInputRef.current?.click(),
-                    () => setPreviewUrlDark(null),
-                    logoDarkInputRef,
-                    (e) => handleLogoUpload(e, 'logo-dark'),
-                    'Logo for Dark Mode (Optional - falls back to light mode logo)'
-                  )}
-                </TabsContent>
-              </Tabs>
-            </motion.div>
-          )}
-
-          {/* Icon Only Upload - Light & Dark */}
-          {selectedType === 'icon-only' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-4"
-            >
-              <Tabs defaultValue="light" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="light" className="gap-2">
-                    <Sun className="w-4 h-4" />
-                    Light Mode
-                  </TabsTrigger>
-                  <TabsTrigger value="dark" className="gap-2">
-                    <Moon className="w-4 h-4" />
-                    Dark Mode
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="light" className="mt-4">
-                  {renderUploadBox(
-                    previewIconUrl,
-                    () => iconInputRef.current?.click(),
-                    () => setPreviewIconUrl(null),
-                    iconInputRef,
-                    (e) => handleLogoUpload(e, 'icon'),
-                    'Icon for Light Mode (Recommended: 512×512px)',
-                    true
-                  )}
-                </TabsContent>
-                <TabsContent value="dark" className="mt-4">
-                  {renderUploadBox(
-                    previewIconUrlDark,
-                    () => iconDarkInputRef.current?.click(),
-                    () => setPreviewIconUrlDark(null),
-                    iconDarkInputRef,
-                    (e) => handleLogoUpload(e, 'icon-dark'),
-                    'Icon for Dark Mode (Optional - falls back to light mode icon)',
-                    true
-                  )}
-                </TabsContent>
-              </Tabs>
-            </motion.div>
-          )}
-
-          {/* Preview */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Header Preview</Label>
-              <div className="flex rounded-lg border border-border overflow-hidden">
-                <button
-                  onClick={() => setPreviewMode('light')}
-                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                    previewMode === 'light' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Settings */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Image className="w-5 h-5" />
+                Application Logo
+              </CardTitle>
+              <CardDescription>
+                Upload custom logos for light and dark modes. SVG files are supported for crisp display at any size.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Logo Type Selection */}
+              <div className="space-y-3">
+                <Label>Logo Display Style</Label>
+                <RadioGroup 
+                  value={selectedType} 
+                  onValueChange={(v) => setSelectedType(v as 'default' | 'custom' | 'icon-only')}
+                  className="grid grid-cols-3 gap-4"
                 >
-                  <Sun className="w-3 h-3" />
-                  Light
-                </button>
-                <button
-                  onClick={() => setPreviewMode('dark')}
-                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
-                    previewMode === 'dark' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  <Moon className="w-3 h-3" />
-                  Dark
-                </button>
-              </div>
-            </div>
-            <div className={`p-4 rounded-xl border border-border ${
-              previewMode === 'dark' ? 'bg-zinc-900' : 'bg-muted/30'
-            }`}>
-              <div className="flex items-center gap-3">
-                {selectedType === 'default' && (
-                  <>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-primary-foreground" />
+                  <Label
+                    htmlFor="default"
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedType === 'default' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-muted-foreground/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="default" id="default" className="sr-only" />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      <Sparkles className="w-6 h-6 text-primary-foreground" />
                     </div>
-                    <span className={`text-lg font-bold ${previewMode === 'dark' ? 'text-white' : ''}`}>
-                      EventKIT
-                    </span>
-                  </>
-                )}
-                {selectedType === 'custom' && (
-                  (() => {
-                    const displayUrl = previewMode === 'dark' 
-                      ? (previewUrlDark || previewUrl) 
-                      : previewUrl;
-                    
-                    if (displayUrl) {
-                      return (
-                        <img 
-                          src={displayUrl} 
-                          alt="Logo" 
-                          className="max-h-10 max-w-[160px] w-auto h-auto object-contain" 
-                        />
-                      );
-                    }
-                    return (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <AlertCircle className="w-5 h-5" />
-                        <span className="text-sm">Upload a logo to preview</span>
-                      </div>
-                    );
-                  })()
-                )}
-                {selectedType === 'icon-only' && (
-                  (() => {
-                    const displayUrl = previewMode === 'dark' 
-                      ? (previewIconUrlDark || previewIconUrl) 
-                      : previewIconUrl;
-                    
-                    if (displayUrl) {
-                      return (
-                        <img 
-                          src={displayUrl} 
-                          alt="Icon" 
-                          className="max-h-10 max-w-[120px] w-auto h-auto object-contain" 
-                        />
-                      );
-                    }
-                    return (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <AlertCircle className="w-5 h-5" />
-                        <span className="text-sm">Upload an icon to preview</span>
-                      </div>
-                    );
-                  })()
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Logos auto-resize to fit the header (max 40px height, 160px width)
-              </p>
-            </div>
-          </div>
+                    <span className="font-medium text-sm">Default</span>
+                    <span className="text-xs text-muted-foreground text-center">EventKIT branding</span>
+                  </Label>
 
-          {/* Actions */}
-          <div className="flex items-center justify-between pt-4 border-t border-border">
-            <Button
-              variant="ghost"
-              onClick={handleReset}
-              disabled={isSaving || (selectedType === 'default' && !logoUrl && !logoIconUrl)}
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset to Default
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <CheckCircle2 className="w-4 h-4 mr-2" />
+                  <Label
+                    htmlFor="custom"
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedType === 'custom' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-muted-foreground/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="custom" id="custom" className="sr-only" />
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                      {previewUrl ? (
+                        <img src={previewUrl} alt="Custom logo" className="w-full h-full object-contain" />
+                      ) : (
+                        <Upload className="w-6 h-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <span className="font-medium text-sm">Custom Logo</span>
+                    <span className="text-xs text-muted-foreground text-center">Your brand logo</span>
+                  </Label>
+
+                  <Label
+                    htmlFor="icon-only"
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                      selectedType === 'icon-only' 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-muted-foreground/50'
+                    }`}
+                  >
+                    <RadioGroupItem value="icon-only" id="icon-only" className="sr-only" />
+                    <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
+                      {previewIconUrl ? (
+                        <img src={previewIconUrl} alt="Icon" className="w-8 h-8 object-contain" />
+                      ) : (
+                        <Image className="w-6 h-6 text-muted-foreground" />
+                      )}
+                    </div>
+                    <span className="font-medium text-sm">Icon Only</span>
+                    <span className="text-xs text-muted-foreground text-center">Square icon/symbol</span>
+                  </Label>
+                </RadioGroup>
+              </div>
+
+              {/* Custom Logo Upload - Light & Dark */}
+              {selectedType === 'custom' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-4"
+                >
+                  <Tabs defaultValue="light" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="light" className="gap-2">
+                        <Sun className="w-4 h-4" />
+                        Light Mode
+                      </TabsTrigger>
+                      <TabsTrigger value="dark" className="gap-2">
+                        <Moon className="w-4 h-4" />
+                        Dark Mode
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="light" className="mt-4">
+                      {renderUploadBox(
+                        previewUrl,
+                        () => logoInputRef.current?.click(),
+                        () => setPreviewUrl(null),
+                        logoInputRef,
+                        (e) => handleLogoUpload(e, 'logo'),
+                        'Logo for Light Mode (Recommended: 200×50px or wider)'
+                      )}
+                    </TabsContent>
+                    <TabsContent value="dark" className="mt-4">
+                      {renderUploadBox(
+                        previewUrlDark,
+                        () => logoDarkInputRef.current?.click(),
+                        () => setPreviewUrlDark(null),
+                        logoDarkInputRef,
+                        (e) => handleLogoUpload(e, 'logo-dark'),
+                        'Logo for Dark Mode (Optional - falls back to light mode logo)'
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </motion.div>
               )}
-              Save Changes
-            </Button>
+
+              {/* Icon Only Upload - Light & Dark */}
+              {selectedType === 'icon-only' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-4"
+                >
+                  <Tabs defaultValue="light" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="light" className="gap-2">
+                        <Sun className="w-4 h-4" />
+                        Light Mode
+                      </TabsTrigger>
+                      <TabsTrigger value="dark" className="gap-2">
+                        <Moon className="w-4 h-4" />
+                        Dark Mode
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="light" className="mt-4">
+                      {renderUploadBox(
+                        previewIconUrl,
+                        () => iconInputRef.current?.click(),
+                        () => setPreviewIconUrl(null),
+                        iconInputRef,
+                        (e) => handleLogoUpload(e, 'icon'),
+                        'Icon for Light Mode (Recommended: 512×512px)',
+                        true
+                      )}
+                    </TabsContent>
+                    <TabsContent value="dark" className="mt-4">
+                      {renderUploadBox(
+                        previewIconUrlDark,
+                        () => iconDarkInputRef.current?.click(),
+                        () => setPreviewIconUrlDark(null),
+                        iconDarkInputRef,
+                        (e) => handleLogoUpload(e, 'icon-dark'),
+                        'Icon for Dark Mode (Optional - falls back to light mode icon)',
+                        true
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                </motion.div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center justify-between pt-4 border-t border-border">
+                <Button
+                  variant="ghost"
+                  onClick={handleReset}
+                  disabled={isSaving || (selectedType === 'default' && !logoUrl && !logoIconUrl)}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset to Default
+                </Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                  )}
+                  Save Changes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Live Preview (Sticky) */}
+        <div className="lg:col-span-1">
+          <div className="lg:sticky lg:top-24">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  Header Preview
+                </CardTitle>
+                <div className="flex rounded-lg border border-border overflow-hidden w-fit">
+                  <button
+                    onClick={() => setPreviewMode('light')}
+                    className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                      previewMode === 'light' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    <Sun className="w-3 h-3" />
+                    Light
+                  </button>
+                  <button
+                    onClick={() => setPreviewMode('dark')}
+                    className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                      previewMode === 'dark' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                  >
+                    <Moon className="w-3 h-3" />
+                    Dark
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className={`p-4 rounded-xl border border-border ${
+                  previewMode === 'dark' ? 'bg-zinc-900' : 'bg-muted/30'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    {selectedType === 'default' && (
+                      <>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+                          <Sparkles className="w-5 h-5 text-primary-foreground" />
+                        </div>
+                        <span className={`text-lg font-bold ${previewMode === 'dark' ? 'text-white' : ''}`}>
+                          EventKIT
+                        </span>
+                      </>
+                    )}
+                    {selectedType === 'custom' && (
+                      (() => {
+                        const displayUrl = previewMode === 'dark' 
+                          ? (previewUrlDark || previewUrl) 
+                          : previewUrl;
+                        
+                        if (displayUrl) {
+                          return (
+                            <img 
+                              src={displayUrl} 
+                              alt="Logo" 
+                              className="max-h-10 max-w-[160px] w-auto h-auto object-contain" 
+                            />
+                          );
+                        }
+                        return (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <AlertCircle className="w-5 h-5" />
+                            <span className="text-sm">Upload a logo to preview</span>
+                          </div>
+                        );
+                      })()
+                    )}
+                    {selectedType === 'icon-only' && (
+                      (() => {
+                        const displayUrl = previewMode === 'dark' 
+                          ? (previewIconUrlDark || previewIconUrl) 
+                          : previewIconUrl;
+                        
+                        if (displayUrl) {
+                          return (
+                            <img 
+                              src={displayUrl} 
+                              alt="Icon" 
+                              className="max-h-10 max-w-[120px] w-auto h-auto object-contain" 
+                            />
+                          );
+                        }
+                        return (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <AlertCircle className="w-5 h-5" />
+                            <span className="text-sm">Upload an icon to preview</span>
+                          </div>
+                        );
+                      })()
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Logos auto-resize to fit the header (max 40px height, 160px width)
+                </p>
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
