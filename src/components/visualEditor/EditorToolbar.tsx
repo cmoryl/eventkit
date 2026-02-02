@@ -132,39 +132,61 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
       <Separator orientation="vertical" className="h-6 mx-2" />
 
       {/* Zoom Controls */}
-      <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0"
-          onClick={() => onZoomChange(Math.max(0.1, zoom - 0.25))}
-          disabled={zoom <= 0.1}
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
-        <button
-          className="h-8 px-2 text-sm font-medium hover:bg-background rounded transition-colors min-w-[60px]"
-          onClick={() => onZoomChange(1)}
-        >
-          {Math.round(zoom * 100)}%
-        </button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0"
-          onClick={() => onZoomChange(Math.min(5, zoom + 0.25))}
-          disabled={zoom >= 5}
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-8 w-8 p-0"
-          onClick={() => onZoomChange(1)}
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 w-8 p-0"
+              onClick={() => onZoomChange(Math.max(0.1, zoom - 0.25))}
+              disabled={zoom <= 0.1}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Zoom Out</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-3 min-w-[60px] font-medium"
+              onClick={() => onZoomChange(1)}
+            >
+              {Math.round(zoom * 100)}%
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Reset to 100%</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8 w-8 p-0"
+              onClick={() => onZoomChange(Math.min(5, zoom + 0.25))}
+              disabled={zoom >= 5}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Zoom In</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0"
+              onClick={() => onZoomChange(1)}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Fit to View</TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Spacer */}
