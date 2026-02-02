@@ -1,5 +1,16 @@
 // Print Vendor Templates with service-specific requirements
+// This file re-exports from the comprehensive vendor production specs
+// and provides backward compatibility with the original interface
+
 import { AssetType } from '../types';
+import { 
+  ALL_VENDOR_SPECS, 
+  getVendorSpecsForAsset, 
+  getSpecsByVendor,
+  VENDOR_LIST,
+  type VendorProductSpec,
+  type ProductionSpec
+} from './vendorProductionSpecs';
 
 export interface VendorTemplate {
   id: string;
@@ -7,7 +18,7 @@ export interface VendorTemplate {
   logo?: string;
   website: string;
   description: string;
-  category: 'online' | 'local' | 'premium' | 'specialty';
+  category: 'online' | 'local' | 'premium' | 'specialty' | 'trade' | 'signage' | 'apparel';
   specs: VendorSpecs;
   supportedAssets: AssetType[];
   tips: string[];
@@ -28,6 +39,10 @@ export interface VendorSpecs {
   embedFonts: boolean;
   notes?: string;
 }
+
+// Re-export new types
+export { VendorProductSpec, ProductionSpec };
+export { getVendorSpecsForAsset, getSpecsByVendor, VENDOR_LIST, ALL_VENDOR_SPECS };
 
 export const PRINT_VENDORS: VendorTemplate[] = [
   // ============= ONLINE PRINT SERVICES =============
