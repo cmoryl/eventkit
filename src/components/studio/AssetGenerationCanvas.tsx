@@ -225,7 +225,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       referencePrompt: brief.referencePrompt,
     };
     
-    let prompt = buildPromptFromBrief(assetName, eventName, briefData, brand?.styles as Record<string, unknown>);
+    let prompt = buildPromptFromBrief(assetName, eventName, briefData, brand?.styles as unknown as Record<string, unknown>);
     
     // Add variation-specific style
     prompt += ` Variation emphasis: ${styleVariant}.`;
@@ -256,8 +256,6 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       prompt += ` ${assetDescription}`;
     }
     
-    return prompt;
-  };
     return prompt;
   };
 
