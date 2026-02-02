@@ -17,10 +17,13 @@ import {
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useAuth } from '@/hooks/useAuth';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { STUDIO_DEFINITIONS, StudioType } from '@/types/studio.types';
 import { toast } from 'sonner';
+import { ActiveBrandIndicator } from '@/components/brand/ActiveBrandIndicator';
+import { BrandColorBar } from '@/components/brand/BrandColorBar';
 
 interface NavItem {
   id: string;
@@ -71,6 +74,7 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   const location = useLocation();
   const { user, isAuthenticated, signOut } = useAuth();
   const { logoType, logoUrl, logoUrlDark, logoIconUrl, logoIconUrlDark } = useAppSettings();
+  const { activeBrand, brands, setActiveBrand, applyBrandToUI, resetUITheme, isThemeApplied } = useActiveBrand();
   const { resolvedTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showStudiosMenu, setShowStudiosMenu] = useState(false);
@@ -113,8 +117,13 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
         ? "bg-transparent" 
         : "bg-background/80 backdrop-blur-xl border-b border-border/50"
     )}>
-      {/* Hero gradient line */}
-      <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 via-primary to-cyan-500" />
+      {/* Brand-aware gradient line */}
+      <BrandColorBar 
+        primaryColor={activeBrand?.styles?.primary_color}
+        secondaryColor={activeBrand?.styles?.secondary_color}
+        accentColor={activeBrand?.styles?.accent_color}
+        position="top"
+      />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
@@ -309,6 +318,19 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
             )}
             
             {actions}
+
+            {/* Active Brand Indicator */}
+            {isAuthenticated && activeBrand && (
+              <ActiveBrandIndicator
+                activeBrand={activeBrand}
+                brands={brands}
+                onSelectBrand={setActiveBrand}
+                onApplyTheme={() => applyBrandToUI()}
+                onResetTheme={resetUITheme}
+                isThemeApplied={isThemeApplied}
+                variant="compact"
+              />
+            )}
             
             <ThemeToggle />
 
