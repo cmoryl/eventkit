@@ -323,7 +323,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
   const inputClassName = "w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all";
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -407,7 +407,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                 )}
               </button>
               
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {expandedSections.has('content') && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -470,7 +470,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                 )}
               </button>
               
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {expandedSections.has('style') && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -533,7 +533,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                 )}
               </button>
               
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {expandedSections.has('colors') && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -602,7 +602,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                 )}
               </button>
               
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {expandedSections.has('typography') && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -891,7 +891,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                 )}
               </button>
               
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {expandedSections.has('layout') && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
@@ -959,7 +959,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
             </button>
 
             {/* Advanced Options */}
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
               {showAdvanced && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
