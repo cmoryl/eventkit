@@ -1,7 +1,7 @@
 // Visual Editor - Main component combining all parts
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Sparkles, Layers } from 'lucide-react';
+import { X, Sparkles, Layers, LayoutTemplate } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useVisualEditor } from '@/hooks/useVisualEditor';
@@ -10,6 +10,7 @@ import { EditorCanvas } from './EditorCanvas';
 import { ElementSidebar } from './ElementSidebar';
 import { PropertiesPanel } from './PropertiesPanel';
 import { LayerPanel } from './LayerPanel';
+import { TemplateGallery } from './TemplateGallery';
 import type { CanvasElement, CanvasState } from '@/types/visualEditor.types';
 
 interface VisualEditorProps {
@@ -22,6 +23,7 @@ interface VisualEditorProps {
   brandColors?: string[];
   onSave?: (state: CanvasState) => void;
   onExport?: (state: CanvasState) => void;
+  showTemplatesOnOpen?: boolean;
 }
 
 export const VisualEditor: React.FC<VisualEditorProps> = ({
@@ -33,10 +35,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   initialHeight = 1080,
   brandColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
   onSave,
-  onExport
+  onExport,
+  showTemplatesOnOpen = true
 }) => {
   const [showLayers, setShowLayers] = useState(true);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
+  const [hasSelectedTemplate, setHasSelectedTemplate] = useState(false);
 
   const editor = useVisualEditor(initialWidth, initialHeight);
   const {
@@ -61,8 +66,16 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
     canRedo,
     getSelectedElements,
     setIsDragging,
-    loadState
+    loadState,
+    resizeCanvas
   } = editor;
+
+  // Show template gallery when editor opens (if no template selected yet)
+  useEffect(() => {
+    if (isOpen && showTemplatesOnOpen && !hasSelectedTemplate) {
+      setShowTemplateGallery(true);
+    }
+  }, [isOpen, showTemplatesOnOpen, hasSelectedTemplate]);
 
   const handleAddElement = useCallback((element: Partial<CanvasElement>) => {
     addElement(element);
@@ -86,6 +99,17 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const handleExport = useCallback(() => {
     onExport?.(state);
   }, [state, onExport]);
+
+  const handleSelectTemplate = useCallback((templateState: CanvasState) => {
+    loadState(templateState);
+    setHasSelectedTemplate(true);
+    setShowTemplateGallery(false);
+  }, [loadState]);
+
+  const handleSkipTemplates = useCallback(() => {
+    setHasSelectedTemplate(true);
+    setShowTemplateGallery(false);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -113,6 +137,15 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={() => setShowTemplateGallery(true)}
+            >
+              <LayoutTemplate className="h-4 w-4" />
+              Templates
+            </Button>
             <Button
               size="sm"
               variant={showLayers ? 'secondary' : 'ghost'}
@@ -188,6 +221,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             onReorderElement={reorderElement}
           />
         </div>
+
+        {/* Template Gallery Modal */}
+        <TemplateGallery
+          isOpen={showTemplateGallery}
+          onClose={handleSkipTemplates}
+          onSelectTemplate={handleSelectTemplate}
+        />
       </motion.div>
     </TooltipProvider>
   );
