@@ -65,7 +65,7 @@ export const BrandImageryGallery: React.FC<BrandImageryGalleryProps> = ({
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
 
-  if (!imagery || imagery.all.length === 0) {
+  if (!imagery || !imagery.all || imagery.all.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-40" />
