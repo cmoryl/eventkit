@@ -114,7 +114,13 @@ export interface BrandContext {
   
   // AI Generation Context
   customPrompts?: Record<string, unknown>;
+  
+  // Brand adherence mode for generation
+  adherenceMode?: BrandAdherenceMode;
 }
+
+// Controls how strictly brand guidelines are followed during asset generation
+export type BrandAdherenceMode = 'strict' | 'inspired' | 'none';
 
 export interface BrandColor {
   hex: string;
@@ -139,6 +145,9 @@ export interface BrandGradient {
 
 /**
  * Convert BrandStyle from database/studio types to BrandContext for generation
+ * 
+ * @param brand - Brand data from database
+ * @param adherenceMode - Optional adherence mode from project (defaults to 'inspired')
  */
 export function buildBrandContext(brand: {
   name?: string;
@@ -211,7 +220,7 @@ export function buildBrandContext(brand: {
       };
     };
   };
-}): BrandContext | null {
+}, adherenceMode?: BrandAdherenceMode): BrandContext | null {
   if (!brand) return null;
   
   const styles = brand.styles;
@@ -305,15 +314,30 @@ export function buildBrandContext(brand: {
     } : undefined,
     
     customPrompts: customPrompts,
+    
+    // Include adherence mode for prompt generation
+    adherenceMode: adherenceMode || 'inspired',
   };
 }
 
 /**
  * Build a style description prompt from brand context
  * Used to inject brand personality into generation prompts
+ * 
+ * @param context - The brand context with all brand intelligence
+ * @param adherenceMode - Controls strictness: 'strict' (exact compliance), 'inspired' (flexible), 'none' (skip brand)
  */
-export function buildBrandStylePrompt(context: BrandContext | null): string {
-  if (!context) return '';
+export function buildBrandStylePrompt(
+  context: BrandContext | null, 
+  adherenceMode: BrandAdherenceMode = 'inspired'
+): string {
+  if (!context || adherenceMode === 'none') return '';
+  
+  // Determine phrasing based on adherence mode
+  const isStrict = adherenceMode === 'strict';
+  const prefix = isStrict 
+    ? 'STRICT BRAND COMPLIANCE REQUIRED: ' 
+    : 'Brand-inspired guidance (creative flexibility encouraged): ';
   
   const parts: string[] = [];
   
@@ -430,7 +454,14 @@ export function buildBrandStylePrompt(context: BrandContext | null): string {
     }
   }
   
-  return parts.join(' ');
+  // Add adherence mode context
+  if (isStrict) {
+    parts.push('All designs MUST strictly follow these brand guidelines without deviation.');
+  } else {
+    parts.push('These are brand suggestions - feel free to interpret creatively for this event while maintaining brand recognition.');
+  }
+  
+  return prefix + parts.join(' ');
 }
 
 /**

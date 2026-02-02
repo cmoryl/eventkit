@@ -134,7 +134,8 @@ export function buildTemplateVariables(
   const accentColor = brandContext?.accentColor || colorPalette[2]?.name || colorPalette[2]?.hex || '';
 
   // Build enhanced style description incorporating brand context
-  const brandStylePrompt = buildBrandStylePrompt(brandContext);
+  // Use adherence mode from brand context (defaults to 'inspired' for flexibility)
+  const brandStylePrompt = buildBrandStylePrompt(brandContext, brandContext?.adherenceMode || 'inspired');
   const enhancedStyle = brandStylePrompt 
     ? `${styleDescription || 'professional and modern'}. ${brandStylePrompt}`
     : styleDescription || 'professional and modern';
@@ -233,9 +234,9 @@ export async function buildAssetPrompt(
     prompt = buildFallbackPrompt(assetType, variables, brandContext);
   }
   
-  // Append brand context as additional guidance
+  // Append brand context as additional guidance (respect adherence mode)
   if (brandContext) {
-    const brandPrompt = buildBrandStylePrompt(brandContext);
+    const brandPrompt = buildBrandStylePrompt(brandContext, brandContext.adherenceMode || 'inspired');
     if (brandPrompt) {
       prompt += ` Brand Guidelines: ${brandPrompt}`;
     }
