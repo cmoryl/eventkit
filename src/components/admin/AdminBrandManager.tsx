@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Edit, Settings, Link } from 'lucide-react';
+import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Settings, Link, Paintbrush } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandStyleEditor } from './BrandStyleEditor';
+import { applyBrandTheme } from '@/services/brandThemeService';
 
 interface BrandStyle {
   primary_color?: string;
@@ -278,6 +279,22 @@ export const AdminBrandManager: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-1">
+                {/* Apply Theme Button */}
+                {brand.brand_styles?.[0] && (brand.brand_styles[0].primary_color || brand.brand_styles[0].accent_color) && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => applyBrandTheme({
+                      primary_color: brand.brand_styles![0].primary_color,
+                      secondary_color: brand.brand_styles![0].secondary_color,
+                      accent_color: brand.brand_styles![0].accent_color,
+                    })}
+                    title="Apply theme to UI"
+                    className="text-violet-500 hover:text-violet-600 hover:bg-violet-500/10"
+                  >
+                    <Paintbrush className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button 
                   variant="ghost" 
                   size="icon" 
