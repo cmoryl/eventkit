@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Palette, Plus, Settings, Clock, Image as ImageIcon, 
-  ChevronRight, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart, Wand2
+  ChevronRight, ChevronDown, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart, Wand2
 } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { BrandAdherenceMode } from '@/types/brand.types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import {
@@ -63,6 +64,7 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
   const [isLoadingCreations, setIsLoadingCreations] = useState(false);
   const [isSettingProjectBrand, setIsSettingProjectBrand] = useState(false);
   const [isSettingAdherence, setIsSettingAdherence] = useState(false);
+  const [isBrandStyleOpen, setIsBrandStyleOpen] = useState(true);
 
   // Load recent creations for selected brand
   useEffect(() => {
@@ -350,87 +352,104 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
             exit={{ opacity: 0, y: -10 }}
             className="flex-1 overflow-hidden flex flex-col"
           >
-            {/* Brand Style Overview */}
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium text-foreground">Brand Style</h4>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
-                  className="h-6 w-6"
-                  onClick={() => onEditBrand(selectedBrand)}
-                >
-                  <Settings className="w-3 h-3" />
-                </Button>
-              </div>
-
-              {/* Color Palette */}
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Droplets className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Colors</span>
-                </div>
-                <div className="flex gap-1">
-                  {getBrandColors(selectedBrand).length > 0 ? (
-                    getBrandColors(selectedBrand).map((color, i) => (
-                      <div
-                        key={i}
-                        className="w-8 h-8 rounded-lg shadow-sm border border-border"
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-xs text-muted-foreground">No colors defined</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Typography */}
-              <div className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Type className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Typography</span>
-                </div>
-                <div className="space-y-1">
-                  {selectedBrand.styles?.heading_font ? (
-                    <p className="text-xs">
-                      <span className="text-muted-foreground">Heading:</span>{' '}
-                      <span className="font-medium">{selectedBrand.styles.heading_font}</span>
-                    </p>
-                  ) : null}
-                  {selectedBrand.styles?.body_font ? (
-                    <p className="text-xs">
-                      <span className="text-muted-foreground">Body:</span>{' '}
-                      <span className="font-medium">{selectedBrand.styles.body_font}</span>
-                    </p>
-                  ) : null}
-                  {!selectedBrand.styles?.heading_font && !selectedBrand.styles?.body_font && (
-                    <p className="text-xs text-muted-foreground">No fonts defined</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Mood Keywords */}
-              {selectedBrand.styles?.mood_keywords && selectedBrand.styles.mood_keywords.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sparkles className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Mood</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedBrand.styles.mood_keywords.slice(0, 4).map((keyword, i) => (
-                      <span 
-                        key={i}
-                        className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+            {/* Brand Style Overview - Collapsible */}
+            <Collapsible open={isBrandStyleOpen} onOpenChange={setIsBrandStyleOpen}>
+              <div className="border-b border-border">
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
+                    <h4 className="text-sm font-medium text-foreground">Brand Style</h4>
+                    <div className="flex items-center gap-1">
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEditBrand(selectedBrand);
+                        }}
                       >
-                        {keyword}
-                      </span>
-                    ))}
+                        <Settings className="w-3 h-3" />
+                      </Button>
+                      <ChevronDown className={cn(
+                        "w-4 h-4 text-muted-foreground transition-transform duration-200",
+                        isBrandStyleOpen && "rotate-180"
+                      )} />
+                    </div>
+                  </button>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent className="animate-accordion-down">
+                  <div className="px-4 pb-4 space-y-4">
+                    {/* Color Palette */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Droplets className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Colors</span>
+                      </div>
+                      <div className="flex gap-1">
+                        {getBrandColors(selectedBrand).length > 0 ? (
+                          getBrandColors(selectedBrand).map((color, i) => (
+                            <div
+                              key={i}
+                              className="w-8 h-8 rounded-lg shadow-sm border border-border"
+                              style={{ backgroundColor: color }}
+                              title={color}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-xs text-muted-foreground">No colors defined</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Typography */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Type className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Typography</span>
+                      </div>
+                      <div className="space-y-1">
+                        {selectedBrand.styles?.heading_font ? (
+                          <p className="text-xs">
+                            <span className="text-muted-foreground">Heading:</span>{' '}
+                            <span className="font-medium">{selectedBrand.styles.heading_font}</span>
+                          </p>
+                        ) : null}
+                        {selectedBrand.styles?.body_font ? (
+                          <p className="text-xs">
+                            <span className="text-muted-foreground">Body:</span>{' '}
+                            <span className="font-medium">{selectedBrand.styles.body_font}</span>
+                          </p>
+                        ) : null}
+                        {!selectedBrand.styles?.heading_font && !selectedBrand.styles?.body_font && (
+                          <p className="text-xs text-muted-foreground">No fonts defined</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Mood Keywords */}
+                    {selectedBrand.styles?.mood_keywords && selectedBrand.styles.mood_keywords.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Sparkles className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">Mood</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedBrand.styles.mood_keywords.slice(0, 4).map((keyword, i) => (
+                            <span 
+                              key={i}
+                              className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
+                </CollapsibleContent>
+              </div>
+            </Collapsible>
 
             {/* Recent Creations */}
             <div className="flex-1 p-4 overflow-hidden">
