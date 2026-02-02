@@ -478,6 +478,38 @@ class GenerationQueue {
   updateConfig(config: Partial<QueueConfig>): void {
     this.config = { ...this.config, ...config };
   }
+
+  // Get context info for persistence
+  getContextInfo(): { eventName: string; eventDescription: string; styleDesc?: string } | null {
+    if (!this.generationContext) return null;
+    return {
+      eventName: this.generationContext.eventDetails.name,
+      eventDescription: this.generationContext.eventDetails.description || '',
+      styleDesc: this.generationContext.styleDesc,
+    };
+  }
+
+  // Restore jobs from persisted state
+  restoreJobs(jobs: GenerationJob[]): void {
+    // Reset status of processing jobs to pending (they were interrupted)
+    const restoredJobs = jobs.map(job => ({
+      ...job,
+      status: job.status === JobStatus.Processing ? JobStatus.Pending : job.status,
+      startedAt: undefined,
+    }));
+
+    // Sort by priority and add to queue
+    restoredJobs.sort((a, b) => a.priority - b.priority);
+    this.queue = restoredJobs;
+
+    console.log(`Restored ${restoredJobs.length} jobs to queue`);
+    this.emit({ type: 'job-added', queueLength: this.queue.length });
+  }
+
+  // Check if queue has pending work
+  hasPendingWork(): boolean {
+    return this.queue.length > 0 || this.activeJobs.size > 0;
+  }
 }
 
 // Singleton instance

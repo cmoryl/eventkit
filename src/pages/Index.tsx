@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import LandingPage from '../components/landing/LandingPage';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
@@ -12,6 +12,7 @@ import AssetDownloadModal from '../components/studio/AssetDownloadModal';
 import GenerationLoader from '../components/GenerationLoader';
 import GenerationSummary from '../components/GenerationSummary';
 import { GenerationQueueStatus } from '../components/GenerationQueueStatus';
+import { QueueRestorePrompt } from '../components/QueueRestorePrompt';
 import Toast from '../components/Toast';
 import ImageEditorModal from '../components/ImageEditorModal';
 import PaletteEditorModal from '../components/PaletteEditorModal';
@@ -34,6 +35,8 @@ import { useQueuedGeneration } from '../hooks/useQueuedGeneration';
 import { useAuth } from '../hooks/useAuth';
 import { useAIBrain } from '../hooks/useAIBrain';
 import { fileToBase64, downloadAllAssets } from '../utils';
+import { generationQueue } from '../services/generationQueue';
+import { generatePlaceholderContent } from '../services/assetGenerator';
 import { getAssetConfig } from '../config/assetConfig';
 import { generateBrandStyleGuide } from '../services/brandGuideGenerator';
 import { supabase } from '@/integrations/supabase/client';
@@ -140,6 +143,9 @@ const Index: React.FC = () => {
     resumeQueue,
     cancelAll: cancelQueue,
     clearQueue,
+    restoreQueue,
+    checkRestorableQueue,
+    discardStoredQueue,
     isProcessing: isQueueProcessing,
   } = useQueuedGeneration({
     eventDetails,
@@ -152,6 +158,66 @@ const Index: React.FC = () => {
 
   // Track whether to use queue mode (for larger batches)
   const [useQueueMode, setUseQueueMode] = useState(false);
+  
+  // Queue restore prompt state
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [restoreInfo, setRestoreInfo] = useState<{
+    pendingCount: number;
+    savedAt: Date;
+    eventName?: string;
+  } | null>(null);
+
+  // Check for restorable queue on mount
+  useEffect(() => {
+    const summary = checkRestorableQueue();
+    if (summary) {
+      setRestoreInfo(summary);
+      setShowRestorePrompt(true);
+    }
+  }, [checkRestorableQueue]);
+
+  // Handle queue restore
+  const handleRestoreQueue = useCallback(() => {
+    setShowRestorePrompt(false);
+    
+    // Set context before restoring
+    generationQueue.setGenerationContext(
+      generatePlaceholderContent,
+      {
+        eventDetails,
+        colorPalette,
+        logoBase64: primaryLogoBase64,
+        styleDesc: styleDescription,
+      }
+    );
+    
+    // Restore the queue and create asset placeholders
+    restoreQueue(setGeneratedAssets);
+    
+    // Switch to studio view
+    setView('studio');
+    
+    // Resume processing
+    resumeQueue();
+    
+    toast.success(`Resuming ${restoreInfo?.pendingCount || 0} pending assets`);
+  }, [
+    eventDetails,
+    colorPalette,
+    primaryLogoBase64,
+    styleDescription,
+    restoreQueue,
+    setGeneratedAssets,
+    resumeQueue,
+    restoreInfo
+  ]);
+
+  // Handle queue discard
+  const handleDiscardQueue = useCallback(() => {
+    setShowRestorePrompt(false);
+    discardStoredQueue();
+    toast.info('Previous queue discarded');
+  }, [discardStoredQueue]);
 
   // Auto-regenerate for non-logged-in users (skip engine selection modal)
   useEffect(() => {
@@ -612,6 +678,16 @@ const Index: React.FC = () => {
     <div className="min-h-screen text-foreground font-sans depth-orbs">
       <div className="soft-bg" />
       
+      {/* Queue restore prompt */}
+      {showRestorePrompt && restoreInfo && (
+        <QueueRestorePrompt
+          pendingCount={restoreInfo.pendingCount}
+          savedAt={restoreInfo.savedAt}
+          eventName={restoreInfo.eventName}
+          onRestore={handleRestoreQueue}
+          onDiscard={handleDiscardQueue}
+        />
+      )}
       {view === 'landing' && (
         <LandingPage 
           onGetStarted={() => setView('onboarding')} 
