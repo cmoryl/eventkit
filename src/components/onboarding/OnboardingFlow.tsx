@@ -6,12 +6,20 @@ import { DEFAULT_QUICK_START_ASSETS, FULL_SUITE_ASSETS } from '../../config/asse
 import StepOne from './StepOne';
 import StepTwo from './StepTwo';
 import StepThree from './StepThree';
-import { Sparkles, Palette, Layers, ChevronLeft, ChevronRight, Zap, ArrowRight } from 'lucide-react';
+import { Sparkles, Palette, Layers, ChevronLeft, ChevronRight, Zap, ArrowRight, Home } from 'lucide-react';
 import FAQSection from '../FAQSection';
 import { cn } from '@/lib/utils';
 import { AnimatedGradientBg } from '../animations/GlowingOrb';
 import { MagneticButton } from '../animations/InteractiveCard';
 import { ThemeToggle } from '../ThemeToggle';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 import onboardingHeroImage from '@/assets/onboarding-hero.jpg';
 
 interface OnboardingFlowProps {
@@ -219,7 +227,70 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       >
         {/* Landing Hero Header */}
         <motion.div variants={itemVariants} className="mb-8">
-          {/* Step Badge */}
+        {/* Breadcrumb Navigation */}
+        <motion.div variants={itemVariants} className="mb-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                  <Home className="w-4 h-4" />
+                  <span className="hidden sm:inline">Home</span>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                {step === 1 ? (
+                  <BreadcrumbPage className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-violet-500" />
+                    Event Details
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink 
+                    onClick={() => { setDirection(-1); setStep(1); }}
+                    className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    <span className="hidden sm:inline">Event Details</span>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+              {step >= 2 && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    {step === 2 ? (
+                      <BreadcrumbPage className="flex items-center gap-1.5">
+                        <Palette className="w-4 h-4 text-pink-500" />
+                        Style & Vibe
+                      </BreadcrumbPage>
+                    ) : (
+                      <BreadcrumbLink 
+                        onClick={() => { setDirection(-1); setStep(2); }}
+                        className="flex items-center gap-1.5 cursor-pointer text-muted-foreground hover:text-foreground"
+                      >
+                        <Palette className="w-4 h-4" />
+                        <span className="hidden sm:inline">Style & Vibe</span>
+                      </BreadcrumbLink>
+                    )}
+                  </BreadcrumbItem>
+                </>
+              )}
+              {step >= 3 && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-cyan-500" />
+                      Select Assets
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </>
+              )}
+            </BreadcrumbList>
+          </Breadcrumb>
+        </motion.div>
+
+        {/* Step Badge */}
           <div className="flex items-center justify-center sm:justify-start gap-3 mb-6">
             <div className="flex items-center gap-1.5">
               {STEPS.map((s, index) => (
