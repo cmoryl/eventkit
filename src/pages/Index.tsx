@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import LandingPage from '../components/landing/LandingPage';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
@@ -11,6 +11,7 @@ import AssetPreviewModal from '../components/studio/AssetPreviewModal';
 import AssetDownloadModal from '../components/studio/AssetDownloadModal';
 import GenerationLoader from '../components/GenerationLoader';
 import GenerationSummary from '../components/GenerationSummary';
+import { GenerationQueueStatus } from '../components/GenerationQueueStatus';
 import Toast from '../components/Toast';
 import ImageEditorModal from '../components/ImageEditorModal';
 import PaletteEditorModal from '../components/PaletteEditorModal';
@@ -29,6 +30,7 @@ import RegenerateWithEngineModal from '../components/RegenerateWithEngineModal';
 import { useProjectHistory } from '../hooks/useProjectHistory';
 import { useProjectPersistence } from '../hooks/useProjectPersistence';
 import { useAIOrchestrator } from '../hooks/useAIOrchestrator';
+import { useQueuedGeneration } from '../hooks/useQueuedGeneration';
 import { useAuth } from '../hooks/useAuth';
 import { useAIBrain } from '../hooks/useAIBrain';
 import { fileToBase64, downloadAllAssets } from '../utils';
@@ -111,6 +113,46 @@ const Index: React.FC = () => {
     eventDetails, logos, styleImage: null, masterPatternImage: null, colorPalette, setColorPalette, generatedAssets, setGeneratedAssets, ensureProtocol
   });
 
+  // Prepare logo base64 for queued generation
+  const [primaryLogoBase64, setPrimaryLogoBase64] = useState<string | undefined>();
+  
+  useEffect(() => {
+    const prepareLogoBase64 = async () => {
+      if (logos.length > 0 && logos[0].file) {
+        try {
+          const b64 = await fileToBase64(logos[0].file);
+          setPrimaryLogoBase64(`data:${b64.type};base64,${b64.data}`);
+        } catch (e) {
+          console.warn('Failed to convert logo:', e);
+        }
+      }
+    };
+    prepareLogoBase64();
+  }, [logos]);
+
+  // Queued generation with priority and retries
+  const {
+    jobs: queueJobs,
+    stats: queueStats,
+    startQueuedGeneration,
+    retryAllFailed,
+    pauseQueue,
+    resumeQueue,
+    cancelAll: cancelQueue,
+    clearQueue,
+    isProcessing: isQueueProcessing,
+  } = useQueuedGeneration({
+    eventDetails,
+    colorPalette,
+    setColorPalette,
+    setGeneratedAssets,
+    logoBase64: primaryLogoBase64,
+    styleDesc: styleDescription,
+  });
+
+  // Track whether to use queue mode (for larger batches)
+  const [useQueueMode, setUseQueueMode] = useState(false);
+
   // Auto-regenerate for non-logged-in users (skip engine selection modal)
   useEffect(() => {
     if (regeneratingAsset && !user) {
@@ -191,15 +233,24 @@ const Index: React.FC = () => {
     // Only generate if there are new loading assets
     const assetsToGenerate = newAssets.filter(a => a.isLoading);
     if (assetsToGenerate.length > 0) {
-      await generateAssets(
-        assetsToGenerate, 
-        data.styleDescription,
-        undefined, // paletteOverride
-        data.vibeImage,
-        data.masterPattern,
-        data.venueImage,
-        data.venueVideoAnalysis
-      );
+      // Use queue mode for larger batches (5+ assets) or if explicitly enabled
+      const shouldUseQueue = useQueueMode || assetsToGenerate.length >= 5;
+      
+      if (shouldUseQueue) {
+        // Queued generation with priority ordering and retries
+        startQueuedGeneration(assetsToGenerate);
+      } else {
+        // Standard parallel generation
+        await generateAssets(
+          assetsToGenerate, 
+          data.styleDescription,
+          undefined, // paletteOverride
+          data.vibeImage,
+          data.masterPattern,
+          data.venueImage,
+          data.venueVideoAnalysis
+        );
+      }
       
       // Show generation summary after completion
       setShowGenerationSummary(true);
@@ -617,7 +668,8 @@ const Index: React.FC = () => {
           />
 
           <main className="container mx-auto px-4 py-8 animate-fade-in">
-            {isLoading && (
+            {/* Standard generation loader */}
+            {isLoading && !isQueueProcessing && (
               <GenerationLoader
                 progress={generationProgress}
                 assets={generatedAssets}
@@ -625,8 +677,25 @@ const Index: React.FC = () => {
               />
             )}
             
+            {/* Queue-based generation status */}
+            {isQueueProcessing && (
+              <div className="fixed bottom-4 right-4 z-50 w-96 animate-fade-in">
+                <GenerationQueueStatus
+                  jobs={queueJobs}
+                  stats={queueStats}
+                  onPause={pauseQueue}
+                  onResume={resumeQueue}
+                  onRetryFailed={retryAllFailed}
+                  onCancel={() => {
+                    cancelQueue();
+                    clearQueue();
+                  }}
+                />
+              </div>
+            )}
+            
             {/* Generation Summary - shows after generation completes */}
-            {showGenerationSummary && !isLoading && (
+            {showGenerationSummary && !isLoading && !isQueueProcessing && (
               <GenerationSummary
                 progress={generationProgress}
                 onDismiss={() => setShowGenerationSummary(false)}
