@@ -38,6 +38,7 @@ interface UseActiveBrandReturn {
   applyBrandToUI: (brand?: ActiveBrand | null, persist?: boolean) => Promise<void>;
   resetUITheme: (persist?: boolean) => Promise<void>;
   isThemeApplied: boolean;
+  savedBrandId: string | null; // The brand ID saved in the user's profile
   refreshBrands: () => Promise<void>;
 }
 
@@ -47,6 +48,7 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
   const [activeBrand, setActiveBrandState] = useState<ActiveBrand | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isThemeApplied, setIsThemeApplied] = useState(isBrandThemeApplied());
+  const [savedBrandId, setSavedBrandId] = useState<string | null>(null);
 
   // Load brands with their styles
   const loadBrands = useCallback(async () => {
@@ -105,6 +107,7 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
         .maybeSingle();
 
       const persistedBrandId = profileData?.applied_brand_id;
+      setSavedBrandId(persistedBrandId || null);
       
       // Try to restore the persisted brand theme
       if (persistedBrandId) {
@@ -196,6 +199,7 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
       // Persist to database
       if (persist) {
         await persistAppliedBrand(brandToApply.id);
+        setSavedBrandId(brandToApply.id);
         toast.success('Theme saved', {
           description: 'Your brand theme will persist across sessions'
         });
@@ -211,6 +215,7 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
     // Clear from database
     if (persist) {
       await persistAppliedBrand(null);
+      setSavedBrandId(null);
     }
   }, [persistAppliedBrand]);
 
@@ -222,6 +227,7 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
     applyBrandToUI,
     resetUITheme,
     isThemeApplied,
+    savedBrandId,
     refreshBrands: loadBrands
   };
 };
