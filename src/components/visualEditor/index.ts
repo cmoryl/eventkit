@@ -8,3 +8,6 @@ export * from './LayerPanel';
 export * from './CanvasElementRenderer';
 export * from './TemplateGallery';
 export * from './editorTemplates';
+export * from './AdvancedExportPanel';
+export * from './AIDesignToolsPanel';
+export * from './CollaborationPanel';
