@@ -1,0 +1,194 @@
+// Template Selector Component - Choose from available templates
+
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { Search, Filter, Star, Building2, Palette } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { EditableTemplate } from '@/types/editableTemplate.types';
+import { AssetType } from '@/types';
+import { 
+  getTemplatesForAsset, 
+  getUniversalTemplates, 
+  getVendorTemplates,
+  TEMPLATE_STATS 
+} from '@/config/editableTemplates';
+
+interface TemplateSelectorProps {
+  assetType?: AssetType;
+  vendorId?: string;
+  onSelect: (template: EditableTemplate) => void;
+  selectedTemplateId?: string;
+}
+
+export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
+  assetType,
+  vendorId,
+  onSelect,
+  selectedTemplateId
+}) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'all' | 'universal' | 'vendor'>('all');
+
+  // Get filtered templates
+  const templates = useMemo(() => {
+    let result: EditableTemplate[] = [];
+    
+    if (activeTab === 'universal') {
+      result = getUniversalTemplates(assetType);
+    } else if (activeTab === 'vendor' && vendorId) {
+      result = getVendorTemplates(vendorId, assetType);
+    } else if (assetType) {
+      result = getTemplatesForAsset(assetType);
+    } else {
+      result = getUniversalTemplates();
+    }
+
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(t => 
+        t.name.toLowerCase().includes(query) ||
+        t.description.toLowerCase().includes(query) ||
+        t.tags?.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    return result;
+  }, [assetType, vendorId, activeTab, searchQuery]);
+
+  // Render template card
+  const renderTemplateCard = (template: EditableTemplate) => {
+    const isSelected = template.id === selectedTemplateId;
+    
+    return (
+      <motion.div
+        key={template.id}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={cn(
+          "group relative rounded-lg border-2 overflow-hidden cursor-pointer transition-all",
+          isSelected 
+            ? "border-primary ring-2 ring-primary/20" 
+            : "border-border hover:border-primary/50"
+        )}
+        onClick={() => onSelect(template)}
+      >
+        {/* Preview */}
+        <div 
+          className="aspect-[4/3] relative"
+          style={{ background: template.background.value }}
+        >
+          {/* Simplified preview showing field layout */}
+          <div className="absolute inset-0 p-2">
+            {template.fields.slice(0, 5).map(field => (
+              <div
+                key={field.id}
+                className="absolute bg-white/20 rounded"
+                style={{
+                  left: `${field.position.x}%`,
+                  top: `${field.position.y}%`,
+                  width: `${field.position.width}%`,
+                  height: `${field.position.height}%`
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Badges */}
+          <div className="absolute top-2 right-2 flex flex-col gap-1">
+            {template.category === 'vendor-specific' && (
+              <Badge variant="secondary" className="text-[10px] h-5">
+                <Building2 className="h-3 w-3 mr-1" />
+                {template.vendorId}
+              </Badge>
+            )}
+            {template.isPremium && (
+              <Badge variant="default" className="text-[10px] h-5 bg-amber-500">
+                <Star className="h-3 w-3 mr-1" />
+                Premium
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="p-3 bg-card">
+          <h4 className="font-medium text-sm text-foreground truncate">{template.name}</h4>
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{template.description}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[10px] text-muted-foreground">
+              {template.dimensions.widthInches}" × {template.dimensions.heightInches}"
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded">
+              {template.colorMode}
+            </span>
+          </div>
+        </div>
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      </motion.div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-foreground">Choose a Template</h3>
+          <p className="text-sm text-muted-foreground">
+            {TEMPLATE_STATS.total} templates available
+          </p>
+        </div>
+      </div>
+
+      {/* Search and filter */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button variant="outline" size="icon">
+          <Filter className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <TabsList className="w-full">
+          <TabsTrigger value="all" className="flex-1">All Templates</TabsTrigger>
+          <TabsTrigger value="universal" className="flex-1">Universal</TabsTrigger>
+          <TabsTrigger value="vendor" className="flex-1" disabled={!vendorId}>
+            Vendor-Specific
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-4">
+          {templates.length === 0 ? (
+            <div className="text-center py-12">
+              <Palette className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-muted-foreground">No templates found</p>
+              <p className="text-sm text-muted-foreground/70">Try adjusting your search or filters</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {templates.map(renderTemplateCard)}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default TemplateSelector;
