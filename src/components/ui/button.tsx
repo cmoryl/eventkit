@@ -10,26 +10,26 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-[0_2px_8px_hsl(var(--primary)/0.35)] hover:shadow-[0_4px_16px_hsl(var(--primary)/0.45)] hover:-translate-y-0.5 rounded-xl",
+          "bg-primary text-primary-foreground shadow-[0_2px_8px_hsl(var(--primary)/0.35)] hover:bg-primary/90 hover:shadow-[0_4px_16px_hsl(var(--primary)/0.45)] hover:-translate-y-0.5 rounded-xl",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-[0_2px_8px_hsl(var(--destructive)/0.35)] hover:shadow-[0_4px_16px_hsl(var(--destructive)/0.45)] hover:-translate-y-0.5 rounded-xl",
+          "bg-destructive text-destructive-foreground shadow-[0_2px_8px_hsl(var(--destructive)/0.35)] hover:bg-destructive/90 hover:shadow-[0_4px_16px_hsl(var(--destructive)/0.45)] hover:-translate-y-0.5 rounded-xl",
         outline:
-          "border-2 border-border bg-background hover:bg-accent hover:text-accent-foreground hover:border-primary/40 rounded-xl shadow-sm hover:shadow-md",
+          "border-2 border-border bg-background hover:bg-muted hover:text-foreground hover:border-primary/40 rounded-xl shadow-sm hover:shadow-md",
         secondary:
-          "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 hover:border-primary/30 rounded-xl shadow-sm hover:shadow-md",
+          "bg-secondary text-secondary-foreground border border-border hover:bg-muted hover:text-foreground hover:border-primary/30 rounded-xl shadow-sm hover:shadow-md",
         ghost: 
-          "hover:bg-accent hover:text-accent-foreground rounded-xl",
+          "hover:bg-muted hover:text-foreground rounded-xl",
         link: 
           "text-primary underline-offset-4 hover:underline",
         // Premium gradient button
         gradient:
-          "bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] text-primary-foreground shadow-[0_2px_12px_hsl(var(--primary)/0.4)] hover:shadow-[0_6px_24px_hsl(var(--primary)/0.5)] hover:-translate-y-0.5 hover:bg-[position:100%_0] rounded-xl transition-all duration-300",
+          "bg-gradient-to-r from-primary via-accent to-primary bg-[length:200%_100%] text-primary-foreground shadow-[0_2px_12px_hsl(var(--primary)/0.4)] hover:opacity-90 hover:shadow-[0_6px_24px_hsl(var(--primary)/0.5)] hover:-translate-y-0.5 hover:bg-[position:100%_0] rounded-xl transition-all duration-300",
         // Glass button for overlays
         glass:
-          "bg-background/80 backdrop-blur-md border border-border/50 text-foreground hover:bg-background/90 hover:border-primary/30 rounded-xl shadow-lg",
+          "bg-background/80 backdrop-blur-md border border-border/50 text-foreground hover:bg-muted/80 hover:border-primary/30 rounded-xl shadow-lg",
         // Success button
         success:
-          "bg-success text-success-foreground shadow-[0_2px_8px_hsl(var(--success)/0.35)] hover:shadow-[0_4px_16px_hsl(var(--success)/0.45)] hover:-translate-y-0.5 rounded-xl",
+          "bg-success text-success-foreground shadow-[0_2px_8px_hsl(var(--success)/0.35)] hover:bg-success/90 hover:shadow-[0_4px_16px_hsl(var(--success)/0.45)] hover:-translate-y-0.5 rounded-xl",
       },
       size: {
         default: "h-11 px-5 py-2.5",
