@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { applyBrandTheme, resetBrandTheme, isBrandThemeApplied } from '@/services/brandThemeService';
+import { toast } from 'sonner';
 
 interface BrandStyleSimple {
   primary_color?: string;
@@ -34,8 +35,8 @@ interface UseActiveBrandReturn {
   brands: ActiveBrand[];
   isLoading: boolean;
   setActiveBrand: (brand: ActiveBrand | null) => void;
-  applyBrandToUI: (brand?: ActiveBrand | null) => void;
-  resetUITheme: () => void;
+  applyBrandToUI: (brand?: ActiveBrand | null, persist?: boolean) => Promise<void>;
+  resetUITheme: (persist?: boolean) => Promise<void>;
   isThemeApplied: boolean;
   refreshBrands: () => Promise<void>;
 }
@@ -96,10 +97,38 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
 
       setBrands(brandsWithStyles);
 
-      // Set default brand as active if none selected
+      // Check if there's a persisted applied brand in the database
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('applied_brand_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      const persistedBrandId = profileData?.applied_brand_id;
+      
+      // Try to restore the persisted brand theme
+      if (persistedBrandId) {
+        const persistedBrand = brandsWithStyles.find(b => b.id === persistedBrandId);
+        if (persistedBrand) {
+          setActiveBrandState(persistedBrand);
+          // Apply the theme without notification on initial load
+          if (persistedBrand.styles) {
+            applyBrandTheme({
+              primary_color: persistedBrand.styles.primary_color,
+              secondary_color: persistedBrand.styles.secondary_color,
+              accent_color: persistedBrand.styles.accent_color,
+              color_palette: persistedBrand.styles.color_palette
+            }, false);
+            setIsThemeApplied(true);
+          }
+          return;
+        }
+      }
+
+      // Fallback: Set default brand as active if none persisted
       const defaultBrand = brandsWithStyles.find(b => b.is_default) || brandsWithStyles[0];
       
-      // Check if there's a stored active brand in session
+      // Check session storage as secondary fallback
       const storedBrandId = sessionStorage.getItem('active-brand-id');
       const storedBrand = storedBrandId 
         ? brandsWithStyles.find(b => b.id === storedBrandId) 
@@ -134,8 +163,26 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
     }
   }, []);
 
+  // Persist applied brand to database
+  const persistAppliedBrand = useCallback(async (brandId: string | null) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ applied_brand_id: brandId })
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error persisting brand theme:', error);
+      }
+    } catch (error) {
+      console.error('Error persisting brand theme:', error);
+    }
+  }, [user]);
+
   // Apply brand colors to UI theme
-  const applyBrandToUI = useCallback((brand?: ActiveBrand | null) => {
+  const applyBrandToUI = useCallback(async (brand?: ActiveBrand | null, persist = true) => {
     const brandToApply = brand ?? activeBrand;
     if (brandToApply?.styles) {
       applyBrandTheme({
@@ -145,14 +192,27 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
         color_palette: brandToApply.styles.color_palette
       });
       setIsThemeApplied(true);
+
+      // Persist to database
+      if (persist) {
+        await persistAppliedBrand(brandToApply.id);
+        toast.success('Theme saved', {
+          description: 'Your brand theme will persist across sessions'
+        });
+      }
     }
-  }, [activeBrand]);
+  }, [activeBrand, persistAppliedBrand]);
 
   // Reset UI theme to defaults
-  const resetUITheme = useCallback(() => {
+  const resetUITheme = useCallback(async (persist = true) => {
     resetBrandTheme();
     setIsThemeApplied(false);
-  }, []);
+
+    // Clear from database
+    if (persist) {
+      await persistAppliedBrand(null);
+    }
+  }, [persistAppliedBrand]);
 
   return {
     activeBrand,
