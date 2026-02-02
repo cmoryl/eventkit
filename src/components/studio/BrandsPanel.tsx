@@ -2,13 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Palette, Plus, Settings, Clock, Image as ImageIcon, 
-  ChevronRight, Sparkles, Check, Type, Droplets
+  ChevronRight, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart
 } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface BrandsPanelProps {
   brands: Brand[];
@@ -16,6 +22,10 @@ interface BrandsPanelProps {
   onSelectBrand: (brand: Brand) => void;
   onCreateBrand: () => void;
   onEditBrand: (brand: Brand) => void;
+  // Per-project brand props
+  projectBrandId?: string | null;
+  onSetProjectBrand?: (brandId: string | null) => Promise<void>;
+  projectName?: string;
 }
 
 interface RecentCreation {
@@ -31,10 +41,14 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
   selectedBrand,
   onSelectBrand,
   onCreateBrand,
-  onEditBrand
+  onEditBrand,
+  projectBrandId,
+  onSetProjectBrand,
+  projectName
 }) => {
   const [recentCreations, setRecentCreations] = useState<RecentCreation[]>([]);
   const [isLoadingCreations, setIsLoadingCreations] = useState(false);
+  const [isSettingProjectBrand, setIsSettingProjectBrand] = useState(false);
 
   // Load recent creations for selected brand
   useEffect(() => {
@@ -89,19 +103,94 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
     return colors.slice(0, 5);
   };
 
+  // Handle setting project brand
+  const handleSetProjectBrand = async (brandId: string) => {
+    if (!onSetProjectBrand) return;
+    setIsSettingProjectBrand(true);
+    try {
+      await onSetProjectBrand(brandId);
+    } finally {
+      setIsSettingProjectBrand(false);
+    }
+  };
+
+  const handleClearProjectBrand = async () => {
+    if (!onSetProjectBrand) return;
+    setIsSettingProjectBrand(true);
+    try {
+      await onSetProjectBrand(null);
+    } finally {
+      setIsSettingProjectBrand(false);
+    }
+  };
+
   return (
-    <div className="w-72 border-l border-border bg-card/50 flex flex-col h-[calc(100vh-4rem)]">
-      {/* Header */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-foreground flex items-center gap-2">
-            <Palette className="w-4 h-4 text-primary" />
-            Your Brands
-          </h3>
-          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCreateBrand}>
-            <Plus className="w-4 h-4" />
-          </Button>
-        </div>
+    <TooltipProvider>
+      <div className="w-72 border-l border-border bg-card/50 flex flex-col h-[calc(100vh-4rem)]">
+        {/* Project Brand Section */}
+        {onSetProjectBrand && (
+          <div className="p-4 border-b border-border bg-primary/5">
+            <div className="flex items-center gap-2 mb-2">
+              <FolderHeart className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Project Brand</h3>
+            </div>
+            
+            {projectBrandId ? (
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const linkedBrand = brands.find(b => b.id === projectBrandId);
+                  return linkedBrand ? (
+                    <>
+                      <div 
+                        className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                        style={{ 
+                          background: linkedBrand.styles?.primary_color 
+                            ? `linear-gradient(135deg, ${linkedBrand.styles.primary_color}, ${linkedBrand.styles.accent_color || linkedBrand.styles.primary_color})`
+                            : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
+                        }}
+                      >
+                        {linkedBrand.name.charAt(0)}
+                      </div>
+                      <span className="text-sm font-medium flex-1 truncate">{linkedBrand.name}</span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-6 w-6"
+                            onClick={handleClearProjectBrand}
+                            disabled={isSettingProjectBrand}
+                          >
+                            <Unlink className="w-3 h-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Remove from project</TooltipContent>
+                      </Tooltip>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Brand not found</span>
+                  );
+                })()}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                No brand linked to this project. Select a brand below and click <Link2 className="w-3 h-3 inline" /> to link it.
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <Palette className="w-4 h-4 text-primary" />
+              Your Brands
+            </h3>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onCreateBrand}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         
         {/* Brand List */}
         <ScrollArea className="h-32">
@@ -115,41 +204,76 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                 </Button>
               </div>
             ) : (
-              brands.map((brand) => (
-                <button
-                  key={brand.id}
-                  onClick={() => onSelectBrand(brand)}
-                  className={cn(
-                    "w-full flex items-center gap-2 p-2 rounded-lg transition-all text-left",
-                    selectedBrand?.id === brand.id
-                      ? "bg-primary/10 border border-primary/30"
-                      : "hover:bg-muted border border-transparent"
-                  )}
-                >
-                  {brand.logo_url ? (
-                    <img 
-                      src={brand.logo_url} 
-                      alt={brand.name}
-                      className="w-8 h-8 rounded object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <span className="text-xs font-bold text-white">
-                        {brand.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{brand.name}</p>
-                    {brand.is_default && (
-                      <span className="text-[10px] text-muted-foreground">Default</span>
+              brands.map((brand) => {
+                const isProjectBrand = brand.id === projectBrandId;
+                return (
+                  <div
+                    key={brand.id}
+                    className={cn(
+                      "w-full flex items-center gap-2 p-2 rounded-lg transition-all",
+                      selectedBrand?.id === brand.id
+                        ? "bg-primary/10 border border-primary/30"
+                        : "hover:bg-muted border border-transparent",
+                      isProjectBrand && "ring-1 ring-emerald-500/50"
+                    )}
+                  >
+                    <button
+                      onClick={() => onSelectBrand(brand)}
+                      className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                    >
+                      {brand.logo_url ? (
+                        <img 
+                          src={brand.logo_url} 
+                          alt={brand.name}
+                          className="w-8 h-8 rounded object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-white">
+                            {brand.name.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{brand.name}</p>
+                        <div className="flex items-center gap-1">
+                          {brand.is_default && (
+                            <span className="text-[10px] text-muted-foreground">Default</span>
+                          )}
+                          {isProjectBrand && (
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-0.5">
+                              <Link2 className="w-2.5 h-2.5" />
+                              Project
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                    
+                    {/* Link to project button */}
+                    {onSetProjectBrand && !isProjectBrand && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            size="icon" 
+                            variant="ghost" 
+                            className="h-6 w-6 flex-shrink-0 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                            onClick={() => handleSetProjectBrand(brand.id)}
+                            disabled={isSettingProjectBrand}
+                          >
+                            <Link2 className="w-3 h-3" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Link to project</TooltipContent>
+                      </Tooltip>
+                    )}
+                    
+                    {selectedBrand?.id === brand.id && (
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
                     )}
                   </div>
-                  {selectedBrand?.id === brand.id && (
-                    <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                  )}
-                </button>
-              ))
+                );
+              })
             )}
           </div>
         </ScrollArea>
@@ -325,5 +449,6 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 };

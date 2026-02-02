@@ -30,6 +30,10 @@ interface ActiveBrand {
   styles?: BrandStyleSimple;
 }
 
+interface UseActiveBrandOptions {
+  projectId?: string | null;
+}
+
 interface UseActiveBrandReturn {
   activeBrand: ActiveBrand | null;
   brands: ActiveBrand[];
@@ -39,16 +43,20 @@ interface UseActiveBrandReturn {
   resetUITheme: (persist?: boolean) => Promise<void>;
   isThemeApplied: boolean;
   savedBrandId: string | null; // The brand ID saved in the user's profile
+  projectBrandId: string | null; // The brand ID linked to the current project
+  setProjectBrand: (brandId: string | null) => Promise<void>;
   refreshBrands: () => Promise<void>;
 }
 
-export const useActiveBrand = (): UseActiveBrandReturn => {
+export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandReturn => {
+  const { projectId } = options || {};
   const { user, isAuthenticated } = useAuth();
   const [brands, setBrands] = useState<ActiveBrand[]>([]);
   const [activeBrand, setActiveBrandState] = useState<ActiveBrand | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isThemeApplied, setIsThemeApplied] = useState(isBrandThemeApplied());
   const [savedBrandId, setSavedBrandId] = useState<string | null>(null);
+  const [projectBrandId, setProjectBrandIdState] = useState<string | null>(null);
 
   // Load brands with their styles
   const loadBrands = useCallback(async () => {
@@ -108,24 +116,39 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
 
       const persistedBrandId = profileData?.applied_brand_id;
       setSavedBrandId(persistedBrandId || null);
-      
-      // Try to restore the persisted brand theme
-      if (persistedBrandId) {
-        const persistedBrand = brandsWithStyles.find(b => b.id === persistedBrandId);
-        if (persistedBrand) {
-          setActiveBrandState(persistedBrand);
-          // Apply the theme without notification on initial load
-          if (persistedBrand.styles) {
-            applyBrandTheme({
-              primary_color: persistedBrand.styles.primary_color,
-              secondary_color: persistedBrand.styles.secondary_color,
-              accent_color: persistedBrand.styles.accent_color,
-              color_palette: persistedBrand.styles.color_palette
-            }, false);
-            setIsThemeApplied(true);
-          }
-          return;
+
+      // Check if there's a project-specific brand
+      let projectBrand: ActiveBrand | null = null;
+      if (projectId) {
+        const { data: projectData } = await supabase
+          .from('projects')
+          .select('brand_id')
+          .eq('id', projectId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (projectData?.brand_id) {
+          setProjectBrandIdState(projectData.brand_id);
+          projectBrand = brandsWithStyles.find(b => b.id === projectData.brand_id) || null;
         }
+      }
+      
+      // Priority: Project brand > Persisted brand > Default brand
+      const brandToApply = projectBrand || (persistedBrandId ? brandsWithStyles.find(b => b.id === persistedBrandId) : null);
+      
+      if (brandToApply) {
+        setActiveBrandState(brandToApply);
+        // Apply the theme without notification on initial load
+        if (brandToApply.styles) {
+          applyBrandTheme({
+            primary_color: brandToApply.styles.primary_color,
+            secondary_color: brandToApply.styles.secondary_color,
+            accent_color: brandToApply.styles.accent_color,
+            color_palette: brandToApply.styles.color_palette
+          }, false);
+          setIsThemeApplied(true);
+        }
+        return;
       }
 
       // Fallback: Set default brand as active if none persisted
@@ -144,7 +167,7 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, projectId]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -153,8 +176,9 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
       setBrands([]);
       setActiveBrandState(null);
       setIsLoading(false);
+      setProjectBrandIdState(null);
     }
-  }, [isAuthenticated, loadBrands]);
+  }, [isAuthenticated, loadBrands, projectId]);
 
   // Set active brand and persist to session
   const setActiveBrand = useCallback((brand: ActiveBrand | null) => {
@@ -183,6 +207,45 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
       console.error('Error persisting brand theme:', error);
     }
   }, [user]);
+
+  // Set project brand
+  const setProjectBrand = useCallback(async (brandId: string | null) => {
+    if (!user || !projectId) return;
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ brand_id: brandId })
+        .eq('id', projectId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setProjectBrandIdState(brandId);
+      
+      // If setting a brand, also select and apply it
+      if (brandId) {
+        const linkedBrand = brands.find(b => b.id === brandId);
+        if (linkedBrand) {
+          setActiveBrandState(linkedBrand);
+          if (linkedBrand.styles) {
+            applyBrandTheme({
+              primary_color: linkedBrand.styles.primary_color,
+              secondary_color: linkedBrand.styles.secondary_color,
+              accent_color: linkedBrand.styles.accent_color,
+              color_palette: linkedBrand.styles.color_palette
+            });
+            setIsThemeApplied(true);
+          }
+        }
+      }
+
+      toast.success(brandId ? 'Project brand updated' : 'Project brand removed');
+    } catch (error) {
+      console.error('Error setting project brand:', error);
+      toast.error('Failed to update project brand');
+    }
+  }, [user, projectId, brands]);
 
   // Apply brand colors to UI theme
   const applyBrandToUI = useCallback(async (brand?: ActiveBrand | null, persist = true) => {
@@ -228,6 +291,8 @@ export const useActiveBrand = (): UseActiveBrandReturn => {
     resetUITheme,
     isThemeApplied,
     savedBrandId,
+    projectBrandId,
+    setProjectBrand,
     refreshBrands: loadBrands
   };
 };
