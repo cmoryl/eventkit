@@ -1,7 +1,7 @@
 // Active Brand Indicator - Shows the currently active brand with quick actions
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, ChevronDown, Check, PaintBucket, RotateCcw } from 'lucide-react';
+import { Palette, ChevronDown, Check, PaintBucket, RotateCcw, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface BrandColors {
   primary_color?: string;
@@ -33,6 +39,7 @@ interface ActiveBrandIndicatorProps {
   onApplyTheme?: () => void;
   onResetTheme?: () => void;
   isThemeApplied?: boolean;
+  savedBrandId?: string | null;
   variant?: 'compact' | 'full';
   className?: string;
 }
@@ -44,10 +51,13 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
   onApplyTheme,
   onResetTheme,
   isThemeApplied = false,
+  savedBrandId,
   variant = 'compact',
   className
 }) => {
   if (!activeBrand) return null;
+
+  const isSavedBrand = savedBrandId === activeBrand.id;
 
   const brandColors = activeBrand.styles 
     ? [
@@ -58,18 +68,19 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
     : [];
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <motion.button
-          className={cn(
-            "flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all",
-            "hover:bg-muted/50 border border-transparent hover:border-border/50",
-            isThemeApplied && "bg-primary/5 border-primary/20",
-            className
-          )}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
+    <TooltipProvider>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <motion.button
+            className={cn(
+              "flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all",
+              "hover:bg-muted/50 border border-transparent hover:border-border/50",
+              isThemeApplied && "bg-primary/5 border-primary/20",
+              className
+            )}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
           {/* Brand Logo/Icon */}
           {activeBrand.logo_url ? (
             <img 
@@ -110,18 +121,34 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
             </div>
           )}
 
-          {/* Theme Applied Indicator */}
-          {isThemeApplied && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="w-1.5 h-1.5 rounded-full bg-emerald-500"
-            />
-          )}
+            {/* Theme Applied Indicator */}
+            {isThemeApplied && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className={cn(
+                      "flex items-center justify-center",
+                      isSavedBrand ? "text-emerald-500" : "text-amber-500"
+                    )}
+                  >
+                    {isSavedBrand ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Circle className="w-3.5 h-3.5" />
+                    )}
+                  </motion.div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {isSavedBrand ? 'Theme saved to profile' : 'Theme applied (not saved)'}
+                </TooltipContent>
+              </Tooltip>
+            )}
 
-          <ChevronDown className="w-3 h-3 text-muted-foreground" />
-        </motion.button>
-      </DropdownMenuTrigger>
+            <ChevronDown className="w-3 h-3 text-muted-foreground" />
+          </motion.button>
+        </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-64">
         {/* Current Brand Header */}
@@ -151,19 +178,29 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
             </div>
           </div>
 
-          {/* Brand Colors Preview */}
-          {brandColors.length > 0 && (
-            <div className="flex gap-1 mt-2">
-              {brandColors.map((color, i) => (
-                <div
-                  key={i}
-                  className="flex-1 h-4 rounded first:rounded-l-lg last:rounded-r-lg"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+            {/* Saved Status Badge */}
+            {isSavedBrand && (
+              <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-500/10 rounded-md border border-emerald-500/20">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                  Saved to profile
+                </span>
+              </div>
+            )}
+
+            {/* Brand Colors Preview */}
+            {brandColors.length > 0 && (
+              <div className="flex gap-1 mt-2">
+                {brandColors.map((color, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 h-4 rounded first:rounded-l-lg last:rounded-r-lg"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
 
         {/* Theme Actions */}
         {(onApplyTheme || onResetTheme) && (
@@ -186,48 +223,65 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
           </>
         )}
 
-        {/* Brand Selection */}
-        {brands.length > 1 && (
-          <div className="p-1">
-            <p className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase">
-              Switch Brand
-            </p>
-            {brands.map((brand) => (
-              <DropdownMenuItem
-                key={brand.id}
-                onClick={() => onSelectBrand(brand)}
-                className="gap-2"
-              >
-                {brand.logo_url ? (
-                  <img 
-                    src={brand.logo_url} 
-                    alt={brand.name}
-                    className="w-5 h-5 rounded object-cover"
-                  />
-                ) : (
-                  <div 
-                    className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold text-white"
-                    style={{ 
-                      background: brand.styles?.primary_color 
-                        ? `linear-gradient(135deg, ${brand.styles.primary_color}, ${brand.styles.accent_color || brand.styles.primary_color})`
-                        : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
-                    }}
+          {/* Brand Selection */}
+          {brands.length > 1 && (
+            <div className="p-1">
+              <p className="px-2 py-1 text-xs font-semibold text-muted-foreground uppercase">
+                Switch Brand
+              </p>
+              {brands.map((brand) => {
+                const isSaved = savedBrandId === brand.id;
+                return (
+                  <DropdownMenuItem
+                    key={brand.id}
+                    onClick={() => onSelectBrand(brand)}
+                    className="gap-2"
                   >
-                    {brand.name.charAt(0)}
-                  </div>
-                )}
-                <span className="flex-1 truncate">{brand.name}</span>
-                {brand.is_default && (
-                  <span className="text-[10px] text-muted-foreground">Default</span>
-                )}
-                {brand.id === activeBrand.id && (
-                  <Check className="w-4 h-4 text-primary" />
-                )}
-              </DropdownMenuItem>
-            ))}
-          </div>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+                    {brand.logo_url ? (
+                      <img 
+                        src={brand.logo_url} 
+                        alt={brand.name}
+                        className="w-5 h-5 rounded object-cover"
+                      />
+                    ) : (
+                      <div 
+                        className="w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold text-white"
+                        style={{ 
+                          background: brand.styles?.primary_color 
+                            ? `linear-gradient(135deg, ${brand.styles.primary_color}, ${brand.styles.accent_color || brand.styles.primary_color})`
+                            : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
+                        }}
+                      >
+                        {brand.name.charAt(0)}
+                      </div>
+                    )}
+                    <span className="flex-1 truncate">{brand.name}</span>
+                    
+                    {/* Saved indicator */}
+                    {isSaved && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="text-xs">
+                          Saved theme
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                    
+                    {brand.is_default && !isSaved && (
+                      <span className="text-[10px] text-muted-foreground">Default</span>
+                    )}
+                    {brand.id === activeBrand.id && (
+                      <Check className="w-4 h-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                );
+              })}
+            </div>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </TooltipProvider>
   );
 };
