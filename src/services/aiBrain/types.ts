@@ -64,7 +64,7 @@ export interface AIFeedback {
 export interface AIKnowledge {
   id: string;
   userId?: string;
-  knowledgeType: 'style_preference' | 'prompt_pattern' | 'asset_template' | 'cultural_mapping' | 'brand_preference' | 'sponsor_recognition';
+  knowledgeType: 'style_preference' | 'prompt_pattern' | 'asset_template' | 'cultural_mapping' | 'brand_preference' | 'sponsor_recognition' | 'brief_preference';
   category?: string;
   key: string;
   value: Record<string, unknown>;
@@ -73,6 +73,18 @@ export interface AIKnowledge {
   successRate: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// Asset Brief types for pre-generation customization
+export interface AssetBriefPreference {
+  assetType: string;
+  stylePreset: string;
+  colorMood: string;
+  layoutStyle: string;
+  typographyStyle: string;
+  imageryStyle: string;
+  usageCount: number;
+  lastUsed: string;
 }
 
 export interface PromptTemplate {
