@@ -204,7 +204,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
           <input
             type="file"
             ref={logoInputRef}
-            accept="image/*"
+            accept="image/*,.svg,image/svg+xml"
             multiple
             onChange={handleLogoUpload}
             className="hidden"
@@ -259,7 +259,7 @@ const LogoUploader: React.FC<LogoUploaderProps> = ({
             <input
               type="file"
               ref={styleInputRef}
-              accept="image/*"
+              accept="image/*,.svg,image/svg+xml"
               onChange={handleStyleUpload}
               className="hidden"
             />
