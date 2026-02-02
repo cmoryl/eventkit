@@ -49,6 +49,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
   const [showGuides, setShowGuides] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ fields: true, style: true });
+  const [zoom, setZoom] = useState<number>(1);
 
   // Get field groups
   const fieldGroups = React.useMemo(() => {
@@ -280,8 +281,10 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
     );
   };
 
-  // Calculate preview scale to fit container
-  const previewScale = 0.5;
+  // Base scale keeps the preview comfortably within the editor viewport.
+  // `zoom` is a multiplier controlled by the dropdown (25%..200%).
+  const baseScale = 0.5;
+  const previewScale = baseScale * zoom;
 
   return (
     <div className="flex h-full bg-background">
@@ -368,15 +371,17 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
               {showGuides ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               <span className="text-xs">Guides</span>
             </Button>
-            <Select defaultValue="100">
+            <Select value={String(zoom)} onValueChange={(v) => setZoom(Number(v))}>
               <SelectTrigger className="w-20 h-8">
-                <SelectValue />
+                <SelectValue placeholder={`${Math.round(zoom * 100)}%`} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="50">50%</SelectItem>
-                <SelectItem value="75">75%</SelectItem>
-                <SelectItem value="100">100%</SelectItem>
-                <SelectItem value="150">150%</SelectItem>
+                <SelectItem value="0.25">25%</SelectItem>
+                <SelectItem value="0.5">50%</SelectItem>
+                <SelectItem value="0.75">75%</SelectItem>
+                <SelectItem value="1">100%</SelectItem>
+                <SelectItem value="1.5">150%</SelectItem>
+                <SelectItem value="2">200%</SelectItem>
               </SelectContent>
             </Select>
           </div>
