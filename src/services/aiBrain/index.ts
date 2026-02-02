@@ -1,9 +1,10 @@
 // AI Brain - Central Intelligence System
-// Coordinates learning, render engines, and intelligent generation
+// Coordinates learning, render engines, intelligent generation, and creative suggestions
 
 export * from './types';
 export * from './renderEngineService';
 export * from './learningService';
+export * from './suggestionService';
 
 import { supabase } from '@/integrations/supabase/client';
 import type { GenerationContext, GenerationResult, RenderEngine, LearnedInsight } from './types';
