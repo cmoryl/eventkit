@@ -8,6 +8,7 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AssetGenerationCanvas } from './AssetGenerationCanvas';
+import { TemplateWorkflowModal } from './TemplateWorkflowModal';
 
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
@@ -361,6 +362,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   const [canvasOpen, setCanvasOpen] = useState(false);
   const [canvasAssetType, setCanvasAssetType] = useState<string | null>(null);
   
+  // Template workflow state
+  const [templateModalOpen, setTemplateModalOpen] = useState(false);
+  const [templateAssetType, setTemplateAssetType] = useState<string | null>(null);
+  const [templateAssetName, setTemplateAssetName] = useState<string>('');
+  
   // Open full-screen canvas for generation with variations
   const handleGenerate = (assetType: string) => {
     if (!brand) {
@@ -370,6 +376,13 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
     
     setCanvasAssetType(assetType);
     setCanvasOpen(true);
+  };
+  
+  // Open template workflow for customization
+  const handleOpenTemplate = (assetType: string, assetName: string) => {
+    setTemplateAssetType(assetType);
+    setTemplateAssetName(assetName);
+    setTemplateModalOpen(true);
   };
 
   // Handle when image is generated and selected from canvas
@@ -734,6 +747,20 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           eventName={brand?.name || 'Your Event'}
           studioGradient={studioGradient}
           onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
+        />
+      )}
+      
+      {/* Template Workflow Modal */}
+      {templateAssetType && (
+        <TemplateWorkflowModal
+          isOpen={templateModalOpen}
+          onClose={() => {
+            setTemplateModalOpen(false);
+            setTemplateAssetType(null);
+          }}
+          assetType={templateAssetType}
+          assetName={templateAssetName}
+          brand={brand}
         />
       )}
     </>
