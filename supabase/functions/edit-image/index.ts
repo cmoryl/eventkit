@@ -81,10 +81,24 @@ serve(async (req) => {
     }
 
     const data = await response.json();
+    console.log("AI response structure:", JSON.stringify({
+      hasChoices: !!data.choices,
+      choicesLength: data.choices?.length,
+      hasMessage: !!data.choices?.[0]?.message,
+      hasImages: !!data.choices?.[0]?.message?.images,
+      imagesLength: data.choices?.[0]?.message?.images?.length,
+      textContent: data.choices?.[0]?.message?.content?.substring(0, 200),
+    }));
+
     const editedImageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
     if (!editedImageUrl) {
-      throw new Error("No edited image generated");
+      const textResponse = data.choices?.[0]?.message?.content;
+      if (textResponse) {
+        // AI understood but couldn't generate an image - return helpful message
+        throw new Error(`Unable to edit image with that instruction. The AI responded: "${textResponse.substring(0, 150)}...". Try a visual editing instruction like "make it brighter" or "add a gradient".`);
+      }
+      throw new Error("No edited image generated. Try a different instruction focused on visual changes.");
     }
 
     console.log("Successfully edited image");
