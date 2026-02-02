@@ -73,7 +73,7 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, signOut } = useAuth();
-  const { logoType, logoUrl, logoUrlDark, logoIconUrl, logoIconUrlDark } = useAppSettings();
+  const { logoType, logoUrl, logoUrlDark, logoIconUrl, logoIconUrlDark, isLoading: isLoadingSettings } = useAppSettings();
   const { activeBrand, brands, setActiveBrand, applyBrandToUI, resetUITheme, isThemeApplied, savedBrandId, projectBrandId } = useActiveBrand();
   const { resolvedTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -136,21 +136,21 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              {/* Custom Logo */}
-              {logoType === 'custom' && effectiveLogoUrl ? (
+              {/* Custom Logo - only show after settings have loaded */}
+              {!isLoadingSettings && logoType === 'custom' && effectiveLogoUrl ? (
                 <img 
                   src={effectiveLogoUrl} 
                   alt="Logo" 
                   className="max-h-8 max-w-[140px] w-auto h-auto object-contain" 
                 />
-              ) : logoType === 'icon-only' && effectiveIconUrl ? (
+              ) : !isLoadingSettings && logoType === 'icon-only' && effectiveIconUrl ? (
                 <img 
                   src={effectiveIconUrl} 
                   alt="Logo" 
                   className="max-h-8 max-w-[100px] w-auto h-auto object-contain" 
                 />
               ) : (
-                /* Default EventKIT Logo */
+                /* Default EventKIT Logo - shown while loading or when no custom logo */
                 <>
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
                     <Sparkles className="w-5 h-5 text-primary-foreground" />
