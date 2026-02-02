@@ -450,7 +450,13 @@ export const AdminSiteSettings: React.FC = () => {
                       : previewUrl;
                     
                     if (displayUrl) {
-                      return <img src={displayUrl} alt="Logo" className="h-10 object-contain" />;
+                      return (
+                        <img 
+                          src={displayUrl} 
+                          alt="Logo" 
+                          className="max-h-10 max-w-[160px] w-auto h-auto object-contain" 
+                        />
+                      );
                     }
                     return (
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -468,9 +474,11 @@ export const AdminSiteSettings: React.FC = () => {
                     
                     if (displayUrl) {
                       return (
-                        <div className={`w-10 h-10 rounded-xl overflow-hidden ${previewMode === 'dark' ? 'bg-zinc-800' : 'bg-background'}`}>
-                          <img src={displayUrl} alt="Icon" className="w-full h-full object-contain" />
-                        </div>
+                        <img 
+                          src={displayUrl} 
+                          alt="Icon" 
+                          className="max-h-10 max-w-[120px] w-auto h-auto object-contain" 
+                        />
                       );
                     }
                     return (
@@ -482,6 +490,9 @@ export const AdminSiteSettings: React.FC = () => {
                   })()
                 )}
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Logos auto-resize to fit the header (max 40px height, 160px width)
+              </p>
             </div>
           </div>
 
