@@ -6,3 +6,5 @@ export * from './ElementSidebar';
 export * from './PropertiesPanel';
 export * from './LayerPanel';
 export * from './CanvasElementRenderer';
+export * from './TemplateGallery';
+export * from './editorTemplates';
