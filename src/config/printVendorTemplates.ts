@@ -18,7 +18,7 @@ export interface VendorTemplate {
   logo?: string;
   website: string;
   description: string;
-  category: 'online' | 'local' | 'premium' | 'specialty' | 'trade' | 'signage' | 'apparel';
+  category: 'online' | 'local' | 'premium' | 'specialty' | 'trade' | 'signage' | 'apparel' | 'promo';
   specs: VendorSpecs;
   supportedAssets: AssetType[];
   tips: string[];

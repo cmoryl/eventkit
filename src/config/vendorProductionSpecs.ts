@@ -804,6 +804,505 @@ export const APPAREL_SPECS: VendorProductSpec[] = [
 ];
 
 // ════════════════════════════════════════════════════════════════════════════════
+// 4IMPRINT SPECIFICATIONS (Promotional Products)
+// Source: https://www.4imprint.com/info/arttips
+// ════════════════════════════════════════════════════════════════════════════════
+
+export const FOURIMPRINT_SPECS: VendorProductSpec[] = [
+  // Embroidered Caps/Hats
+  {
+    vendorId: '4imprint',
+    vendorName: '4imprint',
+    productName: 'Embroidered Cap',
+    assetType: AssetType.Hat,
+    uploadUrl: 'https://www.4imprint.com/',
+    specs: {
+      widthInches: 4,
+      heightInches: 2.25,
+      bleedInches: 0,
+      safeZoneInches: 0.125,
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 12,               // Max 12 thread colors per 4imprint
+      fileFormats: ['ai', 'eps', 'pdf', 'cdr'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Maximum 12 imprint colors for embroidery',
+        'Vector files preferred (AI, EPS, PDF, CDR)',
+        'Convert text to outlines/curves',
+        'One-time tape charge: $35 for <72 pieces, FREE for 72+',
+        'Simple, bold designs reproduce best',
+        'Minimum order: 24 pieces'
+      ]
+    },
+    turnaroundDays: 5,
+    rushAvailable: true
+  },
+  // Screen Printed T-Shirts
+  {
+    vendorId: '4imprint',
+    vendorName: '4imprint',
+    productName: 'Screen Printed T-Shirt',
+    assetType: AssetType.Tshirt,
+    uploadUrl: 'https://www.4imprint.com/',
+    specs: {
+      widthInches: 12,
+      heightInches: 14,
+      bleedInches: 0,
+      safeZoneInches: 0.5,
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 6,                // Standard screen print limit
+      fileFormats: ['ai', 'eps', 'pdf', 'cdr', 'jpg', 'tif', 'png'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Vector artwork preferred for screen printing',
+        'Standard: up to 6 spot colors',
+        'PMS/Pantone color matching available',
+        'Raster images: minimum 300 DPI at print size',
+        'Setup fee per color',
+        'Artwork preparation is FREE'
+      ]
+    },
+    turnaroundDays: 7,
+    rushAvailable: true
+  },
+  // Water Bottles / Drinkware
+  {
+    vendorId: '4imprint',
+    vendorName: '4imprint',
+    productName: 'Imprinted Water Bottle',
+    assetType: AssetType.WaterBottle,
+    uploadUrl: 'https://www.4imprint.com/',
+    specs: {
+      widthInches: 3,              // Typical wrap imprint width
+      heightInches: 2,             // Typical imprint height
+      bleedInches: 0,
+      safeZoneInches: 0.0625,
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 4,                // Pad print typical max
+      fileFormats: ['ai', 'eps', 'pdf', 'png'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Imprint methods: Pad print, screen print, or full-color wrap',
+        'Pad print: typically 1-4 spot colors',
+        'Full-color wrap available on select bottles',
+        'Vector artwork produces crispest results',
+        'Curved surface affects imprint appearance'
+      ]
+    },
+    turnaroundDays: 5
+  },
+  // Tote Bags
+  {
+    vendorId: '4imprint',
+    vendorName: '4imprint',
+    productName: 'Promotional Tote Bag',
+    assetType: AssetType.SwagBag,
+    uploadUrl: 'https://www.4imprint.com/',
+    specs: {
+      widthInches: 10,
+      heightInches: 8,
+      bleedInches: 0,
+      safeZoneInches: 0.25,
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 6,
+      fileFormats: ['ai', 'eps', 'pdf', 'cdr', 'jpg', 'tif'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Screen print or heat transfer available',
+        'Large imprint area on most totes',
+        'Full-color digital transfer available',
+        'Check specific product for exact imprint dimensions'
+      ]
+    },
+    turnaroundDays: 5
+  },
+  // Lanyards
+  {
+    vendorId: '4imprint',
+    vendorName: '4imprint',
+    productName: 'Custom Lanyard',
+    assetType: AssetType.Lanyard,
+    uploadUrl: 'https://www.4imprint.com/',
+    specs: {
+      widthInches: 0.75,           // Standard 3/4" width
+      heightInches: 18,            // Repeat length
+      bleedInches: 0,
+      safeZoneInches: 0.0625,
+      dpi: 300,
+      colorMode: 'CMYK',
+      fileFormats: ['ai', 'eps', 'pdf'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Standard width: 3/4" (0.75")',
+        'Dye-sublimation for full-color printing',
+        'Logo repeats along length',
+        'Woven lanyards available for premium look',
+        'Various attachment options (clip, hook, ring)'
+      ]
+    },
+    turnaroundDays: 7
+  }
+];
+
+// ════════════════════════════════════════════════════════════════════════════════
+// STICKERGIANT SPECIFICATIONS (Professional Stickers & Labels)
+// Source: https://support.stickergiant.com/
+// ════════════════════════════════════════════════════════════════════════════════
+
+export const STICKERGIANT_SPECS: VendorProductSpec[] = [
+  // Die Cut Stickers
+  {
+    vendorId: 'stickergiant',
+    vendorName: 'StickerGiant',
+    productName: 'Die Cut Stickers',
+    assetType: AssetType.StickerSheet,
+    uploadUrl: 'https://www.stickergiant.com/',
+    specs: {
+      widthInches: 3,
+      heightInches: 3,
+      bleedInches: 0.125,          // 1/8" bleed recommended
+      safeZoneInches: 0.0625,      // 1/16" safety margin
+      dpi: 300,
+      minDpi: 300,
+      colorMode: 'CMYK',
+      fileFormats: ['ai', 'eps', 'pdf', 'psd', 'tiff', 'jpg', 'png'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: false,        // Keep layers for editability
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Bleed: 1/8" (0.125") outside edge for full-bleed',
+        'Safety margin: 1/16" (0.0625") inside edge',
+        'Submit one artwork per item ordered',
+        'Vector files (AI, EPS, PDF) preferred for crisp edges',
+        'Raster images: minimum 300 DPI at actual size',
+        'CMYK color mode for accurate print colors',
+        'Keep PSD layers intact for adjustments'
+      ]
+    },
+    turnaroundDays: 3,
+    rushAvailable: true
+  },
+  // Roll Labels
+  {
+    vendorId: 'stickergiant',
+    vendorName: 'StickerGiant',
+    productName: 'Roll Labels',
+    assetType: AssetType.CateringLabel,
+    uploadUrl: 'https://www.stickergiant.com/',
+    specs: {
+      widthInches: 2,
+      heightInches: 2,
+      bleedInches: 0.125,
+      safeZoneInches: 0.0625,
+      dpi: 300,
+      colorMode: 'CMYK',
+      fileFormats: ['ai', 'eps', 'pdf', 'psd', 'tiff', 'png'],
+      preferredFormat: 'pdf',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Perfect for product labeling and food service',
+        'Circle, square, rectangle, or custom shapes',
+        'Waterproof and oil-resistant options',
+        'Matte or gloss finish available',
+        'Minimum font size: 6pt for legibility'
+      ]
+    },
+    turnaroundDays: 3
+  },
+  // Vinyl Stickers
+  {
+    vendorId: 'stickergiant',
+    vendorName: 'StickerGiant',
+    productName: 'Vinyl Stickers (Outdoor)',
+    assetType: AssetType.StickerSheet,
+    uploadUrl: 'https://www.stickergiant.com/',
+    specs: {
+      widthInches: 4,
+      heightInches: 4,
+      bleedInches: 0.125,
+      safeZoneInches: 0.0625,
+      dpi: 300,
+      colorMode: 'CMYK',
+      fileFormats: ['ai', 'eps', 'pdf', 'png'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'UV-resistant and waterproof vinyl',
+        'Ideal for outdoor use, vehicles, windows',
+        '3-5 year outdoor durability',
+        'White or clear vinyl base options',
+        'Kiss-cut or die-cut available'
+      ]
+    },
+    turnaroundDays: 4
+  }
+];
+
+// ════════════════════════════════════════════════════════════════════════════════
+// ADDITIONAL PROMO PRODUCT VENDORS (PCNA, Koozie, etc.)
+// Industry standards for promotional merchandise
+// ════════════════════════════════════════════════════════════════════════════════
+
+export const PROMO_VENDOR_SPECS: VendorProductSpec[] = [
+  // Drinkware - General specs
+  {
+    vendorId: 'drinkware-standard',
+    vendorName: 'Drinkware Standard',
+    productName: 'Tumbler/Mug Imprint',
+    assetType: AssetType.WaterBottle,
+    specs: {
+      widthInches: 3.5,
+      heightInches: 2.5,
+      bleedInches: 0,
+      safeZoneInches: 0.0625,
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 4,
+      fileFormats: ['ai', 'eps', 'pdf', 'png'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Imprint 5/8" from lip for FDA compliance',
+        'Consider taper/curve when designing',
+        'Pad print: 1-4 spot colors typical',
+        'Wrap print: Check specific item for max width',
+        'Laser engraving available on metal items',
+        'Art charges may apply for complex designs'
+      ]
+    },
+    turnaroundDays: 5
+  },
+  // Pens
+  {
+    vendorId: 'pen-standard',
+    vendorName: 'Pen Standard',
+    productName: 'Imprinted Pen',
+    assetType: AssetType.StickerSheet, // No dedicated pen type
+    specs: {
+      widthInches: 1.5,
+      heightInches: 0.375,
+      bleedInches: 0,
+      safeZoneInches: 0.03125,     // 1/32" safety
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 4,
+      fileFormats: ['ai', 'eps', 'pdf'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Typical imprint area: 1.5" × 0.375"',
+        'Pad print or digital transfer',
+        'Fine lines may not reproduce well',
+        'Minimum text height: 0.1" (6pt)',
+        'Single-color most common'
+      ]
+    },
+    turnaroundDays: 5
+  },
+  // Wristbands
+  {
+    vendorId: 'wristband-standard',
+    vendorName: 'Wristband Standard',
+    productName: 'Silicone Wristband',
+    assetType: AssetType.WristbandDesign,
+    specs: {
+      widthInches: 8,              // Band circumference
+      heightInches: 0.5,           // Standard width
+      bleedInches: 0,
+      safeZoneInches: 0.0625,
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 3,                // Debossed color fill
+      fileFormats: ['ai', 'eps', 'pdf'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Standard width: 1/2" (12mm)',
+        'Imprint methods: Debossed, embossed, printed, color-filled',
+        'Debossed: Message carved into band',
+        'Color-fill: Paint fills debossed areas',
+        'Printed: Full-color ink on band surface',
+        'Simple, bold text works best for debossed'
+      ]
+    },
+    turnaroundDays: 7
+  },
+  // Coasters
+  {
+    vendorId: 'coaster-standard',
+    vendorName: 'Coaster Standard',
+    productName: 'Promotional Coaster',
+    assetType: AssetType.CoasterDesign,
+    specs: {
+      widthInches: 4,
+      heightInches: 4,
+      bleedInches: 0.125,
+      safeZoneInches: 0.25,
+      dpi: 300,
+      colorMode: 'CMYK',
+      fileFormats: ['ai', 'eps', 'pdf', 'jpg', 'png'],
+      preferredFormat: 'pdf',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Standard size: 4" round or square',
+        'Full-color printing available',
+        'Materials: Pulpboard, cork, rubber, leather',
+        'Absorbent vs non-absorbent options',
+        'Keep text away from edges (0.25" margin)'
+      ]
+    },
+    turnaroundDays: 5
+  },
+  // Napkins
+  {
+    vendorId: 'napkin-standard',
+    vendorName: 'Napkin Standard',
+    productName: 'Printed Napkin',
+    assetType: AssetType.NapkinDesign,
+    specs: {
+      widthInches: 4.75,           // Beverage napkin
+      heightInches: 4.75,
+      bleedInches: 0,
+      safeZoneInches: 0.25,
+      dpi: 300,
+      colorMode: 'CMYK',
+      maxColors: 3,
+      fileFormats: ['ai', 'eps', 'pdf'],
+      preferredFormat: 'ai',
+      requiresTrimMarks: false,
+      requiresBleedMarks: false,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Beverage napkin: 4.75" × 4.75"',
+        'Luncheon napkin: 6.5" × 6.5"',
+        'Dinner napkin: 8" × 8"',
+        '1-3 spot colors typical',
+        'Foil stamping available for premium look',
+        'Ink absorbs into paper - colors appear muted'
+      ]
+    },
+    turnaroundDays: 7
+  },
+  // Badges/Credentials
+  {
+    vendorId: 'badge-standard',
+    vendorName: 'Badge Standard',
+    productName: 'Event Badge/Credential',
+    assetType: AssetType.VIPBadge,
+    specs: {
+      widthInches: 4,
+      heightInches: 3,
+      bleedInches: 0.125,
+      safeZoneInches: 0.125,
+      dpi: 300,
+      colorMode: 'CMYK',
+      fileFormats: ['pdf', 'ai', 'eps', 'png'],
+      preferredFormat: 'pdf',
+      requiresTrimMarks: true,
+      requiresBleedMarks: true,
+      requiresRegistrationMarks: false,
+      requiresColorBars: false,
+      flattenLayers: true,
+      embedFonts: true,
+      convertToOutlines: true,
+      notes: [
+        'Standard badge: 4" × 3" or 3" × 4"',
+        'Full-color digital printing',
+        'Hole punch or slot for lanyard',
+        'Include crop marks for precise cutting',
+        'Lamination available for durability',
+        'Variable data printing for names/barcodes'
+      ]
+    },
+    turnaroundDays: 3
+  }
+];
+
+// ════════════════════════════════════════════════════════════════════════════════
 // INDUSTRY STANDARD DEFAULTS
 // For professional print shops and local printers
 // ════════════════════════════════════════════════════════════════════════════════
@@ -993,7 +1492,10 @@ export const ALL_VENDOR_SPECS: VendorProductSpec[] = [
   ...STICKERMULE_SPECS,
   ...SIGNSCOM_SPECS,
   ...BANNERBUZZ_SPECS,
-  ...APPAREL_SPECS
+  ...APPAREL_SPECS,
+  ...FOURIMPRINT_SPECS,
+  ...STICKERGIANT_SPECS,
+  ...PROMO_VENDOR_SPECS
 ];
 
 // Unique vendor list
@@ -1001,8 +1503,12 @@ export const VENDOR_LIST = [
   { id: '4over', name: '4over', category: 'trade', website: 'https://4over.com' },
   { id: 'vistaprint', name: 'Vistaprint', category: 'online', website: 'https://vistaprint.com' },
   { id: 'stickermule', name: 'Sticker Mule', category: 'specialty', website: 'https://stickermule.com' },
+  { id: 'stickergiant', name: 'StickerGiant', category: 'specialty', website: 'https://stickergiant.com' },
   { id: 'signscom', name: 'Signs.com', category: 'signage', website: 'https://signs.com' },
   { id: 'bannerbuzz', name: 'BannerBuzz', category: 'signage', website: 'https://bannerbuzz.com' },
   { id: 'printful', name: 'Printful', category: 'apparel', website: 'https://printful.com' },
-  { id: 'customink', name: 'Custom Ink', category: 'apparel', website: 'https://customink.com' }
+  { id: 'customink', name: 'Custom Ink', category: 'apparel', website: 'https://customink.com' },
+  { id: '4imprint', name: '4imprint', category: 'promo', website: 'https://4imprint.com' },
+  { id: 'drinkware-standard', name: 'Drinkware (Industry Std)', category: 'promo', website: '' },
+  { id: 'badge-standard', name: 'Badges (Industry Std)', category: 'promo', website: '' }
 ] as const;
