@@ -1149,11 +1149,664 @@ export const LOCAL_PRINTSHOP_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= COSTCO PRINT TEMPLATES =============
+
+export const COSTCO_PRINT_TEMPLATES: EditableTemplate[] = [
+  // Costco Photo Print 8x10
+  {
+    id: 'costco-photo-8x10',
+    name: 'Costco Photo Print 8×10',
+    description: 'Standard photo print size for Costco Photo Center',
+    assetType: AssetType.PhotorealisticShot,
+    category: 'vendor-specific',
+    vendorId: 'costco-print',
+    dimensions: createDimensions(10, 8, 0, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#e31837', // Costco red
+      secondary: '#003da5', // Costco blue
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Photo',
+        { x: 0, y: 0, width: 100, height: 100 },
+        { 
+          placeholder: 'Upload high-resolution photo (300+ DPI)',
+          required: true,
+          style: { objectFit: 'cover' }
+        }
+      )
+    ],
+    tags: ['costco', 'photo', '8x10', 'print'],
+    isSystemTemplate: true
+  },
+
+  // Costco Photo Canvas 16x20
+  {
+    id: 'costco-canvas-16x20',
+    name: 'Costco Photo Canvas 16×20',
+    description: 'Gallery-wrapped canvas print for Costco Photo',
+    assetType: AssetType.PhotorealisticShot,
+    category: 'vendor-specific',
+    vendorId: 'costco-print',
+    dimensions: {
+      widthInches: 20,
+      heightInches: 16,
+      widthPx: 6000,
+      heightPx: 4800,
+      bleedInches: 1.5, // Canvas wrap
+      safeZoneInches: 1.5,
+      orientation: 'landscape'
+    },
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#e31837',
+      secondary: '#003da5',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Canvas Photo',
+        { x: 0, y: 0, width: 100, height: 100 },
+        { 
+          placeholder: 'Photo for canvas (1.5" wrap area on edges)',
+          required: true,
+          style: { objectFit: 'cover' }
+        }
+      ),
+      {
+        id: 'wrap-zone',
+        type: 'shape',
+        name: 'Canvas Wrap Zone (Content extends to edges)',
+        position: { x: 0, y: 0, width: 100, height: 100 },
+        style: { 
+          borderStyle: 'dashed', 
+          borderColor: 'rgba(255,0,0,0.3)', 
+          borderWidth: 2,
+          backgroundColor: 'transparent'
+        }
+      }
+    ],
+    tags: ['costco', 'canvas', '16x20', 'gallery'],
+    isSystemTemplate: true
+  },
+
+  // Costco Photo Poster 20x30
+  {
+    id: 'costco-poster-20x30',
+    name: 'Costco Photo Poster 20×30',
+    description: 'Large format photo poster for Costco Photo Center',
+    assetType: AssetType.EventSignage,
+    category: 'vendor-specific',
+    vendorId: 'costco-print',
+    dimensions: createDimensions(20, 30, 0, 0.25, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: {
+      primary: '#e31837',
+      secondary: '#003da5',
+      accent: '#fbbf24',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo',
+        { x: 35, y: 3, width: 30, height: 10 },
+        { placeholder: 'Event/Company logo' }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 5, y: 16, width: 90, height: 12 },
+        {
+          placeholder: 'EVENT TITLE',
+          required: true,
+          style: { fontSize: 64, fontWeight: 'bold', textAlign: 'center' }
+        }
+      ),
+      createImageField('main-image', 'Main Image',
+        { x: 5, y: 30, width: 90, height: 45 },
+        { placeholder: 'Event photo' }
+      ),
+      createTextField('details', 'Event Details',
+        { x: 10, y: 78, width: 80, height: 10 },
+        {
+          placeholder: 'Date • Time • Location',
+          style: { fontSize: 24, textAlign: 'center' }
+        }
+      ),
+      createTextField('cta', 'Call to Action',
+        { x: 20, y: 90, width: 60, height: 6 },
+        {
+          placeholder: 'www.event.com',
+          style: { fontSize: 18, textAlign: 'center', color: '#003da5' }
+        }
+      )
+    ],
+    tags: ['costco', 'poster', '20x30', 'large-format'],
+    isSystemTemplate: true
+  },
+
+  // Costco Photo Book Cover
+  {
+    id: 'costco-photobook-cover',
+    name: 'Costco Photo Book Cover',
+    description: 'Cover design for Costco Photo Book 11×14',
+    assetType: AssetType.ProgramBooklet,
+    category: 'vendor-specific',
+    vendorId: 'costco-print',
+    dimensions: createDimensions(11, 14, 0.125, 0.5),
+    background: { type: 'solid', value: '#1a1a1a' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: {
+      primary: '#ffffff',
+      secondary: '#c9a962',
+      accent: '#e31837',
+      text: '#ffffff',
+      background: '#1a1a1a'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('cover-image', 'Cover Image',
+        { x: 0, y: 0, width: 100, height: 70 },
+        { 
+          placeholder: 'Main cover photo',
+          style: { objectFit: 'cover' }
+        }
+      ),
+      createTextField('title', 'Book Title',
+        { x: 10, y: 75, width: 80, height: 12 },
+        {
+          placeholder: 'Our Family Memories',
+          required: true,
+          style: { fontSize: 36, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' }
+        }
+      ),
+      createTextField('subtitle', 'Subtitle',
+        { x: 15, y: 88, width: 70, height: 6 },
+        {
+          placeholder: '2024',
+          style: { fontSize: 18, textAlign: 'center', color: '#c9a962' }
+        }
+      )
+    ],
+    tags: ['costco', 'photobook', 'cover', '11x14'],
+    isSystemTemplate: true
+  }
+];
+
+// ============= WALGREENS PHOTO TEMPLATES =============
+
+export const WALGREENS_PHOTO_TEMPLATES: EditableTemplate[] = [
+  // Walgreens Photo Print 4x6
+  {
+    id: 'walgreens-photo-4x6',
+    name: 'Walgreens Photo Print 4×6',
+    description: 'Standard photo print for Walgreens Photo',
+    assetType: AssetType.PhotorealisticShot,
+    category: 'vendor-specific',
+    vendorId: 'walgreens-photo',
+    dimensions: createDimensions(6, 4, 0, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#e31837', // Walgreens red
+      secondary: '#ffffff',
+      accent: '#333333',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Photo',
+        { x: 0, y: 0, width: 100, height: 100 },
+        { 
+          placeholder: 'Upload photo (300 DPI recommended)',
+          required: true,
+          style: { objectFit: 'cover' }
+        }
+      )
+    ],
+    tags: ['walgreens', 'photo', '4x6', 'print'],
+    isSystemTemplate: true
+  },
+
+  // Walgreens Poster 11x14
+  {
+    id: 'walgreens-poster-11x14',
+    name: 'Walgreens Photo Poster 11×14',
+    description: 'Photo poster for Walgreens Photo Center',
+    assetType: AssetType.EventSignage,
+    category: 'vendor-specific',
+    vendorId: 'walgreens-photo',
+    dimensions: createDimensions(11, 14, 0, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#e31837',
+      secondary: '#333333',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Main Photo',
+        { x: 5, y: 5, width: 90, height: 65 },
+        { 
+          placeholder: 'Featured photo',
+          style: { objectFit: 'cover', borderRadius: 4 }
+        }
+      ),
+      createTextField('title', 'Title',
+        { x: 10, y: 73, width: 80, height: 10 },
+        {
+          placeholder: 'Special Moment',
+          style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center' }
+        }
+      ),
+      createTextField('caption', 'Caption',
+        { x: 15, y: 85, width: 70, height: 8 },
+        {
+          placeholder: 'A memorable day with family',
+          style: { fontSize: 14, textAlign: 'center', color: '#666666' }
+        }
+      )
+    ],
+    tags: ['walgreens', 'poster', '11x14', 'photo'],
+    isSystemTemplate: true
+  },
+
+  // Walgreens Photo Card 5x7
+  {
+    id: 'walgreens-card-5x7',
+    name: 'Walgreens Photo Card 5×7',
+    description: 'Greeting/invitation card for Walgreens Photo',
+    assetType: AssetType.InvitationCard,
+    category: 'vendor-specific',
+    vendorId: 'walgreens-photo',
+    dimensions: createDimensions(7, 5, 0, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: {
+      primary: '#2c3e50',
+      secondary: '#e31837',
+      accent: '#c9a962',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Photo',
+        { x: 5, y: 8, width: 50, height: 84 },
+        { 
+          placeholder: 'Photo',
+          style: { objectFit: 'cover', borderRadius: 4 }
+        }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 58, y: 15, width: 38, height: 15 },
+        {
+          placeholder: "You're Invited!",
+          required: true,
+          style: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', color: '#2c3e50' }
+        }
+      ),
+      createTextField('event', 'Event Name',
+        { x: 58, y: 32, width: 38, height: 12 },
+        {
+          placeholder: 'Birthday Party',
+          style: { fontSize: 16, textAlign: 'center' }
+        }
+      ),
+      createTextField('details', 'Details',
+        { x: 58, y: 48, width: 38, height: 30 },
+        {
+          placeholder: 'Saturday, March 15\n3:00 PM\n123 Main Street',
+          style: { fontSize: 11, textAlign: 'center', lineHeight: 1.5 }
+        }
+      ),
+      createTextField('rsvp', 'RSVP',
+        { x: 58, y: 80, width: 38, height: 10 },
+        {
+          placeholder: 'RSVP: (555) 123-4567',
+          style: { fontSize: 10, textAlign: 'center', fontStyle: 'italic' }
+        }
+      )
+    ],
+    tags: ['walgreens', 'card', '5x7', 'invitation'],
+    isSystemTemplate: true
+  },
+
+  // Walgreens Banner 2x6
+  {
+    id: 'walgreens-banner-2x6',
+    name: 'Walgreens Photo Banner 2×6 ft',
+    description: 'Vinyl banner for Walgreens Photo',
+    assetType: AssetType.Banner,
+    category: 'vendor-specific',
+    vendorId: 'walgreens-photo',
+    dimensions: {
+      widthInches: 72,
+      heightInches: 24,
+      widthPx: 10800,
+      heightPx: 3600,
+      bleedInches: 0.5,
+      safeZoneInches: 1,
+      orientation: 'landscape'
+    },
+    background: { type: 'solid', value: '#1e3a5f' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: {
+      primary: '#1e3a5f',
+      secondary: '#ffffff',
+      accent: '#e31837',
+      text: '#ffffff',
+      background: '#1e3a5f'
+    },
+    colorMode: 'RGB',
+    dpi: 150,
+    fields: [
+      createImageField('photo-1', 'Photo 1',
+        { x: 2, y: 10, width: 18, height: 80 },
+        { placeholder: 'Photo', style: { objectFit: 'cover', borderRadius: 4 } }
+      ),
+      createImageField('photo-2', 'Photo 2',
+        { x: 80, y: 10, width: 18, height: 80 },
+        { placeholder: 'Photo', style: { objectFit: 'cover', borderRadius: 4 } }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 22, y: 15, width: 56, height: 30 },
+        {
+          placeholder: 'Happy Birthday!',
+          required: true,
+          style: { fontSize: 64, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' }
+        }
+      ),
+      createTextField('name', 'Name',
+        { x: 22, y: 50, width: 56, height: 20 },
+        {
+          placeholder: 'SARAH',
+          style: { fontSize: 48, textAlign: 'center', color: '#e31837', fontWeight: 'bold' }
+        }
+      ),
+      createTextField('message', 'Message',
+        { x: 30, y: 75, width: 40, height: 15 },
+        {
+          placeholder: 'Wishing you the best!',
+          style: { fontSize: 18, textAlign: 'center', color: 'rgba(255,255,255,0.9)' }
+        }
+      )
+    ],
+    tags: ['walgreens', 'banner', '2x6', 'birthday'],
+    isSystemTemplate: true
+  }
+];
+
+// ============= CVS PHOTO TEMPLATES =============
+
+export const CVS_PHOTO_TEMPLATES: EditableTemplate[] = [
+  // CVS Photo Print 4x6
+  {
+    id: 'cvs-photo-4x6',
+    name: 'CVS Photo Print 4×6',
+    description: 'Standard photo print for CVS Photo',
+    assetType: AssetType.PhotorealisticShot,
+    category: 'vendor-specific',
+    vendorId: 'cvs-photo',
+    dimensions: createDimensions(6, 4, 0, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#cc0000', // CVS red
+      secondary: '#ffffff',
+      accent: '#333333',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Photo',
+        { x: 0, y: 0, width: 100, height: 100 },
+        { 
+          placeholder: 'Upload photo',
+          required: true,
+          style: { objectFit: 'cover' }
+        }
+      )
+    ],
+    tags: ['cvs', 'photo', '4x6', 'print'],
+    isSystemTemplate: true
+  },
+
+  // CVS Photo Print 8x10
+  {
+    id: 'cvs-photo-8x10',
+    name: 'CVS Photo Print 8×10',
+    description: 'Large photo print for CVS Photo',
+    assetType: AssetType.PhotorealisticShot,
+    category: 'vendor-specific',
+    vendorId: 'cvs-photo',
+    dimensions: createDimensions(10, 8, 0, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#cc0000',
+      secondary: '#ffffff',
+      accent: '#333333',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Photo',
+        { x: 0, y: 0, width: 100, height: 100 },
+        { 
+          placeholder: 'Upload high-resolution photo',
+          required: true,
+          style: { objectFit: 'cover' }
+        }
+      )
+    ],
+    tags: ['cvs', 'photo', '8x10', 'print'],
+    isSystemTemplate: true
+  },
+
+  // CVS Photo Collage Print 8x10
+  {
+    id: 'cvs-collage-8x10',
+    name: 'CVS Photo Collage 8×10',
+    description: '4-photo collage print for CVS Photo',
+    assetType: AssetType.PhotorealisticShot,
+    category: 'vendor-specific',
+    vendorId: 'cvs-photo',
+    dimensions: createDimensions(10, 8, 0, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#cc0000',
+      secondary: '#333333',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo-1', 'Photo 1',
+        { x: 2, y: 2, width: 47, height: 47 },
+        { placeholder: 'Top left photo', style: { objectFit: 'cover' } }
+      ),
+      createImageField('photo-2', 'Photo 2',
+        { x: 51, y: 2, width: 47, height: 47 },
+        { placeholder: 'Top right photo', style: { objectFit: 'cover' } }
+      ),
+      createImageField('photo-3', 'Photo 3',
+        { x: 2, y: 51, width: 47, height: 47 },
+        { placeholder: 'Bottom left photo', style: { objectFit: 'cover' } }
+      ),
+      createImageField('photo-4', 'Photo 4',
+        { x: 51, y: 51, width: 47, height: 47 },
+        { placeholder: 'Bottom right photo', style: { objectFit: 'cover' } }
+      )
+    ],
+    tags: ['cvs', 'photo', 'collage', '8x10'],
+    isSystemTemplate: true
+  },
+
+  // CVS Photo Card 5x7
+  {
+    id: 'cvs-card-5x7',
+    name: 'CVS Photo Card 5×7',
+    description: 'Greeting card for CVS Photo',
+    assetType: AssetType.InvitationCard,
+    category: 'vendor-specific',
+    vendorId: 'cvs-photo',
+    dimensions: createDimensions(7, 5, 0, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: {
+      primary: '#2c3e50',
+      secondary: '#cc0000',
+      accent: '#c9a962',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Photo',
+        { x: 0, y: 0, width: 100, height: 65 },
+        { 
+          placeholder: 'Main photo',
+          style: { objectFit: 'cover' }
+        }
+      ),
+      createTextField('message', 'Message',
+        { x: 10, y: 70, width: 80, height: 12 },
+        {
+          placeholder: 'Thinking of You',
+          required: true,
+          style: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#2c3e50' }
+        }
+      ),
+      createTextField('subtitle', 'Subtitle',
+        { x: 15, y: 84, width: 70, height: 10 },
+        {
+          placeholder: 'With love from our family',
+          style: { fontSize: 12, textAlign: 'center', color: '#666666', fontStyle: 'italic' }
+        }
+      )
+    ],
+    tags: ['cvs', 'card', '5x7', 'greeting'],
+    isSystemTemplate: true
+  },
+
+  // CVS Photo Poster 11x14
+  {
+    id: 'cvs-poster-11x14',
+    name: 'CVS Photo Poster 11×14',
+    description: 'Photo poster for CVS Photo Center',
+    assetType: AssetType.EventSignage,
+    category: 'vendor-specific',
+    vendorId: 'cvs-photo',
+    dimensions: createDimensions(11, 14, 0, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#cc0000',
+      secondary: '#333333',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Main Photo',
+        { x: 5, y: 5, width: 90, height: 70 },
+        { 
+          placeholder: 'Featured photo',
+          style: { objectFit: 'cover' }
+        }
+      ),
+      createTextField('title', 'Title',
+        { x: 10, y: 78, width: 80, height: 10 },
+        {
+          placeholder: 'Family Reunion 2024',
+          style: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' }
+        }
+      ),
+      createTextField('caption', 'Caption',
+        { x: 15, y: 90, width: 70, height: 6 },
+        {
+          placeholder: 'Summer at the Lake',
+          style: { fontSize: 12, textAlign: 'center', color: '#666666' }
+        }
+      )
+    ],
+    tags: ['cvs', 'poster', '11x14', 'photo'],
+    isSystemTemplate: true
+  },
+
+  // CVS Photo Magnet
+  {
+    id: 'cvs-magnet-4x6',
+    name: 'CVS Photo Magnet 4×6',
+    description: 'Photo magnet for CVS Photo',
+    assetType: AssetType.PhotorealisticShot,
+    category: 'vendor-specific',
+    vendorId: 'cvs-photo',
+    dimensions: createDimensions(6, 4, 0, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#cc0000',
+      secondary: '#ffffff',
+      accent: '#333333',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'RGB',
+    dpi: 300,
+    fields: [
+      createImageField('photo', 'Photo',
+        { x: 0, y: 0, width: 100, height: 100 },
+        { 
+          placeholder: 'Photo for magnet',
+          required: true,
+          style: { objectFit: 'cover' }
+        }
+      )
+    ],
+    tags: ['cvs', 'photo', 'magnet', '4x6'],
+    isSystemTemplate: true
+  }
+];
+
 // Export all local vendor templates
 export const ALL_LOCAL_VENDOR_TEMPLATES: EditableTemplate[] = [
   ...STAPLES_TEMPLATES,
   ...FEDEX_OFFICE_TEMPLATES,
   ...UPS_STORE_TEMPLATES,
   ...OFFICE_DEPOT_TEMPLATES,
-  ...LOCAL_PRINTSHOP_TEMPLATES
+  ...LOCAL_PRINTSHOP_TEMPLATES,
+  ...COSTCO_PRINT_TEMPLATES,
+  ...WALGREENS_PHOTO_TEMPLATES,
+  ...CVS_PHOTO_TEMPLATES
 ];
