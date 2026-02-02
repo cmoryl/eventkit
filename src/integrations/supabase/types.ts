@@ -571,6 +571,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          brand_adherence_mode: string | null
           brand_id: string | null
           color_palette: Json | null
           created_at: string
@@ -586,6 +587,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_adherence_mode?: string | null
           brand_id?: string | null
           color_palette?: Json | null
           created_at?: string
@@ -601,6 +603,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_adherence_mode?: string | null
           brand_id?: string | null
           color_palette?: Json | null
           created_at?: string

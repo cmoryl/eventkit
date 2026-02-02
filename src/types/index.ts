@@ -62,6 +62,7 @@ export {
   type BrandColor,
   type ColorCombination,
   type BrandGradient,
+  type BrandAdherenceMode,
   buildBrandContext,
   buildBrandStylePrompt,
   getBrandColorPalette,

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Palette, Plus, Settings, Clock, Image as ImageIcon, 
-  ChevronRight, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart
+  ChevronRight, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart, Wand2
 } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
+import { BrandAdherenceMode } from '@/types/brand.types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +16,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface BrandsPanelProps {
   brands: Brand[];
@@ -26,6 +34,9 @@ interface BrandsPanelProps {
   projectBrandId?: string | null;
   onSetProjectBrand?: (brandId: string | null) => Promise<void>;
   projectName?: string;
+  // Brand adherence mode
+  brandAdherenceMode?: BrandAdherenceMode;
+  onSetBrandAdherenceMode?: (mode: BrandAdherenceMode) => Promise<void>;
 }
 
 interface RecentCreation {
@@ -44,11 +55,14 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
   onEditBrand,
   projectBrandId,
   onSetProjectBrand,
-  projectName
+  projectName,
+  brandAdherenceMode = 'inspired',
+  onSetBrandAdherenceMode
 }) => {
   const [recentCreations, setRecentCreations] = useState<RecentCreation[]>([]);
   const [isLoadingCreations, setIsLoadingCreations] = useState(false);
   const [isSettingProjectBrand, setIsSettingProjectBrand] = useState(false);
+  const [isSettingAdherence, setIsSettingAdherence] = useState(false);
 
   // Load recent creations for selected brand
   useEffect(() => {
@@ -124,6 +138,22 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
     }
   };
 
+  const handleSetAdherenceMode = async (mode: BrandAdherenceMode) => {
+    if (!onSetBrandAdherenceMode) return;
+    setIsSettingAdherence(true);
+    try {
+      await onSetBrandAdherenceMode(mode);
+    } finally {
+      setIsSettingAdherence(false);
+    }
+  };
+
+  const adherenceModeLabels: Record<BrandAdherenceMode, { label: string; description: string }> = {
+    strict: { label: 'Strict', description: 'Exact brand compliance required' },
+    inspired: { label: 'Inspired', description: 'Brand-influenced with creative flexibility' },
+    none: { label: 'None', description: 'Ignore brand guidelines for this project' }
+  };
+
   return (
     <TooltipProvider>
       <div className="w-72 border-l border-border bg-card/50 flex flex-col h-[calc(100vh-4rem)]">
@@ -136,41 +166,72 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
             </div>
             
             {projectBrandId ? (
-              <div className="flex items-center gap-2">
-                {(() => {
-                  const linkedBrand = brands.find(b => b.id === projectBrandId);
-                  return linkedBrand ? (
-                    <>
-                      <div 
-                        className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-                        style={{ 
-                          background: linkedBrand.styles?.primary_color 
-                            ? `linear-gradient(135deg, ${linkedBrand.styles.primary_color}, ${linkedBrand.styles.accent_color || linkedBrand.styles.primary_color})`
-                            : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
-                        }}
-                      >
-                        {linkedBrand.name.charAt(0)}
-                      </div>
-                      <span className="text-sm font-medium flex-1 truncate">{linkedBrand.name}</span>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            size="icon" 
-                            variant="ghost" 
-                            className="h-6 w-6"
-                            onClick={handleClearProjectBrand}
-                            disabled={isSettingProjectBrand}
-                          >
-                            <Unlink className="w-3 h-3" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Remove from project</TooltipContent>
-                      </Tooltip>
-                    </>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Brand not found</span>
-                  );
-                })()}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const linkedBrand = brands.find(b => b.id === projectBrandId);
+                    return linkedBrand ? (
+                      <>
+                        <div 
+                          className="w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                          style={{ 
+                            background: linkedBrand.styles?.primary_color 
+                              ? `linear-gradient(135deg, ${linkedBrand.styles.primary_color}, ${linkedBrand.styles.accent_color || linkedBrand.styles.primary_color})`
+                              : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
+                          }}
+                        >
+                          {linkedBrand.name.charAt(0)}
+                        </div>
+                        <span className="text-sm font-medium flex-1 truncate">{linkedBrand.name}</span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-6 w-6"
+                              onClick={handleClearProjectBrand}
+                              disabled={isSettingProjectBrand}
+                            >
+                              <Unlink className="w-3 h-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Remove from project</TooltipContent>
+                        </Tooltip>
+                      </>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Brand not found</span>
+                    );
+                  })()}
+                </div>
+                
+                {/* Brand Adherence Mode Selector */}
+                {onSetBrandAdherenceMode && (
+                  <div className="pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Wand2 className="w-3 h-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Brand Flexibility</span>
+                    </div>
+                    <Select
+                      value={brandAdherenceMode}
+                      onValueChange={(value) => handleSetAdherenceMode(value as BrandAdherenceMode)}
+                      disabled={isSettingAdherence}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.entries(adherenceModeLabels) as [BrandAdherenceMode, { label: string; description: string }][]).map(([mode, { label, description }]) => (
+                          <SelectItem key={mode} value={mode}>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{label}</span>
+                              <span className="text-[10px] text-muted-foreground">{description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">

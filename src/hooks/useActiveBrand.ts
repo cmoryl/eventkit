@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { applyBrandTheme, resetBrandTheme, isBrandThemeApplied } from '@/services/brandThemeService';
 import { toast } from 'sonner';
+import type { BrandAdherenceMode } from '@/types/brand.types';
 
 interface BrandStyleSimple {
   primary_color?: string;
@@ -46,6 +47,9 @@ interface UseActiveBrandReturn {
   projectBrandId: string | null; // The brand ID linked to the current project
   setProjectBrand: (brandId: string | null) => Promise<void>;
   refreshBrands: () => Promise<void>;
+  // Brand adherence mode for generation
+  brandAdherenceMode: BrandAdherenceMode;
+  setBrandAdherenceMode: (mode: BrandAdherenceMode) => Promise<void>;
 }
 
 export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandReturn => {
@@ -57,6 +61,7 @@ export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandR
   const [isThemeApplied, setIsThemeApplied] = useState(isBrandThemeApplied());
   const [savedBrandId, setSavedBrandId] = useState<string | null>(null);
   const [projectBrandId, setProjectBrandIdState] = useState<string | null>(null);
+  const [brandAdherenceMode, setBrandAdherenceModeState] = useState<BrandAdherenceMode>('inspired');
 
   // Load brands with their styles
   const loadBrands = useCallback(async () => {
@@ -117,12 +122,12 @@ export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandR
       const persistedBrandId = profileData?.applied_brand_id;
       setSavedBrandId(persistedBrandId || null);
 
-      // Check if there's a project-specific brand
+      // Check if there's a project-specific brand and adherence mode
       let projectBrand: ActiveBrand | null = null;
       if (projectId) {
         const { data: projectData } = await supabase
           .from('projects')
-          .select('brand_id')
+          .select('brand_id, brand_adherence_mode')
           .eq('id', projectId)
           .eq('user_id', user.id)
           .maybeSingle();
@@ -130,6 +135,9 @@ export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandR
         if (projectData?.brand_id) {
           setProjectBrandIdState(projectData.brand_id);
           projectBrand = brandsWithStyles.find(b => b.id === projectData.brand_id) || null;
+        }
+        if (projectData?.brand_adherence_mode) {
+          setBrandAdherenceModeState(projectData.brand_adherence_mode as BrandAdherenceMode);
         }
       }
       
@@ -247,6 +255,33 @@ export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandR
     }
   }, [user, projectId, brands]);
 
+  // Set brand adherence mode for the project
+  const setBrandAdherenceMode = useCallback(async (mode: BrandAdherenceMode) => {
+    if (!user || !projectId) return;
+
+    try {
+      const { error } = await supabase
+        .from('projects')
+        .update({ brand_adherence_mode: mode })
+        .eq('id', projectId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setBrandAdherenceModeState(mode);
+      
+      const modeLabels = {
+        strict: 'Strict brand compliance',
+        inspired: 'Brand-inspired flexibility',
+        none: 'Brand guidelines disabled'
+      };
+      toast.success(modeLabels[mode]);
+    } catch (error) {
+      console.error('Error setting brand adherence mode:', error);
+      toast.error('Failed to update brand flexibility');
+    }
+  }, [user, projectId]);
+
   // Apply brand colors to UI theme
   const applyBrandToUI = useCallback(async (brand?: ActiveBrand | null, persist = true) => {
     const brandToApply = brand ?? activeBrand;
@@ -293,6 +328,8 @@ export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandR
     savedBrandId,
     projectBrandId,
     setProjectBrand,
-    refreshBrands: loadBrands
+    refreshBrands: loadBrands,
+    brandAdherenceMode,
+    setBrandAdherenceMode
   };
 };
