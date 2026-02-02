@@ -489,325 +489,280 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
           </div>
         </header>
 
-        {/* Main Content */}
+        {/* Main Content - Split View Layout */}
         <main className={cn(
-          "flex-1 overflow-auto p-8",
+          "flex-1 overflow-hidden",
           hasBrandColors ? "h-[calc(100vh-4.25rem)]" : "h-[calc(100vh-4rem)]"
         )}>
-          {/* Generation Progress */}
-          {generationPhase === 'generating' && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
-            >
-              <div className="max-w-xl mx-auto text-center space-y-4">
-                <div className="flex items-center justify-center gap-3 text-lg font-medium">
-                  <Loader2 
-                    className="h-5 w-5 animate-spin" 
-                    style={{ color: brandPrimary || 'hsl(var(--primary))' }}
-                  />
-                  Generating {VARIATION_COUNT} variations...
-                </div>
-                
-                <div className="relative h-2 bg-muted rounded-full overflow-hidden">
-                  <motion.div 
-                    className={cn(
-                      "h-full rounded-full",
-                      !hasBrandColors && `bg-gradient-to-r ${studioGradient}`
-                    )}
-                    style={hasBrandColors ? brandGradientStyle : undefined}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercent}%` }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-                
-                <p className="text-sm text-muted-foreground">
-                  {completedCount} of {VARIATION_COUNT} complete
-                </p>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Completion Message */}
-          {generationPhase === 'complete' && !selectedVariation && (
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8 text-center"
-            >
-              <div className="flex items-center justify-center gap-2 text-lg font-medium text-primary mb-2">
-                <Check className="h-5 w-5" />
-                All variations ready!
-              </div>
-              <p className="text-muted-foreground">
-                Click on a variation to select it and open the editor
-              </p>
-            </motion.div>
-          )}
-
-          {/* Variations Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {variations.map((variation, index) => (
-              <motion.div
-                key={variation.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.1 }}
-                className={cn(
-                  "relative rounded-2xl border-2 overflow-hidden cursor-pointer transition-all",
-                  selectedVariation === variation.id
-                    ? "border-primary ring-4 ring-primary/20 scale-[1.02]"
-                    : variation.status === 'complete' 
-                      ? "border-border hover:border-primary/50 hover:scale-[1.01]"
-                      : "border-border"
-                )}
-                onClick={() => handleSelectVariation(variation.id)}
-              >
-                {/* Variation Label */}
-                <div className="absolute top-3 left-3 z-10 px-2 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
-                  Variation {index + 1}
-                </div>
-
-                {/* Selection Indicator */}
-                {selectedVariation === variation.id && (
-                  <div className="absolute top-3 right-3 z-10 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                    <Check className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                )}
-
-                {/* Regenerate Button */}
-                {variation.status === 'complete' && selectedVariation !== variation.id && (
-                  <button
-                    className="absolute top-3 right-3 z-10 p-1.5 bg-black/50 backdrop-blur-sm rounded-lg text-white opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRegenerateVariation(variation.id);
-                    }}
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </button>
-                )}
-
-                {/* Content */}
-                <div className="aspect-square relative overflow-hidden">
-                  {variation.status === 'pending' && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-card via-muted/50 to-card">
-                      {/* Subtle grid pattern */}
-                      <div 
-                        className="absolute inset-0 opacity-[0.03]"
-                        style={{
-                          backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), 
-                                           linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-                          backgroundSize: '20px 20px'
-                        }}
+          <div className={cn(
+            "h-full grid gap-6 p-6 transition-all duration-300",
+            selectedVariation ? "grid-cols-1 lg:grid-cols-[280px,1fr]" : "grid-cols-1"
+          )}>
+            {/* Left Panel - Variations Thumbnails */}
+            <div className="flex flex-col gap-4 overflow-auto">
+              {/* Generation Progress */}
+              {generationPhase === 'generating' && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-card/50 rounded-xl border border-border p-4"
+                >
+                  <div className="text-center space-y-3">
+                    <div className="flex items-center justify-center gap-2 text-sm font-medium">
+                      <Loader2 
+                        className="h-4 w-4 animate-spin" 
+                        style={{ color: brandPrimary || 'hsl(var(--primary))' }}
                       />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="flex flex-col items-center gap-2">
+                      Generating {VARIATION_COUNT} variations...
+                    </div>
+                    
+                    <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                      <motion.div 
+                        className={cn(
+                          "h-full rounded-full",
+                          !hasBrandColors && `bg-gradient-to-r ${studioGradient}`
+                        )}
+                        style={hasBrandColors ? brandGradientStyle : undefined}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progressPercent}%` }}
+                        transition={{ duration: 0.3 }}
+                      />
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground">
+                      {completedCount} of {VARIATION_COUNT} complete
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Completion Message */}
+              {generationPhase === 'complete' && !selectedVariation && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-primary/5 rounded-xl border border-primary/20 p-4 text-center"
+                >
+                  <div className="flex items-center justify-center gap-2 text-sm font-medium text-primary mb-1">
+                    <Check className="h-4 w-4" />
+                    All variations ready!
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Click a variation to preview & edit
+                  </p>
+                </motion.div>
+              )}
+              
+              {/* Section Header */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-foreground">Variations</h3>
+                <span className="text-xs text-muted-foreground">{completedCount}/{VARIATION_COUNT}</span>
+              </div>
+
+              {/* Variations Grid - Compact when preview shown */}
+              <div className={cn(
+                "grid gap-3",
+                selectedVariation ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4 max-w-5xl mx-auto"
+              )}>
+                {variations.map((variation, index) => (
+                  <motion.div
+                    key={variation.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={cn(
+                      "relative rounded-xl border-2 overflow-hidden cursor-pointer transition-all group",
+                      selectedVariation === variation.id
+                        ? "border-primary ring-2 ring-primary/20"
+                        : variation.status === 'complete' 
+                          ? "border-border hover:border-primary/50"
+                          : "border-border"
+                    )}
+                    onClick={() => handleSelectVariation(variation.id)}
+                  >
+                    {/* Variation Label */}
+                    <div className="absolute top-2 left-2 z-10 px-1.5 py-0.5 bg-black/50 backdrop-blur-sm rounded text-white text-[10px] font-medium">
+                      V{index + 1}
+                    </div>
+
+                    {/* Selection Indicator */}
+                    {selectedVariation === variation.id && (
+                      <div className="absolute top-2 right-2 z-10 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="h-3 w-3 text-primary-foreground" />
+                      </div>
+                    )}
+
+                    {/* Regenerate Button */}
+                    {variation.status === 'complete' && selectedVariation !== variation.id && (
+                      <button
+                        className="absolute top-2 right-2 z-10 p-1 bg-black/50 backdrop-blur-sm rounded text-white opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRegenerateVariation(variation.id);
+                        }}
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                      </button>
+                    )}
+
+                    {/* Content */}
+                    <div className="aspect-square relative overflow-hidden">
+                      {variation.status === 'pending' && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-card via-muted/50 to-card flex items-center justify-center">
                           <div className="flex gap-1">
                             {[0, 1, 2].map((i) => (
                               <motion.div
                                 key={i}
-                                className="w-2 h-2 rounded-full bg-muted-foreground/30"
+                                className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30"
                                 animate={{ opacity: [0.3, 0.6, 0.3] }}
                                 transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
                               />
                             ))}
                           </div>
-                          <span className="text-xs text-muted-foreground/60">In queue</span>
                         </div>
-                      </div>
-                    </div>
-                  )}
+                      )}
 
-                  {variation.status === 'generating' && (
-                    <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background">
-                      {/* Animated mesh gradient background */}
-                      <div className="absolute inset-0">
-                        <motion.div
-                          className={cn("absolute w-[200%] h-[200%] -left-1/2 -top-1/2 bg-gradient-conic from-primary/20 via-transparent via-30% to-accent/20 to-70%")}
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-                          style={{ filter: 'blur(40px)' }}
-                        />
-                      </div>
-                      
-                      {/* Floating particles */}
-                      <div className="absolute inset-0">
-                        {[...Array(6)].map((_, i) => (
+                      {variation.status === 'generating' && (
+                        <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-background flex items-center justify-center">
                           <motion.div
-                            key={i}
-                            className={cn(
-                              "absolute w-1 h-1 rounded-full",
-                              i % 2 === 0 ? "bg-primary/40" : "bg-accent/40"
-                            )}
-                            style={{
-                              left: `${20 + (i * 12)}%`,
-                              top: `${30 + (i * 8) % 40}%`,
-                            }}
-                            animate={{
-                              y: [-10, 10, -10],
-                              x: [-5, 5, -5],
-                              opacity: [0.3, 0.8, 0.3],
-                              scale: [1, 1.5, 1],
-                            }}
-                            transition={{
-                              duration: 2 + i * 0.5,
-                              repeat: Infinity,
-                              delay: i * 0.3,
-                            }}
-                          />
-                        ))}
-                      </div>
-                      
-                      {/* Center content */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="relative">
-                          {/* Outer ring */}
-                          <motion.div
-                            className="w-20 h-20 rounded-full border border-primary/20"
-                            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                          />
-                          
-                          {/* Middle ring - rotating */}
-                          <motion.div
-                            className="absolute inset-2 rounded-full border-2 border-dashed border-primary/30"
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                          />
-                          
-                          {/* Inner core */}
-                          <motion.div
-                            className={cn("absolute inset-4 rounded-full bg-gradient-to-br shadow-lg", studioGradient)}
+                            className={cn("w-8 h-8 rounded-full bg-gradient-to-br flex items-center justify-center", studioGradient)}
                             animate={{ scale: [0.9, 1.1, 0.9] }}
                             transition={{ duration: 1.5, repeat: Infinity }}
                           >
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <Sparkles className="h-5 w-5 text-white" />
-                            </div>
+                            <Sparkles className="h-4 w-4 text-white" />
                           </motion.div>
                         </div>
-                      </div>
-                      
-                      {/* Bottom label */}
-                      <div className="absolute bottom-4 left-0 right-0 text-center">
-                        <motion.p 
-                          className="text-sm font-medium text-foreground/80"
-                          animate={{ opacity: [0.6, 1, 0.6] }}
-                          transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                          Creating design...
-                        </motion.p>
-                      </div>
-                      
-                      {/* Corner accents */}
-                      <div className="absolute top-3 left-3 w-4 h-4 border-l-2 border-t-2 border-primary/30 rounded-tl" />
-                      <div className="absolute top-3 right-3 w-4 h-4 border-r-2 border-t-2 border-primary/30 rounded-tr" />
-                      <div className="absolute bottom-3 left-3 w-4 h-4 border-l-2 border-b-2 border-primary/30 rounded-bl" />
-                      <div className="absolute bottom-3 right-3 w-4 h-4 border-r-2 border-b-2 border-primary/30 rounded-br" />
+                      )}
+
+                      {variation.status === 'complete' && variation.imageUrl && (
+                        <img
+                          src={variation.imageUrl}
+                          alt={`Variation ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+
+                      {variation.status === 'error' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-destructive/5">
+                          <X className="h-5 w-5 text-destructive" />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRegenerateVariation(variation.id);
+                            }}
+                          >
+                            Retry
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
 
-                  {variation.status === 'complete' && variation.imageUrl && (
-                    <img
-                      src={variation.imageUrl}
-                      alt={`Variation ${index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-
-                  {variation.status === 'error' && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-destructive/5 to-destructive/10">
-                      <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                        <X className="h-6 w-6 text-destructive" />
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRegenerateVariation(variation.id);
-                        }}
-                        className="gap-1.5"
-                      >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        Retry
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                {variation.status === 'complete' && (
-                  <div className="p-3 bg-card border-t border-border">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">
-                        Style {index + 1}
-                      </span>
-                      <div className="flex items-center gap-1 text-xs text-primary">
-                        <Wand2 className="h-3 w-3" />
-                        Click to edit
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Selected Variation Actions */}
-          {selectedVariation && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="fixed bottom-0 left-0 right-0 p-4 bg-card/95 backdrop-blur-sm border-t border-border"
-            >
-              <div className="max-w-3xl mx-auto flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="text-sm">
-                    <span className="text-muted-foreground">Selected: </span>
-                    <span className="font-medium">
+            {/* Right Panel - Live Preview */}
+            {selectedVariation && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col h-full bg-card/30 rounded-2xl border border-border overflow-hidden"
+              >
+                {/* Preview Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/50">
+                  <div className="flex items-center gap-2">
+                    <ZoomIn className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Live Preview</span>
+                    <span className="text-xs text-muted-foreground">
                       Variation {variations.findIndex(v => v.id === selectedVariation) + 1}
                     </span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={() => {
+                        const variation = variations.find(v => v.id === selectedVariation);
+                        if (variation?.imageUrl) {
+                          setEditingImageUrl(variation.imageUrl);
+                          setShowEditor(true);
+                        }
+                      }}
+                    >
+                      <Wand2 className="h-3.5 w-3.5" />
+                      Edit with AI
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 text-xs gap-1.5"
+                      onClick={() => {
+                        const variation = variations.find(v => v.id === selectedVariation);
+                        if (variation?.imageUrl) {
+                          const link = document.createElement('a');
+                          link.href = variation.imageUrl;
+                          link.download = `${assetName.replace(/\s+/g, '_')}_v${variations.findIndex(v => v.id === selectedVariation) + 1}.png`;
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        }
+                      }}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Download
+                    </Button>
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-3">
+
+                {/* Preview Image */}
+                <div className="flex-1 relative overflow-auto p-6 flex items-center justify-center bg-[repeating-conic-gradient(hsl(var(--muted))_0%_25%,hsl(var(--background))_0%_50%)] bg-[length:20px_20px]">
+                  {(() => {
+                    const variation = variations.find(v => v.id === selectedVariation);
+                    if (variation?.imageUrl) {
+                      return (
+                        <motion.img
+                          key={variation.imageUrl}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          src={variation.imageUrl}
+                          alt="Preview"
+                          className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                          style={{ maxHeight: 'calc(100vh - 280px)' }}
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+
+                {/* Preview Footer - Actions */}
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border bg-card/50">
                   <Button 
                     variant="outline"
+                    size="sm"
                     onClick={() => setSelectedVariation(null)}
+                    className="gap-1.5"
                   >
-                    Deselect
-                  </Button>
-                  
-                  <Button
-                    onClick={() => {
-                      const variation = variations.find(v => v.id === selectedVariation);
-                      if (variation?.imageUrl) {
-                        setEditingImageUrl(variation.imageUrl);
-                        setShowEditor(true);
-                      }
-                    }}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    <Wand2 className="h-4 w-4" />
-                    Edit in AI Editor
+                    <ChevronRight className="h-4 w-4 rotate-180" />
+                    View All
                   </Button>
                   
                   <Button
                     onClick={handleUseSelected}
+                    size="sm"
                     className={cn("gap-2 bg-gradient-to-r", studioGradient)}
                   >
                     <Check className="h-4 w-4" />
                     Use This Design
                   </Button>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
+          </div>
         </main>
 
         {/* AI Image Editor Modal */}
