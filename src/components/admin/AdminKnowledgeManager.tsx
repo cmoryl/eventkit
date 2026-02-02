@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Brain, Search, Filter, Trash2, Eye, 
-  TrendingUp, AlertCircle, RefreshCw
+  TrendingUp, RefreshCw, Palette, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -27,17 +27,34 @@ interface KnowledgeItem {
   updated_at: string;
 }
 
+interface BrandInfo {
+  id: string;
+  name: string;
+  primary_color?: string;
+  logo_url?: string;
+}
+
 const KNOWLEDGE_TYPES = [
-  'style_preference',
-  'color_pattern',
-  'layout_preference',
-  'cultural_context',
-  'asset_combination',
-  'successful_prompt'
+  { id: 'all', label: 'All Types', icon: Brain },
+  { id: 'brand_preference', label: 'Brand Preference', icon: Palette },
+  { id: 'brief_preferences', label: 'Brief Preferences', icon: Sparkles },
+  { id: 'style_preference', label: 'Style Preference', icon: Palette },
+  { id: 'color_pattern', label: 'Color Pattern', icon: Palette },
+  { id: 'layout_preference', label: 'Layout Preference', icon: Sparkles },
+  { id: 'cultural_context', label: 'Cultural Context', icon: Brain },
+  { id: 'asset_combination', label: 'Asset Combination', icon: Sparkles },
+  { id: 'successful_prompt', label: 'Successful Prompt', icon: Sparkles },
 ];
+
+// Extract brand ID from key like "brand_88d880e5-e3bf-46d7-b9a9-6039474f6d75"
+const extractBrandId = (key: string): string | null => {
+  const match = key.match(/^brand_([a-f0-9-]{36})$/i);
+  return match ? match[1] : null;
+};
 
 const AdminKnowledgeManager: React.FC = () => {
   const [knowledge, setKnowledge] = useState<KnowledgeItem[]>([]);
+  const [brands, setBrands] = useState<Map<string, BrandInfo>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -50,13 +67,50 @@ const AdminKnowledgeManager: React.FC = () => {
   const fetchKnowledge = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch knowledge entries
+      const { data: knowledgeData, error: knowledgeError } = await supabase
         .from('ai_knowledge')
         .select('*')
         .order('usage_count', { ascending: false });
 
-      if (error) throw error;
-      setKnowledge(data || []);
+      if (knowledgeError) throw knowledgeError;
+      
+      // Collect all brand IDs from knowledge entries
+      const brandIds = new Set<string>();
+      (knowledgeData || []).forEach(item => {
+        const brandId = extractBrandId(item.key);
+        if (brandId) brandIds.add(brandId);
+      });
+
+      // Fetch brand details if we have brand IDs
+      if (brandIds.size > 0) {
+        const { data: brandsData, error: brandsError } = await supabase
+          .from('brands')
+          .select('id, name, logo_url')
+          .in('id', Array.from(brandIds));
+
+        if (!brandsError && brandsData) {
+          // Also fetch brand styles for primary colors
+          const { data: stylesData } = await supabase
+            .from('brand_styles')
+            .select('brand_id, primary_color')
+            .in('brand_id', Array.from(brandIds));
+
+          const brandsMap = new Map<string, BrandInfo>();
+          brandsData.forEach(brand => {
+            const style = stylesData?.find(s => s.brand_id === brand.id);
+            brandsMap.set(brand.id, {
+              id: brand.id,
+              name: brand.name,
+              logo_url: brand.logo_url || undefined,
+              primary_color: style?.primary_color || undefined,
+            });
+          });
+          setBrands(brandsMap);
+        }
+      }
+
+      setKnowledge(knowledgeData || []);
     } catch (error) {
       console.error('Error fetching knowledge:', error);
       toast.error('Failed to load AI knowledge');
@@ -83,21 +137,38 @@ const AdminKnowledgeManager: React.FC = () => {
     }
   };
 
-  const filteredKnowledge = knowledge.filter(k => {
-    const matchesSearch = k.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          (k.category?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-    const matchesFilter = filterType === 'all' || k.knowledge_type === filterType;
-    return matchesSearch && matchesFilter;
-  });
+  // Get display name for a knowledge item
+  const getDisplayName = (item: KnowledgeItem): { name: string; brand?: BrandInfo } => {
+    const brandId = extractBrandId(item.key);
+    if (brandId) {
+      const brand = brands.get(brandId);
+      if (brand) {
+        return { name: brand.name, brand };
+      }
+      return { name: `Unknown Brand (${item.key.slice(0, 20)}...)` };
+    }
+    return { name: item.key };
+  };
 
-  const stats = {
+  const filteredKnowledge = useMemo(() => {
+    return knowledge.filter(k => {
+      const { name } = getDisplayName(k);
+      const matchesSearch = name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            k.key.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (k.category?.toLowerCase() || '').includes(searchQuery.toLowerCase());
+      const matchesFilter = filterType === 'all' || k.knowledge_type === filterType;
+      return matchesSearch && matchesFilter;
+    });
+  }, [knowledge, searchQuery, filterType, brands]);
+
+  const stats = useMemo(() => ({
     total: knowledge.length,
     global: knowledge.filter(k => !k.user_id).length,
     userSpecific: knowledge.filter(k => k.user_id).length,
     avgConfidence: knowledge.length > 0 
       ? (knowledge.reduce((sum, k) => sum + k.confidence_score, 0) / knowledge.length * 100).toFixed(0)
       : 0
-  };
+  }), [knowledge]);
 
   return (
     <div className="space-y-6">
@@ -159,10 +230,12 @@ const AdminKnowledgeManager: React.FC = () => {
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
             {KNOWLEDGE_TYPES.map(type => (
-              <SelectItem key={type} value={type}>
-                {type.replace('_', ' ')}
+              <SelectItem key={type.id} value={type.id}>
+                <span className="flex items-center gap-2">
+                  <type.icon className="w-3.5 h-3.5" />
+                  {type.label}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -186,106 +259,195 @@ const AdminKnowledgeManager: React.FC = () => {
         </Card>
       ) : (
         <div className="grid gap-3">
-          {filteredKnowledge.map((item, i) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-            >
-              <Card className="group hover:border-primary/50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium truncate">{item.key}</h4>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {item.knowledge_type.replace('_', ' ')}
-                        </Badge>
-                        {!item.user_id && (
-                          <Badge className="text-xs bg-blue-500/20 text-blue-500">Global</Badge>
+          {filteredKnowledge.map((item, i) => {
+            const { name, brand } = getDisplayName(item);
+            const typeInfo = KNOWLEDGE_TYPES.find(t => t.id === item.knowledge_type);
+            const TypeIcon = typeInfo?.icon || Brain;
+            
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+              >
+                <Card className="group hover:border-primary/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Brand Color Indicator or Type Icon */}
+                        {brand ? (
+                          <div 
+                            className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 border border-border"
+                            style={{ backgroundColor: brand.primary_color || '#6366f1' }}
+                          >
+                            {brand.logo_url ? (
+                              <img 
+                                src={brand.logo_url} 
+                                alt={brand.name} 
+                                className="w-6 h-6 object-contain"
+                              />
+                            ) : (
+                              <Palette className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                            <TypeIcon className="w-5 h-5 text-muted-foreground" />
+                          </div>
                         )}
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h4 className="font-medium truncate">{name}</h4>
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {typeInfo?.label || item.knowledge_type.replace(/_/g, ' ')}
+                            </Badge>
+                            {!item.user_id && (
+                              <Badge className="text-xs bg-blue-500/20 text-blue-500 border-0">Global</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              {(item.confidence_score * 100).toFixed(0)}% confidence
+                            </span>
+                            <span>Used {item.usage_count} time{item.usage_count !== 1 ? 's' : ''}</span>
+                            {item.category && (
+                              <span className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                                {item.category}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <TrendingUp className="w-3 h-3" />
-                          {(item.confidence_score * 100).toFixed(0)}% confidence
-                        </span>
-                        <span>Used {item.usage_count} times</span>
-                        {item.category && <span>Category: {item.category}</span>}
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => setSelectedItem(item)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDelete(item.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => setSelectedItem(item)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDelete(item.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
       )}
 
-      {/* Detail Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Knowledge Entry Details</DialogTitle>
           </DialogHeader>
-          {selectedItem && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Key</label>
-                  <p className="font-mono">{selectedItem.key}</p>
+          {selectedItem && (() => {
+            const { name, brand } = getDisplayName(selectedItem);
+            const typeInfo = KNOWLEDGE_TYPES.find(t => t.id === selectedItem.knowledge_type);
+            
+            return (
+              <div className="space-y-4 py-4">
+                {/* Brand Header if applicable */}
+                {brand && (
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-muted/50 to-muted/30 border border-border">
+                    <div 
+                      className="w-12 h-12 rounded-lg flex items-center justify-center border border-border shadow-sm"
+                      style={{ backgroundColor: brand.primary_color || '#6366f1' }}
+                    >
+                      {brand.logo_url ? (
+                        <img 
+                          src={brand.logo_url} 
+                          alt={brand.name} 
+                          className="w-8 h-8 object-contain"
+                        />
+                      ) : (
+                        <Palette className="w-6 h-6 text-white" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{brand.name}</h3>
+                      <p className="text-sm text-muted-foreground">Brand Preference Entry</p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">
+                      {brand ? 'Brand' : 'Key'}
+                    </label>
+                    <p className={brand ? 'font-medium' : 'font-mono text-sm'}>{name}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <p className="capitalize">{typeInfo?.label || selectedItem.knowledge_type.replace(/_/g, ' ')}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Confidence</label>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-amber-500 to-green-500 rounded-full transition-all"
+                          style={{ width: `${selectedItem.confidence_score * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{(selectedItem.confidence_score * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Success Rate</label>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-blue-500 to-primary rounded-full transition-all"
+                          style={{ width: `${selectedItem.success_rate * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium">{(selectedItem.success_rate * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Usage Count</label>
+                    <p className="font-medium">{selectedItem.usage_count} time{selectedItem.usage_count !== 1 ? 's' : ''}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Scope</label>
+                    <Badge variant={selectedItem.user_id ? 'secondary' : 'default'} className="mt-1">
+                      {selectedItem.user_id ? 'User-specific' : 'Global'}
+                    </Badge>
+                  </div>
+                  {selectedItem.category && (
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium text-muted-foreground">Category</label>
+                      <p>{selectedItem.category}</p>
+                    </div>
+                  )}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Type</label>
-                  <p className="capitalize">{selectedItem.knowledge_type.replace('_', ' ')}</p>
+                  <label className="text-sm font-medium text-muted-foreground">Learned Value</label>
+                  <pre className="mt-1 p-4 bg-muted rounded-lg text-sm overflow-auto max-h-64 font-mono">
+                    {JSON.stringify(selectedItem.value, null, 2)}
+                  </pre>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Confidence</label>
-                  <p>{(selectedItem.confidence_score * 100).toFixed(1)}%</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Success Rate</label>
-                  <p>{(selectedItem.success_rate * 100).toFixed(1)}%</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Usage Count</label>
-                  <p>{selectedItem.usage_count}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Scope</label>
-                  <p>{selectedItem.user_id ? 'User-specific' : 'Global'}</p>
+                <div className="flex gap-4 text-xs text-muted-foreground pt-2 border-t border-border">
+                  <span>Created: {new Date(selectedItem.created_at).toLocaleDateString()}</span>
+                  <span>Updated: {new Date(selectedItem.updated_at).toLocaleDateString()}</span>
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">Value</label>
-                <pre className="mt-1 p-4 bg-muted rounded-lg text-sm overflow-auto max-h-64">
-                  {JSON.stringify(selectedItem.value, null, 2)}
-                </pre>
-              </div>
-              <div className="flex gap-4 text-xs text-muted-foreground">
-                <span>Created: {new Date(selectedItem.created_at).toLocaleDateString()}</span>
-                <span>Updated: {new Date(selectedItem.updated_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
