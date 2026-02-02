@@ -3,6 +3,8 @@ import Spinner from './Spinner';
 import { Settings } from 'lucide-react';
 import ApiSettingsModal from './settings/ApiSettingsModal';
 import { useApiSettings } from '@/hooks/useApiSettings';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { useTheme } from 'next-themes';
 
 interface AppHeaderProps {
   onNewProject: () => void;
@@ -32,6 +34,16 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const loadProjectInputRef = useRef<HTMLInputElement>(null);
   const [showApiSettings, setShowApiSettings] = useState(false);
   const { configuredKeysCount } = useApiSettings();
+  const { logoUrl, logoUrlDark, logoIconUrl, logoIconUrlDark, logoType, hasCustomLogo } = useAppSettings();
+  const { resolvedTheme } = useTheme();
+  
+  // Determine which logo to show based on theme
+  const currentLogo = resolvedTheme === 'dark' 
+    ? (logoUrlDark || logoUrl) 
+    : logoUrl;
+  const currentIcon = resolvedTheme === 'dark'
+    ? (logoIconUrlDark || logoIconUrl)
+    : logoIconUrl;
 
   const handleLoadClick = () => {
     loadProjectInputRef.current?.click();
@@ -44,19 +56,49 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     e.target.value = '';
   };
 
+  // Render logo based on settings - auto-resizes to fit container
+  const renderLogo = () => {
+    if (logoType === 'icon-only' && currentIcon) {
+      return (
+        <img 
+          src={currentIcon} 
+          alt="EventKIT" 
+          className="max-h-10 max-w-[120px] w-auto h-auto object-contain"
+        />
+      );
+    }
+    
+    if (hasCustomLogo && currentLogo) {
+      return (
+        <img 
+          src={currentLogo} 
+          alt="EventKIT" 
+          className="max-h-10 max-w-[160px] w-auto h-auto object-contain"
+        />
+      );
+    }
+    
+    // Default logo
+    return (
+      <>
+        <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+          </svg>
+        </div>
+        <div className="hidden sm:block">
+          <h1 className="text-lg font-bold text-foreground leading-tight">EventKIT</h1>
+          <p className="text-xs text-muted-foreground">Generator</p>
+        </div>
+      </>
+    );
+  };
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-b border-border z-50 px-4 py-3">
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-          </div>
-          <div className="hidden sm:block">
-            <h1 className="text-lg font-bold text-foreground leading-tight">EventKIT</h1>
-            <p className="text-xs text-muted-foreground">Generator</p>
-          </div>
+          {renderLogo()}
         </div>
         
         <div className="flex items-center gap-2">
