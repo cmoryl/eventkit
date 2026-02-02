@@ -40,6 +40,8 @@ interface UseQueuedGenerationProps {
   masterPatternBase64?: string;
   venueImageBase64?: string;
   renderEngine?: RenderEngine;
+  onGenerationComplete?: (completed: number, failed: number) => void;
+  onAssetComplete?: (title: string, remaining: number) => void;
 }
 
 export function useQueuedGeneration({
@@ -53,6 +55,8 @@ export function useQueuedGeneration({
   masterPatternBase64,
   venueImageBase64,
   renderEngine,
+  onGenerationComplete,
+  onAssetComplete,
 }: UseQueuedGenerationProps) {
   const [jobs, setJobs] = useState<GenerationJob[]>([]);
   const [stats, setStats] = useState<QueueStats>({
@@ -136,6 +140,12 @@ export function useQueuedGeneration({
             if (event.job.assetType === AssetType.Palette && event.job.result) {
               setColorPalette(event.job.result as ColorInfo[]);
             }
+
+            // Notify asset complete
+            const remainingJobs = generationQueue.getJobs().filter(
+              j => j.status === JobStatus.Pending || j.status === JobStatus.Processing
+            ).length;
+            onAssetComplete?.(event.job.assetTitle, remainingJobs);
           }
           updateStats();
           debouncedSaveQueueState(
@@ -167,6 +177,10 @@ export function useQueuedGeneration({
           
         case 'queue-empty':
           updateStats();
+          // Notify generation complete
+          if (completedCountRef.current > 0 || failedCountRef.current > 0) {
+            onGenerationComplete?.(completedCountRef.current, failedCountRef.current);
+          }
           // Clear persisted state when queue is empty
           clearQueueState();
           break;
@@ -194,7 +208,7 @@ export function useQueuedGeneration({
       unsubscribe();
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [updateStats, setGeneratedAssets, setColorPalette]);
+  }, [updateStats, setGeneratedAssets, setColorPalette, onGenerationComplete, onAssetComplete]);
 
   // Start queued generation for assets
   const startQueuedGeneration = useCallback((
