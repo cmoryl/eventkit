@@ -97,6 +97,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         imageryStyle: brief.imageryStyle,
         additionalNotes: brief.additionalNotes,
         referencePrompt: brief.referencePrompt,
+        fontPairing: brief.fontPairing,
+        customFonts: brief.customFonts,
+        fontWeight: brief.fontWeight,
       };
       recordBriefPreference(user.id, assetType, briefData).catch(console.error);
     }
@@ -223,6 +226,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       imageryStyle: brief.imageryStyle,
       additionalNotes: brief.additionalNotes,
       referencePrompt: brief.referencePrompt,
+      fontPairing: brief.fontPairing,
+      customFonts: brief.customFonts,
+      fontWeight: brief.fontWeight,
     };
     
     let prompt = buildPromptFromBrief(assetName, eventName, briefData, brand?.styles as unknown as Record<string, unknown>);

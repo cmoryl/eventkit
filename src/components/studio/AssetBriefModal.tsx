@@ -2,13 +2,133 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, ArrowRight, Palette, Type, ImageIcon, Wand2, 
-  ChevronDown, ChevronUp, Lightbulb, Zap, X, Settings2
+  ChevronDown, ChevronUp, Lightbulb, Zap, X, Settings2, ALargeSmall
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AssetType } from '@/types';
 import { Brand } from '@/types/studio.types';
 import AssetSpecificFields from '@/components/AssetSpecificFields';
+
+// Google Fonts configuration for high-quality typography
+export interface GoogleFontSelection {
+  heading: string;
+  body: string;
+  accent?: string;
+}
+
+// Popular Google Fonts organized by style category
+export const GOOGLE_FONTS = {
+  // Display/Headlines - High impact for titles
+  display: [
+    { name: 'Playfair Display', category: 'serif', weight: '400;700' },
+    { name: 'Montserrat', category: 'sans-serif', weight: '400;600;700' },
+    { name: 'Oswald', category: 'sans-serif', weight: '400;600;700' },
+    { name: 'Bebas Neue', category: 'display', weight: '400' },
+    { name: 'Anton', category: 'sans-serif', weight: '400' },
+    { name: 'Righteous', category: 'display', weight: '400' },
+    { name: 'Abril Fatface', category: 'display', weight: '400' },
+    { name: 'Alfa Slab One', category: 'display', weight: '400' },
+  ],
+  // Body text - Readable at smaller sizes
+  body: [
+    { name: 'Open Sans', category: 'sans-serif', weight: '400;600;700' },
+    { name: 'Roboto', category: 'sans-serif', weight: '400;500;700' },
+    { name: 'Lato', category: 'sans-serif', weight: '400;700' },
+    { name: 'Source Sans 3', category: 'sans-serif', weight: '400;600;700' },
+    { name: 'Inter', category: 'sans-serif', weight: '400;500;600;700' },
+    { name: 'Nunito', category: 'sans-serif', weight: '400;600;700' },
+    { name: 'Poppins', category: 'sans-serif', weight: '400;500;600;700' },
+    { name: 'Work Sans', category: 'sans-serif', weight: '400;500;600;700' },
+  ],
+  // Elegant/Serif - Sophisticated feel
+  elegant: [
+    { name: 'Cormorant Garamond', category: 'serif', weight: '400;600;700' },
+    { name: 'Libre Baskerville', category: 'serif', weight: '400;700' },
+    { name: 'Merriweather', category: 'serif', weight: '400;700' },
+    { name: 'Crimson Pro', category: 'serif', weight: '400;600;700' },
+    { name: 'EB Garamond', category: 'serif', weight: '400;600;700' },
+    { name: 'Spectral', category: 'serif', weight: '400;600;700' },
+  ],
+  // Modern/Geometric - Clean, contemporary
+  modern: [
+    { name: 'Raleway', category: 'sans-serif', weight: '400;600;700' },
+    { name: 'Josefin Sans', category: 'sans-serif', weight: '400;600;700' },
+    { name: 'DM Sans', category: 'sans-serif', weight: '400;500;700' },
+    { name: 'Outfit', category: 'sans-serif', weight: '400;500;600;700' },
+    { name: 'Plus Jakarta Sans', category: 'sans-serif', weight: '400;500;600;700' },
+    { name: 'Space Grotesk', category: 'sans-serif', weight: '400;500;700' },
+  ],
+  // Script/Handwritten - Personal touch
+  script: [
+    { name: 'Dancing Script', category: 'handwriting', weight: '400;700' },
+    { name: 'Pacifico', category: 'handwriting', weight: '400' },
+    { name: 'Great Vibes', category: 'handwriting', weight: '400' },
+    { name: 'Satisfy', category: 'handwriting', weight: '400' },
+    { name: 'Caveat', category: 'handwriting', weight: '400;700' },
+    { name: 'Kalam', category: 'handwriting', weight: '400;700' },
+  ],
+};
+
+// Font pairing presets for quick selection
+export const FONT_PAIRINGS = [
+  { 
+    id: 'modern-clean',
+    name: 'Modern & Clean',
+    heading: 'Montserrat',
+    body: 'Open Sans',
+    description: 'Professional, versatile pairing'
+  },
+  {
+    id: 'elegant-classic',
+    name: 'Elegant Classic',
+    heading: 'Playfair Display',
+    body: 'Lato',
+    description: 'Sophisticated, timeless feel'
+  },
+  {
+    id: 'bold-impact',
+    name: 'Bold Impact',
+    heading: 'Oswald',
+    body: 'Roboto',
+    description: 'Strong headlines, readable body'
+  },
+  {
+    id: 'tech-startup',
+    name: 'Tech Startup',
+    heading: 'Space Grotesk',
+    body: 'Inter',
+    description: 'Modern, tech-forward aesthetic'
+  },
+  {
+    id: 'luxury-premium',
+    name: 'Luxury Premium',
+    heading: 'Cormorant Garamond',
+    body: 'Crimson Pro',
+    description: 'High-end, refined appearance'
+  },
+  {
+    id: 'friendly-warm',
+    name: 'Friendly & Warm',
+    heading: 'Nunito',
+    body: 'Poppins',
+    description: 'Approachable, inviting tone'
+  },
+  {
+    id: 'editorial-magazine',
+    name: 'Editorial',
+    heading: 'Abril Fatface',
+    body: 'Merriweather',
+    description: 'Magazine-style editorial'
+  },
+  {
+    id: 'minimalist-geometric',
+    name: 'Minimalist',
+    heading: 'Raleway',
+    body: 'Work Sans',
+    description: 'Clean, geometric simplicity'
+  },
+];
 
 export interface AssetBrief {
   // Content fields (asset-specific)
@@ -25,8 +145,11 @@ export interface AssetBrief {
   // Layout preferences
   layoutStyle: 'centered' | 'asymmetric' | 'grid' | 'organic' | 'ai-decide';
   
-  // Typography preferences
-  typographyStyle: 'bold-headers' | 'elegant-serif' | 'modern-sans' | 'mixed' | 'brand-fonts';
+  // Typography preferences - Enhanced with Google Fonts
+  typographyStyle: 'bold-headers' | 'elegant-serif' | 'modern-sans' | 'mixed' | 'brand-fonts' | 'custom';
+  fontPairing?: string; // ID of selected font pairing
+  customFonts?: GoogleFontSelection;
+  fontWeight?: 'light' | 'regular' | 'medium' | 'bold';
   
   // Imagery preferences
   imageryStyle: 'photographic' | 'illustrated' | 'abstract' | 'geometric' | 'mixed' | 'none';
@@ -98,6 +221,8 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
     colorMood: brand ? 'brand-only' : 'vibrant',
     layoutStyle: 'ai-decide',
     typographyStyle: brand ? 'brand-fonts' : 'modern-sans',
+    fontPairing: 'modern-clean',
+    fontWeight: 'regular',
     imageryStyle: 'photographic',
   });
   
@@ -115,6 +240,8 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
         colorMood: brand ? 'brand-only' : 'vibrant',
         layoutStyle: 'ai-decide',
         typographyStyle: brand ? 'brand-fonts' : 'modern-sans',
+        fontPairing: 'modern-clean',
+        fontWeight: 'regular',
         imageryStyle: 'photographic',
       });
     }
@@ -401,6 +528,225 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                             <span className="text-sm font-medium">{mood.label}</span>
                           </button>
                         ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Section: Typography with Google Fonts */}
+            <div className="space-y-3">
+              <button
+                onClick={() => toggleSection('typography')}
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <ALargeSmall className="w-4 h-4 text-blue-500" />
+                  <span className="font-medium">Typography</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    Fonts & text styling
+                  </span>
+                </div>
+                {expandedSections.has('typography') ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+              
+              <AnimatePresence>
+                {expandedSections.has('typography') && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-2 pb-4 px-1 space-y-4">
+                      {/* Font Pairing Presets */}
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          Font Pairing (Google Fonts)
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          {FONT_PAIRINGS.map(pairing => (
+                            <button
+                              key={pairing.id}
+                              onClick={() => setBrief(prev => ({ 
+                                ...prev, 
+                                fontPairing: pairing.id,
+                                typographyStyle: 'custom',
+                                customFonts: { heading: pairing.heading, body: pairing.body }
+                              }))}
+                              className={cn(
+                                "p-3 rounded-xl border-2 text-left transition-all",
+                                brief.fontPairing === pairing.id
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-muted-foreground/50"
+                              )}
+                            >
+                              <div className="space-y-1">
+                                <span 
+                                  className="text-sm font-semibold block"
+                                  style={{ fontFamily: `'${pairing.heading}', sans-serif` }}
+                                >
+                                  {pairing.name}
+                                </span>
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] text-muted-foreground">
+                                    H: {pairing.heading}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    B: {pairing.body}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Font Weight */}
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                          Font Weight Emphasis
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { id: 'light', label: 'Light', sample: 'Aa' },
+                            { id: 'regular', label: 'Regular', sample: 'Aa' },
+                            { id: 'medium', label: 'Medium', sample: 'Aa' },
+                            { id: 'bold', label: 'Bold', sample: 'Aa' },
+                          ].map(weight => (
+                            <button
+                              key={weight.id}
+                              onClick={() => setBrief(prev => ({ ...prev, fontWeight: weight.id as any }))}
+                              className={cn(
+                                "px-4 py-2 rounded-lg border-2 text-sm flex items-center gap-2 transition-all",
+                                brief.fontWeight === weight.id
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-muted-foreground/50"
+                              )}
+                            >
+                              <span 
+                                className={cn(
+                                  "text-lg",
+                                  weight.id === 'light' && 'font-light',
+                                  weight.id === 'regular' && 'font-normal',
+                                  weight.id === 'medium' && 'font-medium',
+                                  weight.id === 'bold' && 'font-bold',
+                                )}
+                              >
+                                {weight.sample}
+                              </span>
+                              <span>{weight.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Custom Font Selection */}
+                      {brief.typographyStyle === 'custom' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                              Heading Font
+                            </label>
+                            <select
+                              value={brief.customFonts?.heading || ''}
+                              onChange={(e) => setBrief(prev => ({
+                                ...prev,
+                                customFonts: { ...prev.customFonts, heading: e.target.value, body: prev.customFonts?.body || 'Open Sans' }
+                              }))}
+                              className={inputClassName}
+                            >
+                              <optgroup label="Display Fonts">
+                                {GOOGLE_FONTS.display.map(f => (
+                                  <option key={f.name} value={f.name}>{f.name}</option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="Modern Fonts">
+                                {GOOGLE_FONTS.modern.map(f => (
+                                  <option key={f.name} value={f.name}>{f.name}</option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="Elegant Fonts">
+                                {GOOGLE_FONTS.elegant.map(f => (
+                                  <option key={f.name} value={f.name}>{f.name}</option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="Script Fonts">
+                                {GOOGLE_FONTS.script.map(f => (
+                                  <option key={f.name} value={f.name}>{f.name}</option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                              Body Font
+                            </label>
+                            <select
+                              value={brief.customFonts?.body || ''}
+                              onChange={(e) => setBrief(prev => ({
+                                ...prev,
+                                customFonts: { ...prev.customFonts, body: e.target.value, heading: prev.customFonts?.heading || 'Montserrat' }
+                              }))}
+                              className={inputClassName}
+                            >
+                              <optgroup label="Body Fonts">
+                                {GOOGLE_FONTS.body.map(f => (
+                                  <option key={f.name} value={f.name}>{f.name}</option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="Elegant Fonts">
+                                {GOOGLE_FONTS.elegant.map(f => (
+                                  <option key={f.name} value={f.name}>{f.name}</option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Use Brand Fonts option */}
+                      {brand?.styles?.heading_font && (
+                        <button
+                          onClick={() => setBrief(prev => ({ 
+                            ...prev, 
+                            typographyStyle: 'brand-fonts',
+                            fontPairing: undefined,
+                            customFonts: undefined
+                          }))}
+                          className={cn(
+                            "w-full p-3 rounded-lg border-2 flex items-center gap-3 transition-all",
+                            brief.typographyStyle === 'brand-fonts'
+                              ? "border-primary bg-primary/10"
+                              : "border-border hover:border-muted-foreground/50"
+                          )}
+                        >
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold"
+                            style={{ backgroundColor: brand.styles.primary_color || '#6366f1', color: 'white' }}
+                          >
+                            Aa
+                          </div>
+                          <div className="text-left">
+                            <span className="text-sm font-medium block">Use Brand Fonts</span>
+                            <span className="text-xs text-muted-foreground">
+                              {brand.styles.heading_font} / {brand.styles.body_font || 'Default'}
+                            </span>
+                          </div>
+                        </button>
+                      )}
+
+                      {/* High-res rendering note */}
+                      <div className="p-2 rounded-lg bg-muted/30 flex items-start gap-2">
+                        <Type className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-muted-foreground">
+                          Fonts render at 300+ DPI for print-ready exports. Google Fonts are embedded for consistent display across all devices.
+                        </p>
                       </div>
                     </div>
                   </motion.div>

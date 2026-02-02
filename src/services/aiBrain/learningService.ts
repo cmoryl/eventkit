@@ -419,6 +419,12 @@ async function updateKnowledgeFromFeedback(
 
 // ============ ASSET BRIEF LEARNING ============
 
+export interface GoogleFontSelection {
+  heading: string;
+  body: string;
+  accent?: string;
+}
+
 export interface AssetBriefData {
   customContent: Record<string, string>;
   stylePreset: string;
@@ -429,7 +435,58 @@ export interface AssetBriefData {
   imageryStyle: string;
   additionalNotes?: string;
   referencePrompt?: string;
+  // Font-specific fields
+  fontPairing?: string;
+  customFonts?: GoogleFontSelection;
+  fontWeight?: 'light' | 'regular' | 'medium' | 'bold';
 }
+
+/**
+ * Build Google Fonts URL for embedding in exports
+ */
+export const buildGoogleFontsUrl = (fonts: GoogleFontSelection, weights?: string): string => {
+  const fontFamilies: string[] = [];
+  const defaultWeights = weights || '400;600;700';
+  
+  if (fonts.heading) {
+    fontFamilies.push(`family=${fonts.heading.replace(/ /g, '+')}:wght@${defaultWeights}`);
+  }
+  if (fonts.body && fonts.body !== fonts.heading) {
+    fontFamilies.push(`family=${fonts.body.replace(/ /g, '+')}:wght@${defaultWeights}`);
+  }
+  if (fonts.accent && fonts.accent !== fonts.heading && fonts.accent !== fonts.body) {
+    fontFamilies.push(`family=${fonts.accent.replace(/ /g, '+')}:wght@${defaultWeights}`);
+  }
+  
+  return `https://fonts.googleapis.com/css2?${fontFamilies.join('&')}&display=swap`;
+};
+
+/**
+ * Get font CSS for high-resolution rendering
+ */
+export const getFontRenderingCSS = (fonts: GoogleFontSelection, weight?: string): string => {
+  const fontWeight = weight === 'light' ? '300' : weight === 'medium' ? '500' : weight === 'bold' ? '700' : '400';
+  
+  return `
+    @import url('${buildGoogleFontsUrl(fonts)}');
+    
+    .heading-font {
+      font-family: '${fonts.heading}', sans-serif;
+      font-weight: ${fontWeight === '400' ? '700' : fontWeight};
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    .body-font {
+      font-family: '${fonts.body}', sans-serif;
+      font-weight: ${fontWeight};
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  `;
+};
 
 /**
  * Record brief preferences for AI learning
@@ -452,6 +509,9 @@ export const recordBriefPreference = async (
       layoutStyle: brief.layoutStyle,
       typographyStyle: brief.typographyStyle,
       imageryStyle: brief.imageryStyle,
+      fontPairing: brief.fontPairing,
+      customFonts: brief.customFonts,
+      fontWeight: brief.fontWeight,
       hasCustomContent: Object.keys(brief.customContent).length > 0,
       contentFields: Object.keys(brief.customContent),
       lastUsed: new Date().toISOString(),
@@ -587,6 +647,24 @@ export const buildPromptFromBrief = (
     parts.push(`Layout: ${layoutDescriptions[brief.layoutStyle]}.`);
   }
   
+  // Typography with Google Fonts
+  if (brief.customFonts) {
+    const fontWeight = brief.fontWeight === 'light' ? 'light' : 
+                       brief.fontWeight === 'bold' ? 'bold' : 
+                       brief.fontWeight === 'medium' ? 'medium' : 'regular';
+    parts.push(`Typography: Use "${brief.customFonts.heading}" for headings and "${brief.customFonts.body}" for body text with ${fontWeight} weight emphasis. Ensure crisp, high-resolution text rendering suitable for 300+ DPI print output.`);
+  } else if (brief.typographyStyle && brief.typographyStyle !== 'brand-fonts') {
+    const typographyDescriptions: Record<string, string> = {
+      'bold-headers': 'Bold, impactful headlines with strong visual hierarchy',
+      'elegant-serif': 'Elegant serif typography with refined sophistication',
+      'modern-sans': 'Clean modern sans-serif typography',
+      'mixed': 'Mixed typography combining serif and sans-serif for contrast',
+    };
+    if (typographyDescriptions[brief.typographyStyle]) {
+      parts.push(`Typography: ${typographyDescriptions[brief.typographyStyle]}.`);
+    }
+  }
+  
   // Imagery
   const imageryDescriptions: Record<string, string> = {
     photographic: 'Include photorealistic imagery',
@@ -628,7 +706,18 @@ export const buildPromptFromBrief = (
     if (brandContext.industry) {
       parts.push(`Industry: ${brandContext.industry}.`);
     }
+    // Include brand fonts if using brand-fonts typography style
+    if (brief.typographyStyle === 'brand-fonts') {
+      const headingFont = brandContext.heading_font || brandContext.headingFont;
+      const bodyFont = brandContext.body_font || brandContext.bodyFont;
+      if (headingFont || bodyFont) {
+        parts.push(`Brand Typography: Use "${headingFont || 'default'}" for headings and "${bodyFont || 'default'}" for body text.`);
+      }
+    }
   }
+  
+  // High-resolution output requirement
+  parts.push('Ensure all text and graphics are crisp and suitable for high-resolution print production (300+ DPI).');
   
   return parts.join(' ');
 };
