@@ -1799,6 +1799,837 @@ export const CVS_PHOTO_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= MINUTEMAN PRESS TEMPLATES =============
+
+export const MINUTEMAN_PRESS_TEMPLATES: EditableTemplate[] = [
+  // Minuteman Press Business Card
+  {
+    id: 'minuteman-business-card',
+    name: 'Minuteman Press Business Card',
+    description: 'Premium business card for Minuteman Press',
+    assetType: AssetType.NameTag,
+    category: 'vendor-specific',
+    vendorId: 'minuteman-press',
+    dimensions: createDimensions(3.5, 2, 0.125, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Helvetica', body: 'Helvetica' },
+    defaultColors: {
+      primary: '#003366', // Minuteman blue
+      secondary: '#cc0000',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      createLogoField('logo', 'Company Logo',
+        { x: 5, y: 8, width: 35, height: 28 },
+        { placeholder: 'High-res logo (300 DPI, CMYK)' }
+      ),
+      createTextField('name', 'Full Name',
+        { x: 5, y: 42, width: 90, height: 14 },
+        {
+          placeholder: 'John Smith',
+          required: true,
+          style: { fontSize: 14, fontWeight: 'bold', color: '#003366' }
+        }
+      ),
+      createTextField('title', 'Job Title',
+        { x: 5, y: 55, width: 90, height: 10 },
+        {
+          placeholder: 'Senior Account Manager',
+          maxLength: 40,
+          style: { fontSize: 10, color: '#666666' }
+        }
+      ),
+      createTextField('phone', 'Phone',
+        { x: 5, y: 70, width: 45, height: 8 },
+        { placeholder: '(555) 123-4567', style: { fontSize: 9 } }
+      ),
+      createTextField('email', 'Email',
+        { x: 5, y: 80, width: 55, height: 8 },
+        { placeholder: 'john@company.com', style: { fontSize: 9 } }
+      ),
+      createTextField('website', 'Website',
+        { x: 55, y: 70, width: 40, height: 8 },
+        { placeholder: 'www.company.com', style: { fontSize: 9, textAlign: 'right' } }
+      ),
+      createTextField('address', 'Address',
+        { x: 55, y: 80, width: 40, height: 8 },
+        { placeholder: 'City, State', style: { fontSize: 8, textAlign: 'right', color: '#888888' } }
+      )
+    ],
+    tags: ['minuteman', 'business-card', 'franchise'],
+    isSystemTemplate: true
+  },
+
+  // Minuteman Press Brochure Tri-Fold
+  {
+    id: 'minuteman-brochure-trifold',
+    name: 'Minuteman Press Tri-Fold Brochure',
+    description: 'Professional tri-fold brochure (8.5×11 folded)',
+    assetType: AssetType.ProgramBooklet,
+    category: 'vendor-specific',
+    vendorId: 'minuteman-press',
+    dimensions: createDimensions(11, 8.5, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Helvetica', body: 'Helvetica' },
+    defaultColors: {
+      primary: '#003366',
+      secondary: '#0066cc',
+      accent: '#f5f5f5',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      // Panel 1 (Cover - right side)
+      createLogoField('logo', 'Logo',
+        { x: 70, y: 8, width: 25, height: 15 },
+        { placeholder: 'Company logo' }
+      ),
+      createTextField('title', 'Title',
+        { x: 68, y: 30, width: 30, height: 20 },
+        {
+          placeholder: 'Company\nBrochure',
+          required: true,
+          style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#003366' }
+        }
+      ),
+      createTextField('tagline', 'Tagline',
+        { x: 68, y: 55, width: 30, height: 10 },
+        { placeholder: 'Your tagline here', style: { fontSize: 12, textAlign: 'center', fontStyle: 'italic' } }
+      ),
+      // Panel 2 (Back - left side)
+      createTextField('contact-title', 'Contact Header',
+        { x: 3, y: 8, width: 28, height: 8 },
+        { placeholder: 'Contact Us', style: { fontSize: 16, fontWeight: 'bold', color: '#003366' } }
+      ),
+      createTextField('contact-info', 'Contact Details',
+        { x: 3, y: 18, width: 28, height: 35 },
+        {
+          placeholder: 'Company Name\n123 Main Street\nCity, ST 12345\n\n(555) 123-4567\ninfo@company.com',
+          style: { fontSize: 10, lineHeight: 1.5 }
+        }
+      ),
+      // Panel 3 (Inside flap - center)
+      createTextField('intro-title', 'Introduction',
+        { x: 35, y: 8, width: 28, height: 8 },
+        { placeholder: 'About Us', style: { fontSize: 16, fontWeight: 'bold', color: '#003366' } }
+      ),
+      createTextField('intro-text', 'Intro Text',
+        { x: 35, y: 18, width: 28, height: 40 },
+        { placeholder: 'Brief introduction to your company...', style: { fontSize: 10, lineHeight: 1.5 } }
+      ),
+      {
+        id: 'fold-line-1',
+        type: 'divider',
+        name: 'Fold Line 1',
+        position: { x: 33.33, y: 0, width: 0.1, height: 100 },
+        style: { borderStyle: 'dashed', borderColor: '#cccccc', borderWidth: 1 }
+      },
+      {
+        id: 'fold-line-2',
+        type: 'divider',
+        name: 'Fold Line 2',
+        position: { x: 66.66, y: 0, width: 0.1, height: 100 },
+        style: { borderStyle: 'dashed', borderColor: '#cccccc', borderWidth: 1 }
+      }
+    ],
+    tags: ['minuteman', 'brochure', 'tri-fold', 'franchise'],
+    isSystemTemplate: true
+  },
+
+  // Minuteman Press Poster 24x36
+  {
+    id: 'minuteman-poster-24x36',
+    name: 'Minuteman Press Poster 24×36',
+    description: 'Large format poster for Minuteman Press',
+    assetType: AssetType.EventSignage,
+    category: 'vendor-specific',
+    vendorId: 'minuteman-press',
+    dimensions: createDimensions(24, 36, 0.25, 0.5, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Helvetica', body: 'Helvetica' },
+    defaultColors: {
+      primary: '#003366',
+      secondary: '#cc0000',
+      accent: '#fbbf24',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo',
+        { x: 35, y: 3, width: 30, height: 10 },
+        { placeholder: 'Event/Company logo' }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 5, y: 16, width: 90, height: 12 },
+        {
+          placeholder: 'EVENT TITLE',
+          required: true,
+          style: { fontSize: 72, fontWeight: 'bold', textAlign: 'center', color: '#003366' }
+        }
+      ),
+      createTextField('subheadline', 'Subheadline',
+        { x: 10, y: 29, width: 80, height: 6 },
+        { placeholder: 'Event tagline or description', style: { fontSize: 20, textAlign: 'center', color: '#666666' } }
+      ),
+      createImageField('main-image', 'Main Image',
+        { x: 5, y: 38, width: 90, height: 38 },
+        { placeholder: 'Event photo or graphic' }
+      ),
+      createTextField('details', 'Event Details',
+        { x: 10, y: 79, width: 80, height: 10 },
+        {
+          placeholder: 'Saturday, March 15, 2024 | 6:00 PM',
+          style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' }
+        }
+      ),
+      createTextField('location', 'Location',
+        { x: 15, y: 90, width: 70, height: 6 },
+        { placeholder: 'Convention Center, 123 Main Street', style: { fontSize: 14, textAlign: 'center', color: '#666666' } }
+      )
+    ],
+    tags: ['minuteman', 'poster', '24x36', 'large-format'],
+    isSystemTemplate: true
+  },
+
+  // Minuteman Press Vinyl Banner
+  {
+    id: 'minuteman-banner-3x6',
+    name: 'Minuteman Press Banner 3×6 ft',
+    description: 'Outdoor vinyl banner with grommets',
+    assetType: AssetType.Banner,
+    category: 'vendor-specific',
+    vendorId: 'minuteman-press',
+    dimensions: {
+      widthInches: 72,
+      heightInches: 36,
+      widthPx: 10800,
+      heightPx: 5400,
+      bleedInches: 0.5,
+      safeZoneInches: 2, // Grommet/hem area
+      orientation: 'landscape'
+    },
+    background: { type: 'solid', value: '#003366' },
+    defaultFonts: { heading: 'Helvetica', body: 'Helvetica' },
+    defaultColors: {
+      primary: '#003366',
+      secondary: '#ffffff',
+      accent: '#cc0000',
+      text: '#ffffff',
+      background: '#003366'
+    },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo',
+        { x: 3, y: 15, width: 18, height: 70 },
+        { placeholder: 'Logo (white version)' }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 23, y: 18, width: 54, height: 28 },
+        {
+          placeholder: 'GRAND OPENING',
+          required: true,
+          style: { fontSize: 72, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' }
+        }
+      ),
+      createTextField('subheadline', 'Details',
+        { x: 23, y: 50, width: 54, height: 18 },
+        { placeholder: 'Saturday, March 15 | 10 AM', style: { fontSize: 32, textAlign: 'center', color: '#fbbf24' } }
+      ),
+      createTextField('cta', 'Call to Action',
+        { x: 23, y: 72, width: 54, height: 12 },
+        { placeholder: 'www.business.com', style: { fontSize: 24, textAlign: 'center', color: 'rgba(255,255,255,0.9)' } }
+      ),
+      {
+        id: 'qr-code',
+        type: 'qrcode',
+        name: 'QR Code',
+        position: { x: 80, y: 20, width: 16, height: 60 },
+        placeholder: 'Website URL',
+        style: { backgroundColor: '#ffffff', borderRadius: 8 }
+      }
+    ],
+    tags: ['minuteman', 'banner', '3x6', 'vinyl', 'outdoor'],
+    isSystemTemplate: true
+  }
+];
+
+// ============= ALPHAGRAPHICS TEMPLATES =============
+
+export const ALPHAGRAPHICS_TEMPLATES: EditableTemplate[] = [
+  // AlphaGraphics Business Card
+  {
+    id: 'alphagraphics-business-card',
+    name: 'AlphaGraphics Business Card',
+    description: 'Premium business card for AlphaGraphics',
+    assetType: AssetType.NameTag,
+    category: 'vendor-specific',
+    vendorId: 'alphagraphics',
+    dimensions: createDimensions(3.5, 2, 0.125, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#e4002b', // AlphaGraphics red
+      secondary: '#1a1a1a',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      createLogoField('logo', 'Company Logo',
+        { x: 5, y: 8, width: 40, height: 30 },
+        { placeholder: 'Logo (CMYK, 300 DPI)' }
+      ),
+      createTextField('name', 'Full Name',
+        { x: 5, y: 44, width: 90, height: 14 },
+        {
+          placeholder: 'Jane Doe',
+          required: true,
+          style: { fontSize: 14, fontWeight: 'bold' }
+        }
+      ),
+      createTextField('title', 'Title',
+        { x: 5, y: 57, width: 90, height: 10 },
+        { placeholder: 'Marketing Director', style: { fontSize: 10, color: '#666666' } }
+      ),
+      createTextField('phone', 'Phone',
+        { x: 5, y: 72, width: 45, height: 8 },
+        { placeholder: '(555) 123-4567', style: { fontSize: 9 } }
+      ),
+      createTextField('email', 'Email',
+        { x: 5, y: 82, width: 55, height: 8 },
+        { placeholder: 'jane@company.com', style: { fontSize: 9 } }
+      ),
+      createTextField('website', 'Website',
+        { x: 55, y: 72, width: 40, height: 8 },
+        { placeholder: 'www.company.com', style: { fontSize: 9, textAlign: 'right' } }
+      )
+    ],
+    tags: ['alphagraphics', 'business-card', 'franchise'],
+    isSystemTemplate: true
+  },
+
+  // AlphaGraphics Trade Show Banner
+  {
+    id: 'alphagraphics-tradeshow-banner',
+    name: 'AlphaGraphics Trade Show Banner',
+    description: 'Retractable banner for trade shows (33×81)',
+    assetType: AssetType.Banner,
+    category: 'vendor-specific',
+    vendorId: 'alphagraphics',
+    dimensions: {
+      widthInches: 33,
+      heightInches: 81,
+      widthPx: 4950,
+      heightPx: 12150,
+      bleedInches: 0,
+      safeZoneInches: 2,
+      orientation: 'portrait'
+    },
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #e4002b 0%, #8b0000 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: {
+      primary: '#e4002b',
+      secondary: '#ffffff',
+      accent: '#fbbf24',
+      text: '#ffffff',
+      background: '#e4002b'
+    },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createLogoField('logo', 'Company Logo',
+        { x: 20, y: 3, width: 60, height: 10 },
+        { placeholder: 'Logo (white/light version)' }
+      ),
+      createTextField('headline', 'Main Message',
+        { x: 5, y: 15, width: 90, height: 12 },
+        {
+          placeholder: 'INNOVATE',
+          required: true,
+          style: { fontSize: 80, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' }
+        }
+      ),
+      createTextField('subheadline', 'Tagline',
+        { x: 10, y: 28, width: 80, height: 6 },
+        { placeholder: 'Transform Your Business', style: { fontSize: 24, textAlign: 'center', color: 'rgba(255,255,255,0.9)' } }
+      ),
+      createImageField('hero-image', 'Hero Image',
+        { x: 5, y: 38, width: 90, height: 28 },
+        { placeholder: 'Product or service image' }
+      ),
+      createTextField('feature-1', 'Feature 1',
+        { x: 8, y: 69, width: 84, height: 4 },
+        { placeholder: '✓ Industry-leading solutions', style: { fontSize: 18, color: '#ffffff' } }
+      ),
+      createTextField('feature-2', 'Feature 2',
+        { x: 8, y: 74, width: 84, height: 4 },
+        { placeholder: '✓ 24/7 customer support', style: { fontSize: 18, color: '#ffffff' } }
+      ),
+      createTextField('feature-3', 'Feature 3',
+        { x: 8, y: 79, width: 84, height: 4 },
+        { placeholder: '✓ Proven track record', style: { fontSize: 18, color: '#ffffff' } }
+      ),
+      createTextField('cta', 'Call to Action',
+        { x: 15, y: 86, width: 70, height: 5 },
+        { placeholder: 'Visit us at Booth #123', style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24' } }
+      ),
+      createTextField('contact', 'Contact',
+        { x: 20, y: 92, width: 60, height: 3 },
+        { placeholder: 'www.company.com', style: { fontSize: 14, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } }
+      )
+    ],
+    tags: ['alphagraphics', 'banner', 'trade-show', 'retractable'],
+    isSystemTemplate: true
+  },
+
+  // AlphaGraphics Foam Board Sign
+  {
+    id: 'alphagraphics-foamboard-18x24',
+    name: 'AlphaGraphics Foam Board 18×24',
+    description: 'Rigid foam board sign for indoor display',
+    assetType: AssetType.EaselSignage,
+    category: 'vendor-specific',
+    vendorId: 'alphagraphics',
+    dimensions: createDimensions(18, 24, 0, 0.5, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: {
+      primary: '#e4002b',
+      secondary: '#1a1a1a',
+      accent: '#0066cc',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo',
+        { x: 35, y: 5, width: 30, height: 12 },
+        { placeholder: 'Company logo' }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 5, y: 20, width: 90, height: 15 },
+        {
+          placeholder: 'WELCOME',
+          required: true,
+          style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#e4002b' }
+        }
+      ),
+      createTextField('event-name', 'Event Name',
+        { x: 10, y: 37, width: 80, height: 12 },
+        { placeholder: 'Annual Conference 2024', style: { fontSize: 28, textAlign: 'center' } }
+      ),
+      createImageField('image', 'Featured Image',
+        { x: 10, y: 52, width: 80, height: 28 },
+        { placeholder: 'Event or product image' }
+      ),
+      createTextField('details', 'Details',
+        { x: 15, y: 83, width: 70, height: 8 },
+        { placeholder: 'Registration → Main Lobby', style: { fontSize: 16, textAlign: 'center' } }
+      ),
+      createTextField('date', 'Date',
+        { x: 20, y: 92, width: 60, height: 5 },
+        { placeholder: 'March 15-17, 2024', style: { fontSize: 14, textAlign: 'center', color: '#666666' } }
+      )
+    ],
+    tags: ['alphagraphics', 'foam-board', '18x24', 'indoor'],
+    isSystemTemplate: true
+  },
+
+  // AlphaGraphics Postcards
+  {
+    id: 'alphagraphics-postcard-6x4',
+    name: 'AlphaGraphics Postcard 6×4',
+    description: 'Standard marketing postcard',
+    assetType: AssetType.InvitationCard,
+    category: 'vendor-specific',
+    vendorId: 'alphagraphics',
+    dimensions: createDimensions(6, 4, 0.125, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#e4002b',
+      secondary: '#1a1a1a',
+      accent: '#0066cc',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      createImageField('image', 'Hero Image',
+        { x: 0, y: 0, width: 55, height: 100 },
+        { placeholder: 'Promotional image', style: { objectFit: 'cover' } }
+      ),
+      createLogoField('logo', 'Logo',
+        { x: 60, y: 5, width: 35, height: 15 },
+        { placeholder: 'Logo' }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 58, y: 25, width: 40, height: 18 },
+        {
+          placeholder: 'Special Offer!',
+          required: true,
+          style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', color: '#e4002b' }
+        }
+      ),
+      createTextField('offer', 'Offer',
+        { x: 58, y: 45, width: 40, height: 25 },
+        { placeholder: '20% OFF\nYour First Order', style: { fontSize: 16, textAlign: 'center', fontWeight: 'bold' } }
+      ),
+      createTextField('cta', 'Call to Action',
+        { x: 58, y: 75, width: 40, height: 10 },
+        { placeholder: 'Use code: SAVE20', style: { fontSize: 11, textAlign: 'center', color: '#0066cc' } }
+      ),
+      createTextField('website', 'Website',
+        { x: 58, y: 88, width: 40, height: 8 },
+        { placeholder: 'www.company.com', style: { fontSize: 10, textAlign: 'center', color: '#666666' } }
+      )
+    ],
+    tags: ['alphagraphics', 'postcard', '6x4', 'marketing'],
+    isSystemTemplate: true
+  }
+];
+
+// ============= SIR SPEEDY TEMPLATES =============
+
+export const SIR_SPEEDY_TEMPLATES: EditableTemplate[] = [
+  // Sir Speedy Business Card
+  {
+    id: 'sirspeedy-business-card',
+    name: 'Sir Speedy Business Card',
+    description: 'Professional business card for Sir Speedy',
+    assetType: AssetType.NameTag,
+    category: 'vendor-specific',
+    vendorId: 'sir-speedy',
+    dimensions: createDimensions(3.5, 2, 0.125, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Times New Roman', body: 'Arial' },
+    defaultColors: {
+      primary: '#00529b', // Sir Speedy blue
+      secondary: '#cc0000',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      createLogoField('logo', 'Company Logo',
+        { x: 5, y: 8, width: 38, height: 28 },
+        { placeholder: 'Logo (CMYK, high resolution)' }
+      ),
+      createTextField('name', 'Full Name',
+        { x: 5, y: 42, width: 90, height: 14 },
+        {
+          placeholder: 'Robert Johnson',
+          required: true,
+          style: { fontSize: 14, fontWeight: 'bold', color: '#00529b' }
+        }
+      ),
+      createTextField('title', 'Title',
+        { x: 5, y: 55, width: 90, height: 10 },
+        { placeholder: 'Vice President, Sales', style: { fontSize: 10, color: '#666666' } }
+      ),
+      createTextField('phone', 'Phone',
+        { x: 5, y: 70, width: 45, height: 8 },
+        { placeholder: '(555) 123-4567', style: { fontSize: 9 } }
+      ),
+      createTextField('email', 'Email',
+        { x: 5, y: 80, width: 55, height: 8 },
+        { placeholder: 'robert@company.com', style: { fontSize: 9 } }
+      ),
+      createTextField('website', 'Website',
+        { x: 55, y: 70, width: 40, height: 8 },
+        { placeholder: 'www.company.com', style: { fontSize: 9, textAlign: 'right' } }
+      ),
+      createTextField('address', 'Address',
+        { x: 55, y: 80, width: 40, height: 8 },
+        { placeholder: 'City, State 12345', style: { fontSize: 8, textAlign: 'right', color: '#888888' } }
+      )
+    ],
+    tags: ['sirspeedy', 'business-card', 'franchise'],
+    isSystemTemplate: true
+  },
+
+  // Sir Speedy Flyer 8.5x11
+  {
+    id: 'sirspeedy-flyer-letter',
+    name: 'Sir Speedy Flyer 8.5×11',
+    description: 'Letter-size promotional flyer',
+    assetType: AssetType.EventSignage,
+    category: 'vendor-specific',
+    vendorId: 'sir-speedy',
+    dimensions: createDimensions(8.5, 11, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: {
+      primary: '#00529b',
+      secondary: '#cc0000',
+      accent: '#fbbf24',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      {
+        id: 'header-bar',
+        type: 'shape',
+        name: 'Header Bar',
+        position: { x: 0, y: 0, width: 100, height: 12 },
+        style: { backgroundColor: '#00529b' }
+      },
+      createLogoField('logo', 'Logo',
+        { x: 5, y: 2, width: 20, height: 8 },
+        { placeholder: 'Logo (white version)' }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 5, y: 15, width: 90, height: 12 },
+        {
+          placeholder: 'BIG SALE EVENT',
+          required: true,
+          style: { fontSize: 48, fontWeight: 'bold', textAlign: 'center', color: '#00529b' }
+        }
+      ),
+      createTextField('subheadline', 'Subheadline',
+        { x: 10, y: 28, width: 80, height: 6 },
+        { placeholder: 'Limited Time Only!', style: { fontSize: 20, textAlign: 'center', color: '#cc0000' } }
+      ),
+      createImageField('main-image', 'Main Image',
+        { x: 5, y: 36, width: 90, height: 35 },
+        { placeholder: 'Product or event photo' }
+      ),
+      createTextField('details', 'Details',
+        { x: 10, y: 74, width: 80, height: 12 },
+        {
+          placeholder: 'Up to 50% off selected items\nFree shipping on orders over $50',
+          style: { fontSize: 16, textAlign: 'center', lineHeight: 1.5 }
+        }
+      ),
+      createTextField('cta', 'Call to Action',
+        { x: 15, y: 88, width: 70, height: 8 },
+        { placeholder: 'Shop Now at www.company.com', style: { fontSize: 14, textAlign: 'center', fontWeight: 'bold', color: '#00529b' } }
+      )
+    ],
+    tags: ['sirspeedy', 'flyer', '8.5x11', 'letter'],
+    isSystemTemplate: true
+  },
+
+  // Sir Speedy Presentation Folder
+  {
+    id: 'sirspeedy-presentation-folder',
+    name: 'Sir Speedy Presentation Folder',
+    description: 'Professional presentation folder (9×12 with pockets)',
+    assetType: AssetType.Folder,
+    category: 'vendor-specific',
+    vendorId: 'sir-speedy',
+    dimensions: createDimensions(18.5, 12, 0.125, 0.5),
+    background: { type: 'solid', value: '#00529b' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: {
+      primary: '#00529b',
+      secondary: '#ffffff',
+      accent: '#c9a962',
+      text: '#ffffff',
+      background: '#00529b'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      // Front cover (right side)
+      createLogoField('logo', 'Logo',
+        { x: 58, y: 15, width: 35, height: 20 },
+        { placeholder: 'Company logo (white/light version)' }
+      ),
+      createTextField('company-name', 'Company Name',
+        { x: 55, y: 40, width: 40, height: 10 },
+        {
+          placeholder: 'Company Name',
+          style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' }
+        }
+      ),
+      createTextField('tagline', 'Tagline',
+        { x: 55, y: 52, width: 40, height: 8 },
+        { placeholder: 'Your Partner in Success', style: { fontSize: 14, textAlign: 'center', color: 'rgba(255,255,255,0.9)' } }
+      ),
+      // Back cover (left side)
+      createTextField('contact-title', 'Contact',
+        { x: 5, y: 15, width: 40, height: 8 },
+        { placeholder: 'Contact Us', style: { fontSize: 20, fontWeight: 'bold', color: '#ffffff' } }
+      ),
+      createTextField('contact-info', 'Contact Info',
+        { x: 5, y: 25, width: 40, height: 30 },
+        {
+          placeholder: '123 Business Avenue\nCity, State 12345\n\n(555) 123-4567\ninfo@company.com',
+          style: { fontSize: 11, lineHeight: 1.6, color: '#ffffff' }
+        }
+      ),
+      createTextField('website', 'Website',
+        { x: 5, y: 58, width: 40, height: 6 },
+        { placeholder: 'www.company.com', style: { fontSize: 14, color: '#c9a962' } }
+      ),
+      {
+        id: 'spine',
+        type: 'divider',
+        name: 'Spine (Fold Line)',
+        position: { x: 50, y: 0, width: 0.5, height: 100 },
+        style: { borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.3)', borderWidth: 1 }
+      }
+    ],
+    tags: ['sirspeedy', 'folder', 'presentation', '9x12'],
+    isSystemTemplate: true
+  },
+
+  // Sir Speedy Yard Sign
+  {
+    id: 'sirspeedy-yard-sign-24x18',
+    name: 'Sir Speedy Yard Sign 24×18',
+    description: 'Corrugated plastic yard sign',
+    assetType: AssetType.OutdoorSignage,
+    category: 'vendor-specific',
+    vendorId: 'sir-speedy',
+    dimensions: createDimensions(24, 18, 0.25, 0.5, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: {
+      primary: '#00529b',
+      secondary: '#cc0000',
+      accent: '#ffffff',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      {
+        id: 'top-bar',
+        type: 'shape',
+        name: 'Top Bar',
+        position: { x: 0, y: 0, width: 100, height: 25 },
+        style: { backgroundColor: '#00529b' }
+      },
+      createTextField('headline', 'Headline',
+        { x: 5, y: 3, width: 90, height: 18 },
+        {
+          placeholder: 'FOR SALE',
+          required: true,
+          style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' }
+        }
+      ),
+      createLogoField('logo', 'Agent/Company Logo',
+        { x: 5, y: 30, width: 30, height: 35 },
+        { placeholder: 'Logo' }
+      ),
+      createTextField('details', 'Property Details',
+        { x: 38, y: 30, width: 57, height: 20 },
+        {
+          placeholder: '4 BR | 3 BA | 2,500 SF',
+          style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' }
+        }
+      ),
+      createTextField('price', 'Price',
+        { x: 38, y: 52, width: 57, height: 15 },
+        { placeholder: '$425,000', style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#cc0000' } }
+      ),
+      createTextField('agent', 'Agent Info',
+        { x: 5, y: 70, width: 90, height: 12 },
+        {
+          placeholder: 'John Smith | (555) 123-4567',
+          style: { fontSize: 16, textAlign: 'center' }
+        }
+      ),
+      createTextField('website', 'Website',
+        { x: 20, y: 85, width: 60, height: 10 },
+        { placeholder: 'www.realtycompany.com', style: { fontSize: 14, textAlign: 'center', color: '#00529b' } }
+      )
+    ],
+    tags: ['sirspeedy', 'yard-sign', '24x18', 'real-estate'],
+    isSystemTemplate: true
+  },
+
+  // Sir Speedy Door Hanger
+  {
+    id: 'sirspeedy-door-hanger',
+    name: 'Sir Speedy Door Hanger',
+    description: 'Standard door hanger (4.25×11)',
+    assetType: AssetType.DoorSignage,
+    category: 'vendor-specific',
+    vendorId: 'sir-speedy',
+    dimensions: createDimensions(4.25, 11, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: {
+      primary: '#00529b',
+      secondary: '#cc0000',
+      accent: '#fbbf24',
+      text: '#1a1a1a',
+      background: '#ffffff'
+    },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      {
+        id: 'die-cut-hole',
+        type: 'shape',
+        name: 'Door Knob Hole (Die Cut)',
+        position: { x: 30, y: 2, width: 40, height: 8 },
+        style: { 
+          backgroundColor: 'transparent', 
+          borderStyle: 'dashed', 
+          borderColor: '#ff0000', 
+          borderWidth: 2,
+          borderRadius: 50
+        }
+      },
+      createLogoField('logo', 'Logo',
+        { x: 20, y: 12, width: 60, height: 12 },
+        { placeholder: 'Company logo' }
+      ),
+      createTextField('headline', 'Headline',
+        { x: 5, y: 26, width: 90, height: 10 },
+        {
+          placeholder: 'WE STOPPED BY!',
+          required: true,
+          style: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', color: '#00529b' }
+        }
+      ),
+      createImageField('image', 'Image',
+        { x: 8, y: 38, width: 84, height: 25 },
+        { placeholder: 'Service image' }
+      ),
+      createTextField('message', 'Message',
+        { x: 8, y: 65, width: 84, height: 15 },
+        {
+          placeholder: 'Sorry we missed you!\nCall us to schedule.',
+          style: { fontSize: 12, textAlign: 'center', lineHeight: 1.5 }
+        }
+      ),
+      createTextField('phone', 'Phone',
+        { x: 15, y: 82, width: 70, height: 8 },
+        { placeholder: '(555) 123-4567', style: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#cc0000' } }
+      ),
+      createTextField('website', 'Website',
+        { x: 20, y: 92, width: 60, height: 6 },
+        { placeholder: 'www.company.com', style: { fontSize: 10, textAlign: 'center', color: '#666666' } }
+      )
+    ],
+    tags: ['sirspeedy', 'door-hanger', '4.25x11', 'marketing'],
+    isSystemTemplate: true
+  }
+];
+
 // Export all local vendor templates
 export const ALL_LOCAL_VENDOR_TEMPLATES: EditableTemplate[] = [
   ...STAPLES_TEMPLATES,
@@ -1808,5 +2639,8 @@ export const ALL_LOCAL_VENDOR_TEMPLATES: EditableTemplate[] = [
   ...LOCAL_PRINTSHOP_TEMPLATES,
   ...COSTCO_PRINT_TEMPLATES,
   ...WALGREENS_PHOTO_TEMPLATES,
-  ...CVS_PHOTO_TEMPLATES
+  ...CVS_PHOTO_TEMPLATES,
+  ...MINUTEMAN_PRESS_TEMPLATES,
+  ...ALPHAGRAPHICS_TEMPLATES,
+  ...SIR_SPEEDY_TEMPLATES
 ];
