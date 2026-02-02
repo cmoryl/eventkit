@@ -486,6 +486,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          applied_brand_id: string | null
           avatar_url: string | null
           created_at: string
           id: string
@@ -494,6 +495,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          applied_brand_id?: string | null
           avatar_url?: string | null
           created_at?: string
           id?: string
@@ -502,6 +504,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          applied_brand_id?: string | null
           avatar_url?: string | null
           created_at?: string
           id?: string
@@ -509,7 +512,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_applied_brand_id_fkey"
+            columns: ["applied_brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       project_assets: {
         Row: {
