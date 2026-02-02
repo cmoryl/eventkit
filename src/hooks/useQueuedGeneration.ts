@@ -1,0 +1,270 @@
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  generationQueue, 
+  GenerationJob, 
+  JobStatus, 
+  QueueEvent,
+  GenerationPriority 
+} from '@/services/generationQueue';
+import type { GeneratedAsset, ColorInfo, EventDetails } from '@/types';
+import type { RenderEngine } from '@/services/aiBrain/types';
+import { generatePlaceholderContent } from '@/services/assetGenerator';
+import { AssetType } from '@/types';
+
+interface QueueStats {
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
+  retrying: number;
+  isPaused: boolean;
+  totalJobs: number;
+  completionPercentage: number;
+}
+
+interface UseQueuedGenerationProps {
+  eventDetails: EventDetails;
+  colorPalette: ColorInfo[];
+  setColorPalette: (palette: ColorInfo[]) => void;
+  setGeneratedAssets: React.Dispatch<React.SetStateAction<GeneratedAsset[]>>;
+  logoBase64?: string;
+  styleDesc?: string;
+  vibeImageBase64?: string;
+  masterPatternBase64?: string;
+  venueImageBase64?: string;
+  renderEngine?: RenderEngine;
+}
+
+export function useQueuedGeneration({
+  eventDetails,
+  colorPalette,
+  setColorPalette,
+  setGeneratedAssets,
+  logoBase64,
+  styleDesc,
+  vibeImageBase64,
+  masterPatternBase64,
+  venueImageBase64,
+  renderEngine,
+}: UseQueuedGenerationProps) {
+  const [jobs, setJobs] = useState<GenerationJob[]>([]);
+  const [stats, setStats] = useState<QueueStats>({
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    failed: 0,
+    retrying: 0,
+    isPaused: false,
+    totalJobs: 0,
+    completionPercentage: 0,
+  });
+  
+  const completedCountRef = useRef(0);
+  const failedCountRef = useRef(0);
+  const totalJobsRef = useRef(0);
+
+  // Update stats helper
+  const updateStats = useCallback(() => {
+    const currentJobs = generationQueue.getJobs();
+    const status = generationQueue.getStatus();
+    
+    const retryingCount = currentJobs.filter(j => j.status === JobStatus.Retrying).length;
+    
+    setStats({
+      pending: status.pending,
+      processing: status.processing,
+      completed: completedCountRef.current,
+      failed: failedCountRef.current,
+      retrying: retryingCount,
+      isPaused: status.isPaused,
+      totalJobs: totalJobsRef.current,
+      completionPercentage: totalJobsRef.current > 0 
+        ? Math.round(((completedCountRef.current + failedCountRef.current) / totalJobsRef.current) * 100)
+        : 0,
+    });
+    
+    setJobs([...currentJobs]);
+  }, []);
+
+  // Handle queue events
+  useEffect(() => {
+    const unsubscribe = generationQueue.subscribe((event: QueueEvent) => {
+      switch (event.type) {
+        case 'job-added':
+          updateStats();
+          break;
+          
+        case 'job-started':
+          if (event.job) {
+            setGeneratedAssets(prev => prev.map(asset =>
+              asset.id === event.job!.assetId
+                ? { ...asset, isLoading: true }
+                : asset
+            ));
+          }
+          updateStats();
+          break;
+          
+        case 'job-completed':
+          if (event.job) {
+            completedCountRef.current++;
+            
+            // Update the asset with the result
+            setGeneratedAssets(prev => prev.map(asset =>
+              asset.id === event.job!.assetId
+                ? { ...asset, content: event.job!.result, isLoading: false }
+                : asset
+            ));
+            
+            // Update color palette if this was palette generation
+            if (event.job.assetType === AssetType.Palette && event.job.result) {
+              setColorPalette(event.job.result as ColorInfo[]);
+            }
+          }
+          updateStats();
+          break;
+          
+        case 'job-failed':
+          if (event.job) {
+            failedCountRef.current++;
+            
+            setGeneratedAssets(prev => prev.map(asset =>
+              asset.id === event.job!.assetId
+                ? { ...asset, content: `Error: ${event.job!.error}`, isLoading: false }
+                : asset
+            ));
+          }
+          updateStats();
+          break;
+          
+        case 'job-retrying':
+          updateStats();
+          break;
+          
+        case 'queue-empty':
+          updateStats();
+          break;
+          
+        case 'queue-paused':
+        case 'queue-resumed':
+          updateStats();
+          break;
+      }
+    });
+
+    return () => unsubscribe();
+  }, [updateStats, setGeneratedAssets, setColorPalette]);
+
+  // Start queued generation for assets
+  const startQueuedGeneration = useCallback((
+    assets: GeneratedAsset[],
+    overridePalette?: ColorInfo[]
+  ) => {
+    // Reset counters
+    completedCountRef.current = 0;
+    failedCountRef.current = 0;
+    totalJobsRef.current = assets.length;
+    
+    // Set generation context
+    generationQueue.setGenerationContext(
+      generatePlaceholderContent,
+      {
+        eventDetails,
+        colorPalette: overridePalette || colorPalette,
+        logoBase64,
+        styleDesc,
+        vibeImageBase64,
+        masterPatternBase64,
+        venueImageBase64,
+        renderEngine,
+      }
+    );
+    
+    // Add all jobs to queue
+    const jobs = generationQueue.addJobs(assets);
+    
+    console.log(`Started queued generation for ${assets.length} assets`);
+    
+    return jobs;
+  }, [
+    eventDetails, 
+    colorPalette, 
+    logoBase64, 
+    styleDesc, 
+    vibeImageBase64, 
+    masterPatternBase64, 
+    venueImageBase64, 
+    renderEngine
+  ]);
+
+  // Retry a specific failed job
+  const retryJob = useCallback((assetId: string) => {
+    const asset = jobs.find(j => j.assetId === assetId);
+    if (asset && asset.status === JobStatus.Failed) {
+      // Re-add as new job
+      const newJob: GeneratedAsset = {
+        id: assetId,
+        type: asset.assetType,
+        title: asset.assetTitle,
+        content: undefined,
+        isLoading: true,
+      };
+      generationQueue.addJob(newJob);
+    }
+  }, [jobs]);
+
+  // Retry all failed jobs
+  const retryAllFailed = useCallback(() => {
+    const failedJobs = jobs.filter(j => j.status === JobStatus.Failed);
+    
+    failedJobs.forEach(job => {
+      const newJob: GeneratedAsset = {
+        id: job.assetId,
+        type: job.assetType,
+        title: job.assetTitle,
+        content: undefined,
+        isLoading: true,
+      };
+      generationQueue.addJob(newJob);
+    });
+    
+    console.log(`Retrying ${failedJobs.length} failed jobs`);
+  }, [jobs]);
+
+  // Pause/resume queue
+  const pauseQueue = useCallback(() => {
+    generationQueue.pause();
+  }, []);
+
+  const resumeQueue = useCallback(() => {
+    generationQueue.resume();
+  }, []);
+
+  // Cancel all pending jobs
+  const cancelAll = useCallback(() => {
+    generationQueue.cancelAll();
+    updateStats();
+  }, [updateStats]);
+
+  // Clear queue state
+  const clearQueue = useCallback(() => {
+    generationQueue.clear();
+    completedCountRef.current = 0;
+    failedCountRef.current = 0;
+    totalJobsRef.current = 0;
+    updateStats();
+  }, [updateStats]);
+
+  return {
+    jobs,
+    stats,
+    startQueuedGeneration,
+    retryJob,
+    retryAllFailed,
+    pauseQueue,
+    resumeQueue,
+    cancelAll,
+    clearQueue,
+    isProcessing: stats.processing > 0 || stats.pending > 0,
+  };
+}
