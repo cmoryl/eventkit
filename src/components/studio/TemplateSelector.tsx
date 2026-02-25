@@ -16,6 +16,7 @@ import {
   getVendorTemplates,
   TEMPLATE_STATS 
 } from '@/config/editableTemplates';
+import { TemplatePreviewRenderer } from './TemplatePreviewRenderer';
 
 interface TemplateSelectorProps {
   assetType?: AssetType;
@@ -78,25 +79,8 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         onClick={() => onSelect(template)}
       >
         {/* Preview */}
-        <div 
-          className="aspect-[4/3] relative"
-          style={{ background: template.background.value }}
-        >
-          {/* Simplified preview showing field layout */}
-          <div className="absolute inset-0 p-2">
-            {template.fields.slice(0, 5).map(field => (
-              <div
-                key={field.id}
-                className="absolute bg-white/20 rounded"
-                style={{
-                  left: `${field.position.x}%`,
-                  top: `${field.position.y}%`,
-                  width: `${field.position.width}%`,
-                  height: `${field.position.height}%`
-                }}
-              />
-            ))}
-          </div>
+        <div className="aspect-[4/3] relative flex items-center justify-center bg-muted/30 overflow-hidden">
+          <TemplatePreviewRenderer template={template} width={200} />
           
           {/* Badges */}
           <div className="absolute top-2 right-2 flex flex-col gap-1">

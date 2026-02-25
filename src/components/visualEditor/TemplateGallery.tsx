@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { EDITOR_TEMPLATES, TEMPLATE_CATEGORIES, EditorTemplate } from './editorTemplates';
 import type { CanvasState } from '@/types/visualEditor.types';
+import { TemplatePreviewRenderer } from '@/components/studio/TemplatePreviewRenderer';
 
 interface TemplateGalleryProps {
   isOpen: boolean;
