@@ -1331,6 +1331,39 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
               <BrandImageryGallery 
                 imagery={style.all_imagery}
                 brandName={brand.name}
+                editable
+                onImagesAdded={(images, category) => {
+                  setStyle(prev => {
+                    const currentImagery = prev.all_imagery || { all: [], byType: {} };
+                    const catKey = category as keyof typeof currentImagery.byType;
+                    return {
+                      ...prev,
+                      all_imagery: {
+                        all: [...currentImagery.all, ...images],
+                        byType: {
+                          ...currentImagery.byType,
+                          [catKey]: [...(currentImagery.byType[catKey] || []), ...images]
+                        }
+                      }
+                    };
+                  });
+                }}
+                onImageRemoved={(url) => {
+                  setStyle(prev => {
+                    const currentImagery = prev.all_imagery || { all: [], byType: {} };
+                    const newAll = currentImagery.all.filter(u => u !== url);
+                    const newByType = { ...currentImagery.byType };
+                    for (const key of Object.keys(newByType) as Array<keyof typeof newByType>) {
+                      if (newByType[key]) {
+                        newByType[key] = newByType[key]!.filter(u => u !== url);
+                      }
+                    }
+                    return {
+                      ...prev,
+                      all_imagery: { all: newAll, byType: newByType }
+                    };
+                  });
+                }}
               />
             </div>
           </section>
