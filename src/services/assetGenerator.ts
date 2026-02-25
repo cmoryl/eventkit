@@ -373,14 +373,14 @@ const generateImageAsset = async (
       logoDataUrl,
       eventDetails.location,
       eventDetails.incorporateLocationStyle,
-      primaryVibeBase64,
-      primaryPatternBase64,
+      allVibeImages.length > 0 ? allVibeImages : primaryVibeBase64,
+      allPatternImages.length > 0 ? allPatternImages : primaryPatternBase64,
       venueImageBase64,
-      cachedAnalysis, // Pass cached analysis to avoid redundant AI call
-      eventDetails.venueIntelligence, // Pass venue intelligence for cultural context
-      eventDetails.date, // Pass event date for template variable merging
-      eventDetails.eventType, // Pass event type for template variable merging
-      brandContext // Pass brand intelligence for on-brand generation
+      cachedAnalysis,
+      eventDetails.venueIntelligence,
+      eventDetails.date,
+      eventDetails.eventType,
+      brandContext
     );
     
     if (aiImage) {

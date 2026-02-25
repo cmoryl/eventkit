@@ -38,8 +38,8 @@ interface UseQueuedGenerationProps {
   setGeneratedAssets: React.Dispatch<React.SetStateAction<GeneratedAsset[]>>;
   logoBase64?: string;
   styleDesc?: string;
-  vibeImageBase64?: string;
-  masterPatternBase64?: string;
+  vibeImageBase64?: string | string[];
+  masterPatternBase64?: string | string[];
   venueImageBase64?: string;
   renderEngine?: RenderEngine;
   onGenerationComplete?: (completed: number, failed: number) => void;

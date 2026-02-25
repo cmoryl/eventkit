@@ -537,14 +537,14 @@ export const generateAssetImage = async (
   logoBase64?: string,
   location?: string,
   incorporateLocationStyle?: boolean,
-  vibeImageBase64?: string,
-  masterPatternBase64?: string,
+  vibeImageBase64?: string | string[],
+  masterPatternBase64?: string | string[],
   venueImageBase64?: string,
-  preComputedAnalysis?: ImageAnalysis | null, // Pass pre-computed analysis to avoid extra AI call
-  venueIntelligence?: VenueIntelligence | null, // AI-researched venue intelligence
+  preComputedAnalysis?: ImageAnalysis | null,
+  venueIntelligence?: VenueIntelligence | null,
   eventDate?: string,
   eventType?: string,
-  brandContext?: BrandContext | null // Brand intelligence from BrandHub or local brand
+  brandContext?: BrandContext | null
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
@@ -552,9 +552,10 @@ export const generateAssetImage = async (
     const assetTypeStr = typeof assetType === 'string' ? assetType : String(assetType);
     
     // OPTIMIZATION: Check for cached analysis if we have a vibe image
+    const primaryVibe = Array.isArray(vibeImageBase64) ? vibeImageBase64[0] : vibeImageBase64;
     let imageAnalysis = preComputedAnalysis;
-    if (!imageAnalysis && vibeImageBase64) {
-      imageAnalysis = getCachedAnalysis(vibeImageBase64);
+    if (!imageAnalysis && primaryVibe) {
+      imageAnalysis = getCachedAnalysis(primaryVibe);
       if (imageAnalysis) {
         console.log('Using cached image analysis for generation');
       }
