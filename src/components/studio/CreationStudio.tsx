@@ -4,7 +4,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Palette, Printer, Shirt, Share2, Presentation, Building,
   Ticket, UtensilsCrossed, Video, FileText, Camera, Shield, Plus,
-  Grid, List, Sliders, Download, Sparkles, ChevronRight, PanelRightOpen, PanelRightClose
+  Grid, List, Sliders, Download, Sparkles, ChevronRight, PanelRightOpen, PanelRightClose,
+  Accessibility
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
@@ -22,6 +23,7 @@ import { StudioProductionPanel } from './StudioProductionPanel';
 import { BrandSelector } from './BrandSelector';
 import { BrandsPanel } from './BrandsPanel';
 import { StudioReferenceChat } from './StudioReferenceChat';
+import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -51,6 +53,7 @@ export const CreationStudio: React.FC = () => {
   const [showProductionPanel, setShowProductionPanel] = useState(false);
   const [showBrandsPanel, setShowBrandsPanel] = useState(true);
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
+  const [showAccessibility, setShowAccessibility] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
   // Project persistence state
@@ -385,6 +388,17 @@ export const CreationStudio: React.FC = () => {
       </Button>
 
       <Button
+        variant={showAccessibility ? 'secondary' : 'outline'}
+        size="sm"
+        onClick={() => setShowAccessibility(!showAccessibility)}
+        className="hidden md:flex"
+        title="Accessibility Analysis"
+      >
+        <Accessibility className="h-4 w-4 mr-2" />
+        A11y
+      </Button>
+
+      <Button
         variant={showBrandsPanel ? 'secondary' : 'outline'}
         size="icon"
         className="h-8 w-8"
@@ -520,6 +534,17 @@ export const CreationStudio: React.FC = () => {
               brand={selectedBrand}
               selectedAssets={selectedAssets}
               onClose={() => setShowProductionPanel(false)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Accessibility Panel */}
+        <AnimatePresence>
+          {showAccessibility && (
+            <AccessibilityAnalysisPanel
+              isOpen={showAccessibility}
+              onClose={() => setShowAccessibility(false)}
+              brand={selectedBrand}
             />
           )}
         </AnimatePresence>
