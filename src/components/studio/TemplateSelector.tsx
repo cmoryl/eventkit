@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Star, Building2, Palette } from 'lucide-react';
+import { Search, Star, Building2, Palette, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,19 @@ import {
   getVendorTemplates,
   TEMPLATE_STATS 
 } from '@/config/editableTemplates';
+import { ALL_EDITABLE_TEMPLATES } from '@/config/editableTemplates/allTemplates';
 import { TemplatePreviewRenderer } from './TemplatePreviewRenderer';
+
+// Category chip definitions with tag-based matching
+const CATEGORY_CHIPS = [
+  { id: 'all', label: 'All' },
+  { id: 'badges', label: 'Badges', tags: ['vip', 'security', 'backstage', 'badge', 'credential', 'lanyard'] },
+  { id: 'signage', label: 'Signage', tags: ['door', 'room', 'wayfinding', 'wifi', 'sign', 'directional'] },
+  { id: 'merch', label: 'Merch', tags: ['tshirt', 'hat', 'cap', 'bag', 'swag', 'apparel', 'wristband', 'sticker'] },
+  { id: 'social', label: 'Social', tags: ['social', 'instagram', 'story', 'linkedin', 'youtube', 'twitter'] },
+  { id: 'large-format', label: 'Large Format', tags: ['step-repeat', 'stage', 'backdrop', 'booth', 'hanging', 'floor-decal', 'window-cling', 'a-frame', 'banner'] },
+  { id: 'vendor', label: 'Vendor', tags: ['staples', 'fedex', 'ups-store', 'costco', 'walgreens', 'cvs', 'local'] },
+] as const;
 
 interface TemplateSelectorProps {
   assetType?: AssetType;
@@ -33,6 +45,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'universal' | 'vendor'>('all');
+  const [activeCategory, setActiveCategory] = useState('all');
 
   // Get filtered templates
   const templates = useMemo(() => {
@@ -45,7 +58,19 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     } else if (assetType) {
       result = getTemplatesForAsset(assetType);
     } else {
-      result = getUniversalTemplates();
+      result = [...ALL_EDITABLE_TEMPLATES];
+    }
+
+    // Apply category chip filter
+    if (activeCategory !== 'all') {
+      const chip = CATEGORY_CHIPS.find(c => c.id === activeCategory);
+      if (chip && 'tags' in chip) {
+        const chipTags = chip.tags;
+        result = result.filter(t =>
+          t.tags?.some(tag => chipTags.some(ct => tag.toLowerCase().includes(ct))) ||
+          (activeCategory === 'vendor' && t.category === 'vendor-specific')
+        );
+      }
     }
 
     // Apply search filter
@@ -59,7 +84,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     }
 
     return result;
-  }, [assetType, vendorId, activeTab, searchQuery]);
+  }, [assetType, vendorId, activeTab, activeCategory, searchQuery]);
 
   // Render template card
   const renderTemplateCard = (template: EditableTemplate) => {
@@ -126,25 +151,36 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
         <div>
           <h3 className="font-semibold text-foreground">Choose a Template</h3>
           <p className="text-sm text-muted-foreground">
-            {TEMPLATE_STATS.total} templates available
+            {templates.length} of {TEMPLATE_STATS.total} templates
           </p>
         </div>
       </div>
 
-      {/* Search and filter */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search templates..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Button variant="outline" size="icon">
-          <Filter className="h-4 w-4" />
-        </Button>
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search templates..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {/* Category filter chips */}
+      <div className="flex gap-1.5 flex-wrap">
+        {CATEGORY_CHIPS.map(chip => (
+          <Button
+            key={chip.id}
+            size="sm"
+            variant={activeCategory === chip.id ? 'default' : 'outline'}
+            onClick={() => setActiveCategory(chip.id)}
+            className="text-xs h-7 px-2.5 rounded-full"
+          >
+            {chip.id === 'all' && <Tag className="h-3 w-3 mr-1" />}
+            {chip.label}
+          </Button>
+        ))}
       </div>
 
       {/* Tabs */}
