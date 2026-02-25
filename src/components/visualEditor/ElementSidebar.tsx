@@ -301,7 +301,7 @@ export const ElementSidebar: React.FC<ElementSidebarProps> = ({
   })).filter(cat => cat.items.length > 0);
 
   return (
-    <div className="w-64 border-r bg-background flex flex-col h-full">
+    <div className="w-48 lg:w-56 xl:w-64 border-r bg-background flex flex-col h-full overflow-hidden">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}

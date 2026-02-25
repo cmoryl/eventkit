@@ -61,7 +61,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
 
   if (selectedElements.length === 0) {
     return (
-      <div className="w-72 border-l bg-background p-4 flex flex-col items-center justify-center text-center text-muted-foreground">
+      <div className="w-56 lg:w-64 xl:w-72 border-l bg-background p-4 flex flex-col items-center justify-center text-center text-muted-foreground">
         <p className="text-sm">Select an element to edit its properties</p>
       </div>
     );
@@ -100,7 +100,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   };
 
   return (
-    <div className="w-72 border-l bg-background flex flex-col h-full">
+    <div className="w-56 lg:w-64 xl:w-72 border-l bg-background flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="p-3 border-b flex items-center justify-between">
         <div>
