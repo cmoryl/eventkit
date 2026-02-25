@@ -54,7 +54,7 @@ export const LayerPanel: React.FC<LayerPanelProps> = ({
   };
 
   return (
-    <div className="w-56 border-l bg-background flex flex-col h-full">
+    <div className="w-44 lg:w-52 xl:w-56 border-l bg-background flex flex-col h-full overflow-hidden">
       <div className="p-3 border-b">
         <h3 className="font-semibold text-sm">Layers</h3>
         <p className="text-xs text-muted-foreground">{elements.length} elements</p>
