@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.validate-api-key]
 verify_jwt = false
+
+[functions.studio-chat]
+verify_jwt = false
