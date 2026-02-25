@@ -167,42 +167,175 @@ ${venueIntelligence.localTips}`;
 }
 
 /**
- * Build logo integration instructions
+ * Build logo integration instructions with asset-type-specific placement
  */
-export function buildLogoInstructions(hasLogo: boolean): string {
+export function buildLogoInstructions(hasLogo: boolean, assetType?: string): string {
   if (!hasLogo) return '';
+
+  // Determine placement zone based on asset category
+  const placementRules = getLogoPlacementForAsset(assetType);
   
   return `
-LOGO INTEGRATION - ABSOLUTELY CRITICAL (HIGHEST PRIORITY):
-Reference Image #1 is the EVENT LOGO. This is the PRIMARY brand element and MUST be treated with utmost importance.
+LOGO INTEGRATION - HIGHEST PRIORITY DIRECTIVE:
+Reference Image #1 is the EVENT/BRAND LOGO. You MUST reproduce this logo EXACTLY as provided.
 
-MANDATORY LOGO PLACEMENT REQUIREMENTS:
-1. VISIBILITY: The logo MUST be clearly visible and immediately recognizable in the final design
-2. SIZE: The logo should occupy at least 15-25% of the visual hierarchy - it should NEVER be tiny or hidden
-3. POSITIONING: Place the logo in a prominent position:
-   - For signage/banners: Center or top-center placement preferred
-   - For merchandise: Front and center, appropriately sized for the item
-   - For digital assets: Above the fold, clearly visible
-4. INTEGRITY: The logo MUST remain:
-   - Undistorted (maintain original aspect ratio)
-   - Unobscured (no elements overlapping or competing)
-   - Sharp and crisp (not blurred or pixelated)
-   - Properly contrasted against background (ensure readability)
-5. PROTECTION: Leave adequate clear space around the logo - no text or design elements crowding it
+═══════════════════════════════════════════════
+  THIS IS NOT A SUGGESTION — IT IS A HARD RULE
+═══════════════════════════════════════════════
 
-BRAND COHESION REQUIREMENTS:
-6. Extract the logo's color palette and use it as the FOUNDATION for all design choices
-7. Match the logo's visual style (modern, vintage, minimal, bold, etc.) throughout the design
-8. Typography should complement (not compete with) the logo's typographic style
-9. All design elements should feel like natural extensions of the logo's brand identity
-10. The logo is the HERO - everything else supports it
+STEP 1 — EXACT REPRODUCTION (NON-NEGOTIABLE):
+- Copy the logo PIXEL-FOR-PIXEL from the reference image into the design
+- Do NOT redraw, reinterpret, simplify, or "inspire" a new logo
+- Do NOT change any colors, shapes, text, or elements within the logo
+- Do NOT add effects like glow, 3D, bevel, emboss, or drop shadow to the logo itself
+- The logo must look IDENTICAL to what was uploaded — treat it as a sacred, untouchable element
 
-FAILURE CRITERIA - DO NOT:
-- Make the logo too small or insignificant
-- Place the logo in corners where it can be overlooked
-- Use colors that clash with or diminish the logo
-- Apply effects that distort the logo (extreme shadows, warping)
-- Let busy backgrounds make the logo hard to see`;
+STEP 2 — PLACEMENT & SIZE:
+${placementRules}
+
+STEP 3 — PROTECTION & CONTRAST:
+- Surround the logo with adequate CLEAR SPACE (minimum 10% of logo width on all sides)
+- If the background is busy, place a subtle solid or semi-transparent panel behind the logo
+- Ensure HIGH CONTRAST between logo and background — if logo is light, use dark background area and vice versa
+- NEVER place the logo over complex imagery, textures, or patterns that reduce readability
+- NEVER crop, clip, or partially hide the logo
+
+STEP 4 — BRAND COHESION:
+- Extract the logo's dominant colors and use them throughout the entire design
+- Match the logo's visual style (modern/classic/playful/elegant) in all other design elements
+- Typography choices should complement the logo's typographic character
+- The logo sets the tone — every other element is subordinate to it
+
+CRITICAL FAILURE CONDITIONS (any of these = failed design):
+✗ Logo is too small (less than 15% of visual area)
+✗ Logo is distorted, stretched, or wrong aspect ratio
+✗ Logo is hard to see due to poor contrast or busy background
+✗ Logo looks different from the uploaded version (redrawn/reinterpreted)
+✗ Logo is hidden in a corner or competing with other elements
+✗ Logo colors have been changed or shifted`;
+}
+
+/**
+ * Get asset-type-specific logo placement rules
+ */
+function getLogoPlacementForAsset(assetType?: string): string {
+  if (!assetType) {
+    return `- Place logo in the TOP-CENTER or CENTER of the design
+- Logo should occupy 15-25% of the total visual area
+- Logo must be the FIRST thing viewers notice`;
+  }
+
+  const type = assetType.toUpperCase();
+
+  // Signage & Banners — logo top-center, large
+  if (['BANNER', 'ROLLUP_BANNER', 'EVENT_SIGNAGE', 'OUTDOOR_SIGNAGE', 'HANGING_SIGNAGE',
+       'DOOR_SIGNAGE', 'ROOM_SIGNAGE', 'LOCATION_SIGNAGE', 'EASEL_SIGNAGE', 'WIFI_SIGN',
+       'FEATHER_FLAG', 'TEARDROP_FLAG', 'A_FRAME', 'PORTABLE_BILLBOARD',
+       'STAND_UP_PILLAR_BANNER'].includes(type)) {
+    return `- Position: TOP-CENTER of the sign/banner, prominently above the event name
+- Size: 20-30% of the design area — banners need logos that read from a distance
+- The logo is the anchor element — event name and details flow BELOW it
+- For tall formats (feather flags, pillars): place logo in upper third`;
+  }
+
+  // Stage & Backdrops — logo center or top-center, very large
+  if (['STEP_AND_REPEAT', 'BACK_WALL', 'MAIN_STAGE_BACKDROP', 'STAGE_BACKDROP',
+       'SPONSOR_WALL', 'REGISTRATION_BACK_WALL', 'REGISTRATION_WALL'].includes(type)) {
+    return `- Position: CENTER of the backdrop for step & repeat (tiled), or TOP-CENTER for stage backdrops
+- Size: 25-40% of visible area — these are designed to be photographed and seen from afar
+- For step & repeat: tile the logo in a clean grid pattern with consistent spacing
+- For backdrops: single large logo placement with supporting design elements`;
+  }
+
+  // Counters & Structures — logo front-and-center on the counter face
+  if (['REGISTRATION_COUNTER', 'WELCOME_COUNTER', 'TECHNOLOGY_COUNTER', 'TECH_COUNTER',
+       'KIOSK', 'FEEDBACK_KIOSK'].includes(type)) {
+    return `- Position: FRONT-CENTER of the counter/kiosk face panel
+- Size: 25-35% of the front panel area
+- Logo should be at eye level when attendees approach the counter
+- Clean, uncluttered placement with event name below`;
+  }
+
+  // Badges & Passes — logo top area, smaller but clear
+  if (['NAME_TAG', 'NAME_TAG_BACK', 'VIP_PASS', 'BACKSTAGE_PASS', 'MEDIA_CREDENTIAL',
+       'SECURITY_BADGE', 'PARKING_PASS', 'WRISTBAND_DESIGN'].includes(type)) {
+    return `- Position: TOP-CENTER of the badge/pass, above the attendee name area
+- Size: 15-20% of the badge area — must be clear but leave room for name and details
+- Logo anchors the top of the credential, establishing brand identity at first glance
+- For wristbands: centered within the narrow band, sized to fill height`;
+  }
+
+  // Apparel — centered on garment print area
+  if (['TSHIRT', 'TSHIRT_BACK', 'TSHIRT_SLEEVE', 'HAT', 'VOLUNTEER_VEST'].includes(type)) {
+    return `- Position: CENTERED on the print area of the garment
+- Size: For front chest — 20-30% of print area; for hat — fill front panel
+- Logo should be the dominant graphic element on the garment
+- For sleeve prints: scale to fit sleeve width while maintaining readability
+- Ensure logo works on the garment color (use reversed version if needed)`;
+  }
+
+  // Merchandise — centered, product-appropriate
+  if (['SWAG_BAG', 'WATER_BOTTLE', 'LANYARD', 'COASTER_DESIGN', 'NAPKIN_DESIGN',
+       'COCKTAIL_NAPKIN', 'GIFT_BOX', 'MATCHBOOK'].includes(type)) {
+    return `- Position: CENTERED on the primary face of the product
+- Size: 20-35% of the visible product surface
+- Logo should be the hero element on the merchandise item
+- Scale appropriately for the physical product size (coasters are small, tote bags are large)`;
+  }
+
+  // Digital/Social — top or overlay position
+  if (['SOCIAL_POST', 'SOCIAL_STORY', 'SOCIAL_PROFILE', 'EMAIL_HEADER',
+       'LINKEDIN_BANNER', 'TWITTER_HEADER', 'YOUTUBE_THUMBNAIL',
+       'PODCAST_COVER', 'ZOOM_BACKGROUND', 'STREAM_OVERLAY',
+       'LIVE_STREAM_OVERLAY', 'SIGNAGE_LOOP', 'COUNTDOWN'].includes(type)) {
+    return `- Position: TOP-LEFT or TOP-CENTER — follow social media design conventions
+- Size: 12-20% of the design area — present but not overwhelming for digital formats
+- Logo should be immediately visible but balanced with the content
+- For stories (vertical): place in upper 15% of the frame
+- For banners (horizontal): left-aligned or centered in the header zone`;
+  }
+
+  // Print materials — top-center or header area
+  if (['INVITATION', 'RSVP_CARD', 'TICKET', 'PROGRAM_BOOKLET', 'THANK_YOU_NOTE',
+       'ENVELOPE', 'CERTIFICATE', 'MENU', 'BAR_MENU', 'FOLDER',
+       'EVALUATION_FORM', 'FLOOR_PLAN', 'SEATING_CHART'].includes(type)) {
+    return `- Position: TOP-CENTER as a header element, or centered at the top third
+- Size: 15-22% of the design — elegant and prominent without dominating text content
+- Logo establishes the brand before the reader engages with content
+- For menus/programs: smaller top placement to leave room for text-heavy content`;
+  }
+
+  // Table & Dining — centered, elegant
+  if (['TABLE_TENT', 'TABLE_NUMBER', 'TABLE_RUNNER', 'TABLECLOTH', 'PLACE_CARD',
+       'DIETARY_CARD', 'CATERING_LABEL'].includes(type)) {
+    return `- Position: CENTERED on the item, or top-center for tent cards
+- Size: 15-25% of the visible area
+- Logo placement should be refined and elegant, matching dining aesthetics
+- For small items (place cards, dietary cards): subtle but readable logo`;
+  }
+
+  // Architectural wraps — prominent, scaled for distance
+  if (['GLASS_DOOR', 'GLASS_DOUBLE_DOOR', 'GLASS_ROTATING_DOOR', 'ELEVATOR_WRAP',
+       'COLUMN_WRAP', 'CEILING_HANGER', 'WINDOW_CLING', 'FLOOR_DECAL',
+       'STAIRS', 'STAIR_GRAPHICS', 'ESCALATOR_GRAPHICS'].includes(type)) {
+    return `- Position: CENTERED on the architectural element
+- Size: 25-40% of the visible surface — architectural graphics are seen from distance
+- Logo must be readable from 10+ feet away
+- For floor decals: centered and oriented for foot traffic direction
+- For glass: ensure logo contrasts against transparency`;
+  }
+
+  // Presentations & Slides
+  if (['PRESENTATION_SLIDE', 'WEBINAR_SLIDE'].includes(type)) {
+    return `- Position: TOP-LEFT or BOTTOM-RIGHT corner (standard presentation placement)
+- Size: 8-12% of the slide area — present but not competing with slide content
+- Logo provides consistent brand presence across all slides`;
+  }
+
+  // Default fallback
+  return `- Place logo in the TOP-CENTER or CENTER of the design
+- Logo should occupy 15-25% of the total visual area
+- Logo must be the FIRST thing viewers notice`;
 }
 
 /**
