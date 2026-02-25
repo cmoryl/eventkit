@@ -252,14 +252,30 @@ export function useQueuedGeneration({
   }, [updateStats, setGeneratedAssets, setColorPalette, onGenerationComplete, onAssetComplete]);
 
   // Start queued generation for assets
+  // Accepts optional overrides for images/style to avoid race conditions
+  // when called immediately after state updates (e.g. from onboarding)
   const startQueuedGeneration = useCallback((
     assets: GeneratedAsset[],
-    overridePalette?: ColorInfo[]
+    overridePalette?: ColorInfo[],
+    overrides?: {
+      logoBase64?: string;
+      vibeImageBase64?: string;
+      masterPatternBase64?: string;
+      venueImageBase64?: string;
+      styleDesc?: string;
+    }
   ) => {
     // Reset counters
     completedCountRef.current = 0;
     failedCountRef.current = 0;
     totalJobsRef.current = assets.length;
+    
+    // Use overrides if provided (avoids race condition with state-based values)
+    const effectiveLogoBase64 = overrides?.logoBase64 ?? logoBase64;
+    const effectiveVibeBase64 = overrides?.vibeImageBase64 ?? vibeImageBase64;
+    const effectivePatternBase64 = overrides?.masterPatternBase64 ?? masterPatternBase64;
+    const effectiveVenueBase64 = overrides?.venueImageBase64 ?? venueImageBase64;
+    const effectiveStyleDesc = overrides?.styleDesc ?? styleDesc;
     
     // Set generation context
     generationQueue.setGenerationContext(
@@ -267,11 +283,11 @@ export function useQueuedGeneration({
       {
         eventDetails,
         colorPalette: overridePalette || colorPalette,
-        logoBase64,
-        styleDesc,
-        vibeImageBase64,
-        masterPatternBase64,
-        venueImageBase64,
+        logoBase64: effectiveLogoBase64,
+        styleDesc: effectiveStyleDesc,
+        vibeImageBase64: effectiveVibeBase64,
+        masterPatternBase64: effectivePatternBase64,
+        venueImageBase64: effectiveVenueBase64,
         renderEngine,
       }
     );
@@ -279,7 +295,13 @@ export function useQueuedGeneration({
     // Add all jobs to queue
     const jobs = generationQueue.addJobs(assets);
     
-    console.log(`Started queued generation for ${assets.length} assets`);
+    console.log(`Started queued generation for ${assets.length} assets`, {
+      hasLogo: !!effectiveLogoBase64,
+      hasVibeImage: !!effectiveVibeBase64,
+      hasPattern: !!effectivePatternBase64,
+      hasVenue: !!effectiveVenueBase64,
+      style: effectiveStyleDesc?.substring(0, 50),
+    });
     
     return jobs;
   }, [

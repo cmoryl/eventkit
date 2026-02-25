@@ -303,12 +303,78 @@ const Index: React.FC = () => {
     // Only generate if there are new loading assets
     const assetsToGenerate = newAssets.filter(a => a.isLoading);
     if (assetsToGenerate.length > 0) {
+      // Pre-convert all files to base64 BEFORE starting generation
+      // This avoids race conditions with state-based useEffect conversions
+      const [logoB64, vibeB64, patternB64, venueB64] = await Promise.all([
+        // Logo base64
+        (async () => {
+          const logosToUse = isAddingMore ? logos : data.logos;
+          if (logosToUse.length > 0 && logosToUse[0].file) {
+            try {
+              const b64 = await fileToBase64(logosToUse[0].file);
+              return `data:${b64.type};base64,${b64.data}`;
+            } catch (e) {
+              console.warn('Failed to convert logo to base64:', e);
+              return logosToUse[0].url;
+            }
+          }
+          return undefined;
+        })(),
+        // Vibe image base64
+        (async () => {
+          if (data.vibeImage) {
+            try {
+              const b64 = await fileToBase64(data.vibeImage);
+              return `data:${b64.type};base64,${b64.data}`;
+            } catch (e) {
+              console.warn('Failed to convert vibe image:', e);
+            }
+          }
+          return undefined;
+        })(),
+        // Master pattern base64
+        (async () => {
+          if (data.masterPattern) {
+            try {
+              const b64 = await fileToBase64(data.masterPattern);
+              return `data:${b64.type};base64,${b64.data}`;
+            } catch (e) {
+              console.warn('Failed to convert master pattern:', e);
+            }
+          }
+          return undefined;
+        })(),
+        // Venue image base64
+        (async () => {
+          if (data.venueImage) {
+            try {
+              const b64 = await fileToBase64(data.venueImage);
+              return `data:${b64.type};base64,${b64.data}`;
+            } catch (e) {
+              console.warn('Failed to convert venue image:', e);
+            }
+          }
+          // Fallback to video analysis key frame
+          if (data.venueVideoAnalysis?.keyFrames?.length) {
+            return data.venueVideoAnalysis.keyFrames[0].imageData;
+          }
+          return undefined;
+        })(),
+      ]);
+
       // Use queue mode for larger batches (5+ assets) or if explicitly enabled
       const shouldUseQueue = useQueueMode || assetsToGenerate.length >= 5;
       
       if (shouldUseQueue) {
         // Queued generation with priority ordering and retries
-        startQueuedGeneration(assetsToGenerate);
+        // Pass pre-converted base64 images directly to avoid race conditions
+        startQueuedGeneration(assetsToGenerate, undefined, {
+          logoBase64: logoB64,
+          vibeImageBase64: vibeB64,
+          masterPatternBase64: patternB64,
+          venueImageBase64: venueB64,
+          styleDesc: data.styleDescription,
+        });
       } else {
         // Standard parallel generation
         await generateAssets(
