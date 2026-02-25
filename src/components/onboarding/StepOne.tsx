@@ -241,6 +241,8 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                   setEventDetails(prev => ({ 
                     ...prev, 
                     location: value,
+                    // Automatically enable location style when a location is provided
+                    incorporateLocationStyle: !!value && value.trim().length > 0,
                     // Store venue intelligence for use in asset generation
                     venueIntelligence: venueData || prev.venueIntelligence,
                   }));
