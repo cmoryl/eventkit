@@ -2,11 +2,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Star, Building2, Palette, Tag } from 'lucide-react';
+import { Search, Star, Building2, Palette, Tag, Type, Image, QrCode, Shapes } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { EditableTemplate } from '@/types/editableTemplate.types';
 import { AssetType } from '@/types';
@@ -86,61 +88,131 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     return result;
   }, [assetType, vendorId, activeTab, activeCategory, searchQuery]);
 
+  // Field type icon helper
+  const fieldIcon = (type: string) => {
+    switch (type) {
+      case 'text': case 'textarea': return <Type className="h-3 w-3 text-muted-foreground" />;
+      case 'image': case 'logo': return <Image className="h-3 w-3 text-muted-foreground" />;
+      case 'qrcode': return <QrCode className="h-3 w-3 text-muted-foreground" />;
+      default: return <Shapes className="h-3 w-3 text-muted-foreground" />;
+    }
+  };
+
   // Render template card
   const renderTemplateCard = (template: EditableTemplate) => {
     const isSelected = template.id === selectedTemplateId;
-    
+    const editableFields = template.fields.filter(f => ['text', 'textarea', 'image', 'logo', 'qrcode', 'date'].includes(f.type));
+
     return (
-      <motion.div
-        key={template.id}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn(
-          "group relative rounded-lg border-2 overflow-hidden cursor-pointer transition-all",
-          isSelected 
-            ? "border-primary ring-2 ring-primary/20" 
-            : "border-border hover:border-primary/50"
-        )}
-        onClick={() => onSelect(template)}
-      >
-        {/* Preview */}
-        <div className="aspect-[4/3] relative flex items-center justify-center bg-muted/30 overflow-hidden">
-          <TemplatePreviewRenderer template={template} width={200} />
-          
-          {/* Badges */}
-          <div className="absolute top-2 right-2 flex flex-col gap-1">
-            {template.category === 'vendor-specific' && (
-              <Badge variant="secondary" className="text-[10px] h-5">
-                <Building2 className="h-3 w-3 mr-1" />
-                {template.vendorId}
-              </Badge>
+      <HoverCard key={template.id} openDelay={300} closeDelay={100}>
+        <HoverCardTrigger asChild>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={cn(
+              "group relative rounded-lg border-2 overflow-hidden cursor-pointer transition-all",
+              isSelected 
+                ? "border-primary ring-2 ring-primary/20" 
+                : "border-border hover:border-primary/50"
             )}
-            {template.isPremium && (
-              <Badge variant="default" className="text-[10px] h-5 bg-amber-500">
-                <Star className="h-3 w-3 mr-1" />
-                Premium
-              </Badge>
+            onClick={() => onSelect(template)}
+          >
+            {/* Preview */}
+            <div className="aspect-[4/3] relative flex items-center justify-center bg-muted/30 overflow-hidden">
+              <TemplatePreviewRenderer template={template} width={200} />
+              
+              {/* Badges */}
+              <div className="absolute top-2 right-2 flex flex-col gap-1">
+                {template.category === 'vendor-specific' && (
+                  <Badge variant="secondary" className="text-[10px] h-5">
+                    <Building2 className="h-3 w-3 mr-1" />
+                    {template.vendorId}
+                  </Badge>
+                )}
+                {template.isPremium && (
+                  <Badge variant="default" className="text-[10px] h-5 bg-amber-500">
+                    <Star className="h-3 w-3 mr-1" />
+                    Premium
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Info */}
+            <div className="p-3 bg-card">
+              <h4 className="font-medium text-sm text-foreground truncate">{template.name}</h4>
+              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{template.description}</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-[10px] text-muted-foreground">
+                  {template.dimensions.widthInches}" × {template.dimensions.heightInches}"
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded">
+                  {template.colorMode}
+                </span>
+              </div>
+            </div>
+
+            {/* Hover overlay */}
+            <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+          </motion.div>
+        </HoverCardTrigger>
+
+        <HoverCardContent side="right" align="start" className="w-72 p-0">
+          {/* Large preview */}
+          <div className="flex items-center justify-center bg-muted/20 p-3 border-b border-border">
+            <TemplatePreviewRenderer template={template} width={240} />
+          </div>
+
+          {/* Details */}
+          <div className="p-3 space-y-2">
+            <h4 className="font-semibold text-sm text-foreground">{template.name}</h4>
+            <p className="text-xs text-muted-foreground">{template.description}</p>
+
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">
+                {template.dimensions.widthInches}" × {template.dimensions.heightInches}"
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">
+                {template.dpi} DPI
+              </span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">
+                {template.colorMode}
+              </span>
+            </div>
+
+            {/* Editable fields list */}
+            {editableFields.length > 0 && (
+              <div className="pt-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">
+                  Editable Fields ({editableFields.length})
+                </p>
+                <ScrollArea className="max-h-32">
+                  <div className="space-y-0.5">
+                    {editableFields.map(field => (
+                      <div key={field.id} className="flex items-center gap-1.5 text-xs text-foreground py-0.5">
+                        {fieldIcon(field.type)}
+                        <span className="truncate">{field.name}</span>
+                        {field.required && <span className="text-destructive text-[10px]">*</span>}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+
+            {/* Tags */}
+            {template.tags && template.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {template.tags.slice(0, 5).map(tag => (
+                  <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-accent/50 text-accent-foreground rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
-        </div>
-
-        {/* Info */}
-        <div className="p-3 bg-card">
-          <h4 className="font-medium text-sm text-foreground truncate">{template.name}</h4>
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{template.description}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="text-[10px] text-muted-foreground">
-              {template.dimensions.widthInches}" × {template.dimensions.heightInches}"
-            </span>
-            <span className="text-[10px] px-1.5 py-0.5 bg-muted rounded">
-              {template.colorMode}
-            </span>
-          </div>
-        </div>
-
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-      </motion.div>
+        </HoverCardContent>
+      </HoverCard>
     );
   };
 
