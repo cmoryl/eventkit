@@ -1,12 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, ArrowRight, Palette, Type, ImageIcon, Wand2, 
-  ChevronDown, ChevronUp, Lightbulb, Zap, X, Settings2, ALargeSmall, Loader2
+  ChevronDown, ChevronUp, Lightbulb, Zap, X, Settings2, ALargeSmall, Loader2,
+  Upload, Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { AssetType } from '@/types';
+import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import AssetSpecificFields from '@/components/AssetSpecificFields';
 import { useGoogleFonts } from '@/hooks/useGoogleFonts';
@@ -160,6 +162,9 @@ export interface AssetBrief {
   
   // Reference/inspiration
   referencePrompt?: string;
+  
+  // Reference images (base64)
+  referenceImages?: string[];
 }
 
 interface AssetBriefModalProps {
@@ -217,6 +222,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
   studioGradient = 'from-primary to-accent'
 }) => {
   const { loadFont, loadFonts, isFontLoaded } = useGoogleFonts();
+  const refImageInputRef = useRef<HTMLInputElement>(null);
   const [brief, setBrief] = useState<AssetBrief>({
     customContent: {},
     stylePreset: 'modern',
@@ -941,6 +947,111 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                             </button>
                           ))}
                         </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Section: Reference Images */}
+            <div className="space-y-3">
+              <button
+                onClick={() => toggleSection('references')}
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-emerald-500" />
+                  <span className="font-medium">Reference Images</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    Upload examples to guide AI
+                  </span>
+                  {(brief.referenceImages?.length || 0) > 0 && (
+                    <span className="ml-1 px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-primary/20 text-primary">
+                      {brief.referenceImages!.length}
+                    </span>
+                  )}
+                </div>
+                {expandedSections.has('references') ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+              
+              <AnimatePresence initial={false}>
+                {expandedSections.has('references') && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pt-2 pb-4 px-1">
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Upload example designs, mood boards, or imagery you'd like the AI to reference when generating this asset.
+                      </p>
+                      <div className="flex gap-2 flex-wrap">
+                        {(brief.referenceImages || []).map((img, idx) => (
+                          <div
+                            key={idx}
+                            className="relative w-20 h-20 rounded-lg overflow-hidden border border-border group"
+                          >
+                            <img src={img} alt={`Reference ${idx + 1}`} className="w-full h-full object-cover" />
+                            <button
+                              onClick={() => setBrief(prev => ({
+                                ...prev,
+                                referenceImages: prev.referenceImages?.filter((_, i) => i !== idx)
+                              }))}
+                              className="absolute top-0.5 right-0.5 p-0.5 rounded-full bg-background/80 text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+
+                        {(brief.referenceImages?.length || 0) < 6 && (
+                          <button
+                            onClick={() => refImageInputRef.current?.click()}
+                            className="w-20 h-20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+                          >
+                            <Upload className="h-4 w-4" />
+                            <span className="text-[9px]">Upload</span>
+                          </button>
+                        )}
+
+                        <input
+                          ref={refImageInputRef}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || []);
+                            if (files.length === 0) return;
+                            const current = brief.referenceImages?.length || 0;
+                            if (current + files.length > 6) {
+                              toast.error('Maximum 6 reference images per asset');
+                              return;
+                            }
+                            files.forEach(file => {
+                              if (file.size > 10 * 1024 * 1024) {
+                                toast.error(`${file.name} exceeds 10MB limit`);
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                const base64 = ev.target?.result as string;
+                                setBrief(prev => ({
+                                  ...prev,
+                                  referenceImages: [...(prev.referenceImages || []), base64]
+                                }));
+                              };
+                              reader.readAsDataURL(file);
+                            });
+                            if (e.target) e.target.value = '';
+                          }}
+                          className="hidden"
+                        />
                       </div>
                     </div>
                   </motion.div>
