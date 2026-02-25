@@ -2630,6 +2630,227 @@ export const SIR_SPEEDY_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= ADDITIONAL TABLE TENT TEMPLATES =============
+
+export const TABLE_TENT_EXTRA: EditableTemplate[] = [
+  {
+    id: 'table-tent-4x6-elegant',
+    name: 'Table Tent – Elegant',
+    description: 'Elegant table tent for upscale events',
+    assetType: AssetType.TableTent,
+    category: 'universal',
+    dimensions: createDimensions(4, 6, 0.125, 0.25),
+    background: { type: 'solid', value: '#1a1a2e' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: { primary: '#1a1a2e', secondary: '#c9a962', accent: '#ffffff', text: '#ffffff', background: '#1a1a2e' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      { id: 'border', type: 'shape' as const, name: 'Border', position: { x: 5, y: 5, width: 90, height: 90 }, style: { borderWidth: 1, borderColor: '#c9a962', borderStyle: 'solid', backgroundColor: 'transparent' } },
+      createLogoField('logo', 'Logo', { x: 25, y: 8, width: 50, height: 15 }, { placeholder: 'Logo' }),
+      createTextField('title', 'Title', { x: 10, y: 28, width: 80, height: 15 }, { placeholder: 'RESERVE', required: true, style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#c9a962', letterSpacing: 4 } }),
+      createTextField('desc', 'Description', { x: 10, y: 48, width: 80, height: 25 }, { placeholder: 'This table is reserved\nfor VIP guests', style: { fontSize: 12, textAlign: 'center', color: '#ffffff', lineHeight: 1.6 } }),
+      createTextField('event', 'Event', { x: 15, y: 80, width: 70, height: 10 }, { placeholder: 'Gala Dinner 2024', style: { fontSize: 10, textAlign: 'center', color: 'rgba(201,169,98,0.8)', fontStyle: 'italic' } }),
+    ],
+    tags: ['table-tent', 'elegant', 'reserved'], isSystemTemplate: true
+  },
+  {
+    id: 'table-tent-4x6-menu',
+    name: 'Table Tent – Menu',
+    description: 'Table tent for food & drink menus',
+    assetType: AssetType.TableTent,
+    category: 'universal',
+    dimensions: createDimensions(4, 6, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: { primary: '#2d1b0e', secondary: '#8b6914', accent: '#ffffff', text: '#2d1b0e', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 3, width: 50, height: 12 }, { placeholder: 'Logo' }),
+      createTextField('title', 'Title', { x: 5, y: 18, width: 90, height: 10 }, { placeholder: 'DRINK MENU', required: true, style: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', color: '#2d1b0e' } }),
+      { id: 'div', type: 'divider' as const, name: 'Divider', position: { x: 20, y: 30, width: 60, height: 0.3 }, style: { backgroundColor: '#8b6914' } },
+      createTextField('items', 'Items', { x: 8, y: 34, width: 84, height: 45 }, { placeholder: 'House Red · $12\nHouse White · $12\nCraft Beer · $8\nSparkling Water · $5', style: { fontSize: 11, lineHeight: 2, color: '#2d1b0e' } }),
+      createTextField('note', 'Note', { x: 10, y: 82, width: 80, height: 12 }, { placeholder: 'Ask your server for\ntoday\'s specials', style: { fontSize: 9, textAlign: 'center', color: '#8b6914', fontStyle: 'italic' } }),
+    ],
+    tags: ['table-tent', 'menu', 'drinks'], isSystemTemplate: true
+  },
+  {
+    id: 'table-tent-4x6-sponsor',
+    name: 'Table Tent – Sponsor',
+    description: 'Table tent showcasing event sponsors',
+    assetType: AssetType.TableTent,
+    category: 'universal',
+    dimensions: createDimensions(4, 6, 0.125, 0.25),
+    background: { type: 'solid', value: '#f0f4f8' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#1e40af', secondary: '#1a1a1a', accent: '#fbbf24', text: '#1a1a1a', background: '#f0f4f8' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('header', 'Header', { x: 5, y: 5, width: 90, height: 10 }, { placeholder: 'SPONSORED BY', style: { fontSize: 12, fontWeight: 'bold', textAlign: 'center', color: '#1e40af', letterSpacing: 3 } }),
+      createLogoField('sponsor-logo', 'Sponsor Logo', { x: 15, y: 18, width: 70, height: 30 }, { placeholder: 'Sponsor Logo' }),
+      { id: 'div', type: 'divider' as const, name: 'Divider', position: { x: 20, y: 52, width: 60, height: 0.3 }, style: { backgroundColor: '#1e40af' } },
+      createTextField('desc', 'Description', { x: 8, y: 56, width: 84, height: 20 }, { placeholder: 'Learn more about our sponsor and their innovative solutions.', style: { fontSize: 10, textAlign: 'center', lineHeight: 1.5, color: '#666666' } }),
+      createTextField('url', 'URL', { x: 10, y: 80, width: 80, height: 8 }, { placeholder: 'www.sponsor.com', style: { fontSize: 11, fontWeight: 'bold', textAlign: 'center', color: '#1e40af' } }),
+      { id: 'qr', type: 'qrcode' as const, name: 'QR', position: { x: 35, y: 88, width: 30, height: 10 }, placeholder: 'Sponsor URL', style: {} },
+    ],
+    tags: ['table-tent', 'sponsor', 'branding'], isSystemTemplate: true
+  },
+  {
+    id: 'table-tent-5x7-event',
+    name: 'Table Tent 5×7 – Event Info',
+    description: 'Larger table tent for event info and schedule',
+    assetType: AssetType.TableTent,
+    category: 'universal',
+    dimensions: createDimensions(5, 7, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#0f172a', secondary: '#3b82f6', accent: '#fbbf24', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      { id: 'top-bar', type: 'shape' as const, name: 'Top Bar', position: { x: 0, y: 0, width: 100, height: 15 }, style: { backgroundColor: '#0f172a' } },
+      createLogoField('logo', 'Logo', { x: 5, y: 2, width: 25, height: 11 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 32, y: 3, width: 65, height: 9 }, { placeholder: 'TECH SUMMIT 2024', style: { fontSize: 14, fontWeight: 'bold', textAlign: 'right', color: '#ffffff' } }),
+      createTextField('title', 'Title', { x: 5, y: 20, width: 90, height: 10 }, { placeholder: 'SESSION SCHEDULE', required: true, style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center' } }),
+      createTextField('schedule', 'Schedule', { x: 8, y: 34, width: 84, height: 45 }, { placeholder: '9:00 AM – Keynote\n10:30 AM – Panel Discussion\n12:00 PM – Lunch\n1:30 PM – Workshops\n3:00 PM – Networking', style: { fontSize: 10, lineHeight: 2 } }),
+      createTextField('wifi', 'WiFi', { x: 10, y: 82, width: 80, height: 12 }, { placeholder: 'WiFi: EventNet\nPassword: summit2024', style: { fontSize: 10, textAlign: 'center', color: '#3b82f6', lineHeight: 1.5 } }),
+    ],
+    tags: ['table-tent', 'event', 'schedule', '5x7'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL OUTDOOR SIGNAGE TEMPLATES =============
+
+export const OUTDOOR_SIGNAGE_EXTRA: EditableTemplate[] = [
+  {
+    id: 'outdoor-sign-24x18-event',
+    name: 'Outdoor Sign 24×18 – Event',
+    description: 'Event directional outdoor sign',
+    assetType: AssetType.OutdoorSignage,
+    category: 'universal',
+    dimensions: createDimensions(24, 18, 0.25, 0.5, 150),
+    background: { type: 'solid', value: '#1e40af' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#1e40af', secondary: '#ffffff', accent: '#fbbf24', text: '#ffffff', background: '#1e40af' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 5, y: 10, width: 25, height: 35 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 33, y: 10, width: 62, height: 25 }, { placeholder: 'CONFERENCE\nTHIS WAY →', required: true, style: { fontSize: 36, fontWeight: 'bold', color: '#ffffff', lineHeight: 1.2 } }),
+      createTextField('details', 'Details', { x: 33, y: 55, width: 62, height: 25 }, { placeholder: 'Building A · Parking in Rear', style: { fontSize: 16, color: '#fbbf24' } }),
+    ],
+    tags: ['outdoor', 'event', 'directional', '24x18'], isSystemTemplate: true
+  },
+  {
+    id: 'outdoor-sign-36x24-banner',
+    name: 'Outdoor Sign 36×24 – Banner',
+    description: 'Large outdoor event banner sign',
+    assetType: AssetType.OutdoorSignage,
+    category: 'universal',
+    dimensions: createDimensions(36, 24, 0.25, 0.5, 150),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#0f172a', secondary: '#ffffff', accent: '#22d3ee', text: '#ffffff', background: '#0f172a' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 5, y: 10, width: 20, height: 80 }, { placeholder: 'Logo' }),
+      createTextField('headline', 'Headline', { x: 28, y: 12, width: 68, height: 30 }, { placeholder: 'OPEN HOUSE', required: true, style: { fontSize: 64, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('date', 'Date', { x: 28, y: 48, width: 68, height: 15 }, { placeholder: 'Saturday, March 15', style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#22d3ee' } }),
+      createTextField('time', 'Time & Location', { x: 28, y: 68, width: 68, height: 15 }, { placeholder: '10AM – 4PM · 123 Main St', style: { fontSize: 18, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } }),
+    ],
+    tags: ['outdoor', 'banner', '36x24'], isSystemTemplate: true
+  },
+  {
+    id: 'outdoor-sign-18x24-parking',
+    name: 'Outdoor Sign 18×24 – Parking',
+    description: 'Parking lot directional sign',
+    assetType: AssetType.OutdoorSignage,
+    category: 'universal',
+    dimensions: createDimensions(18, 24, 0.25, 0.5, 150),
+    background: { type: 'solid', value: '#1e3a5f' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#1e3a5f', secondary: '#ffffff', accent: '#fbbf24', text: '#ffffff', background: '#1e3a5f' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createTextField('p-icon', 'P Icon', { x: 25, y: 8, width: 50, height: 25 }, { placeholder: 'P', style: { fontSize: 96, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('label', 'Label', { x: 5, y: 38, width: 90, height: 15 }, { placeholder: 'EVENT\nPARKING', required: true, style: { fontSize: 42, fontWeight: 'bold', textAlign: 'center', color: '#ffffff', lineHeight: 1.1 } }),
+      createLogoField('logo', 'Logo', { x: 25, y: 60, width: 50, height: 15 }, { placeholder: 'Event Logo' }),
+      createTextField('arrow', 'Arrow', { x: 10, y: 80, width: 80, height: 12 }, { placeholder: '← ENTRANCE', style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24' } }),
+    ],
+    tags: ['outdoor', 'parking', '18x24'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL INVITATION TEMPLATES =============
+
+export const INVITATION_EXTRA: EditableTemplate[] = [
+  {
+    id: 'invitation-5x7-modern',
+    name: 'Invitation 5×7 – Modern',
+    description: 'Modern minimalist invitation card',
+    assetType: AssetType.InvitationCard,
+    category: 'universal',
+    dimensions: createDimensions(5, 7, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#666666', accent: '#c9a962', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('invite', 'You\'re Invited', { x: 10, y: 8, width: 80, height: 10 }, { placeholder: 'You\'re Invited', style: { fontSize: 16, textAlign: 'center', color: '#c9a962', fontStyle: 'italic' } }),
+      createTextField('event', 'Event', { x: 5, y: 22, width: 90, height: 15 }, { placeholder: 'Annual Gala', required: true, style: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', color: '#1a1a1a' } }),
+      { id: 'div', type: 'divider' as const, name: 'Divider', position: { x: 30, y: 40, width: 40, height: 0.3 }, style: { backgroundColor: '#c9a962' } },
+      createTextField('details', 'Details', { x: 10, y: 45, width: 80, height: 30 }, { placeholder: 'Saturday, March Fifteenth\nTwo Thousand Twenty-Four\nat Six O\'Clock in the Evening\n\nThe Grand Ballroom\n123 Elegant Avenue', style: { fontSize: 11, textAlign: 'center', lineHeight: 1.8, color: '#666666' } }),
+      createTextField('rsvp', 'RSVP', { x: 15, y: 82, width: 70, height: 12 }, { placeholder: 'RSVP by March 1st\nrsvp@event.com', style: { fontSize: 10, textAlign: 'center', color: '#c9a962', lineHeight: 1.5 } }),
+    ],
+    tags: ['invitation', 'modern', 'gala', '5x7'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL PROGRAM BOOKLET TEMPLATES =============
+
+export const PROGRAM_BOOKLET_EXTRA: EditableTemplate[] = [
+  {
+    id: 'program-booklet-8x11-event',
+    name: 'Program Booklet 8.5×11 – Event',
+    description: 'Standard event program cover',
+    assetType: AssetType.ProgramBooklet,
+    category: 'universal',
+    dimensions: createDimensions(8.5, 11, 0.125, 0.25),
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #1e3a5f 0%, #0a1628 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#1e3a5f', secondary: '#ffffff', accent: '#c9a962', text: '#ffffff', background: '#1e3a5f' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 5, width: 40, height: 15 }, { placeholder: 'Event Logo' }),
+      createTextField('title', 'Title', { x: 5, y: 25, width: 90, height: 15 }, { placeholder: 'CONFERENCE 2024', required: true, style: { fontSize: 48, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('subtitle', 'Subtitle', { x: 15, y: 42, width: 70, height: 8 }, { placeholder: 'Official Program Guide', style: { fontSize: 18, textAlign: 'center', color: '#c9a962', fontStyle: 'italic' } }),
+      createImageField('cover', 'Cover Image', { x: 10, y: 55, width: 80, height: 25 }, { placeholder: 'Cover photograph' }),
+      createTextField('date', 'Date', { x: 15, y: 84, width: 70, height: 6 }, { placeholder: 'March 15–17, 2024', style: { fontSize: 14, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } }),
+      createTextField('venue', 'Venue', { x: 15, y: 91, width: 70, height: 6 }, { placeholder: 'Convention Center · New York', style: { fontSize: 12, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } }),
+    ],
+    tags: ['program', 'booklet', 'event', 'cover'], isSystemTemplate: true
+  },
+  {
+    id: 'program-booklet-6x9-gala',
+    name: 'Program Booklet 6×9 – Gala',
+    description: 'Elegant gala program cover',
+    assetType: AssetType.ProgramBooklet,
+    category: 'universal',
+    dimensions: createDimensions(6, 9, 0.125, 0.25),
+    background: { type: 'solid', value: '#0a0a0a' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: { primary: '#0a0a0a', secondary: '#c9a962', accent: '#ffffff', text: '#c9a962', background: '#0a0a0a' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      { id: 'border', type: 'shape' as const, name: 'Border', position: { x: 4, y: 3, width: 92, height: 94 }, style: { borderWidth: 1, borderColor: '#c9a962', borderStyle: 'solid', backgroundColor: 'transparent' } },
+      createLogoField('logo', 'Logo', { x: 25, y: 8, width: 50, height: 15 }, { placeholder: 'Logo' }),
+      createTextField('year', 'Year', { x: 20, y: 28, width: 60, height: 10 }, { placeholder: '2024', style: { fontSize: 36, textAlign: 'center', color: '#c9a962', letterSpacing: 8 } }),
+      createTextField('title', 'Title', { x: 10, y: 40, width: 80, height: 15 }, { placeholder: 'Awards Gala', required: true, style: { fontSize: 36, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('subtitle', 'Subtitle', { x: 15, y: 58, width: 70, height: 8 }, { placeholder: 'Celebrating Excellence', style: { fontSize: 14, textAlign: 'center', color: '#c9a962', fontStyle: 'italic' } }),
+      { id: 'div', type: 'divider' as const, name: 'Divider', position: { x: 30, y: 70, width: 40, height: 0.2 }, style: { backgroundColor: '#c9a962' } },
+      createTextField('date', 'Date & Venue', { x: 10, y: 75, width: 80, height: 15 }, { placeholder: 'Saturday Evening\nMarch Fifteenth\nThe Grand Ballroom', style: { fontSize: 11, textAlign: 'center', color: 'rgba(201,169,98,0.8)', lineHeight: 1.8 } }),
+    ],
+    tags: ['program', 'booklet', 'gala', 'awards', '6x9'], isSystemTemplate: true
+  }
+];
+
 // Export all local vendor templates
 export const ALL_LOCAL_VENDOR_TEMPLATES: EditableTemplate[] = [
   ...STAPLES_TEMPLATES,
@@ -2642,5 +2863,9 @@ export const ALL_LOCAL_VENDOR_TEMPLATES: EditableTemplate[] = [
   ...CVS_PHOTO_TEMPLATES,
   ...MINUTEMAN_PRESS_TEMPLATES,
   ...ALPHAGRAPHICS_TEMPLATES,
-  ...SIR_SPEEDY_TEMPLATES
+  ...SIR_SPEEDY_TEMPLATES,
+  ...TABLE_TENT_EXTRA,
+  ...OUTDOOR_SIGNAGE_EXTRA,
+  ...INVITATION_EXTRA,
+  ...PROGRAM_BOOKLET_EXTRA
 ];

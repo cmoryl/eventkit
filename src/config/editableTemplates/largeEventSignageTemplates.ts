@@ -922,13 +922,471 @@ export const AFRAME_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= ADDITIONAL STEP & REPEAT TEMPLATES =============
+
+const STEP_REPEAT_EXTRA: EditableTemplate[] = [
+  {
+    id: 'step-repeat-6x8-elegant',
+    name: 'Step & Repeat 6×8 ft – Elegant',
+    description: 'Elegant step and repeat with centered branding',
+    assetType: AssetType.StepAndRepeat,
+    category: 'universal',
+    dimensions: createDimensions(72, 96, 2, 6, 150),
+    background: { type: 'solid', value: '#0a0a0a' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: { primary: '#0a0a0a', secondary: '#c9a962', accent: '#ffffff', text: '#ffffff', background: '#0a0a0a' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo-center', 'Event Logo', { x: 35, y: 35, width: 30, height: 30 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event Name', { x: 10, y: 70, width: 80, height: 10 }, { placeholder: 'GALA AWARDS 2024', style: { fontSize: 72, fontWeight: 'bold', textAlign: 'center', color: '#c9a962', letterSpacing: 4 } }),
+      createLogoField('sp-tl', 'Sponsor TL', { x: 5, y: 5, width: 15, height: 12 }, { placeholder: 'Sponsor' }),
+      createLogoField('sp-tr', 'Sponsor TR', { x: 80, y: 5, width: 15, height: 12 }, { placeholder: 'Sponsor' }),
+      createLogoField('sp-bl', 'Sponsor BL', { x: 5, y: 83, width: 15, height: 12 }, { placeholder: 'Sponsor' }),
+      createLogoField('sp-br', 'Sponsor BR', { x: 80, y: 83, width: 15, height: 12 }, { placeholder: 'Sponsor' }),
+    ],
+    tags: ['step-repeat', 'elegant', 'gala'], isSystemTemplate: true
+  },
+  {
+    id: 'step-repeat-10x8-grid',
+    name: 'Step & Repeat 10×8 ft – Grid',
+    description: 'Uniform grid pattern step and repeat',
+    assetType: AssetType.StepAndRepeat,
+    category: 'universal',
+    dimensions: createDimensions(120, 96, 2, 6, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#ffffff', secondary: '#1a1a1a', accent: '#0066cc', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: Array.from({ length: 20 }, (_, i) => createLogoField(`logo-g-${i}`, `Logo ${i + 1}`, { x: 5 + (i % 5) * 19, y: 5 + Math.floor(i / 5) * 23, width: 14, height: 18 }, { placeholder: 'Logo/Sponsor' })),
+    tags: ['step-repeat', 'grid', 'uniform'], isSystemTemplate: true
+  },
+  {
+    id: 'step-repeat-8x8-branded',
+    name: 'Step & Repeat 8×8 ft – Branded',
+    description: 'Single-brand focused step and repeat with pattern',
+    assetType: AssetType.StepAndRepeat,
+    category: 'universal',
+    dimensions: createDimensions(96, 96, 2, 6, 150),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#1e3a5f', secondary: '#ffffff', accent: '#fbbf24', text: '#ffffff', background: '#1e3a5f' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      ...Array.from({ length: 12 }, (_, i) => createLogoField(`logo-p-${i}`, `Logo ${i + 1}`, { x: 8 + (i % 4) * 23, y: 5 + Math.floor(i / 4) * 28, width: 18, height: 22 }, { placeholder: 'Brand Logo' })),
+      createTextField('hashtag', 'Hashtag', { x: 10, y: 90, width: 80, height: 6 }, { placeholder: '#EventName2024', style: { fontSize: 48, textAlign: 'center', color: '#fbbf24', fontWeight: 'bold' } }),
+    ],
+    tags: ['step-repeat', 'branded', 'single-brand'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL STAGE BACKDROP TEMPLATES =============
+
+const STAGE_BACKDROP_EXTRA: EditableTemplate[] = [
+  {
+    id: 'stage-backdrop-12x8-minimal',
+    name: 'Stage Backdrop 12×8 ft – Minimal',
+    description: 'Clean minimal stage backdrop',
+    assetType: AssetType.MainStageBackdrop,
+    category: 'universal',
+    dimensions: createDimensions(144, 96, 2, 12, 100),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#666666', accent: '#0066cc', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 38, y: 15, width: 24, height: 18 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 15, y: 42, width: 70, height: 16 }, { placeholder: 'EVENT NAME', required: true, style: { fontSize: 160, fontWeight: 'bold', textAlign: 'center', color: '#1a1a1a' } }),
+      createTextField('date', 'Date', { x: 25, y: 65, width: 50, height: 8 }, { placeholder: 'March 15–17, 2024', style: { fontSize: 48, textAlign: 'center', color: '#666666' } }),
+    ],
+    tags: ['stage', 'backdrop', 'minimal', 'clean'], isSystemTemplate: true
+  },
+  {
+    id: 'stage-backdrop-16x9-neon',
+    name: 'Stage Backdrop 16×9 ft – Neon',
+    description: 'Bold neon-accented stage backdrop',
+    assetType: AssetType.MainStageBackdrop,
+    category: 'universal',
+    dimensions: createDimensions(192, 108, 2, 12, 100),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #0f0f0f 0%, #1a0a2e 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#0f0f0f', secondary: '#00ff88', accent: '#ff00ff', text: '#ffffff', background: '#0f0f0f' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 38, y: 8, width: 24, height: 16 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 5, y: 30, width: 90, height: 20 }, { placeholder: 'TECH SUMMIT', required: true, style: { fontSize: 220, fontWeight: 'bold', textAlign: 'center', color: '#00ff88' } }),
+      createTextField('year', 'Year', { x: 35, y: 52, width: 30, height: 12 }, { placeholder: '2024', style: { fontSize: 100, fontWeight: 'bold', textAlign: 'center', color: '#ff00ff' } }),
+      createTextField('tagline', 'Tagline', { x: 20, y: 70, width: 60, height: 8 }, { placeholder: 'CODE THE FUTURE', style: { fontSize: 48, textAlign: 'center', color: '#ffffff', letterSpacing: 6 } }),
+    ],
+    tags: ['stage', 'backdrop', 'neon', 'tech'], isSystemTemplate: true
+  },
+  {
+    id: 'stage-backdrop-20x10-corporate',
+    name: 'Stage Backdrop 20×10 ft – Corporate',
+    description: 'Professional corporate stage backdrop',
+    assetType: AssetType.MainStageBackdrop,
+    category: 'universal',
+    dimensions: createDimensions(240, 120, 3, 18, 100),
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #1e3a5f 0%, #0a1628 100%)' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#1e3a5f', secondary: '#ffffff', accent: '#c9a962', text: '#ffffff', background: '#1e3a5f' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 40, y: 5, width: 20, height: 15 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 10, y: 25, width: 80, height: 15 }, { placeholder: 'ANNUAL MEETING', required: true, style: { fontSize: 180, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('subtitle', 'Subtitle', { x: 20, y: 42, width: 60, height: 8 }, { placeholder: 'Leading with Purpose', style: { fontSize: 60, textAlign: 'center', color: '#c9a962', fontStyle: 'italic' } }),
+      { id: 'divider', type: 'divider' as const, name: 'Divider', position: { x: 30, y: 55, width: 40, height: 0.3 }, style: { backgroundColor: '#c9a962' } },
+      createTextField('date', 'Date & Location', { x: 15, y: 60, width: 70, height: 8 }, { placeholder: 'March 15–17 • New York', style: { fontSize: 48, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } }),
+      createLogoField('sp1', 'Sponsor 1', { x: 15, y: 85, width: 12, height: 8 }, { placeholder: 'Sponsor' }),
+      createLogoField('sp2', 'Sponsor 2', { x: 32, y: 85, width: 12, height: 8 }, { placeholder: 'Sponsor' }),
+      createLogoField('sp3', 'Sponsor 3', { x: 49, y: 85, width: 12, height: 8 }, { placeholder: 'Sponsor' }),
+      createLogoField('sp4', 'Sponsor 4', { x: 66, y: 85, width: 12, height: 8 }, { placeholder: 'Sponsor' }),
+    ],
+    tags: ['stage', 'backdrop', 'corporate', 'annual-meeting'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL BACK WALL TEMPLATES =============
+
+const BOOTH_PANEL_EXTRA: EditableTemplate[] = [
+  {
+    id: 'booth-backwall-8x8-minimal',
+    name: 'Trade Show Booth 8×8 ft – Minimal',
+    description: 'Clean minimal booth back wall',
+    assetType: AssetType.BackWall,
+    category: 'universal',
+    dimensions: createDimensions(96, 96, 1, 6, 150),
+    background: { type: 'solid', value: '#f8f9fa' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#666666', accent: '#0066cc', text: '#1a1a1a', background: '#f8f9fa' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 10, width: 40, height: 20 }, { placeholder: 'Logo' }),
+      createTextField('tagline', 'Tagline', { x: 15, y: 38, width: 70, height: 10 }, { placeholder: 'Simple. Powerful. Effective.', style: { fontSize: 48, textAlign: 'center', color: '#666666' } }),
+      createImageField('product', 'Product', { x: 20, y: 55, width: 60, height: 30 }, { placeholder: 'Hero product image' }),
+      createTextField('url', 'Website', { x: 30, y: 90, width: 40, height: 5 }, { placeholder: 'www.company.com', style: { fontSize: 24, textAlign: 'center', color: '#0066cc' } }),
+    ],
+    tags: ['booth', 'minimal', '8x8'], isSystemTemplate: true
+  },
+  {
+    id: 'booth-backwall-10x10-split',
+    name: 'Trade Show Booth 10×10 ft – Split',
+    description: 'Two-tone split booth back wall',
+    assetType: AssetType.BackWall,
+    category: 'universal',
+    dimensions: createDimensions(120, 96, 1, 6, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#dc2626', secondary: '#1a1a1a', accent: '#ffffff', text: '#ffffff', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      { id: 'left-panel', type: 'shape' as const, name: 'Left Panel', position: { x: 0, y: 0, width: 50, height: 100 }, style: { backgroundColor: '#dc2626' } },
+      createLogoField('logo', 'Logo', { x: 8, y: 15, width: 34, height: 20 }, { placeholder: 'Logo (white)' }),
+      createTextField('headline', 'Headline', { x: 5, y: 42, width: 42, height: 18 }, { placeholder: 'LEADING\nINNOVATION', required: true, style: { fontSize: 72, fontWeight: 'bold', textAlign: 'center', color: '#ffffff', lineHeight: 1.1 } }),
+      createImageField('img1', 'Image 1', { x: 55, y: 5, width: 40, height: 28 }, { placeholder: 'Product 1' }),
+      createImageField('img2', 'Image 2', { x: 55, y: 36, width: 40, height: 28 }, { placeholder: 'Product 2' }),
+      createImageField('img3', 'Image 3', { x: 55, y: 67, width: 40, height: 28 }, { placeholder: 'Product 3' }),
+    ],
+    tags: ['booth', 'split', '10x10'], isSystemTemplate: true
+  },
+  {
+    id: 'booth-backwall-10x10-tech',
+    name: 'Trade Show Booth 10×10 ft – Tech',
+    description: 'Technology-focused booth back wall',
+    assetType: AssetType.BackWall,
+    category: 'universal',
+    dimensions: createDimensions(120, 96, 1, 6, 150),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#0f172a', secondary: '#38bdf8', accent: '#22d3ee', text: '#ffffff', background: '#0f172a' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 35, y: 5, width: 30, height: 15 }, { placeholder: 'Logo' }),
+      createTextField('headline', 'Headline', { x: 10, y: 25, width: 80, height: 15 }, { placeholder: 'AI-POWERED', required: true, style: { fontSize: 96, fontWeight: 'bold', textAlign: 'center', color: '#38bdf8' } }),
+      createTextField('sub', 'Subtitle', { x: 15, y: 42, width: 70, height: 8 }, { placeholder: 'The Future of Enterprise', style: { fontSize: 36, textAlign: 'center', color: '#ffffff' } }),
+      createImageField('demo', 'Demo Screenshot', { x: 15, y: 55, width: 70, height: 25 }, { placeholder: 'Product demo screenshot' }),
+      createTextField('booth', 'Booth', { x: 35, y: 88, width: 30, height: 6 }, { placeholder: 'BOOTH #A100', style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#22d3ee' } }),
+    ],
+    tags: ['booth', 'tech', '10x10'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL HANGING SIGN TEMPLATES =============
+
+const HANGING_SIGN_EXTRA: EditableTemplate[] = [
+  {
+    id: 'hanging-sign-3x3-circle',
+    name: 'Hanging Sign 3×3 ft – Circular',
+    description: 'Circular hanging sign for zones',
+    assetType: AssetType.HangingSignage,
+    category: 'universal',
+    dimensions: createDimensions(36, 36, 0.5, 2, 150),
+    background: { type: 'solid', value: '#10b981' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#10b981', secondary: '#ffffff', accent: '#1a1a1a', text: '#ffffff', background: '#10b981' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      { id: 'bg-circle', type: 'shape' as const, name: 'Background', position: { x: 5, y: 5, width: 90, height: 90 }, style: { backgroundColor: '#10b981', borderRadius: 50 } },
+      createLogoField('logo', 'Logo', { x: 30, y: 12, width: 40, height: 25 }, { placeholder: 'Logo' }),
+      createTextField('zone', 'Zone', { x: 10, y: 48, width: 80, height: 25 }, { placeholder: 'FOOD', required: true, style: { fontSize: 96, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('desc', 'Description', { x: 15, y: 75, width: 70, height: 10 }, { placeholder: 'Hall B', style: { fontSize: 28, textAlign: 'center', color: 'rgba(255,255,255,0.9)' } }),
+    ],
+    tags: ['hanging', 'circular', '3x3'], isSystemTemplate: true
+  },
+  {
+    id: 'hanging-banner-6x3-directional',
+    name: 'Hanging Banner 6×3 ft – Directional',
+    description: 'Directional hanging banner with arrows',
+    assetType: AssetType.HangingSignage,
+    category: 'universal',
+    dimensions: createDimensions(72, 36, 0.5, 2, 150),
+    background: { type: 'solid', value: '#f59e0b' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#f59e0b', secondary: '#1a1a1a', accent: '#ffffff', text: '#1a1a1a', background: '#f59e0b' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createTextField('direction', 'Direction', { x: 5, y: 15, width: 70, height: 35 }, { placeholder: 'REGISTRATION →', required: true, style: { fontSize: 72, fontWeight: 'bold', color: '#1a1a1a' } }),
+      createTextField('floor', 'Floor/Area', { x: 5, y: 55, width: 70, height: 20 }, { placeholder: 'Ground Floor, East Wing', style: { fontSize: 32, color: 'rgba(0,0,0,0.7)' } }),
+      createLogoField('logo', 'Logo', { x: 78, y: 15, width: 18, height: 70 }, { placeholder: 'Logo' }),
+    ],
+    tags: ['hanging', 'directional', '6x3'], isSystemTemplate: true
+  },
+  {
+    id: 'hanging-sign-4x4-premium',
+    name: 'Hanging Sign 4×4 ft – Premium',
+    description: 'Premium illuminated-style hanging sign',
+    assetType: AssetType.HangingSignage,
+    category: 'universal',
+    dimensions: createDimensions(48, 48, 0.5, 2, 150),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: { primary: '#1a1a2e', secondary: '#c9a962', accent: '#ffffff', text: '#c9a962', background: '#1a1a2e' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      { id: 'border', type: 'shape' as const, name: 'Border', position: { x: 3, y: 3, width: 94, height: 94 }, style: { borderWidth: 2, borderColor: '#c9a962', borderStyle: 'solid', backgroundColor: 'transparent' } },
+      createLogoField('logo', 'Logo', { x: 25, y: 10, width: 50, height: 25 }, { placeholder: 'Logo' }),
+      createTextField('name', 'Name', { x: 10, y: 42, width: 80, height: 25 }, { placeholder: 'VIP', required: true, style: { fontSize: 120, fontWeight: 'bold', textAlign: 'center', color: '#c9a962' } }),
+      createTextField('sub', 'Subtitle', { x: 15, y: 72, width: 70, height: 12 }, { placeholder: 'LOUNGE', style: { fontSize: 40, textAlign: 'center', color: '#ffffff', letterSpacing: 8 } }),
+    ],
+    tags: ['hanging', 'premium', '4x4'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL FLOOR DECAL TEMPLATES =============
+
+const FLOOR_GRAPHICS_EXTRA: EditableTemplate[] = [
+  {
+    id: 'floor-decal-3x3-arrow',
+    name: 'Floor Decal 3×3 ft – Arrow',
+    description: 'Arrow-shaped floor directional',
+    assetType: AssetType.FloorDecal,
+    category: 'universal',
+    dimensions: createDimensions(36, 36, 0.5, 2, 150),
+    background: { type: 'solid', value: '#dc2626' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#dc2626', secondary: '#ffffff', accent: '#1a1a1a', text: '#ffffff', background: '#dc2626' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createTextField('direction', 'Direction', { x: 10, y: 20, width: 80, height: 30 }, { placeholder: '↑', required: true, style: { fontSize: 120, textAlign: 'center', color: '#ffffff' } }),
+      createTextField('label', 'Label', { x: 10, y: 55, width: 80, height: 20 }, { placeholder: 'EXIT', style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+    ],
+    tags: ['floor', 'arrow', '3x3'], isSystemTemplate: true
+  },
+  {
+    id: 'floor-decal-4x4-branded',
+    name: 'Floor Decal 4×4 ft – Branded',
+    description: 'Brand logo floor decal for high-traffic areas',
+    assetType: AssetType.FloorDecal,
+    category: 'universal',
+    dimensions: createDimensions(48, 48, 0.5, 2, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#666666', accent: '#0066cc', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Brand Logo', { x: 15, y: 15, width: 70, height: 50 }, { placeholder: 'Large brand logo' }),
+      createTextField('tagline', 'Tagline', { x: 10, y: 70, width: 80, height: 12 }, { placeholder: 'Welcome to Innovation', style: { fontSize: 36, textAlign: 'center', color: '#1a1a1a' } }),
+    ],
+    tags: ['floor', 'branded', '4x4'], isSystemTemplate: true
+  },
+  {
+    id: 'floor-runner-2x8-pathway',
+    name: 'Floor Runner 2×8 ft – Pathway',
+    description: 'Long floor runner for corridors',
+    assetType: AssetType.FloorDecal,
+    category: 'universal',
+    dimensions: createDimensions(96, 24, 0.5, 2, 150),
+    background: { type: 'gradient', value: 'linear-gradient(90deg, #1e40af 0%, #3b82f6 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#1e40af', secondary: '#ffffff', accent: '#fbbf24', text: '#ffffff', background: '#1e40af' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createTextField('text', 'Direction', { x: 5, y: 20, width: 60, height: 60 }, { placeholder: 'MAIN STAGE →', required: true, style: { fontSize: 64, fontWeight: 'bold', color: '#ffffff' } }),
+      createLogoField('logo', 'Logo', { x: 72, y: 15, width: 25, height: 70 }, { placeholder: 'Logo' }),
+    ],
+    tags: ['floor', 'runner', '2x8', 'pathway'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL WINDOW CLING TEMPLATES =============
+
+const WINDOW_GRAPHICS_EXTRA: EditableTemplate[] = [
+  {
+    id: 'window-cling-3x4-promo',
+    name: 'Window Cling 3×4 ft – Promo',
+    description: 'Promotional window cling',
+    assetType: AssetType.WindowCling,
+    category: 'universal',
+    dimensions: createDimensions(36, 48, 0.5, 2, 150),
+    background: { type: 'solid', value: 'rgba(255,255,255,0.9)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#dc2626', secondary: '#1a1a1a', accent: '#fbbf24', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 20, y: 5, width: 60, height: 15 }, { placeholder: 'Logo' }),
+      createTextField('headline', 'Headline', { x: 5, y: 25, width: 90, height: 15 }, { placeholder: 'SALE', required: true, style: { fontSize: 96, fontWeight: 'bold', textAlign: 'center', color: '#dc2626' } }),
+      createTextField('details', 'Details', { x: 10, y: 45, width: 80, height: 20 }, { placeholder: 'Up to 50% Off\nThis Weekend Only', style: { fontSize: 28, textAlign: 'center', lineHeight: 1.4 } }),
+      createTextField('dates', 'Dates', { x: 15, y: 75, width: 70, height: 10 }, { placeholder: 'March 15–17', style: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' } }),
+    ],
+    tags: ['window', 'cling', 'promo', '3x4'], isSystemTemplate: true
+  },
+  {
+    id: 'window-cling-6x4-landscape',
+    name: 'Window Cling 6×4 ft – Landscape',
+    description: 'Wide landscape window graphic',
+    assetType: AssetType.WindowCling,
+    category: 'universal',
+    dimensions: createDimensions(72, 48, 0.5, 2, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#0f172a', secondary: '#ffffff', accent: '#3b82f6', text: '#0f172a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createImageField('hero', 'Hero Image', { x: 0, y: 0, width: 55, height: 100 }, { placeholder: 'Event hero image' }),
+      createLogoField('logo', 'Logo', { x: 60, y: 8, width: 35, height: 18 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 58, y: 32, width: 40, height: 18 }, { placeholder: 'SUMMIT\n2024', required: true, style: { fontSize: 48, fontWeight: 'bold', textAlign: 'center', color: '#0f172a', lineHeight: 1.1 } }),
+      createTextField('info', 'Info', { x: 58, y: 58, width: 40, height: 20 }, { placeholder: 'March 15–17\nConvention Center', style: { fontSize: 20, textAlign: 'center', lineHeight: 1.5 } }),
+      createTextField('cta', 'CTA', { x: 60, y: 82, width: 35, height: 10 }, { placeholder: 'Register Now', style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', color: '#3b82f6' } }),
+    ],
+    tags: ['window', 'cling', 'landscape', '6x4'], isSystemTemplate: true
+  },
+  {
+    id: 'window-frosted-4x6',
+    name: 'Window Frosted Film 4×6 ft',
+    description: 'Frosted window film with cutout design',
+    assetType: AssetType.WindowCling,
+    category: 'universal',
+    dimensions: createDimensions(48, 72, 0.5, 2, 150),
+    background: { type: 'solid', value: 'rgba(255,255,255,0.7)' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#334155', secondary: '#ffffff', accent: '#0ea5e9', text: '#334155', background: 'rgba(255,255,255,0.7)' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 10, width: 50, height: 20 }, { placeholder: 'Logo' }),
+      createTextField('name', 'Name', { x: 10, y: 38, width: 80, height: 12 }, { placeholder: 'MEETING ROOM', required: true, style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#334155' } }),
+      createTextField('capacity', 'Capacity', { x: 20, y: 55, width: 60, height: 8 }, { placeholder: 'Capacity: 20', style: { fontSize: 24, textAlign: 'center', color: '#64748b' } }),
+      createTextField('hours', 'Hours', { x: 15, y: 70, width: 70, height: 12 }, { placeholder: 'Available 8AM – 6PM', style: { fontSize: 20, textAlign: 'center', color: '#64748b' } }),
+    ],
+    tags: ['window', 'frosted', 'meeting-room', '4x6'], isSystemTemplate: true
+  }
+];
+
+// ============= ADDITIONAL A-FRAME TEMPLATES =============
+
+const AFRAME_EXTRA: EditableTemplate[] = [
+  {
+    id: 'aframe-24x36-cafe',
+    name: 'A-Frame Sign 24×36 – Café',
+    description: 'Café/restaurant sidewalk A-frame',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0.25, 0.5, 150),
+    background: { type: 'solid', value: '#2d1b0e' },
+    defaultFonts: { heading: 'Georgia', body: 'Arial' },
+    defaultColors: { primary: '#2d1b0e', secondary: '#f5e6d3', accent: '#c9a962', text: '#f5e6d3', background: '#2d1b0e' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 5, width: 50, height: 15 }, { placeholder: 'Logo' }),
+      createTextField('headline', 'Headline', { x: 5, y: 25, width: 90, height: 15 }, { placeholder: 'TODAY\'S SPECIALS', required: true, style: { fontSize: 48, fontWeight: 'bold', textAlign: 'center', color: '#c9a962' } }),
+      createTextField('items', 'Menu Items', { x: 10, y: 45, width: 80, height: 35 }, { placeholder: '☕ Latte · $5\n🥐 Croissant · $4\n🥗 Salad · $12', style: { fontSize: 20, textAlign: 'center', color: '#f5e6d3', lineHeight: 2 } }),
+      createTextField('hours', 'Hours', { x: 15, y: 85, width: 70, height: 10 }, { placeholder: 'Open 7AM – 9PM', style: { fontSize: 16, textAlign: 'center', color: 'rgba(245,230,211,0.7)' } }),
+    ],
+    tags: ['aframe', 'cafe', 'restaurant', 'menu'], isSystemTemplate: true
+  },
+  {
+    id: 'aframe-24x36-directional',
+    name: 'A-Frame Sign 24×36 – Directional',
+    description: 'Directional wayfinding A-frame',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0.25, 0.5, 150),
+    background: { type: 'solid', value: '#1e40af' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#1e40af', secondary: '#ffffff', accent: '#fbbf24', text: '#ffffff', background: '#1e40af' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 20, y: 5, width: 60, height: 15 }, { placeholder: 'Event Logo' }),
+      createTextField('arrow', 'Arrow', { x: 10, y: 25, width: 80, height: 25 }, { placeholder: '←', required: true, style: { fontSize: 120, textAlign: 'center', color: '#fbbf24' } }),
+      createTextField('destination', 'Destination', { x: 5, y: 55, width: 90, height: 20 }, { placeholder: 'BALLROOM', style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('detail', 'Detail', { x: 10, y: 78, width: 80, height: 10 }, { placeholder: '2nd Floor, Turn Left', style: { fontSize: 20, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } }),
+    ],
+    tags: ['aframe', 'directional', 'wayfinding'], isSystemTemplate: true
+  },
+  {
+    id: 'aframe-24x36-promo',
+    name: 'A-Frame Sign 24×36 – Promo',
+    description: 'Promotional event A-frame sign',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0.25, 0.5, 150),
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #dc2626 0%, #991b1b 100%)' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#dc2626', secondary: '#ffffff', accent: '#fbbf24', text: '#ffffff', background: '#dc2626' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 3, width: 50, height: 12 }, { placeholder: 'Logo' }),
+      createTextField('headline', 'Headline', { x: 5, y: 18, width: 90, height: 15 }, { placeholder: 'FREE\nADMISSION', required: true, style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#ffffff', lineHeight: 1.1 } }),
+      createImageField('image', 'Image', { x: 10, y: 38, width: 80, height: 30 }, { placeholder: 'Promotional image' }),
+      createTextField('event', 'Event', { x: 5, y: 72, width: 90, height: 10 }, { placeholder: 'Art Exhibition 2024', style: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24' } }),
+      createTextField('info', 'Info', { x: 10, y: 85, width: 80, height: 10 }, { placeholder: 'March 15 · 10AM–6PM', style: { fontSize: 18, textAlign: 'center', color: 'rgba(255,255,255,0.9)' } }),
+    ],
+    tags: ['aframe', 'promo', 'event'], isSystemTemplate: true
+  },
+  {
+    id: 'aframe-24x36-registration',
+    name: 'A-Frame Sign 24×36 – Registration',
+    description: 'Registration desk A-frame with QR code',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0.25, 0.5, 150),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#666666', accent: '#0066cc', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 5, width: 50, height: 12 }, { placeholder: 'Event Logo' }),
+      createTextField('headline', 'Headline', { x: 5, y: 22, width: 90, height: 12 }, { placeholder: 'CHECK IN', required: true, style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#1a1a1a' } }),
+      createTextField('instructions', 'Instructions', { x: 10, y: 38, width: 80, height: 12 }, { placeholder: 'Scan the QR code below\nto check in', style: { fontSize: 18, textAlign: 'center', color: '#666666', lineHeight: 1.5 } }),
+      { id: 'qr', type: 'qrcode' as const, name: 'QR Code', position: { x: 25, y: 55, width: 50, height: 30 }, placeholder: 'Registration URL', style: {} },
+      createTextField('help', 'Help', { x: 15, y: 88, width: 70, height: 8 }, { placeholder: 'Need help? Visit the info desk', style: { fontSize: 14, textAlign: 'center', color: '#0066cc' } }),
+    ],
+    tags: ['aframe', 'registration', 'check-in', 'qr'], isSystemTemplate: true
+  }
+];
+
 // Export all large event signage templates
 export const ALL_LARGE_EVENT_SIGNAGE_TEMPLATES: EditableTemplate[] = [
   ...STEP_REPEAT_TEMPLATES,
+  ...STEP_REPEAT_EXTRA,
   ...STAGE_BACKDROP_TEMPLATES,
+  ...STAGE_BACKDROP_EXTRA,
   ...BOOTH_PANEL_TEMPLATES,
+  ...BOOTH_PANEL_EXTRA,
   ...HANGING_SIGN_TEMPLATES,
+  ...HANGING_SIGN_EXTRA,
   ...FLOOR_GRAPHICS_TEMPLATES,
+  ...FLOOR_GRAPHICS_EXTRA,
   ...WINDOW_GRAPHICS_TEMPLATES,
-  ...AFRAME_TEMPLATES
+  ...WINDOW_GRAPHICS_EXTRA,
+  ...AFRAME_TEMPLATES,
+  ...AFRAME_EXTRA
 ];
