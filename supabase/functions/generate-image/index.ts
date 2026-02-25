@@ -69,7 +69,7 @@ serve(async (req) => {
     const brandContextString = buildBrandContext(brandContext);
     const locationContext = buildLocationContext(location, incorporateLocationStyle);
     const venueIntelligenceContext = buildVenueContext(venueIntelligence);
-    const logoInstructions = buildLogoInstructions(!!logoBase64);
+    const logoInstructions = buildLogoInstructions(!!logoBase64, assetType);
     const analysisInstructions = buildAnalysisInstructions(imageAnalysis);
 
     // FETCH PROMPT TEMPLATE FROM DATABASE
