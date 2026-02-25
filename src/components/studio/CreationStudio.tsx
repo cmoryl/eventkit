@@ -21,6 +21,7 @@ import { StudioAssetGrid } from './StudioAssetGrid';
 import { StudioProductionPanel } from './StudioProductionPanel';
 import { BrandSelector } from './BrandSelector';
 import { BrandsPanel } from './BrandsPanel';
+import { StudioReferenceChat } from './StudioReferenceChat';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -479,6 +480,13 @@ export const CreationStudio: React.FC = () => {
                   : [...prev, id]
               );
             }}
+            studioGradient={studio.gradient}
+          />
+
+          {/* AI Reference Chat */}
+          <StudioReferenceChat
+            studioType={studio.id}
+            studioName={studio.name}
             studioGradient={studio.gradient}
           />
         </main>
