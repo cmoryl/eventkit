@@ -1,15 +1,15 @@
-import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Accessibility, Eye, EyeOff, Type, Contrast, CheckCircle2, XCircle,
-  AlertTriangle, Info, ChevronDown, ChevronRight, X
+  AlertTriangle, Info, ChevronDown, ChevronRight, X, Wand2, Copy, Check, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 import type { Brand } from '@/types/studio.types';
 
 // ── Contrast helpers ──────────────────────────────────────
@@ -88,6 +88,87 @@ function rgbToHex([r, g, b]: [number, number, number]) {
   return '#' + [r, g, b].map(c => Math.max(0, Math.min(255, c)).toString(16).padStart(2, '0')).join('');
 }
 
+// ── Auto-fix: adjust color to meet target contrast ────────
+
+function rgbToHsl([r, g, b]: [number, number, number]): [number, number, number] {
+  const rn = r / 255, gn = g / 255, bn = b / 255;
+  const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === rn) h = ((gn - bn) / d + (gn < bn ? 6 : 0)) / 6;
+  else if (max === gn) h = ((bn - rn) / d + 2) / 6;
+  else h = ((rn - gn) / d + 4) / 6;
+  return [h, s, l];
+}
+
+function hslToRgb([h, s, l]: [number, number, number]): [number, number, number] {
+  if (s === 0) { const v = Math.round(l * 255); return [v, v, v]; }
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1; if (t > 1) t -= 1;
+    if (t < 1 / 6) return p + (q - p) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+    return p;
+  };
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  return [
+    Math.round(hue2rgb(p, q, h + 1 / 3) * 255),
+    Math.round(hue2rgb(p, q, h) * 255),
+    Math.round(hue2rgb(p, q, h - 1 / 3) * 255),
+  ];
+}
+
+/** Adjust a foreground color's lightness to meet targetRatio against bgRgb, preserving hue & saturation. */
+function suggestFixedColor(fgHex: string, bgHex: string, targetRatio = 4.5): string | null {
+  const fgRgb = hexToRgb(fgHex);
+  const bgRgb = hexToRgb(bgHex);
+  if (!fgRgb || !bgRgb) return null;
+
+  const bgLum = relativeLuminance(bgRgb);
+  const [h, s] = rgbToHsl(fgRgb);
+
+  // Try darkening or lightening based on background
+  const shouldDarken = bgLum > 0.5;
+  const step = 0.01;
+  const startL = rgbToHsl(fgRgb)[2];
+
+  for (let i = 0; i <= 100; i++) {
+    const newL = shouldDarken
+      ? Math.max(0, startL - i * step)
+      : Math.min(1, startL + i * step);
+    const candidateRgb = hslToRgb([h, s, newL]);
+    const ratio = contrastRatio(candidateRgb, bgRgb);
+    if (ratio >= targetRatio) {
+      return rgbToHex(candidateRgb);
+    }
+  }
+  // If adjusting lightness alone doesn't work, try boosting saturation too
+  for (let i = 0; i <= 100; i++) {
+    const newL = shouldDarken ? Math.max(0, startL - i * step) : Math.min(1, startL + i * step);
+    const newS = Math.min(1, s + 0.2);
+    const candidateRgb = hslToRgb([h, newS, newL]);
+    const ratio = contrastRatio(candidateRgb, bgRgb);
+    if (ratio >= targetRatio) {
+      return rgbToHex(candidateRgb);
+    }
+  }
+  return null;
+}
+
+interface AutoFixSuggestion {
+  colorName: string;
+  originalHex: string;
+  bgName: string;
+  bgHex: string;
+  originalRatio: number;
+  suggestedHex: string;
+  newRatio: number;
+}
+
 // ── Readability scoring ───────────────────────────────────
 
 interface ReadabilityCheck {
@@ -136,6 +217,8 @@ export const AccessibilityAnalysisPanel: React.FC<AccessibilityAnalysisPanelProp
 }) => {
   const [activeCbType, setActiveCbType] = useState<CbType>('protanopia');
   const [expandedSection, setExpandedSection] = useState<string | null>('contrast');
+  const [copiedHex, setCopiedHex] = useState<string | null>(null);
+  const [showAutoFix, setShowAutoFix] = useState(false);
 
   // Extract brand colors
   const brandColors = useMemo(() => {
@@ -205,6 +288,34 @@ export const AccessibilityAnalysisPanel: React.FC<AccessibilityAnalysisPanelProp
   }, [contrastResults, readabilityChecks]);
 
   const scoreColor = overallScore >= 80 ? 'text-green-600 dark:text-green-400' : overallScore >= 50 ? 'text-yellow-600 dark:text-yellow-400' : 'text-destructive';
+
+  // Auto-fix suggestions for failing pairs
+  const autoFixSuggestions = useMemo<AutoFixSuggestion[]>(() => {
+    const failing = contrastResults.filter(r => r.level === 'Fail' || r.level === 'AA Large');
+    return failing.map(r => {
+      const fixed = suggestFixedColor(r.fgHex, r.bgHex, 4.5);
+      if (!fixed) return null;
+      const fixedRgb = hexToRgb(fixed);
+      const bgRgb = hexToRgb(r.bgHex);
+      const newRatio = fixedRgb && bgRgb ? contrastRatio(fixedRgb, bgRgb) : 0;
+      return {
+        colorName: r.fg,
+        originalHex: r.fgHex,
+        bgName: r.bg,
+        bgHex: r.bgHex,
+        originalRatio: r.ratio,
+        suggestedHex: fixed,
+        newRatio,
+      };
+    }).filter(Boolean) as AutoFixSuggestion[];
+  }, [contrastResults]);
+
+  const handleCopyHex = useCallback((hex: string) => {
+    navigator.clipboard.writeText(hex);
+    setCopiedHex(hex);
+    toast.success(`Copied ${hex}`);
+    setTimeout(() => setCopiedHex(null), 2000);
+  }, []);
 
   if (!isOpen) return null;
 
@@ -294,6 +405,93 @@ export const AccessibilityAnalysisPanel: React.FC<AccessibilityAnalysisPanelProp
                 </div>
               ))}
               <p className="text-[10px] text-muted-foreground mt-1">AA = 4.5:1 normal text · AAA = 7:1 · AA Large = 3:1 (18px+)</p>
+
+              {/* Auto-fix button */}
+              {autoFixSuggestions.length > 0 && (
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    variant={showAutoFix ? 'default' : 'outline'}
+                    className="w-full gap-2 text-xs"
+                    onClick={() => setShowAutoFix(!showAutoFix)}
+                  >
+                    <Wand2 className="h-3.5 w-3.5" />
+                    Auto-Fix {autoFixSuggestions.length} Failing {autoFixSuggestions.length === 1 ? 'Pair' : 'Pairs'}
+                  </Button>
+
+                  <AnimatePresence>
+                    {showAutoFix && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-2 space-y-2">
+                          {autoFixSuggestions.map((fix, i) => (
+                            <div key={i} className="p-2.5 rounded-lg border bg-muted/20 space-y-2">
+                              <p className="text-[11px] font-medium">{fix.colorName} on {fix.bgName}</p>
+
+                              <div className="flex items-center gap-2">
+                                {/* Original */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-6 h-6 rounded-md border shrink-0" style={{ backgroundColor: fix.originalHex }} />
+                                  <div className="text-[10px]">
+                                    <p className="text-muted-foreground">{fix.originalHex}</p>
+                                    <p className="text-destructive font-medium">{fix.originalRatio.toFixed(1)}:1</p>
+                                  </div>
+                                </div>
+
+                                <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+
+                                {/* Suggested */}
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-6 h-6 rounded-md border shrink-0" style={{ backgroundColor: fix.suggestedHex }} />
+                                  <div className="text-[10px]">
+                                    <p className="font-medium">{fix.suggestedHex}</p>
+                                    <p className="text-green-600 dark:text-green-400 font-medium">{fix.newRatio.toFixed(1)}:1 ✓</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Preview text */}
+                              <div className="rounded-md p-2 text-xs font-medium" style={{ backgroundColor: fix.bgHex, color: fix.suggestedHex }}>
+                                Sample Text Preview
+                              </div>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full h-7 text-[11px] gap-1.5"
+                                onClick={() => handleCopyHex(fix.suggestedHex)}
+                              >
+                                {copiedHex === fix.suggestedHex ? (
+                                  <><Check className="h-3 w-3" /> Copied!</>
+                                ) : (
+                                  <><Copy className="h-3 w-3" /> Copy {fix.suggestedHex}</>
+                                )}
+                              </Button>
+                            </div>
+                          ))}
+
+                          <p className="text-[10px] text-muted-foreground">
+                            Suggestions preserve hue & saturation, adjusting only lightness to meet AA (4.5:1).
+                            Copy the hex and update your brand colors.
+                          </p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {autoFixSuggestions.length === 0 && contrastResults.every(r => r.level !== 'Fail') && (
+                <div className="flex items-center gap-2 p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-xs text-green-700 dark:text-green-300 mt-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  <p>All color pairs pass WCAG AA — no fixes needed!</p>
+                </div>
+              )}
             </div>
           )}
 
