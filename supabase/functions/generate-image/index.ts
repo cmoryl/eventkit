@@ -39,14 +39,20 @@ serve(async (req) => {
       logoBase64,
       location,
       incorporateLocationStyle,
-      vibeImageBase64,
-      masterPatternBase64,
+      vibeImageBase64: rawVibeImage,
+      masterPatternBase64: rawMasterPattern,
       venueImageBase64,
       renderMode = 'hyperrealistic',
       imageAnalysis: providedAnalysis,
       venueIntelligence,
       brandContext
     } = body;
+
+    // Normalize to arrays for multi-image support
+    const vibeImageBase64 = Array.isArray(rawVibeImage) ? rawVibeImage[0] : rawVibeImage;
+    const allVibeImages = Array.isArray(rawVibeImage) ? rawVibeImage : (rawVibeImage ? [rawVibeImage] : []);
+    const masterPatternBase64 = Array.isArray(rawMasterPattern) ? rawMasterPattern[0] : rawMasterPattern;
+    const allPatternImages = Array.isArray(rawMasterPattern) ? rawMasterPattern : (rawMasterPattern ? [rawMasterPattern] : []);
 
     // OPTIMIZATION: Perform inline analysis if vibe image exists but no analysis provided
     let imageAnalysis: ImageAnalysis | undefined = providedAnalysis;
@@ -131,24 +137,26 @@ serve(async (req) => {
       : '';
 
     // Build vibe image instructions
-    const vibeInstructions = vibeImageBase64
+    const vibeInstructions = allVibeImages.length > 0
       ? `
 STYLE REFERENCE - IMPORTANT:
-Reference Image #${logoBase64 ? '2' : '1'} is a STYLE/VIBE REFERENCE IMAGE. You MUST:
-1. Match the overall aesthetic, mood, and visual style of this reference
-2. Use similar color tones, textures, and design elements
-3. Capture the same energy and feeling conveyed in this reference
-4. Apply this visual language throughout the design`
+${allVibeImages.length} STYLE/VIBE REFERENCE IMAGE(S) provided. You MUST:
+1. Analyze ALL reference images and identify their shared aesthetic, mood, and visual style
+2. Match the overall color tones, textures, and design elements across all references
+3. Capture the combined energy and feeling conveyed in these references
+4. Create a cohesive design that harmoniously blends the best elements from all references
+5. Apply this unified visual language throughout the design`
       : '';
 
     // Build pattern instructions
-    const patternInstructions = masterPatternBase64
+    const patternInstructions = allPatternImages.length > 0
       ? `
 PATTERN REFERENCE - IMPORTANT:
-Reference Image #${(logoBase64 ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + 1} is a MASTER PATTERN. You MUST:
-1. Incorporate this pattern as a design element in the final output
-2. Use the pattern as a background, accent, or decorative element
-3. Maintain the pattern's colors and style throughout the design`
+${allPatternImages.length} MASTER PATTERN(S) provided. You MUST:
+1. Analyze ALL provided patterns and their design elements
+2. Incorporate these patterns as background, accent, or decorative elements
+3. Blend multiple patterns harmoniously while maintaining visual coherence
+4. Maintain the patterns' colors and style throughout the design`
       : '';
 
     // Build venue compositing instructions
@@ -218,8 +226,8 @@ ${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}`;
     // Collect all reference images in order
     const referenceImages: string[] = [];
     if (logoBase64) referenceImages.push(logoBase64);
-    if (vibeImageBase64) referenceImages.push(vibeImageBase64);
-    if (masterPatternBase64) referenceImages.push(masterPatternBase64);
+    allVibeImages.forEach(img => referenceImages.push(img));
+    allPatternImages.forEach(img => referenceImages.push(img));
     if (venueImageBase64) referenceImages.push(venueImageBase64);
 
     const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages);

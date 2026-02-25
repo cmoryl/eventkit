@@ -91,8 +91,8 @@ export const useAIOrchestrator = ({
     assetsToGenerate: GeneratedAsset[], 
     currentStyleDesc: string, 
     paletteOverride?: ColorInfo[],
-    vibeImageFile?: File | null,
-    masterPatternFile?: File | null,
+    vibeImageFiles?: File[] | null,
+    masterPatternFiles?: File[] | null,
     venueImageFile?: File | null,
     venueVideoAnalysisData?: VenueVideoAnalysis | null,
     renderEngine?: RenderEngine
@@ -102,7 +102,7 @@ export const useAIOrchestrator = ({
     
     // Get asset types for strategy optimization
     const assetTypes = assetsToGenerate.filter(a => a.isLoading).map(a => String(a.type));
-    const hasVibeImage = !!(vibeImageFile || styleImage?.file);
+    const hasVibeImage = !!(vibeImageFiles?.length || styleImage?.file);
     const hasLogo = logos.length > 0;
     
     // Calculate optimized generation strategy
@@ -168,28 +168,38 @@ export const useAIOrchestrator = ({
         }
         return undefined;
       })(),
-      // Vibe image
+      // Vibe images (multiple)
       (async () => {
-        const vibeFile = vibeImageFile || styleImage?.file;
-        if (vibeFile) {
+        const vibeFiles = vibeImageFiles?.length ? vibeImageFiles : (styleImage?.file ? [styleImage.file] : []);
+        if (vibeFiles.length > 0) {
           try {
-            const b64 = await fileToBase64(vibeFile);
-            return `data:${b64.type};base64,${b64.data}`;
+            const results = await Promise.all(
+              vibeFiles.map(async (f) => {
+                const b64 = await fileToBase64(f);
+                return `data:${b64.type};base64,${b64.data}`;
+              })
+            );
+            return results;
           } catch (e) {
-            console.warn('Failed to convert vibe image to base64:', e);
+            console.warn('Failed to convert vibe images to base64:', e);
           }
         }
         return undefined;
       })(),
-      // Master pattern
+      // Master patterns (multiple)
       (async () => {
-        const patternFile = masterPatternFile || masterPatternImage;
-        if (patternFile) {
+        const patternFiles = masterPatternFiles?.length ? masterPatternFiles : (masterPatternImage ? [masterPatternImage] : []);
+        if (patternFiles.length > 0) {
           try {
-            const b64 = await fileToBase64(patternFile);
-            return `data:${b64.type};base64,${b64.data}`;
+            const results = await Promise.all(
+              patternFiles.map(async (f) => {
+                const b64 = await fileToBase64(f);
+                return `data:${b64.type};base64,${b64.data}`;
+              })
+            );
+            return results;
           } catch (e) {
-            console.warn('Failed to convert master pattern to base64:', e);
+            console.warn('Failed to convert master patterns to base64:', e);
           }
         }
         return undefined;

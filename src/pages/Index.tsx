@@ -65,8 +65,8 @@ const Index: React.FC = () => {
   const [folders, setFolders] = useState<{ id: string; name: string }[]>([]);
   const [styleDescription, setStyleDescription] = useState('');
   const [colorPalette, setColorPalette] = useState<ColorInfo[]>([]);
-  const [vibeImage, setVibeImage] = useState<File | null>(null);
-  const [masterPattern, setMasterPattern] = useState<File | null>(null);
+  const [vibeImages, setVibeImages] = useState<File[]>([]);
+  const [masterPatterns, setMasterPatterns] = useState<File[]>([]);
   const [venueVideoAnalysis, setVenueVideoAnalysis] = useState<VenueVideoAnalysis | null>(null);
   const [toastState, setToastState] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -236,8 +236,8 @@ const Index: React.FC = () => {
     logos: LogoAsset[];
     selectedAssets: Set<AssetType>;
     styleDescription: string;
-    vibeImage: File | null;
-    masterPattern: File | null;
+    vibeImages: File[];
+    masterPatterns: File[];
     venueImage: File | null;
     venueVideoAnalysis: VenueVideoAnalysis | null;
   }, isAddingMore = false) => {
@@ -250,8 +250,8 @@ const Index: React.FC = () => {
       setLogos(data.logos);
     }
     setStyleDescription(data.styleDescription);
-    setVibeImage(data.vibeImage);
-    setMasterPattern(data.masterPattern);
+    setVibeImages(data.vibeImages);
+    setMasterPatterns(data.masterPatterns);
     setVenueVideoAnalysis(data.venueVideoAnalysis);
     setView('studio');
 
@@ -320,26 +320,36 @@ const Index: React.FC = () => {
           }
           return undefined;
         })(),
-        // Vibe image base64
+        // Vibe images base64 (multiple)
         (async () => {
-          if (data.vibeImage) {
+          if (data.vibeImages.length > 0) {
             try {
-              const b64 = await fileToBase64(data.vibeImage);
-              return `data:${b64.type};base64,${b64.data}`;
+              const results = await Promise.all(
+                data.vibeImages.map(async (file) => {
+                  const b64 = await fileToBase64(file);
+                  return `data:${b64.type};base64,${b64.data}`;
+                })
+              );
+              return results;
             } catch (e) {
-              console.warn('Failed to convert vibe image:', e);
+              console.warn('Failed to convert vibe images:', e);
             }
           }
           return undefined;
         })(),
-        // Master pattern base64
+        // Master patterns base64 (multiple)
         (async () => {
-          if (data.masterPattern) {
+          if (data.masterPatterns.length > 0) {
             try {
-              const b64 = await fileToBase64(data.masterPattern);
-              return `data:${b64.type};base64,${b64.data}`;
+              const results = await Promise.all(
+                data.masterPatterns.map(async (file) => {
+                  const b64 = await fileToBase64(file);
+                  return `data:${b64.type};base64,${b64.data}`;
+                })
+              );
+              return results;
             } catch (e) {
-              console.warn('Failed to convert master pattern:', e);
+              console.warn('Failed to convert master patterns:', e);
             }
           }
           return undefined;
@@ -370,8 +380,8 @@ const Index: React.FC = () => {
         // Pass pre-converted base64 images directly to avoid race conditions
         startQueuedGeneration(assetsToGenerate, undefined, {
           logoBase64: logoB64,
-          vibeImageBase64: vibeB64,
-          masterPatternBase64: patternB64,
+          vibeImageBase64: vibeB64 as string[] | undefined,
+          masterPatternBase64: patternB64 as string[] | undefined,
           venueImageBase64: venueB64,
           styleDesc: data.styleDescription,
         });
@@ -381,8 +391,8 @@ const Index: React.FC = () => {
           assetsToGenerate, 
           data.styleDescription,
           undefined, // paletteOverride
-          data.vibeImage,
-          data.masterPattern,
+          data.vibeImages,
+          data.masterPatterns,
           data.venueImage,
           data.venueVideoAnalysis
         );
@@ -553,8 +563,8 @@ const Index: React.FC = () => {
       [{ ...asset, isLoading: true }], 
       styleDescription,
       undefined,  // paletteOverride
-      vibeImage,  // vibeImageFile
-      masterPattern,  // masterPatternFile  
+      vibeImages,  // vibeImageFiles
+      masterPatterns,  // masterPatternFiles  
       null,  // venueImageFile
       venueVideoAnalysis,  // venueVideoAnalysisData
       engine  // renderEngine
