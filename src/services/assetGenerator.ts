@@ -290,8 +290,8 @@ const generateImageAsset = async (
   colorPalette: ColorInfo[] = [],
   logoDataUrl?: string,
   styleDescription?: string,
-  vibeImageBase64?: string,
-  masterPatternBase64?: string,
+  vibeImageBase64?: string | string[],
+  masterPatternBase64?: string | string[],
   venueImageBase64?: string,
   renderEngine?: RenderEngine,
   brandContext?: BrandContext | null
@@ -299,11 +299,16 @@ const generateImageAsset = async (
   // Build enhanced style description incorporating vibe and pattern references
   let enhancedStyleDesc = styleDescription || `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`;
   
-  if (vibeImageBase64) {
-    enhancedStyleDesc += ' Match the visual style, color mood, and aesthetic of the provided reference image.';
+  const primaryVibeBase64 = Array.isArray(vibeImageBase64) ? vibeImageBase64[0] : vibeImageBase64;
+  const primaryPatternBase64 = Array.isArray(masterPatternBase64) ? masterPatternBase64[0] : masterPatternBase64;
+  const allVibeImages = Array.isArray(vibeImageBase64) ? vibeImageBase64 : (vibeImageBase64 ? [vibeImageBase64] : []);
+  const allPatternImages = Array.isArray(masterPatternBase64) ? masterPatternBase64 : (masterPatternBase64 ? [masterPatternBase64] : []);
+  
+  if (allVibeImages.length > 0) {
+    enhancedStyleDesc += ` Match the visual style, color mood, and aesthetic of the ${allVibeImages.length} provided reference image(s). Analyze all reference images and create a cohesive design that combines their best elements.`;
   }
-  if (masterPatternBase64) {
-    enhancedStyleDesc += ' Incorporate the provided pattern as a design element throughout the asset.';
+  if (allPatternImages.length > 0) {
+    enhancedStyleDesc += ` Incorporate elements from the ${allPatternImages.length} provided pattern(s) as design elements throughout the asset. Blend patterns harmoniously.`;
   }
   if (venueImageBase64) {
     enhancedStyleDesc += ' Composite the branded asset into the provided venue photo with realistic lighting, shadows, and perspective matching.';
@@ -311,13 +316,13 @@ const generateImageAsset = async (
 
   // OPTIMIZATION: Check for cached analysis if we have a vibe image
   let cachedAnalysis = null;
-  if (vibeImageBase64) {
-    cachedAnalysis = getCachedAnalysis(vibeImageBase64);
+  if (primaryVibeBase64) {
+    cachedAnalysis = getCachedAnalysis(primaryVibeBase64);
     if (!cachedAnalysis) {
       // Pre-analyze and cache for future use if generating multiple assets
-      cachedAnalysis = await analyzeReferenceImage(vibeImageBase64, eventDetails.name, eventDetails.description);
+      cachedAnalysis = await analyzeReferenceImage(primaryVibeBase64, eventDetails.name, eventDetails.description);
       if (cachedAnalysis) {
-        cacheAnalysis(vibeImageBase64, cachedAnalysis);
+        cacheAnalysis(primaryVibeBase64, cachedAnalysis);
       }
     }
   }
@@ -336,8 +341,8 @@ const generateImageAsset = async (
         logoBase64: logoDataUrl,
         location: eventDetails.location,
         incorporateLocationStyle: eventDetails.incorporateLocationStyle,
-        vibeImageBase64,
-        masterPatternBase64,
+        vibeImageBase64: primaryVibeBase64,
+        masterPatternBase64: primaryPatternBase64,
         venueImageBase64,
       });
       
@@ -368,8 +373,8 @@ const generateImageAsset = async (
       logoDataUrl,
       eventDetails.location,
       eventDetails.incorporateLocationStyle,
-      vibeImageBase64,
-      masterPatternBase64,
+      primaryVibeBase64,
+      primaryPatternBase64,
       venueImageBase64,
       cachedAnalysis, // Pass cached analysis to avoid redundant AI call
       eventDetails.venueIntelligence, // Pass venue intelligence for cultural context
@@ -573,8 +578,8 @@ export const generatePlaceholderContent = async (
   colorPalette: ColorInfo[] = [],
   logoDataUrl?: string,
   styleDescription?: string,
-  vibeImageBase64?: string,
-  masterPatternBase64?: string,
+  vibeImageBase64?: string | string[],
+  masterPatternBase64?: string | string[],
   venueImageBase64?: string,
   renderEngine?: RenderEngine
 ): Promise<string | string[] | ColorInfo[]> => {
@@ -589,7 +594,7 @@ export const generatePlaceholderContent = async (
           eventDetails.name,
           eventDetails.description,
           styleDescription,
-          vibeImageBase64 // Extract colors from reference image if provided
+          Array.isArray(vibeImageBase64) ? vibeImageBase64[0] : vibeImageBase64 // Extract colors from primary reference image if provided
         );
       } catch {
         return generateColorPalette(eventDetails.name, Date.now());

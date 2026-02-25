@@ -259,8 +259,8 @@ export function useQueuedGeneration({
     overridePalette?: ColorInfo[],
     overrides?: {
       logoBase64?: string;
-      vibeImageBase64?: string;
-      masterPatternBase64?: string;
+      vibeImageBase64?: string | string[];
+      masterPatternBase64?: string | string[];
       venueImageBase64?: string;
       styleDesc?: string;
     }

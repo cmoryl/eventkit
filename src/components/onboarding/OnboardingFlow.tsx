@@ -28,8 +28,8 @@ interface OnboardingFlowProps {
     logos: LogoAsset[];
     selectedAssets: Set<AssetType>;
     styleDescription: string;
-    vibeImage: File | null;
-    masterPattern: File | null;
+    vibeImages: File[];
+    masterPatterns: File[];
     venueImage: File | null;
     venueVideoAnalysis: VenueVideoAnalysis | null;
   }) => void;
@@ -135,8 +135,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     return new Set(DEFAULT_QUICK_START_ASSETS);
   });
   const [styleDescription, setStyleDescription] = useState(initialStyleDescription ?? '');
-  const [vibeImage, setVibeImage] = useState<File | null>(null);
-  const [masterPattern, setMasterPattern] = useState<File | null>(null);
+  const [vibeImages, setVibeImages] = useState<File[]>([]);
+  const [masterPatterns, setMasterPatterns] = useState<File[]>([]);
   const [venueImage, setVenueImage] = useState<File | null>(null);
   const [venueVideoAnalysis, setVenueVideoAnalysis] = useState<VenueVideoAnalysis | null>(null);
   
@@ -159,8 +159,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         logos, 
         selectedAssets, 
         styleDescription,
-        vibeImage,
-        masterPattern,
+        vibeImages,
+        masterPatterns,
         venueImage,
         venueVideoAnalysis,
       });
@@ -500,10 +500,10 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <StepTwo
                       styleDescription={styleDescription}
                       setStyleDescription={setStyleDescription}
-                      vibeImage={vibeImage}
-                      setVibeImage={setVibeImage}
-                      masterPattern={masterPattern}
-                      setMasterPattern={setMasterPattern}
+                      vibeImages={vibeImages}
+                      setVibeImages={setVibeImages}
+                      masterPatterns={masterPatterns}
+                      setMasterPatterns={setMasterPatterns}
                       venueImage={venueImage}
                       setVenueImage={setVenueImage}
                       venueVideoAnalysis={venueVideoAnalysis}

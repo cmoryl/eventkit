@@ -117,8 +117,8 @@ type GenerateFn = (
   colorPalette: ColorInfo[],
   logoBase64?: string,
   styleDesc?: string,
-  vibeImageBase64?: string,
-  masterPatternBase64?: string,
+  vibeImageBase64?: string | string[],
+  masterPatternBase64?: string | string[],
   venueImageBase64?: string,
   renderEngine?: RenderEngine
 ) => Promise<string | string[] | ColorInfo[]>;
@@ -135,8 +135,8 @@ class GenerationQueue {
     colorPalette: ColorInfo[];
     logoBase64?: string;
     styleDesc?: string;
-    vibeImageBase64?: string;
-    masterPatternBase64?: string;
+    vibeImageBase64?: string | string[];
+    masterPatternBase64?: string | string[];
     venueImageBase64?: string;
     renderEngine?: RenderEngine;
   } | null = null;
@@ -153,8 +153,8 @@ class GenerationQueue {
       colorPalette: ColorInfo[];
       logoBase64?: string;
       styleDesc?: string;
-      vibeImageBase64?: string;
-      masterPatternBase64?: string;
+      vibeImageBase64?: string | string[];
+      masterPatternBase64?: string | string[];
       venueImageBase64?: string;
       renderEngine?: RenderEngine;
     }

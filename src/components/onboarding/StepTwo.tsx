@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EventDetails, VenueVideoAnalysis } from '../../types';
-import { Upload, Image, Palette, Sparkles, X, MapPin, Building2, Check, Camera, Video, Ruler, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { Upload, Image, Palette, Sparkles, X, MapPin, Building2, Check, Camera, Video, Ruler, Eye, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import VenueVideoUploader from '../VenueVideoUploader';
 import { VenueAnalysis } from '@/services/venueVideoService';
@@ -9,10 +9,10 @@ import { VenueAnalysis } from '@/services/venueVideoService';
 interface StepTwoProps {
   styleDescription: string;
   setStyleDescription: React.Dispatch<React.SetStateAction<string>>;
-  vibeImage: File | null;
-  setVibeImage: React.Dispatch<React.SetStateAction<File | null>>;
-  masterPattern: File | null;
-  setMasterPattern: React.Dispatch<React.SetStateAction<File | null>>;
+  vibeImages: File[];
+  setVibeImages: React.Dispatch<React.SetStateAction<File[]>>;
+  masterPatterns: File[];
+  setMasterPatterns: React.Dispatch<React.SetStateAction<File[]>>;
   venueImage: File | null;
   setVenueImage: React.Dispatch<React.SetStateAction<File | null>>;
   venueVideoAnalysis: VenueVideoAnalysis | null;
@@ -32,18 +32,18 @@ const STYLE_PRESETS = [
 const StepTwo: React.FC<StepTwoProps> = ({
   styleDescription,
   setStyleDescription,
-  vibeImage,
-  setVibeImage,
-  masterPattern,
-  setMasterPattern,
+  vibeImages,
+  setVibeImages,
+  masterPatterns,
+  setMasterPatterns,
   venueImage,
   setVenueImage,
   venueVideoAnalysis,
   setVenueVideoAnalysis,
   eventDetails,
 }) => {
-  const [vibePreview, setVibePreview] = useState<string | null>(null);
-  const [patternPreview, setPatternPreview] = useState<string | null>(null);
+  const [vibePreviews, setVibePreviews] = useState<string[]>([]);
+  const [patternPreviews, setPatternPreviews] = useState<string[]>([]);
   const [venuePreview, setVenuePreview] = useState<string | null>(null);
   const [selectedPresets, setSelectedPresets] = useState<Set<string>>(new Set());
   const [showVideoUploader, setShowVideoUploader] = useState(false);
@@ -53,7 +53,6 @@ const StepTwo: React.FC<StepTwoProps> = ({
 
   const handleVideoAnalysisComplete = useCallback((analysis: VenueAnalysis) => {
     setVenueVideoAnalysis(analysis as VenueVideoAnalysis);
-    // If a key frame was selected, use it as the venue image
     if (analysis.keyFrames.length > 0 && analysis.keyFrames[0].imageData) {
       setVenuePreview(analysis.keyFrames[0].imageData);
     }
@@ -61,7 +60,6 @@ const StepTwo: React.FC<StepTwoProps> = ({
 
   const handleVideoFrameSelect = useCallback((frameData: string) => {
     setVenuePreview(frameData);
-    // Convert base64 to File for the venue image
     fetch(frameData)
       .then(res => res.blob())
       .then(blob => {
@@ -71,13 +69,19 @@ const StepTwo: React.FC<StepTwoProps> = ({
   }, [setVenueImage]);
 
   const handleVibeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVibeImage(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    setVibeImages(prev => [...prev, ...files]);
+    
+    files.forEach(file => {
       const reader = new FileReader();
-      reader.onload = () => setVibePreview(reader.result as string);
+      reader.onload = () => setVibePreviews(prev => [...prev, reader.result as string]);
       reader.readAsDataURL(file);
-    }
+    });
+    
+    // Reset input so same files can be re-selected
+    if (vibeInputRef.current) vibeInputRef.current.value = '';
   };
 
   const handleVenueUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -94,16 +98,21 @@ const StepTwo: React.FC<StepTwoProps> = ({
     setVenueImage(null);
     setVenuePreview(null);
     if (venueInputRef.current) venueInputRef.current.value = '';
-  }
+  };
 
   const handlePatternUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setMasterPattern(file);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    setMasterPatterns(prev => [...prev, ...files]);
+    
+    files.forEach(file => {
       const reader = new FileReader();
-      reader.onload = () => setPatternPreview(reader.result as string);
+      reader.onload = () => setPatternPreviews(prev => [...prev, reader.result as string]);
       reader.readAsDataURL(file);
-    }
+    });
+    
+    if (patternInputRef.current) patternInputRef.current.value = '';
   };
 
   const togglePreset = (id: string) => {
@@ -128,16 +137,14 @@ const StepTwo: React.FC<StepTwoProps> = ({
     }
   };
 
-  const clearVibeImage = () => {
-    setVibeImage(null);
-    setVibePreview(null);
-    if (vibeInputRef.current) vibeInputRef.current.value = '';
+  const removeVibeImage = (index: number) => {
+    setVibeImages(prev => prev.filter((_, i) => i !== index));
+    setVibePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const clearPattern = () => {
-    setMasterPattern(null);
-    setPatternPreview(null);
-    if (patternInputRef.current) patternInputRef.current.value = '';
+  const removePattern = (index: number) => {
+    setMasterPatterns(prev => prev.filter((_, i) => i !== index));
+    setPatternPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -182,7 +189,6 @@ const StepTwo: React.FC<StepTwoProps> = ({
                 whileHover={{ scale: 1.03, y: -2 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {/* Background gradient when selected */}
                 <AnimatePresence>
                   {isSelected && (
                     <motion.div 
@@ -194,7 +200,6 @@ const StepTwo: React.FC<StepTwoProps> = ({
                   )}
                 </AnimatePresence>
                 
-                {/* Selection indicator */}
                 <motion.div 
                   className={cn(
                     "absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-colors",
@@ -219,7 +224,6 @@ const StepTwo: React.FC<StepTwoProps> = ({
                 </motion.div>
 
                 <div className="relative">
-                  {/* Icon */}
                   <motion.span 
                     className="text-2xl mb-2 block"
                     animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
@@ -253,146 +257,148 @@ const StepTwo: React.FC<StepTwoProps> = ({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        {/* Vibe Image */}
+        {/* Vibe / Background Images - MULTI UPLOAD */}
         <div>
           <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
             <Image className="w-4 h-4 text-pink-500" />
-            Vibe Reference
-            <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+            Background / Vibe References
+            <span className="text-xs text-muted-foreground font-normal">(multiple allowed)</span>
           </label>
           <input
             ref={vibeInputRef}
             type="file"
             accept="image/*"
+            multiple
             onChange={handleVibeUpload}
             className="hidden"
             id="vibe-upload"
           />
-          <AnimatePresence mode="wait">
-            {vibePreview ? (
+          
+          {/* Image Grid */}
+          <div className="grid grid-cols-2 gap-2">
+            {vibePreviews.map((preview, index) => (
               <motion.div 
-                className="relative rounded-2xl overflow-hidden border border-border aspect-video bg-secondary/20 group"
+                key={index}
+                className="relative rounded-xl overflow-hidden border border-border aspect-video bg-secondary/20 group"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
               >
-                <motion.img 
-                  src={vibePreview} 
-                  alt="Vibe reference" 
+                <img 
+                  src={preview} 
+                  alt={`Vibe reference ${index + 1}`} 
                   className="w-full h-full object-cover"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
-                />
-                <motion.div 
-                  className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
                 />
                 <motion.button
-                  onClick={clearVibeImage}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg"
+                  onClick={() => removeVibeImage(index)}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3" />
                 </motion.button>
               </motion.div>
-            ) : (
-              <motion.label
-                htmlFor="vibe-upload"
-                className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border cursor-pointer transition-colors aspect-video group"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                whileHover={{ 
-                  borderColor: 'rgba(236, 72, 153, 0.5)',
-                  background: 'linear-gradient(to bottom right, rgba(236, 72, 153, 0.05), rgba(244, 63, 94, 0.05))'
-                }}
+            ))}
+            
+            {/* Add More Button */}
+            <motion.label
+              htmlFor="vibe-upload"
+              className={cn(
+                "flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border cursor-pointer transition-colors group",
+                vibePreviews.length === 0 ? "aspect-video col-span-2 p-6" : "aspect-video"
+              )}
+              whileHover={{ 
+                borderColor: 'rgba(236, 72, 153, 0.5)',
+                background: 'linear-gradient(to bottom right, rgba(236, 72, 153, 0.05), rgba(244, 63, 94, 0.05))'
+              }}
+            >
+              <motion.div 
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-2"
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
-                <motion.div 
-                  className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-3"
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <Upload className="w-6 h-6 text-pink-500" />
-                </motion.div>
-                <span className="text-sm font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
-                  Upload aesthetic reference
-                </span>
-              </motion.label>
-            )}
-          </AnimatePresence>
+                {vibePreviews.length === 0 ? (
+                  <Upload className="w-5 h-5 text-pink-500" />
+                ) : (
+                  <Plus className="w-5 h-5 text-pink-500" />
+                )}
+              </motion.div>
+              <span className="text-xs font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
+                {vibePreviews.length === 0 ? 'Upload aesthetic references' : 'Add more'}
+              </span>
+            </motion.label>
+          </div>
         </div>
 
-        {/* Master Pattern */}
+        {/* Master Patterns - MULTI UPLOAD */}
         <div>
           <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
             <Palette className="w-4 h-4 text-pink-500" />
-            Master Pattern
-            <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+            Master Patterns
+            <span className="text-xs text-muted-foreground font-normal">(multiple allowed)</span>
           </label>
           <input
             ref={patternInputRef}
             type="file"
             accept="image/*"
+            multiple
             onChange={handlePatternUpload}
             className="hidden"
             id="pattern-upload"
           />
-          <AnimatePresence mode="wait">
-            {patternPreview ? (
+          
+          {/* Pattern Grid */}
+          <div className="grid grid-cols-2 gap-2">
+            {patternPreviews.map((preview, index) => (
               <motion.div 
-                className="relative rounded-2xl overflow-hidden border border-border aspect-video bg-secondary/20 group"
+                key={index}
+                className="relative rounded-xl overflow-hidden border border-border aspect-video bg-secondary/20 group"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
               >
-                <motion.img 
-                  src={patternPreview} 
-                  alt="Master pattern" 
+                <img 
+                  src={preview} 
+                  alt={`Pattern ${index + 1}`} 
                   className="w-full h-full object-cover"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.3 }}
-                />
-                <motion.div 
-                  className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
                 />
                 <motion.button
-                  onClick={clearPattern}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg"
+                  onClick={() => removePattern(index)}
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3 h-3" />
                 </motion.button>
               </motion.div>
-            ) : (
-              <motion.label
-                htmlFor="pattern-upload"
-                className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border cursor-pointer transition-colors aspect-video group"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                whileHover={{ 
-                  borderColor: 'rgba(236, 72, 153, 0.5)',
-                  background: 'linear-gradient(to bottom right, rgba(236, 72, 153, 0.05), rgba(244, 63, 94, 0.05))'
-                }}
+            ))}
+            
+            {/* Add More Button */}
+            <motion.label
+              htmlFor="pattern-upload"
+              className={cn(
+                "flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border cursor-pointer transition-colors group",
+                patternPreviews.length === 0 ? "aspect-video col-span-2 p-6" : "aspect-video"
+              )}
+              whileHover={{ 
+                borderColor: 'rgba(236, 72, 153, 0.5)',
+                background: 'linear-gradient(to bottom right, rgba(236, 72, 153, 0.05), rgba(244, 63, 94, 0.05))'
+              }}
+            >
+              <motion.div 
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-2"
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
               >
-                <motion.div 
-                  className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/10 to-rose-500/10 flex items-center justify-center mb-3"
-                  animate={{ y: [0, -5, 0] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-                >
-                  <Upload className="w-6 h-6 text-pink-500" />
-                </motion.div>
-                <span className="text-sm font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
-                  Upload pattern to use
-                </span>
-              </motion.label>
-            )}
-          </AnimatePresence>
+                {patternPreviews.length === 0 ? (
+                  <Upload className="w-5 h-5 text-pink-500" />
+                ) : (
+                  <Plus className="w-5 h-5 text-pink-500" />
+                )}
+              </motion.div>
+              <span className="text-xs font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
+                {patternPreviews.length === 0 ? 'Upload patterns to use' : 'Add more'}
+              </span>
+            </motion.label>
+          </div>
         </div>
       </motion.div>
 
@@ -437,19 +443,10 @@ const StepTwo: React.FC<StepTwoProps> = ({
                 src={venuePreview} 
                 alt="Venue photo" 
                 className="w-full h-full object-cover"
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 transition={{ duration: 0.3 }}
               />
-              <motion.div 
-                className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
-              />
-              {/* Overlay showing what will happen */}
-              <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 text-white text-xs">
-                <Building2 className="w-4 h-4" />
-                <span className="font-medium">Assets will be composited into this venue</span>
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <motion.button
                 onClick={clearVenueImage}
                 className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-foreground shadow-lg"
@@ -458,250 +455,132 @@ const StepTwo: React.FC<StepTwoProps> = ({
               >
                 <X className="w-4 h-4" />
               </motion.button>
-            </motion.div>
-          ) : (
-            <motion.label
-              htmlFor="venue-upload"
-              className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-emerald-500/30 cursor-pointer transition-colors aspect-video group relative overflow-hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              whileHover={{ 
-                borderColor: 'rgba(16, 185, 129, 0.5)',
-                background: 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), rgba(34, 197, 94, 0.05))'
-              }}
-            >
-              {/* Background illustration */}
-              <div className="absolute inset-0 opacity-5">
-                <div className="absolute top-4 left-4 w-20 h-12 border-2 border-current rounded" />
-                <div className="absolute top-8 right-8 w-16 h-24 border-2 border-current rounded" />
-                <div className="absolute bottom-4 left-1/4 w-32 h-1 bg-current rounded" />
-                <div className="absolute bottom-8 right-1/4 w-24 h-1 bg-current rounded" />
-              </div>
-              
-              <motion.div 
-                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 flex items-center justify-center mb-4 relative"
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
-              >
-                <Camera className="w-7 h-7 text-emerald-500" />
-                <motion.div 
-                  className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 flex items-center justify-center"
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <Sparkles className="w-2.5 h-2.5 text-white" />
-                </motion.div>
-              </motion.div>
-              <span className="text-sm font-semibold text-foreground text-center group-hover:text-emerald-600 transition-colors">
-                Upload your venue photo
-              </span>
-              <span className="text-xs text-muted-foreground text-center mt-1 max-w-xs">
-                Banners, signage, and counters will be realistically placed in your actual space
-              </span>
-            </motion.label>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Venue Video Walkthrough Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.58 }}
-      >
-        <button
-          onClick={() => setShowVideoUploader(!showVideoUploader)}
-          className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-dashed border-violet-500/30 hover:border-violet-500/50 transition-colors bg-gradient-to-r from-violet-500/5 to-purple-500/5"
-        >
-          <div className="flex items-center gap-3">
-            <motion.div 
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center"
-              animate={{ rotate: showVideoUploader ? 0 : [0, 5, -5, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Video className="w-5 h-5 text-violet-500" />
-            </motion.div>
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">Venue Walkthrough Video</span>
+              <div className="absolute bottom-3 left-3 right-3 flex gap-2">
                 <motion.span 
-                  className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-500 text-white"
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
+                  className="px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-500/90 text-white"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                 >
-                  AI SPATIAL ANALYSIS
+                  ✓ Venue photo loaded
                 </motion.span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Upload a walkthrough video for AI-powered space analysis & measurements
-              </p>
-            </div>
-          </div>
-          <motion.div
-            animate={{ rotate: showVideoUploader ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="w-5 h-5 text-muted-foreground" />
-          </motion.div>
-        </button>
-
-        <AnimatePresence>
-          {showVideoUploader && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="overflow-hidden"
-            >
-              <div className="pt-4">
-                <VenueVideoUploader
-                  eventName={eventDetails.name}
-                  eventDescription={eventDetails.description}
-                  onAnalysisComplete={handleVideoAnalysisComplete}
-                  onFrameSelect={handleVideoFrameSelect}
-                />
-              </div>
+            </motion.div>
+          ) : (
+            <motion.div className="space-y-3">
+              <motion.label
+                htmlFor="venue-upload"
+                className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-emerald-500/30 cursor-pointer transition-colors aspect-video group"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                whileHover={{ 
+                  borderColor: 'rgba(16, 185, 129, 0.5)',
+                  background: 'linear-gradient(to bottom right, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.05))'
+                }}
+              >
+                <motion.div 
+                  className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 flex items-center justify-center mb-3"
+                  animate={{ y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Camera className="w-7 h-7 text-emerald-500" />
+                </motion.div>
+                <span className="text-sm font-medium text-muted-foreground text-center group-hover:text-foreground transition-colors">
+                  Upload venue photo for compositing
+                </span>
+                <span className="text-xs text-muted-foreground mt-1">
+                  AI will place your branded assets into this space
+                </span>
+              </motion.label>
+              
+              {/* Video Analysis Toggle */}
+              <motion.button
+                type="button"
+                onClick={() => setShowVideoUploader(!showVideoUploader)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+              >
+                <Video className="w-4 h-4" />
+                {showVideoUploader ? 'Hide Video Analysis' : 'Or upload a venue walkthrough video'}
+                {showVideoUploader ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </motion.button>
+              
+              <AnimatePresence>
+                {showVideoUploader && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <VenueVideoUploader 
+                      eventName={eventDetails.name}
+                      eventDescription={eventDetails.description}
+                      onAnalysisComplete={handleVideoAnalysisComplete}
+                      onFrameSelect={handleVideoFrameSelect}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Show analysis summary if completed */}
-        {venueVideoAnalysis && venueVideoAnalysis.success && !showVideoUploader && (
-          <motion.div
+        
+        {/* Venue Video Analysis Results */}
+        {venueVideoAnalysis && (
+          <motion.div 
+            className="mt-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/20"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-3 p-3 rounded-xl bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-violet-500" />
-                <span className="text-sm font-medium text-foreground">
-                  {venueVideoAnalysis.areas.length} areas analyzed
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  • {venueVideoAnalysis.keyFrames.length} key frames extracted
-                </span>
+            <div className="flex items-center gap-2 mb-2">
+              <Ruler className="w-4 h-4 text-emerald-500" />
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                AI Venue Analysis Complete
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Building2 className="w-3 h-3" />
+                <span>{venueVideoAnalysis.overallAssessment?.venueType || 'Analyzed'}</span>
               </div>
-              <div className="flex items-center gap-1 text-xs text-violet-600">
-                <Ruler className="w-3.5 h-3.5" />
-                {venueVideoAnalysis.overallAssessment.totalEstimatedArea}
+              <div className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                <span>{venueVideoAnalysis.areas?.length || 0} areas mapped</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span>{venueVideoAnalysis.assetRecommendations?.length || 0} recommendations</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Camera className="w-3 h-3" />
+                <span>{venueVideoAnalysis.keyFrames?.length || 0} key frames</span>
               </div>
             </div>
           </motion.div>
         )}
       </motion.div>
 
-      {/* Venue Intelligence hint */}
-      <AnimatePresence>
-        {eventDetails.location && (
-          <motion.div 
-            className="relative overflow-hidden p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <motion.div 
-              className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-500/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"
-              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 3, repeat: Infinity }}
-            />
-            <div className="relative flex items-start gap-3">
-              <motion.div 
-                className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 text-white shadow-lg"
-                whileHover={{ scale: 1.1, rotate: 5 }}
-              >
-                <Building2 className="w-5 h-5" />
-              </motion.div>
-              <div className="flex-1">
-                <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                  Venue Intelligence
-                  <motion.span 
-                    className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-gradient-to-r from-emerald-500 to-green-500 text-white"
-                    animate={{ scale: [1, 1.05, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    ACTIVE
-                  </motion.span>
-                </h4>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  AI will research "<span className="font-medium text-foreground">{eventDetails.location}</span>" to inform floor plans and location-specific designs.
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600">
-                <MapPin className="w-3.5 h-3.5" />
-                Ready
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Custom Style Description */}
+      {/* Style Description */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
       >
-        <label className="block text-sm font-semibold text-foreground mb-2">
-          Additional Style Notes
+        <label className="block text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-pink-500" />
+          Custom Style Notes
+          <span className="text-xs text-muted-foreground font-normal">(optional)</span>
         </label>
-        <div className="relative group">
-          <motion.div 
-            className="absolute -inset-0.5 bg-gradient-to-r from-pink-500 to-rose-500 rounded-2xl blur transition-opacity duration-300 opacity-0 group-focus-within:opacity-100"
-          />
-          <textarea
-            value={styleDescription}
-            onChange={e => setStyleDescription(e.target.value)}
-            placeholder="e.g., Use blue and silver tones, avoid red, include subtle geometric patterns, maintain professional corporate feel..."
-            rows={3}
-            className="relative w-full px-4 py-3 rounded-xl border border-border bg-background/80 backdrop-blur-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-pink-500/30 focus:border-pink-500 transition-all resize-none"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Be specific about colors, patterns, typography preferences, and any elements to avoid
-        </p>
-      </motion.div>
-
-      {/* AI Safety Notes */}
-      <motion.div 
-        className="p-4 rounded-2xl bg-gradient-to-r from-secondary/50 to-muted/50 border border-border"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-      >
-        <div className="flex items-start gap-3">
-          <motion.div 
-            className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center flex-shrink-0"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 3, repeat: Infinity }}
-          >
-            <Sparkles className="w-4 h-4 text-violet-500" />
-          </motion.div>
-          <div>
-            <h4 className="text-sm font-semibold text-foreground mb-1">AI Safety Guarantees</h4>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-              {[
-                "Text won't overlap logos",
-                "Clear space maintained",
-                "Brand colors prioritized",
-                "Print specs enforced"
-              ].map((item, index) => (
-                <motion.span 
-                  key={item}
-                  className="flex items-center gap-1"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.8 + index * 0.1 }}
-                >
-                  <Check className="w-3 h-3 text-emerald-500" />
-                  {item}
-                </motion.span>
-              ))}
-            </div>
-          </div>
-        </div>
+        <textarea
+          value={styleDescription}
+          onChange={(e) => setStyleDescription(e.target.value)}
+          placeholder="Describe any additional style preferences... e.g., 'Art deco with gold foil accents, inspired by 1920s glamour'"
+          className="w-full px-4 py-3 rounded-2xl bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 resize-none transition-all min-h-[100px]"
+          rows={3}
+        />
       </motion.div>
     </motion.div>
   );
