@@ -1,6 +1,7 @@
 import { AssetType } from '@/types';
 import type { EventDetails, ColorInfo, GeneratedAsset } from '@/types';
 import type { RenderEngine } from '@/services/aiBrain/types';
+import type { BrandContext } from '@/types/brand.types';
 
 // Priority levels for asset generation
 export enum GenerationPriority {
@@ -120,7 +121,8 @@ type GenerateFn = (
   vibeImageBase64?: string | string[],
   masterPatternBase64?: string | string[],
   venueImageBase64?: string,
-  renderEngine?: RenderEngine
+  renderEngine?: RenderEngine,
+  brandContext?: BrandContext | null
 ) => Promise<string | string[] | ColorInfo[]>;
 
 class GenerationQueue {
@@ -139,6 +141,7 @@ class GenerationQueue {
     masterPatternBase64?: string | string[];
     venueImageBase64?: string;
     renderEngine?: RenderEngine;
+    brandContext?: BrandContext | null;
   } | null = null;
 
   constructor(config: Partial<QueueConfig> = {}) {
@@ -157,6 +160,7 @@ class GenerationQueue {
       masterPatternBase64?: string | string[];
       venueImageBase64?: string;
       renderEngine?: RenderEngine;
+      brandContext?: BrandContext | null;
     }
   ): void {
     this.generateFn = generateFn;
@@ -280,7 +284,8 @@ class GenerationQueue {
         this.generationContext.vibeImageBase64,
         this.generationContext.masterPatternBase64,
         this.generationContext.venueImageBase64,
-        this.generationContext.renderEngine
+        this.generationContext.renderEngine,
+        this.generationContext.brandContext
       );
 
       job.status = JobStatus.Completed;

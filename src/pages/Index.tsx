@@ -379,14 +379,19 @@ const Index: React.FC = () => {
       const shouldUseQueue = useQueueMode || assetsToGenerate.length >= 5;
       
       if (shouldUseQueue) {
+        // Load full brand context for queued generation
+        const fullBrandContext = activeBrand?.id
+          ? await loadFullBrandContext(activeBrand.id, brandAdherenceMode)
+          : null;
+
         // Queued generation with priority ordering and retries
-        // Pass pre-converted base64 images directly to avoid race conditions
         startQueuedGeneration(assetsToGenerate, undefined, {
           logoBase64: logoB64,
           vibeImageBase64: vibeB64 as string[] | undefined,
           masterPatternBase64: patternB64 as string[] | undefined,
           venueImageBase64: venueB64,
           styleDesc: data.styleDescription,
+          brandContext: fullBrandContext,
         });
       } else {
         // Load full brand context (with all_imagery) for generation
