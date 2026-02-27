@@ -249,35 +249,44 @@ export const applyLearnedInsights = (
 ): string => {
   let enhancedPrompt = basePrompt;
 
-  // Apply high-confidence insights
   const styleInsights = insights.filter(i => i.type === 'style' && i.confidence > 0.7);
   const culturalInsights = insights.filter(i => i.type === 'cultural' && i.confidence > 0.6);
 
+  const blocks: string[] = [];
+
   if (styleInsights.length > 0) {
-    const styleEnhancements = styleInsights.map(i => i.value).join('. ');
-    enhancedPrompt += ` Style preferences: ${styleEnhancements}.`;
+    blocks.push(
+      `LEARNED STYLE PREFERENCES (apply without breaking hierarchy or logo rules):\n` +
+      styleInsights.map(i => `- ${i.value}`).join('\n')
+    );
   }
 
   if (culturalInsights.length > 0) {
-    const culturalEnhancements = culturalInsights.map(i => i.value).join('. ');
-    enhancedPrompt += ` Cultural context: ${culturalEnhancements}.`;
+    blocks.push(
+      `LEARNED CULTURAL CONTEXT (apply respectfully, avoid clichés, keep it subtle):\n` +
+      culturalInsights.map(i => `- ${i.value}`).join('\n')
+    );
   }
 
-  // Apply typography layout knowledge for typography-heavy assets
+  // Typography layout knowledge for typography-heavy assets (corrected asset keys)
   const typographyAssets = [
     'SLOGANS', 'LOGO', 'LOGO_MONOCHROME', 'LOGO_REVERSED',
-    'STICKERS', 'SOCIAL_POST', 'SOCIAL_STORY', 'INVITATION',
-    'CERTIFICATE', 'BANNER', 'ROLLUP_BANNER', 'THANK_YOU_NOTE',
-    'RSVP_CARD', 'TABLE_TENT', 'PLACE_CARD', 'MENU', 'COASTER_DESIGN',
-    'NAPKIN_DESIGN', 'PROGRAM_BOOKLET', 'TICKET',
+    'SOCIAL_POST', 'SOCIAL_STORY', 'LINKEDIN_BANNER', 'TWITTER_HEADER', 'YOUTUBE_THUMBNAIL',
+    'INVITATION_CARD', 'RSVP_CARD', 'CERTIFICATE_AWARD', 'THANK_YOU_NOTE', 'PROGRAM_BOOKLET', 'PRESS_RELEASE',
+    'BANNER', 'STAND_UP_PILLAR_BANNER', 'EVENT_SIGNAGE', 'DOOR_SIGNAGE', 'ROOM_SIGNAGE', 'WIFI_SIGN',
+    'TICKET_DESIGN', 'STICKER_SHEET', 'TABLE_TENT', 'MENU', 'COASTER_DESIGN', 'NAPKIN_DESIGN',
   ];
-  
+
   const assetType = options?.assetType?.toUpperCase();
   if (assetType && typographyAssets.includes(assetType)) {
     const layoutPrompt = buildTypographyLayoutPrompt(options?.typographyLayoutId, options?.assetType);
     if (layoutPrompt) {
-      enhancedPrompt += layoutPrompt;
+      blocks.push(`TYPOGRAPHY LAYOUT SYSTEM:\n${layoutPrompt.trim()}`);
     }
+  }
+
+  if (blocks.length > 0) {
+    enhancedPrompt += `\n\n=== AI BRAIN INJECTIONS ===\n${blocks.join('\n\n')}\n=== END AI BRAIN INJECTIONS ===\n`;
   }
 
   return enhancedPrompt;
@@ -340,11 +349,8 @@ export const buildSponsorAwarePrompt = (
     byTier[tier].push(k);
   });
   
-  let enhancedPrompt = basePrompt;
-  
-  // Add sponsor context based on learned patterns
   const tierOrder = ['platinum', 'gold', 'silver', 'bronze', 'partner', 'media'];
-  const sponsorParts: string[] = [];
+  const sponsorLines: string[] = [];
   
   tierOrder.forEach(tier => {
     if (byTier[tier] && byTier[tier].length > 0) {
@@ -353,16 +359,14 @@ export const buildSponsorAwarePrompt = (
         .filter(Boolean)
         .slice(0, 5);
       if (names.length > 0) {
-        sponsorParts.push(`${tier}: ${names.join(', ')}`);
+        sponsorLines.push(`  ${tier.toUpperCase()}: ${names.join(', ')}`);
       }
     }
   });
   
-  if (sponsorParts.length > 0) {
-    enhancedPrompt += ` Event sponsors by tier: ${sponsorParts.join('; ')}.`;
-  }
-  
-  return enhancedPrompt;
+  if (sponsorLines.length === 0) return basePrompt;
+
+  return basePrompt + `\n\nSPONSOR HIERARCHY (apply tier-appropriate sizing and prominence):\n${sponsorLines.join('\n')}\nRules: Platinum logos largest, Gold next, etc. Maintain consistent gutters. Never invent sponsor marks.\n`;
 };
 
 // ============ INTERNAL HELPERS ============
