@@ -241,13 +241,13 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       }
 
       // Sponsor data — critical for sponsor walls, step-and-repeat, etc.
-      const sponsors = hubBrand.sponsors as Array<{ name?: string; url?: string; tier?: string }> | undefined;
+      const sponsors = hubBrand.sponsors as Array<{ name?: string; url?: string; logoUrl?: string; tier?: string }> | undefined;
       if (sponsors?.length) {
         knowledgePromises.push(addOrUpdateKnowledge(
           user.id, 'brand_preference', `${brandName}_sponsors`,
           `brand_sponsors_${brandId}`,
           {
-            sponsors: sponsors.map(s => ({ name: s.name, logoUrl: s.url, tier: s.tier })),
+            sponsors: sponsors.map(s => ({ name: s.name, logoUrl: s.logoUrl || s.url, tier: s.tier })),
             totalCount: sponsors.length,
           }
         ));
@@ -263,6 +263,140 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
             brandId,
             ...data.event,
             importedAt: new Date().toISOString(),
+          }
+        ));
+      }
+
+      // Event schedule — for agenda, program booklet, and session-based assets
+      const schedule = hubBrand.eventSchedule as Array<{ title?: string; time?: string; location?: string; description?: string; track?: string; speaker?: string }> | undefined;
+      if (schedule?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_schedule`,
+          `brand_schedule_${brandId}`,
+          {
+            sessions: schedule.map(s => ({
+              title: s.title, time: s.time, location: s.location,
+              description: s.description, track: s.track, speaker: s.speaker,
+            })),
+            totalSessions: schedule.length,
+          }
+        ));
+      }
+
+      // Linked regional events — for multi-event context
+      const linkedGuides = hubBrand.linkedGuides as Array<{ name?: string; slug?: string; region?: string; location?: string; dates?: string; venue?: string; attendees?: number; accentColor?: string }> | undefined;
+      if (linkedGuides?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_linked_events`,
+          `brand_linked_events_${brandId}`,
+          {
+            events: linkedGuides.map(g => ({
+              name: g.name, region: g.region, location: g.location,
+              dates: g.dates, venue: g.venue, attendees: g.attendees, accentColor: g.accentColor,
+            })),
+            totalEvents: linkedGuides.length,
+          }
+        ));
+      }
+
+      // Color combinations — approved/rejected combos for design guidance
+      const colorCombos = hubBrand.colorCombinations as Array<{ name?: string; colors?: string[]; status?: string; notes?: string }> | undefined;
+      if (colorCombos?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_color_combos`,
+          `brand_color_combos_${brandId}`,
+          {
+            approved: colorCombos.filter(c => c.status === 'approved').map(c => ({ name: c.name, colors: c.colors, notes: c.notes })),
+            rejected: colorCombos.filter(c => c.status === 'rejected').map(c => ({ name: c.name, colors: c.colors, notes: c.notes })),
+          }
+        ));
+      }
+
+      // Social platform specs — for accurate social media asset generation
+      const socialAssets = hubBrand.socialAssets as Array<{ platform?: string; postSize?: string; storySize?: string; directive?: string; textLegibility?: string }> | undefined;
+      if (socialAssets?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_social_specs`,
+          `brand_social_specs_${brandId}`,
+          {
+            platforms: socialAssets.map(s => ({
+              platform: s.platform, postSize: s.postSize, storySize: s.storySize,
+              directive: s.directive, textLegibility: s.textLegibility,
+            })),
+          }
+        ));
+      }
+
+      // Partner booths / divisions — for booth graphics, kiosk screens
+      const partnerBooths = hubBrand.partnerBooths as Array<{ divisionName?: string; tagline?: string; color?: string; services?: string[] }> | undefined;
+      if (partnerBooths?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_divisions`,
+          `brand_divisions_${brandId}`,
+          {
+            divisions: partnerBooths.map(p => ({
+              name: p.divisionName, tagline: p.tagline, color: p.color, services: p.services,
+            })),
+          }
+        ));
+      }
+
+      // Event photography URLs — reference imagery for generation
+      const eventPhotos = hubBrand.eventPhotographyUrls as string[] | undefined;
+      if (eventPhotos?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_event_photos`,
+          `brand_event_photos_${brandId}`,
+          {
+            urls: eventPhotos.slice(0, 20),
+            totalCount: eventPhotos.length,
+          }
+        ));
+      }
+
+      // Event details (dates, hashtag, registration URL)
+      const eventDetailsData = hubBrand.eventDetails as Record<string, unknown> | undefined;
+      if (eventDetailsData) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_event_details`,
+          `brand_event_details_${brandId}`,
+          {
+            eventName: eventDetailsData.eventName,
+            eventDates: eventDetailsData.eventDates,
+            eventType: eventDetailsData.eventType,
+            hashtag: eventDetailsData.hashtag,
+            location: eventDetailsData.location,
+            registrationUrl: eventDetailsData.registrationUrl,
+          }
+        ));
+      }
+
+      // Display banner specs — for ad generation
+      const displayBanners = hubBrand.displayBanners as Array<{ name?: string; dimensions?: string; safeZonePolicy?: string; textLegibility?: string; maxMessaging?: string }> | undefined;
+      if (displayBanners?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_display_specs`,
+          `brand_display_specs_${brandId}`,
+          {
+            banners: displayBanners.map(b => ({
+              name: b.name, dimensions: b.dimensions, safeZone: b.safeZonePolicy,
+              textLegibility: b.textLegibility, maxMessaging: b.maxMessaging,
+            })),
+          }
+        ));
+      }
+
+      // Event history — for context about past events
+      const eventHistory = hubBrand.eventHistory as Array<{ year?: number; eventName?: string; location?: string; attendees?: number; theme?: string; highlights?: string }> | undefined;
+      if (eventHistory?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_event_history`,
+          `brand_event_history_${brandId}`,
+          {
+            history: eventHistory.map(h => ({
+              year: h.year, name: h.eventName, location: h.location,
+              attendees: h.attendees, theme: h.theme, highlights: h.highlights,
+            })),
           }
         ));
       }

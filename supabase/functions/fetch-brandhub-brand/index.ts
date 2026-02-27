@@ -466,14 +466,39 @@ function buildBrandFromEventGuideData(
     hex: c.hex, name: c.name || '', role: c.role || '', usage: c.usage || '',
   }));
 
+  // Extract event-specific rich data
+  const eventDetails = (guideData.eventDetails as Record<string, unknown>) || {};
+  const eventSchedule = Array.isArray(guideData.eventSchedule) ? guideData.eventSchedule : [];
+  const eventSponsors = Array.isArray(guideData.eventSponsors) ? guideData.eventSponsors : [];
+  const linkedGuides = Array.isArray(guideData.linkedGuides) ? guideData.linkedGuides : [];
+  const colorCombinations = Array.isArray(guideData.colorCombinations) ? guideData.colorCombinations : [];
+  const socialAssets = Array.isArray(guideData.socialAssets) ? guideData.socialAssets : [];
+  const displayBanners = Array.isArray(guideData.displayBanners) ? guideData.displayBanners : [];
+  const partnerBooths = Array.isArray(guideData.partnerBooths) ? guideData.partnerBooths : [];
+  const eventHistory = Array.isArray(guideData.eventHistory) ? guideData.eventHistory : [];
+  const eventSignage = Array.isArray(guideData.eventSignage) ? guideData.eventSignage : [];
+  const emailBanners = Array.isArray(guideData.emailBanners) ? guideData.emailBanners : [];
+  const eventBanners = Array.isArray(guideData.eventBanners) ? guideData.eventBanners : [];
+  const eventVideos = Array.isArray(guideData.eventVideos) ? guideData.eventVideos : [];
+  const brochures = Array.isArray(guideData.brochures) ? guideData.brochures : [];
+  const textStyles = Array.isArray(guideData.textStyles) ? guideData.textStyles : [];
+  const templates = Array.isArray(guideData.templates) ? guideData.templates : [];
+  const assets = Array.isArray(guideData.assets) ? guideData.assets : [];
+  const websites = Array.isArray(guideData.websites) ? guideData.websites : [];
+  const eventDigitalAssets = Array.isArray(guideData.eventDigitalAssets) ? guideData.eventDigitalAssets : [];
+
   const normalizedBrand = {
     id: eventData.id,
     name: hero.name || eventData.name,
     slug: eventData.slug,
     tagline: taglineData.primary || hero.tagline || null,
+    tagline_secondary: taglineData.secondary || null,
+    tagline_variations: Array.isArray(taglineData.variations) ? taglineData.variations : 
+      Array.isArray(taglineData.variationsV2) ? (taglineData.variationsV2 as Array<{text?: string}>).map(v => v.text).filter(Boolean) : [],
     mission: identity.missionStatement || null,
     industry: guideData.industry || null,
     voice: Array.isArray(identity.toneOfVoice) ? identity.toneOfVoice : [],
+    archetype: identity.archetype || null,
     primary_color: colorPalette[0]?.hex,
     secondary_color: colorPalette[1]?.hex,
     accent_color: colorPalette[2]?.hex,
@@ -491,25 +516,81 @@ function buildBrandFromEventGuideData(
     photography_dos: imagery.filter((i: Record<string, unknown>) => i.type === 'do').map((i: Record<string, unknown>) => String(i.description || '')),
     photography_donts: imagery.filter((i: Record<string, unknown>) => i.type === 'dont').map((i: Record<string, unknown>) => String(i.description || '')),
     social_handles: socialHandles,
-    hashtags: values.slice(0, 10).map((v: Record<string, unknown>) => v.text ? `#${String(v.text).replace(/\\s+/g, '')}` : null).filter(Boolean),
-    values: values.map((v: Record<string, unknown>) => v.text).filter(Boolean),
+    hashtags: [eventDetails.hashtag].filter(Boolean),
+    values: values.map((v: Record<string, unknown>) => ({ text: v.text, description: v.description })),
     services: services.map((s: Record<string, unknown>) => ({ name: s.name, description: s.description })),
-    sponsors: sponsorLogos.map((s: Record<string, unknown>) => ({ id: s.id, name: s.name, url: s.url, tier: s.tier })),
+    sponsors: eventSponsors.map((s: Record<string, unknown>) => ({ id: s.id, name: s.name, logoUrl: s.logoUrl, tier: s.tier })),
     heroSettings: { coverImage: hero.coverImage || null, coverVideo: hero.coverVideo || null, useVideo: hero.useVideo || false },
     allImagery: { all: [], byType: {}, totalCount: 0 },
+    
+    // Rich event data
+    eventDetails: {
+      eventName: eventDetails.eventName || hero.name || eventData.name,
+      eventDates: eventDetails.eventDates,
+      eventType: eventDetails.eventType || guideData.eventType,
+      hashtag: eventDetails.hashtag,
+      location: eventDetails.location,
+      registrationUrl: eventDetails.registrationUrl,
+      tagline: eventDetails.tagline || taglineData.primary,
+    },
+    eventSchedule: eventSchedule.map((s: Record<string, unknown>) => ({
+      title: s.title, time: s.time, location: s.location, 
+      description: s.description, track: s.track, speaker: s.speaker,
+    })),
+    linkedGuides: linkedGuides.map((g: Record<string, unknown>) => ({
+      name: g.name, slug: g.slug, region: g.region, location: g.location,
+      dates: g.dates, venue: g.venue, attendees: g.attendees, accentColor: g.accentColor,
+    })),
+    colorCombinations: colorCombinations.map((c: Record<string, unknown>) => ({
+      name: c.name, colors: c.colors, status: c.status, notes: c.notes,
+    })),
+    socialAssets: socialAssets.map((s: Record<string, unknown>) => ({
+      platform: s.platform, postSize: s.postSize, storySize: s.storySize,
+      coverSize: s.coverSize, directive: s.directive, textLegibility: s.textLegibility,
+    })),
+    displayBanners: displayBanners.map((b: Record<string, unknown>) => ({
+      name: b.name, dimensions: b.dimensions, category: b.category,
+      safeZonePolicy: b.safeZonePolicy, textLegibility: b.textLegibility, maxMessaging: b.maxMessaging,
+    })),
+    partnerBooths: partnerBooths.map((p: Record<string, unknown>) => ({
+      divisionName: p.divisionName, tagline: p.tagline, color: p.color,
+      services: p.services,
+    })),
+    eventHistory: eventHistory.map((h: Record<string, unknown>) => ({
+      year: h.year, eventName: h.eventName, location: h.location, 
+      attendees: h.attendees, theme: h.theme, highlights: h.highlights,
+    })),
+    textStyles: textStyles.map((t: Record<string, unknown>) => ({
+      tag: t.tag, size: t.size, weight: t.weight, lineHeight: t.lineHeight,
+    })),
+    eventSignagePreviewUrls: eventSignage.slice(0, 10).map((s: Record<string, unknown>) => s.previewUrl).filter(Boolean),
+    emailBannerUrls: emailBanners.slice(0, 5).map((b: Record<string, unknown>) => b.imageUrl).filter(Boolean),
+    eventBannerUrls: eventBanners.slice(0, 5).map((b: Record<string, unknown>) => b.previewUrl).filter(Boolean),
+    eventVideoUrls: eventVideos.map((v: Record<string, unknown>) => ({ title: v.title, url: v.url, thumbnailUrl: v.thumbnailUrl })),
+    eventPhotographyUrls: assets.slice(0, 20).map((a: Record<string, unknown>) => a.url).filter(Boolean),
+    websites: websites.map((w: Record<string, unknown>) => ({ name: w.name, url: w.url })),
+    digitalAssetUrls: eventDigitalAssets.map((d: Record<string, unknown>) => ({ name: d.name, url: d.imageUrl })),
+    brochurePreviewUrls: brochures.map((b: Record<string, unknown>) => b.previewUrl).filter(Boolean),
+    
     guide_data: guideData,
   };
 
   const venue = (guideData.venue as Record<string, unknown>) || {};
-  const eventDetails = {
+  const eventDetailsResponse = {
     name: hero.name || eventData.name,
     description: hero.subtitle || hero.description,
-    date: guideData.eventDate,
-    eventType: guideData.eventType || guideData.category,
+    date: eventDetails.eventDates || guideData.eventDate,
+    eventType: eventDetails.eventType || guideData.eventType || guideData.category,
     venue: venue.name,
     venueAddress: venue.address,
-    venueCity: venue.city,
+    venueCity: venue.city || eventDetails.location,
     tagline: taglineData.primary || hero.tagline,
+    hashtag: eventDetails.hashtag,
+    registrationUrl: eventDetails.registrationUrl,
+    attendeeCount: linkedGuides.reduce((sum: number, g: Record<string, unknown>) => sum + (Number(g.attendees) || 0), 0) || undefined,
+    linkedEvents: linkedGuides.map((g: Record<string, unknown>) => ({
+      name: g.name, region: g.region, location: g.location, dates: g.dates, venue: g.venue,
+    })),
   };
 
   const corsHeaders = {
@@ -520,8 +601,8 @@ function buildBrandFromEventGuideData(
   return new Response(JSON.stringify({
     success: true,
     brand: normalizedBrand,
-    event: eventDetails,
-    hasEventData: !!(eventDetails.name || eventDetails.date || eventDetails.venue),
+    event: eventDetailsResponse,
+    hasEventData: !!(eventDetailsResponse.name || eventDetailsResponse.date || eventDetailsResponse.venue),
     sectionsImported: Object.keys(normalizedBrand).filter(k => (normalizedBrand as any)[k] != null).length,
     resolvedToken: String(eventData.slug),
   }), {
