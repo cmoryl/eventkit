@@ -89,19 +89,27 @@ serve(async (req) => {
       f.role === 'accent' || f.role === 'caption'
     );
 
-    // Photography guidelines
-    const photographyApproved = Array.isArray(photography.approved)
+    // Photography guidelines — enrich with AI analysis
+    const rawApproved = Array.isArray(photography.approved)
       ? photography.approved.map((p: Record<string, unknown>) => ({
-          url: p.url,
-          description: p.description,
+          url: String(p.url || ''),
+          description: String(p.description || ''),
         }))
       : [];
-    const photographyRejected = Array.isArray(photography.rejected)
+    const rawRejected = Array.isArray(photography.rejected)
       ? photography.rejected.map((p: Record<string, unknown>) => ({
-          url: p.url,
-          description: p.description,
+          url: String(p.url || ''),
+          description: String(p.description || ''),
         }))
       : [];
+
+    // Deep-analyze approved photography with AI vision
+    const photographyApproved = await analyzePhotographyBatch(
+      rawApproved, brandData.name, 'approved'
+    );
+    const photographyRejected = await analyzePhotographyBatch(
+      rawRejected, brandData.name, 'rejected'
+    );
 
     // Brand misuse / constraints
     const brandMisuse = Array.isArray(constraints.brandMisuse)
@@ -262,4 +270,95 @@ function extractEventDetails(
     attendeeCount: brandData.attendee_count || brandData.attendeeCount || guideData.attendeeCount,
     tagline: brandData.tagline || heroData.tagline,
   };
+}
+
+/**
+ * Deep-analyze a batch of photography images with AI vision.
+ * Replaces generic descriptions like "Good example of brand photography"
+ * with rich, actionable descriptions of what makes each image on-brand.
+ */
+async function analyzePhotographyBatch(
+  photos: Array<{ url: string; description: string }>,
+  brandName: string,
+  type: 'approved' | 'rejected'
+): Promise<Array<{ url: string; description: string; aiAnalysis?: string }>> {
+  if (photos.length === 0) return [];
+
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) {
+    console.warn('No LOVABLE_API_KEY — skipping photography deep analysis');
+    return photos;
+  }
+
+  // Build a single batch prompt with all image URLs to minimize API calls
+  const imageEntries = photos
+    .filter(p => p.url)
+    .slice(0, 8); // cap at 8 to stay within context limits
+
+  if (imageEntries.length === 0) return photos;
+
+  const direction = type === 'approved'
+    ? 'what makes each image ON-BRAND and suitable for the brand'
+    : 'what makes each image OFF-BRAND or unsuitable for the brand';
+
+  const prompt = `You are a brand photography analyst for "${brandName}".
+
+Analyze each of the ${imageEntries.length} images below and describe ${direction}.
+
+For each image, provide a concise 1-2 sentence analysis covering:
+- Subject matter & composition (e.g. "diverse team in modern office", "aerial cityscape")
+- Lighting & color treatment (e.g. "warm natural light", "high-contrast corporate blue tones")
+- Mood & style (e.g. "energetic and collaborative", "polished editorial")
+- Why it works for the brand (e.g. "reinforces global teamwork values", "aligns with professional tone")
+
+Respond with ONLY a JSON array of objects: [{"index": 0, "analysis": "..."}, ...]
+One entry per image, in order.`;
+
+  try {
+    const content: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
+      { type: "text", text: prompt }
+    ];
+    for (const entry of imageEntries) {
+      content.push({ type: "image_url", image_url: { url: entry.url } });
+    }
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [{ role: "user", content }],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Photography analysis API error:', response.status);
+      return photos;
+    }
+
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+
+    if (jsonMatch) {
+      const analyses: Array<{ index: number; analysis: string }> = JSON.parse(jsonMatch[0]);
+      
+      return photos.map((photo, i) => {
+        const match = analyses.find(a => a.index === i);
+        return {
+          url: photo.url,
+          description: match?.analysis || photo.description,
+          aiAnalysis: match?.analysis || undefined,
+        };
+      });
+    }
+  } catch (e) {
+    console.warn('Photography analysis error:', e);
+  }
+
+  return photos;
 }
