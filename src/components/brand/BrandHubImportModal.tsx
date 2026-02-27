@@ -429,7 +429,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className={importedHubBrand ? 'max-w-lg' : 'max-w-md'}>
+      <DialogContent className={importedHubBrand ? 'max-w-lg' : 'max-w-md'} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
