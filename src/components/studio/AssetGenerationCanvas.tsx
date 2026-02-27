@@ -15,8 +15,10 @@ import {
   recordBriefPreference, 
   getBriefPreference,
   buildPromptFromBrief,
+  getKnowledge,
   type AssetBriefData 
 } from '@/services/aiBrain/learningService';
+import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 
@@ -65,12 +67,43 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [currentBrief, setCurrentBrief] = useState<AssetBrief | null>(null);
   const [showBriefModal, setShowBriefModal] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100); // Zoom percentage
+  const [brandKnowledge, setBrandKnowledge] = useState<Record<string, unknown> | null>(null);
 
   // Get brand colors for accents
   const brandPrimary = brand?.styles?.primary_color || activeBrand?.styles?.primary_color;
   const brandSecondary = brand?.styles?.secondary_color || activeBrand?.styles?.secondary_color;
   const brandAccent = brand?.styles?.accent_color || activeBrand?.styles?.accent_color;
   const hasBrandColors = brandPrimary || brandSecondary || brandAccent;
+
+  // Fetch brand knowledge once when opening
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      getKnowledge(user.id, 'brand_preference').then(entries => {
+        const merged: Record<string, unknown> = {};
+        entries.forEach(entry => {
+          if (entry.value && typeof entry.value === 'object') {
+            Object.assign(merged, entry.value);
+          }
+        });
+        setBrandKnowledge(Object.keys(merged).length > 0 ? merged : null);
+      }).catch(console.error);
+    }
+  }, [isOpen, user?.id]);
+
+  // Compile prompt with Level-5 DNA + brand intelligence
+  const enrichPromptWithBrandIntelligence = (basePrompt: string): string => {
+    return compileGenerationPrompt({
+      basePrompt,
+      context: {
+        eventName,
+        assetType,
+        styleDescription: currentBrief?.stylePreset,
+        colorPalette: brand?.styles?.color_palette?.map((c: any) => c.hex || c) || [],
+        dimensions: parseDimensions(dimensions),
+      },
+      brandKnowledge: brandKnowledge || undefined,
+    });
+  };
 
   // Initialize when opened - show brief modal first
   useEffect(() => {
@@ -240,16 +273,17 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       fontWeight: brief.fontWeight,
     };
     
-    let prompt = buildPromptFromBrief(assetName, eventName, briefData, brand?.styles as unknown as Record<string, unknown>);
+    let basePrompt = buildPromptFromBrief(assetName, eventName, briefData, brand?.styles as unknown as Record<string, unknown>);
     
     // Add variation-specific style
-    prompt += ` Variation emphasis: ${styleVariant}.`;
+    basePrompt += ` Variation emphasis: ${styleVariant}.`;
     
     if (assetDescription) {
-      prompt += ` ${assetDescription}`;
+      basePrompt += ` ${assetDescription}`;
     }
     
-    return prompt;
+    // Enrich with Level-5 DNA + brand intelligence (photography, logo, voice/tone)
+    return enrichPromptWithBrandIntelligence(basePrompt);
   };
 
   // Legacy function for regeneration without brief
@@ -258,20 +292,21 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       return buildPromptWithBrief(currentBrief, styleVariant);
     }
     
-    let prompt = `Create a professional ${assetName} for "${eventName}". Style: ${styleVariant}.`;
+    let basePrompt = `Create a professional ${assetName} for "${eventName}". Style: ${styleVariant}.`;
     
     if (brand?.styles) {
       const { mood_keywords, industry, imagery_style } = brand.styles;
-      if (mood_keywords?.length) prompt += ` Mood: ${mood_keywords.join(', ')}.`;
-      if (industry) prompt += ` Industry: ${industry}.`;
-      if (imagery_style) prompt += ` Visual style: ${imagery_style}.`;
+      if (mood_keywords?.length) basePrompt += ` Mood: ${mood_keywords.join(', ')}.`;
+      if (industry) basePrompt += ` Industry: ${industry}.`;
+      if (imagery_style) basePrompt += ` Visual style: ${imagery_style}.`;
     }
     
     if (assetDescription) {
-      prompt += ` ${assetDescription}`;
+      basePrompt += ` ${assetDescription}`;
     }
     
-    return prompt;
+    // Enrich with Level-5 DNA + brand intelligence
+    return enrichPromptWithBrandIntelligence(basePrompt);
   };
 
   const parseDimensions = (dims?: string): { width: number; height: number } | undefined => {
