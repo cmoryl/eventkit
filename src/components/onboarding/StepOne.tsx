@@ -1,12 +1,16 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import type { EventDetails, LogoAsset } from '../../types';
 import EventTypeSelector from './EventTypeSelector';
 import VenueLocationFinder from '../VenueLocationFinder';
-import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, Globe, Mail, Link2 } from 'lucide-react';
+import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, Globe, Mail, Link2, Sparkles, CalendarDays, MapPin, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
+import { useActiveBrand } from '@/hooks/useActiveBrand';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface StepOneProps {
   eventDetails: EventDetails;
@@ -15,9 +19,70 @@ interface StepOneProps {
   setLogos: React.Dispatch<React.SetStateAction<LogoAsset[]>>;
 }
 
+interface BrandEvent {
+  name?: string;
+  date?: string;
+  location?: string;
+  venue?: string;
+  description?: string;
+  expectedAttendees?: number;
+  hashtag?: string;
+  website?: string;
+  email?: string;
+  dresscode?: string;
+  eventType?: string;
+}
+
 const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos, setLogos }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showBrandHubImport, setShowBrandHubImport] = useState(false);
+  const { activeBrand, isLoading: brandLoading } = useActiveBrand();
+  const { user, isAuthenticated } = useAuth();
+  const [brandEvents, setBrandEvents] = useState<BrandEvent[]>([]);
+  const [hasAutoFilled, setHasAutoFilled] = useState(false);
+
+  // Load events for active brand
+  const loadBrandEvents = useCallback(async () => {
+    if (!user || !activeBrand) {
+      setBrandEvents([]);
+      return;
+    }
+    try {
+      const { data } = await supabase
+        .from('ai_knowledge')
+        .select('value')
+        .eq('user_id', user.id)
+        .eq('knowledge_type', 'brand_preference')
+        .like('key', `brandhub_event_${activeBrand.id}%`);
+
+      const events = (data || []).map(row => row.value as unknown as BrandEvent);
+      setBrandEvents(events);
+    } catch (err) {
+      console.error('Failed to load brand events:', err);
+    }
+  }, [user, activeBrand?.id]);
+
+  useEffect(() => {
+    if (isAuthenticated) loadBrandEvents();
+  }, [isAuthenticated, loadBrandEvents]);
+
+  const handleAutoFill = (event: BrandEvent) => {
+    setEventDetails(prev => ({
+      ...prev,
+      name: event.name || prev.name,
+      description: event.description || prev.description,
+      date: event.date || prev.date,
+      location: event.location || event.venue || prev.location,
+      website: event.website || prev.website,
+      email: event.email || prev.email,
+      expectedAttendees: event.expectedAttendees || prev.expectedAttendees,
+      hashtag: event.hashtag || prev.hashtag,
+      dresscode: event.dresscode || prev.dresscode,
+      incorporateLocationStyle: !!(event.location || event.venue || prev.location),
+    }));
+    setHasAutoFilled(true);
+    toast.success('Event fields auto-filled from BrandHub');
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -27,7 +92,6 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
     Array.from(files).forEach(file => {
       const url = URL.createObjectURL(file);
       setLogos(prev => [...prev, { id: uuidv4(), file, url, name: file.name }]);
@@ -49,6 +113,87 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
+
+      {/* Active Brand + Event Auto-fill Banner */}
+      {isAuthenticated && activeBrand && brandEvents.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-xl border border-primary/20 bg-primary/5 p-4"
+        >
+          <div className="flex items-start gap-3">
+            {/* Brand icon */}
+            {activeBrand.logo_url ? (
+              <img src={activeBrand.logo_url} alt={activeBrand.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+            ) : (
+              <div
+                className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                style={{
+                  background: activeBrand.styles?.primary_color
+                    ? `linear-gradient(135deg, ${activeBrand.styles.primary_color}, ${activeBrand.styles.accent_color || activeBrand.styles.primary_color})`
+                    : 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))'
+                }}
+              >
+                {activeBrand.name.charAt(0)}
+              </div>
+            )}
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sm font-semibold text-foreground">{activeBrand.name}</span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
+                  ACTIVE BRAND
+                </span>
+              </div>
+
+              {/* Event cards */}
+              <div className="space-y-2 mt-2">
+                {brandEvents.map((event, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleAutoFill(event)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all",
+                      "border border-border/50 hover:border-primary/30 hover:bg-primary/5",
+                      hasAutoFilled && "opacity-70"
+                    )}
+                  >
+                    <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {event.name || 'Unnamed Event'}
+                      </p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        {event.date && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                            <CalendarDays className="w-2.5 h-2.5" /> {event.date}
+                          </span>
+                        )}
+                        {(event.location || event.venue) && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5 truncate">
+                            <MapPin className="w-2.5 h-2.5" /> {event.location || event.venue}
+                          </span>
+                        )}
+                        {event.expectedAttendees && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                            <Users className="w-2.5 h-2.5" /> {event.expectedAttendees}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {hasAutoFilled ? (
+                      <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                    ) : (
+                      <span className="text-[10px] font-medium text-primary whitespace-nowrap">Auto-fill</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Event Name - Hero Field */}
       <motion.div 
@@ -210,7 +355,10 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
       <BrandHubImportModal
         isOpen={showBrandHubImport}
         onClose={() => setShowBrandHubImport(false)}
-        onBrandImported={() => setShowBrandHubImport(false)}
+        onBrandImported={() => {
+          setShowBrandHubImport(false);
+          loadBrandEvents();
+        }}
       />
 
       {/* Optional Details - Collapsible */}
@@ -271,9 +419,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                   setEventDetails(prev => ({ 
                     ...prev, 
                     location: value,
-                    // Automatically enable location style when a location is provided
                     incorporateLocationStyle: !!value && value.trim().length > 0,
-                    // Store venue intelligence for use in asset generation
                     venueIntelligence: venueData || prev.venueIntelligence,
                   }));
                 }}
