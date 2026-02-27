@@ -123,6 +123,20 @@ const BrandKnowledgePanel: React.FC<{ brandId: string; brandName: string }> = ({
   const [entries, setEntries] = useState<Array<{ id: string; knowledge_type: string; category: string | null; key: string; value: Record<string, unknown>; confidence_score: number | null; usage_count: number | null; success_rate: number | null; updated_at: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const handleDeleteEntry = async (entryId: string) => {
+    setDeleting(entryId);
+    const { error } = await supabase.from('ai_knowledge').delete().eq('id', entryId);
+    if (error) {
+      toast.error('Failed to delete knowledge entry');
+    } else {
+      setEntries(prev => prev.filter(e => e.id !== entryId));
+      toast.success('Knowledge entry deleted');
+      if (expanded === entryId) setExpanded(null);
+    }
+    setDeleting(null);
+  };
 
   useEffect(() => {
     const fetchKnowledge = async () => {
@@ -213,8 +227,24 @@ const BrandKnowledgePanel: React.FC<{ brandId: string; brandName: string }> = ({
                       <div className="font-medium">{entry.success_rate != null ? `${Math.round(entry.success_rate * 100)}%` : '—'}</div>
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    Updated {new Date(entry.updated_at).toLocaleDateString()}
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground">
+                      Updated {new Date(entry.updated_at).toLocaleDateString()}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      disabled={deleting === entry.id}
+                      onClick={(e) => { e.stopPropagation(); handleDeleteEntry(entry.id); }}
+                    >
+                      {deleting === entry.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      )}
+                      <span className="ml-1 text-xs">Delete</span>
+                    </Button>
                   </div>
                   <pre className="text-xs bg-muted/20 rounded-lg p-2 overflow-x-auto max-h-48 whitespace-pre-wrap break-all">
                     {formatValue(entry.value)}
