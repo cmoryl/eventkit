@@ -294,10 +294,16 @@ const generateImageAsset = async (
   masterPatternBase64?: string | string[],
   venueImageBase64?: string,
   renderEngine?: RenderEngine,
-  brandContext?: BrandContext | null
+  brandContext?: BrandContext | null,
+  masterDirectionBlock?: string
 ): Promise<string> => {
   // Build enhanced style description incorporating vibe and pattern references
   let enhancedStyleDesc = styleDescription || `Professional event design for ${eventDetails.name}. Modern, clean aesthetics with bold typography.`;
+  
+  // Inject master visual direction if available
+  if (masterDirectionBlock) {
+    enhancedStyleDesc = masterDirectionBlock + '\n\n' + enhancedStyleDesc;
+  }
   
   const primaryVibeBase64 = Array.isArray(vibeImageBase64) ? vibeImageBase64[0] : vibeImageBase64;
   const primaryPatternBase64 = Array.isArray(masterPatternBase64) ? masterPatternBase64[0] : masterPatternBase64;
@@ -581,7 +587,9 @@ export const generatePlaceholderContent = async (
   vibeImageBase64?: string | string[],
   masterPatternBase64?: string | string[],
   venueImageBase64?: string,
-  renderEngine?: RenderEngine
+  renderEngine?: RenderEngine,
+  brandContext?: BrandContext | null,
+  masterDirectionBlock?: string
 ): Promise<string | string[] | ColorInfo[]> => {
   // Simulate AI delay
   await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
@@ -666,7 +674,7 @@ Use the Color Palette asset for complete color specifications including CMYK for
 - Consistent color grading aligned with brand palette`;
 
     default:
-      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl, styleDescription, vibeImageBase64, masterPatternBase64, venueImageBase64, renderEngine);
+      return generateImageAsset(type, eventDetails, colorPalette, logoDataUrl, styleDescription, vibeImageBase64, masterPatternBase64, venueImageBase64, renderEngine, brandContext, masterDirectionBlock);
   }
 };
 

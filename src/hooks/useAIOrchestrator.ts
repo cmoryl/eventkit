@@ -2,10 +2,13 @@ import { useState, useCallback, useRef } from 'react';
 import { AssetType } from '@/types';
 import type { EventDetails, GeneratedAsset, ColorInfo, LogoAsset, VenueVideoAnalysis } from '@/types';
 import type { RenderEngine } from '@/services/aiBrain/types';
+import type { BrandContext } from '@/types/brand.types';
 import { generatePlaceholderContent, optimizeGenerationStrategy, prioritizeAssets } from '@/services/assetGenerator';
 import { fileToBase64 } from '@/utils';
 import { progressPublisher } from '@/services/progressPublisher';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveBrandImagery } from '@/services/brandImageryResolver';
+import { generateMasterStyleDirection, buildMasterDirectionPromptBlock, clearMasterDirectionCache } from '@/services/masterStyleDirector';
 
 interface UseAIOrchestratorProps {
   eventDetails: EventDetails;
@@ -95,7 +98,8 @@ export const useAIOrchestrator = ({
     masterPatternFiles?: File[] | null,
     venueImageFile?: File | null,
     venueVideoAnalysisData?: VenueVideoAnalysis | null,
-    renderEngine?: RenderEngine
+    renderEngine?: RenderEngine,
+    brandContext?: BrandContext | null
   ) => {
     setIsLoading(true);
     const startTime = Date.now();
@@ -232,6 +236,57 @@ export const useAIOrchestrator = ({
         estimatedArea: venueVideoAnalysisData.overallAssessment.totalEstimatedArea,
       });
     }
+
+    // === GAP 1: Resolve brand imagery as visual references ===
+    let mergedVibeImages = vibeImageBase64 || [];
+    let mergedPatternImages = masterPatternBase64 || [];
+    
+    if (brandContext?.allImagery) {
+      setGenerationProgress(prev => ({
+        ...prev,
+        phase: 'analyzing',
+        currentAssetName: 'Resolving brand imagery references...'
+      }));
+
+      const brandImagery = await resolveBrandImagery(brandContext);
+      
+      // Merge brand photography with user-provided vibe images
+      const existingVibes = Array.isArray(mergedVibeImages) ? mergedVibeImages : (mergedVibeImages ? [mergedVibeImages] : []);
+      mergedVibeImages = [...existingVibes, ...brandImagery.photographyRefs];
+      
+      // Merge brand patterns with user-provided patterns
+      const existingPatterns = Array.isArray(mergedPatternImages) ? mergedPatternImages : (mergedPatternImages ? [mergedPatternImages] : []);
+      mergedPatternImages = [...existingPatterns, ...brandImagery.patternRefs];
+      
+      console.log(`Brand imagery merged: ${mergedVibeImages.length} vibe refs, ${mergedPatternImages.length} pattern refs`);
+    }
+
+    // === GAP 3: Generate master style direction for visual consistency ===
+    let masterDirectionBlock = '';
+    const loadingCount = assetsToGenerate.filter(a => a.isLoading).length;
+    
+    if (loadingCount > 1) {
+      setGenerationProgress(prev => ({
+        ...prev,
+        phase: 'analyzing',
+        currentAssetName: 'Creating unified visual direction...'
+      }));
+      
+      clearMasterDirectionCache();
+      const direction = await generateMasterStyleDirection({
+        eventDetails,
+        brandContext: brandContext || null,
+        colorPalette: paletteOverride || colorPalette,
+        styleDescription: currentStyleDesc,
+        hasVibeImage: (Array.isArray(mergedVibeImages) ? mergedVibeImages.length : mergedVibeImages ? 1 : 0) > 0,
+        hasVenueImage: !!venueImageBase64,
+      });
+      
+      if (direction) {
+        masterDirectionBlock = buildMasterDirectionPromptBlock(direction);
+        console.log('Master visual direction generated — will inject into all assets');
+      }
+    }
     
     // Update phase to analyzing if we have reference images
     if (hasVibeImage && strategy.shouldPreAnalyze) {
@@ -298,10 +353,11 @@ export const useAIOrchestrator = ({
           [], 
           primaryLogoBase64,
           currentStyleDesc,
-          vibeImageBase64,
-          masterPatternBase64,
+          mergedVibeImages,
+          mergedPatternImages,
           venueImageBase64,
-          renderEngine
+          renderEngine,
+          brandContext
         ) as ColorInfo[];
         
         const assetTime = Date.now() - assetStart;
@@ -367,10 +423,12 @@ export const useAIOrchestrator = ({
                 currentPalette,
                 primaryLogoBase64,
                 currentStyleDesc,
-                vibeImageBase64,
-                masterPatternBase64,
+                mergedVibeImages,
+                mergedPatternImages,
                 venueImageBase64,
-                renderEngine
+                renderEngine,
+                brandContext,
+                masterDirectionBlock
               );
               return { id: asset.id, success: true, content };
             } catch (error) {
