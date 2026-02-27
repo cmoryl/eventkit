@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Settings, Link, Paintbrush } from 'lucide-react';
+import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Settings, Link, Paintbrush, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 import { BrandStyleEditor } from './BrandStyleEditor';
 import { applyBrandTheme } from '@/services/brandThemeService';
+import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
 
 interface BrandStyle {
   primary_color?: string;
@@ -36,6 +37,7 @@ export const AdminBrandManager: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [newBrand, setNewBrand] = useState({ name: '', description: '' });
+  const [showBrandHubImport, setShowBrandHubImport] = useState(false);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -160,10 +162,16 @@ export const AdminBrandManager: React.FC = () => {
           <h2 className="text-xl font-bold">Brand Profiles</h2>
           <p className="text-sm text-muted-foreground">Manage your brand identities for asset generation</p>
         </div>
-        <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Brand
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowBrandHubImport(true)}>
+            <Link2 className="w-4 h-4 mr-2" />
+            Import from BrandHub
+          </Button>
+          <Button onClick={() => setIsCreating(true)} disabled={isCreating}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Brand
+          </Button>
+        </div>
       </div>
 
       {/* Create New Brand Form */}
@@ -330,6 +338,16 @@ export const AdminBrandManager: React.FC = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* BrandHub Import Modal */}
+      <BrandHubImportModal
+        isOpen={showBrandHubImport}
+        onClose={() => setShowBrandHubImport(false)}
+        onBrandImported={() => {
+          loadBrands();
+          setShowBrandHubImport(false);
+        }}
+      />
     </div>
   );
 };
