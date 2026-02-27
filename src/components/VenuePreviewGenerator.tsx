@@ -174,6 +174,10 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
         eventDescription: eventDetails.description,
         styleDescription,
         duration: 5,
+        // Pass compiled AI Brain prompt so the edge function uses it untouched
+        customPrompt: styleDescription
+          ? `Transform this venue into a professionally branded event space for "${eventDetails.name}". ${eventDetails.description ? `Event: ${eventDetails.description}. ` : ''}Style: ${styleDescription}. Preserve venue architecture, match lighting, maintain perspective. All inserted assets must be pixel-faithful reproductions—no redrawing or reinterpretation.`
+          : undefined,
       };
 
       if (assetMode === 'specific' && selectedAssets.length > 0) {
