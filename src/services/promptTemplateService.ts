@@ -274,6 +274,7 @@ async function incrementTemplateUsage(templateId: string): Promise<void> {
 
 /**
  * Build a fallback prompt when no template exists
+ * Uses Master Wrapper structure from the Interactive Prompt Bible
  */
 function buildFallbackPrompt(assetType: AssetType, variables: TemplateVariables, brandContext?: BrandContext | null): string {
   const assetName = assetType.toString().replace(/_/g, ' ').toLowerCase();
@@ -294,13 +295,18 @@ function buildFallbackPrompt(assetType: AssetType, variables: TemplateVariables,
     );
   }
   
-  return `Create a professional ${assetName} design for "${variables.eventName}". 
+  return `[TEMPLATE_SKELETON]
+Template Name: ${assetName}
+Category / Asset Type: ${assetType}
+
+Create a professional ${assetName} design for "${variables.eventName}". 
 ${variables.eventDescription ? `Event description: ${variables.eventDescription}.` : ''}
 ${variables.eventLocation ? `Location: ${variables.eventLocation}.` : ''}
 ${variables.eventDate ? `Date: ${variables.eventDate}.` : ''}
 Style: ${variables.mood}. 
 ${variables.colors ? `Use these colors: ${variables.colors}.` : ''}
-Create a cohesive, professional design that reflects the event's brand identity.`;
+Create a cohesive, professional design that reflects the event's brand identity.
+Ensure the design passes the 3-second scan test for immediate comprehension.`;
 }
 
 /**
