@@ -22,6 +22,9 @@ export function buildBrandContext(brandContext: BrandContext | undefined): strin
   if (brandContext.tagline) {
     brandParts.push(`Brand tagline for design inspiration: "${brandContext.tagline}".`);
   }
+  if (brandContext.mission) {
+    brandParts.push(`Brand mission: ${brandContext.mission}.`);
+  }
   
   // Visual mood and style
   if (brandContext.moodKeywords && brandContext.moodKeywords.length > 0) {
@@ -58,6 +61,9 @@ export function buildBrandContext(brandContext: BrandContext | undefined): strin
   if (brandContext.toneKeywords && brandContext.toneKeywords.length > 0) {
     brandParts.push(`Tone: ${brandContext.toneKeywords.join(', ')}.`);
   }
+  if (brandContext.writingStyle) {
+    brandParts.push(`Writing style: ${brandContext.writingStyle}.`);
+  }
   
   // Cultural context from brand
   if (brandContext.culturalContext) {
@@ -72,8 +78,8 @@ export function buildBrandContext(brandContext: BrandContext | undefined): strin
   // Approved color combinations
   if (brandContext.approvedColorCombinations && brandContext.approvedColorCombinations.length > 0) {
     const approved = brandContext.approvedColorCombinations
-      .filter(c => c.status === 'approved')
-      .map(c => c.colors.join(' + '))
+      .filter((c: { status: string }) => c.status === 'approved')
+      .map((c: { colors: string[] }) => c.colors.join(' + '))
       .slice(0, 3);
     if (approved.length > 0) {
       brandParts.push(`Approved color combinations: ${approved.join('; ')}.`);
@@ -84,19 +90,78 @@ export function buildBrandContext(brandContext: BrandContext | undefined): strin
   if (brandContext.gradients && brandContext.gradients.length > 0) {
     const gradientDesc = brandContext.gradients
       .slice(0, 2)
-      .map(g => `${g.name}: ${g.colors.join(' to ')}`)
+      .map((g: { name: string; colors: string[] }) => `${g.name}: ${g.colors.join(' to ')}`)
       .join('; ');
     brandParts.push(`Brand gradients available: ${gradientDesc}.`);
   }
   
-  if (brandParts.length > 0) {
-    return `
+  if (brandParts.length === 0) return '';
+
+  // Build the main brand context
+  let result = `
 BRAND INTELLIGENCE - CRITICAL DESIGN CONTEXT:
 ${brandParts.join('\n')}
 Ensure the design is unmistakably on-brand while remaining fresh and contextually appropriate.`;
+
+  // === BRAND INTELLIGENCE BLOCK (photography, logo, voice, constraints) ===
+  // This mirrors the compileGenerationPrompt brand intelligence from the frontend
+  const intelligenceBlocks: string[] = [];
+
+  // Photography rules
+  const photoDos = brandContext.photographyDos as string[] | undefined;
+  const photoDonts = brandContext.photographyDonts as string[] | undefined;
+  const photoStyle = brandContext.photographyStyle as string | undefined;
+  if (photoStyle || photoDos?.length || photoDonts?.length) {
+    const lines = ["BRAND PHOTOGRAPHY RULES:"];
+    if (photoStyle) lines.push(`  Style: ${photoStyle}`);
+    if (photoDos?.length) {
+      lines.push("  DO:");
+      photoDos.slice(0, 6).forEach((d: string) => lines.push(`    ✓ ${d}`));
+    }
+    if (photoDonts?.length) {
+      lines.push("  DO NOT:");
+      photoDonts.slice(0, 6).forEach((d: string) => lines.push(`    ✗ ${d}`));
+    }
+    intelligenceBlocks.push(lines.join("\n"));
+  }
+
+  // Logo usage rules
+  const logoRules = brandContext.logoPlacementRules as string[] | undefined;
+  const logoClearSpace = brandContext.logoClearSpace as string | undefined;
+  const logoMinSize = brandContext.logoMinSize as string | undefined;
+  const logoBgs = brandContext.logoBackgrounds as string[] | undefined;
+  if (logoRules?.length || logoClearSpace || logoMinSize) {
+    const lines = ["BRAND LOGO USAGE RULES:"];
+    if (logoClearSpace) lines.push(`  Clear space: ${logoClearSpace}`);
+    if (logoMinSize) lines.push(`  Minimum size: ${logoMinSize}`);
+    if (logoBgs?.length) lines.push(`  Approved backgrounds: ${logoBgs.join(", ")}`);
+    if (logoRules?.length) {
+      logoRules.slice(0, 5).forEach((r: string) => lines.push(`  • ${r}`));
+    }
+    intelligenceBlocks.push(lines.join("\n"));
+  }
+
+  // Constraints / restrictions
+  const restricted = brandContext.restrictedElements as string[] | undefined;
+  const approvedLayouts = brandContext.approvedLayouts as string[] | undefined;
+  if (restricted?.length || approvedLayouts?.length) {
+    const lines = ["BRAND CONSTRAINTS:"];
+    if (restricted?.length) {
+      lines.push("  NEVER:");
+      restricted.slice(0, 5).forEach((r: string) => lines.push(`    ✗ ${r}`));
+    }
+    if (approvedLayouts?.length) {
+      lines.push("  APPROVED LAYOUTS:");
+      approvedLayouts.slice(0, 4).forEach((l: string) => lines.push(`    ✓ ${l}`));
+    }
+    intelligenceBlocks.push(lines.join("\n"));
+  }
+
+  if (intelligenceBlocks.length > 0) {
+    result += `\n\n=== BRAND INTELLIGENCE ===\n${intelligenceBlocks.join("\n\n")}\n=== END BRAND INTELLIGENCE ===`;
   }
   
-  return '';
+  return result;
 }
 
 /**
