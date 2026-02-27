@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, Loader2, Sparkles, ExternalLink } from 'lucide-react';
+import { Link2, Loader2 } from 'lucide-react';
+import { BrandImportSummary } from './BrandImportSummary';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,8 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
   const [shareUrl, setShareUrl] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importedBrandName, setImportedBrandName] = useState<string | null>(null);
+  const [importedHubBrand, setImportedHubBrand] = useState<Record<string, unknown> | null>(null);
+  const [importedEventData, setImportedEventData] = useState<Record<string, unknown> | null>(null);
 
   const extractTokenOrSlug = (url: string): { shareToken?: string; slug?: string } | null => {
     const trimmed = url.trim();
@@ -404,16 +407,10 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       await Promise.all(knowledgePromises);
 
       setImportedBrandName(brandName);
-      const eventNote = data.hasEventData ? ` with event "${data.event?.name || 'unnamed'}"` : '';
-      toast.success(`"${brandName}" imported from BrandHub${eventNote}`);
+      setImportedHubBrand(hubBrand as Record<string, unknown>);
+      setImportedEventData(data.hasEventData ? data.event : null);
+      toast.success(`"${brandName}" imported from BrandHub`);
       onBrandImported();
-      
-      // Reset and close after brief delay
-      setTimeout(() => {
-        setShareUrl('');
-        setImportedBrandName(null);
-        onClose();
-      }, 1500);
     } catch (error) {
       console.error('BrandHub import error:', error);
       toast.error('Failed to import from BrandHub');
@@ -422,35 +419,43 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
     }
   };
 
+  const handleClose = () => {
+    setShareUrl('');
+    setImportedBrandName(null);
+    setImportedHubBrand(null);
+    setImportedEventData(null);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent className={importedHubBrand ? 'max-w-lg' : 'max-w-md'}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
               <Link2 className="w-4 h-4 text-white" />
             </div>
-            Import from BrandHub
+            {importedHubBrand ? 'Import Summary' : 'Import from BrandHub'}
           </DialogTitle>
-          <DialogDescription>
-            Paste your BrandHub Creator share URL to import brand identity, colors, fonts, photography rules, and event data.
-          </DialogDescription>
+          {!importedHubBrand && (
+            <DialogDescription>
+              Paste your BrandHub Creator share URL to import brand identity, colors, fonts, photography rules, and event data.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
-          {importedBrandName ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center gap-3 py-6"
-            >
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                <Sparkles className="w-6 h-6 text-emerald-500" />
-              </div>
-              <p className="text-sm font-medium text-center">
-                <span className="text-emerald-600 dark:text-emerald-400">{importedBrandName}</span> imported successfully!
-              </p>
-            </motion.div>
+          {importedHubBrand && importedBrandName ? (
+            <>
+              <BrandImportSummary
+                brandName={importedBrandName}
+                hubBrand={importedHubBrand}
+                eventData={importedEventData}
+              />
+              <Button onClick={handleClose} className="w-full">
+                Done
+              </Button>
+            </>
           ) : (
             <>
               <div>
@@ -486,7 +491,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                     </>
                   )}
                 </Button>
-                <Button variant="outline" onClick={onClose} disabled={isImporting}>
+                <Button variant="outline" onClick={handleClose} disabled={isImporting}>
                   Cancel
                 </Button>
               </div>
@@ -498,7 +503,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                   <li>Logo variants & usage rules</li>
                   <li>Photography guidelines</li>
                   <li>Voice, tone & brand personality</li>
-                  <li>Event details (if available)</li>
+                  <li>Event details, schedule & sponsors</li>
                 </ul>
               </div>
             </>
