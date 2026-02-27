@@ -8,4 +8,10 @@ export {
   getVariantsForAsset,
   getTemplateCount,
 } from "./templateGenerator";
-export type { Level5Template, Level5AssetType, TemplateDNA, SceneSpec, LogoRules } from "../../types/eventTemplateSystem";
+export type {
+  Level5Template,
+  Level5AssetType,
+  TemplateDNA,
+  SceneSpec,
+  LogoRules,
+} from "../../types/eventTemplateSystem";
