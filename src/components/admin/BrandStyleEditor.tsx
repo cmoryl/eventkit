@@ -376,21 +376,126 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           })
           .eq('id', brand.id);
         
-        // Record comprehensive brand + event knowledge to AI brain
+        // Record comprehensive brand knowledge to AI brain — broken into granular entries
         await recordBrandKnowledge({
           syncedFrom: 'brandhub',
           syncTimestamp: now,
           hubBrandName: data.brand.name,
-          ...(data.hasEventData ? { eventData: data.event } : {}),
         });
 
-        // If event data is available, also store it as separate knowledge
-        if (data.hasEventData && data.event && user?.id) {
-          try {
-            await addOrUpdateKnowledge(
-              user.id,
-              'brand_preference',
-              `${brand.name}_event`,
+        // Store granular knowledge entries for better AI retrieval
+        if (user?.id) {
+          const hubBrand = data.brand;
+          const knowledgePromises: Promise<boolean>[] = [];
+
+          // Photography knowledge
+          if (hubBrand.photography_dos?.length || hubBrand.photography_donts?.length || hubBrand.photography_approved?.length) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'brand_preference', brand.name,
+              `brand_photography_${brand.id}`,
+              {
+                style: hubBrand.photography_style || style.photography_style,
+                dos: hubBrand.photography_dos || [],
+                donts: hubBrand.photography_donts || [],
+                approvedExamples: (hubBrand.photography_approved || []).slice(0, 10),
+                rejectedExamples: (hubBrand.photography_rejected || []).slice(0, 10),
+              }
+            ));
+          }
+
+          // Logo usage knowledge
+          if (hubBrand.all_logos?.length || hubBrand.logo_url) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'brand_preference', brand.name,
+              `brand_logos_${brand.id}`,
+              {
+                primaryUrl: hubBrand.logo_url,
+                monochromeUrl: hubBrand.logo_monochrome_url,
+                reversedUrl: hubBrand.logo_reversed_url,
+                iconUrl: hubBrand.logo_icon_url,
+                wordmarkUrl: hubBrand.logo_wordmark_url,
+                allVariants: (hubBrand.all_logos || []).slice(0, 10),
+                clearSpace: style.logo_clear_space,
+                minSize: style.logo_min_size,
+                placementRules: style.logo_placement_rules,
+                backgrounds: style.logo_backgrounds,
+              }
+            ));
+          }
+
+          // Brand constraints / misuse knowledge
+          if (hubBrand.brand_misuse?.length || hubBrand.restricted_elements?.length) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'brand_preference', brand.name,
+              `brand_constraints_${brand.id}`,
+              {
+                misuse: hubBrand.brand_misuse || [],
+                restrictedElements: hubBrand.restricted_elements || [],
+                approvedLayouts: style.approved_layouts || [],
+              }
+            ));
+          }
+
+          // Visual assets (patterns, gradients, icons)
+          if (hubBrand.patterns?.length || hubBrand.gradients?.length || hubBrand.brandIcons?.length) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'brand_preference', brand.name,
+              `brand_visual_assets_${brand.id}`,
+              {
+                patterns: (hubBrand.patterns || []).slice(0, 15),
+                gradients: (hubBrand.gradients || []).slice(0, 15),
+                brandIcons: (hubBrand.brandIcons || []).slice(0, 20),
+                imageryCount: hubBrand.allImagery?.totalCount || 0,
+              }
+            ));
+          }
+
+          // Sponsor knowledge
+          if (hubBrand.sponsors?.length) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'sponsor_recognition', brand.name,
+              `brand_sponsors_${brand.id}`,
+              {
+                sponsors: hubBrand.sponsors.slice(0, 30),
+                totalCount: hubBrand.sponsors.length,
+                source: 'brandhub',
+              }
+            ));
+          }
+
+          // Voice & tone knowledge
+          if (hubBrand.voice?.length || hubBrand.mission || hubBrand.tagline) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'brand_preference', brand.name,
+              `brand_voice_${brand.id}`,
+              {
+                voice: hubBrand.voice || [],
+                tone: style.tone_keywords || [],
+                writingStyle: style.writing_style,
+                mission: hubBrand.mission || style.mission,
+                tagline: hubBrand.tagline || style.tagline,
+                values: hubBrand.values || [],
+                archetype: style.archetype,
+              }
+            ));
+          }
+
+          // Social media knowledge
+          if (Object.keys(hubBrand.social_handles || {}).length || hubBrand.hashtags?.length) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'brand_preference', brand.name,
+              `brand_social_${brand.id}`,
+              {
+                handles: hubBrand.social_handles || {},
+                hashtags: hubBrand.hashtags || [],
+              }
+            ));
+          }
+
+          // Event data
+          if (data.hasEventData && data.event) {
+            knowledgePromises.push(addOrUpdateKnowledge(
+              user.id, 'brand_preference', `${brand.name}_event`,
               `brandhub_event_${brand.id}`,
               {
                 source: 'brandhub_creator',
@@ -398,10 +503,14 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
                 ...data.event,
                 importedAt: now,
               }
-            );
-            console.log('Event data from BrandHub stored in AI knowledge');
+            ));
+          }
+
+          try {
+            await Promise.all(knowledgePromises);
+            console.log(`Stored ${knowledgePromises.length} granular brand knowledge entries to AI brain`);
           } catch (e) {
-            console.error('Error storing event knowledge:', e);
+            console.error('Error storing granular brand knowledge:', e);
           }
         }
         

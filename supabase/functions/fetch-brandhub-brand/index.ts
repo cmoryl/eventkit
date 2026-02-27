@@ -29,7 +29,6 @@ serve(async (req) => {
 
     console.log("Fetching brand from BrandHub with token:", shareToken);
 
-    // Call BrandHub's get-shared-brand endpoint
     const response = await fetch(BRANDHUB_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -47,20 +46,194 @@ serve(async (req) => {
       });
     }
 
-    console.log("Successfully fetched brand from BrandHub:", data.brand?.name);
-
-    // Extract event data if available (BrandHub Creator stores event info alongside brand)
     const brandData = data.brand || {};
-    const guideData = (brandData.guide_data || {}) as Record<string, unknown>;
 
-    // Try to extract event details from BrandHub data
-    const eventData = extractEventDetails(brandData, guideData);
+    console.log("Successfully fetched brand from BrandHub:", brandData.name);
+
+    // ── Map BrandHub's rich data into a normalized structure ──
+    // BrandHub returns: colors, fonts, logos, brandIcons, patterns, gradients,
+    // photography (approved/rejected), constraints, socialMedia, values,
+    // services, sponsorLogos, heroSettings, industry, tagline, voice, mission
+
+    const colors = Array.isArray(brandData.colors) ? brandData.colors : [];
+    const fonts = Array.isArray(brandData.fonts) ? brandData.fonts : [];
+    const logos = brandData.logos || {};
+    const brandIcons = Array.isArray(brandData.brandIcons) ? brandData.brandIcons : [];
+    const patterns = Array.isArray(brandData.patterns) ? brandData.patterns : [];
+    const gradients = Array.isArray(brandData.gradients) ? brandData.gradients : [];
+    const photography = brandData.photography || {};
+    const constraints = brandData.constraints || {};
+    const socialMedia = brandData.socialMedia || {};
+    const values = Array.isArray(brandData.values) ? brandData.values : [];
+    const services = Array.isArray(brandData.services) ? brandData.services : [];
+    const sponsorLogos = brandData.sponsorLogos || {};
+    const heroSettings = brandData.heroSettings || {};
+    const allImagery = brandData.allImagery || {};
+
+    // Map colors to our format
+    const colorPalette = colors.map((c: Record<string, unknown>) => ({
+      hex: c.hex,
+      name: c.name || '',
+      role: c.role || '',
+      usage: c.usage || '',
+    }));
+
+    // Map fonts
+    const headingFont = fonts.find((f: Record<string, unknown>) =>
+      f.role === 'heading' || f.role === 'display'
+    );
+    const bodyFont = fonts.find((f: Record<string, unknown>) =>
+      f.role === 'body' || f.role === 'paragraph'
+    );
+    const accentFont = fonts.find((f: Record<string, unknown>) =>
+      f.role === 'accent' || f.role === 'caption'
+    );
+
+    // Photography guidelines
+    const photographyApproved = Array.isArray(photography.approved)
+      ? photography.approved.map((p: Record<string, unknown>) => ({
+          url: p.url,
+          description: p.description,
+        }))
+      : [];
+    const photographyRejected = Array.isArray(photography.rejected)
+      ? photography.rejected.map((p: Record<string, unknown>) => ({
+          url: p.url,
+          description: p.description,
+        }))
+      : [];
+
+    // Brand misuse / constraints
+    const brandMisuse = Array.isArray(constraints.brandMisuse)
+      ? constraints.brandMisuse.map((m: Record<string, unknown>) => ({
+          description: m.description,
+          exampleUrl: m.exampleUrl,
+        }))
+      : [];
+
+    // Social handles
+    const socialHandles: Record<string, string> = {};
+    if (Array.isArray(socialMedia.handles)) {
+      socialMedia.handles.forEach((h: Record<string, unknown>) => {
+        if (h.platform && h.handle) {
+          socialHandles[String(h.platform)] = String(h.handle);
+        }
+      });
+    }
+    const hashtags = Array.isArray(socialMedia.hashtags) ? socialMedia.hashtags : [];
+
+    // Sponsor logos
+    const sponsorsList = Array.isArray(sponsorLogos.all) ? sponsorLogos.all : [];
+
+    // All imagery organized by type
+    const imageryByType: Record<string, string[]> = {
+      logos: [],
+      brandIcons: [],
+      patterns: [],
+      photography: [],
+      heroImages: [],
+      sponsors: [],
+    };
+    if (Array.isArray(allImagery.all)) {
+      allImagery.all.forEach((img: { url: string; type: string }) => {
+        const url = img.url;
+        if (!url) return;
+        if (img.type === 'logo') imageryByType.logos.push(url);
+        else if (img.type === 'brand-icon') imageryByType.brandIcons.push(url);
+        else if (img.type === 'pattern') imageryByType.patterns.push(url);
+        else if (img.type === 'photography-approved') imageryByType.photography.push(url);
+        else if (img.type === 'hero' || img.type === 'hero-logo') imageryByType.heroImages.push(url);
+        else if (img.type === 'sponsor-logo') imageryByType.sponsors.push(url);
+      });
+    }
+
+    // Extract event details from BrandHub data
+    const eventData = extractEventDetails(brandData);
+
+    // Build the comprehensive normalized brand object
+    const normalizedBrand = {
+      // Identity
+      id: brandData.id,
+      name: brandData.name,
+      slug: brandData.slug,
+      tagline: brandData.tagline,
+      mission: brandData.mission,
+      industry: brandData.industry,
+      voice: Array.isArray(brandData.voice) ? brandData.voice : [],
+
+      // Colors
+      primary_color: colorPalette[0]?.hex,
+      secondary_color: colorPalette[1]?.hex,
+      accent_color: colorPalette[2]?.hex,
+      colors: colorPalette,
+
+      // Fonts
+      fonts,
+      heading_font: headingFont?.family || headingFont?.fontFamily,
+      body_font: bodyFont?.family || bodyFont?.fontFamily,
+      accent_font: accentFont?.family || accentFont?.fontFamily,
+
+      // Logos
+      logo_url: logos.primary || brandData.logo_url,
+      logo_monochrome_url: logos.monochrome,
+      logo_reversed_url: logos.reversed,
+      logo_icon_url: logos.icon,
+      logo_wordmark_url: logos.wordmark,
+      all_logos: Array.isArray(logos.all) ? logos.all : [],
+
+      // Visual assets
+      brandIcons,
+      patterns,
+      gradients,
+
+      // Photography guidelines
+      photography_approved: photographyApproved,
+      photography_rejected: photographyRejected,
+      photography_dos: photographyApproved.map((p: { description: string }) => p.description).filter(Boolean),
+      photography_donts: photographyRejected.map((p: { description: string }) => p.description).filter(Boolean),
+
+      // Brand constraints & misuse
+      brand_misuse: brandMisuse,
+      restricted_elements: brandMisuse.map((m: { description: string }) => m.description).filter(Boolean),
+
+      // Social
+      social_handles: socialHandles,
+      hashtags,
+
+      // Values & services
+      values: values.map((v: Record<string, unknown>) => v.text).filter(Boolean),
+      services: services.map((s: Record<string, unknown>) => ({ name: s.name, description: s.description })),
+
+      // Sponsors
+      sponsors: sponsorsList,
+
+      // Hero
+      heroSettings,
+
+      // All imagery organized
+      allImagery: {
+        all: Array.isArray(allImagery.all) ? allImagery.all.map((i: { url: string }) => i.url) : [],
+        byType: imageryByType,
+        totalCount: allImagery.totalCount || 0,
+      },
+
+      // Original guide_data for anything we missed
+      guide_data: brandData.guide_data || {},
+    };
+
+    const sectionCount = Object.keys(normalizedBrand).filter(
+      k => normalizedBrand[k as keyof typeof normalizedBrand] !== undefined &&
+           normalizedBrand[k as keyof typeof normalizedBrand] !== null
+    ).length;
+
+    console.log(`Normalized ${sectionCount} brand sections from BrandHub`);
 
     return json(200, {
       success: true,
-      brand: brandData,
+      brand: normalizedBrand,
       event: eventData,
       hasEventData: !!(eventData.name || eventData.date || eventData.venue),
+      sectionsImported: sectionCount,
     });
   } catch (error) {
     console.error("Error fetching BrandHub brand:", error);
@@ -71,78 +244,22 @@ serve(async (req) => {
   }
 });
 
-/**
- * Extract event details from BrandHub brand data.
- * BrandHub Creator stores event context in various places.
- */
 function extractEventDetails(
-  brandData: Record<string, unknown>,
-  guideData: Record<string, unknown>
+  brandData: Record<string, unknown>
 ): Record<string, unknown> {
+  const guideData = (brandData.guide_data || {}) as Record<string, unknown>;
   const heroData = (guideData.hero || {}) as Record<string, unknown>;
 
-  // Event name — try multiple sources
-  const name =
-    brandData.event_name ||
-    brandData.eventName ||
-    guideData.eventName ||
-    heroData.eventName ||
-    brandData.name; // fallback to brand name
-
-  // Event description
-  const description =
-    brandData.event_description ||
-    brandData.eventDescription ||
-    guideData.eventDescription ||
-    heroData.subtitle ||
-    heroData.description ||
-    brandData.description;
-
-  // Event date
-  const date =
-    brandData.event_date ||
-    brandData.eventDate ||
-    guideData.eventDate;
-
-  // Event type
-  const eventType =
-    brandData.event_type ||
-    brandData.eventType ||
-    guideData.eventType ||
-    guideData.category;
-
-  // Venue info
-  const venueData = (guideData.venue || brandData.venue || {}) as Record<string, unknown>;
-  const venue = venueData.name || brandData.venue_name || brandData.venueName;
-  const venueAddress = venueData.address || brandData.venue_address;
-  const venueCity = venueData.city || brandData.venue_city || brandData.location;
-
-  // Sponsors
-  const sponsors = (
-    brandData.sponsors ||
-    guideData.sponsors ||
-    []
-  ) as Array<Record<string, unknown>>;
-
-  // Attendee count / capacity
-  const attendeeCount =
-    brandData.attendee_count ||
-    brandData.attendeeCount ||
-    guideData.attendeeCount;
-
-  // Tagline from hero
-  const tagline = heroData.tagline || brandData.tagline;
-
   return {
-    name,
-    description,
-    date,
-    eventType,
-    venue,
-    venueAddress,
-    venueCity,
-    sponsors: sponsors.length > 0 ? sponsors : undefined,
-    attendeeCount,
-    tagline,
+    name: brandData.event_name || brandData.eventName || guideData.eventName || heroData.eventName || brandData.name,
+    description: brandData.event_description || brandData.eventDescription || heroData.subtitle || heroData.description || brandData.description,
+    date: brandData.event_date || brandData.eventDate || guideData.eventDate,
+    eventType: brandData.event_type || brandData.eventType || guideData.eventType || guideData.category,
+    venue: (guideData.venue as Record<string, unknown>)?.name || brandData.venue_name,
+    venueAddress: (guideData.venue as Record<string, unknown>)?.address || brandData.venue_address,
+    venueCity: (guideData.venue as Record<string, unknown>)?.city || brandData.location,
+    sponsors: Array.isArray(brandData.sponsors?.all) ? brandData.sponsors.all : (Array.isArray(guideData.sponsors) ? guideData.sponsors : undefined),
+    attendeeCount: brandData.attendee_count || brandData.attendeeCount || guideData.attendeeCount,
+    tagline: brandData.tagline || heroData.tagline,
   };
 }

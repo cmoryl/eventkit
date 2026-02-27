@@ -1,6 +1,6 @@
 // src/services/aiBrain/promptCompiler.ts
-// Real compiler layer: injects Level-5 DNA, anchors, uniqueness seed, quality gate, and scene rules
-// Called BEFORE applyLearnedInsights so insights can tweak within the rules.
+// Real compiler layer: injects Level-5 DNA, anchors, uniqueness seed, quality gate,
+// scene rules, AND brand intelligence from the knowledge base.
 
 import type { GenerationContext } from "./types";
 import { getAssetDefault } from "@/config/level5/assetDefaults";
@@ -44,6 +44,96 @@ function shouldUseScene(assetType: string): boolean {
 }
 
 /**
+ * Build brand intelligence block from knowledge entries.
+ * This injects photography rules, logo usage, voice/tone, imagery, and constraints.
+ */
+export function buildBrandIntelligenceBlock(
+  brandKnowledge: Record<string, unknown>
+): string {
+  const blocks: string[] = [];
+
+  // Photography rules
+  const photoDos = brandKnowledge.photographyDos as string[] | undefined;
+  const photoDonts = brandKnowledge.photographyDonts as string[] | undefined;
+  const photoStyle = brandKnowledge.photographyStyle as string | undefined;
+  if (photoStyle || photoDos?.length || photoDonts?.length) {
+    const lines = ["BRAND PHOTOGRAPHY RULES:"];
+    if (photoStyle) lines.push(`  Style: ${photoStyle}`);
+    if (photoDos?.length) {
+      lines.push("  DO:");
+      photoDos.slice(0, 6).forEach(d => lines.push(`    ✓ ${d}`));
+    }
+    if (photoDonts?.length) {
+      lines.push("  DO NOT:");
+      photoDonts.slice(0, 6).forEach(d => lines.push(`    ✗ ${d}`));
+    }
+    blocks.push(lines.join("\n"));
+  }
+
+  // Logo usage rules
+  const logoRules = brandKnowledge.logoPlacementRules as string[] | undefined;
+  const logoClearSpace = brandKnowledge.logoClearSpace as string | undefined;
+  const logoMinSize = brandKnowledge.logoMinSize as string | undefined;
+  const logoBgs = brandKnowledge.logoBackgrounds as string[] | undefined;
+  if (logoRules?.length || logoClearSpace || logoMinSize) {
+    const lines = ["BRAND LOGO USAGE RULES:"];
+    if (logoClearSpace) lines.push(`  Clear space: ${logoClearSpace}`);
+    if (logoMinSize) lines.push(`  Minimum size: ${logoMinSize}`);
+    if (logoBgs?.length) lines.push(`  Approved backgrounds: ${logoBgs.join(", ")}`);
+    if (logoRules?.length) {
+      logoRules.slice(0, 5).forEach(r => lines.push(`  • ${r}`));
+    }
+    blocks.push(lines.join("\n"));
+  }
+
+  // Voice & tone
+  const voice = brandKnowledge.voice as string[] | undefined;
+  const tone = brandKnowledge.tone as string[] | undefined;
+  const writingStyle = brandKnowledge.writingStyle as string | undefined;
+  const tagline = brandKnowledge.tagline as string | undefined;
+  const mission = brandKnowledge.mission as string | undefined;
+  if (voice?.length || tone?.length || writingStyle || tagline) {
+    const lines = ["BRAND VOICE & TONE:"];
+    if (voice?.length) lines.push(`  Voice: ${voice.join(", ")}`);
+    if (tone?.length) lines.push(`  Tone: ${tone.join(", ")}`);
+    if (writingStyle) lines.push(`  Writing style: ${writingStyle}`);
+    if (tagline) lines.push(`  Tagline: "${tagline}"`);
+    if (mission) lines.push(`  Mission: ${mission}`);
+    blocks.push(lines.join("\n"));
+  }
+
+  // Constraints / restrictions
+  const restricted = brandKnowledge.restrictedElements as string[] | undefined;
+  const approvedLayouts = brandKnowledge.approvedLayouts as string[] | undefined;
+  if (restricted?.length || approvedLayouts?.length) {
+    const lines = ["BRAND CONSTRAINTS:"];
+    if (restricted?.length) {
+      lines.push("  NEVER:");
+      restricted.slice(0, 5).forEach(r => lines.push(`    ✗ ${r}`));
+    }
+    if (approvedLayouts?.length) {
+      lines.push("  APPROVED LAYOUTS:");
+      approvedLayouts.slice(0, 4).forEach(l => lines.push(`    ✓ ${l}`));
+    }
+    blocks.push(lines.join("\n"));
+  }
+
+  // Imagery style
+  const imagery = brandKnowledge.imagery as string | undefined;
+  const archetype = brandKnowledge.archetype as string | undefined;
+  if (imagery || archetype) {
+    const lines = ["BRAND VISUAL IDENTITY:"];
+    if (archetype) lines.push(`  Archetype: ${archetype}`);
+    if (imagery) lines.push(`  Imagery approach: ${imagery}`);
+    blocks.push(lines.join("\n"));
+  }
+
+  if (blocks.length === 0) return "";
+
+  return `\n=== BRAND INTELLIGENCE ===\n${blocks.join("\n\n")}\n=== END BRAND INTELLIGENCE ===\n`;
+}
+
+/**
  * Compile a generation prompt by layering Level-5 DNA, anchors,
  * uniqueness seed, quality gate, and scene rules onto a base prompt.
  */
@@ -51,8 +141,9 @@ export function compileGenerationPrompt(args: {
   basePrompt: string;
   context: GenerationContext;
   variantName?: string;
+  brandKnowledge?: Record<string, unknown>;
 }): string {
-  const { basePrompt, context, variantName } = args;
+  const { basePrompt, context, variantName, brandKnowledge } = args;
 
   const seed = makeUniquenessSeed(context);
   const useScene = shouldUseScene(context.assetType);
@@ -131,6 +222,11 @@ export function compileGenerationPrompt(args: {
         "No mockup shadows, no paper texture unless explicitly requested.",
       ].join("\n");
 
+  // ── Brand Intelligence ──
+  const brandBlock = brandKnowledge
+    ? buildBrandIntelligenceBlock(brandKnowledge)
+    : "";
+
   return [
     basePrompt,
     "",
@@ -145,5 +241,6 @@ export function compileGenerationPrompt(args: {
     qualityGate,
     "",
     sceneBlock,
+    brandBlock,
   ].join("\n");
 }
