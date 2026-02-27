@@ -91,14 +91,25 @@ export function buildBrandIntelligenceBlock(
   const tone = brandKnowledge.tone as string[] | undefined;
   const writingStyle = brandKnowledge.writingStyle as string | undefined;
   const tagline = brandKnowledge.tagline as string | undefined;
+  const taglineSecondary = brandKnowledge.taglineSecondary as string | undefined;
+  const taglineVariations = brandKnowledge.taglineVariations as string[] | undefined;
   const mission = brandKnowledge.mission as string | undefined;
+  const industry = brandKnowledge.industry as string | undefined;
+  const targetAudience = brandKnowledge.targetAudience as string | undefined;
   if (voice?.length || tone?.length || writingStyle || tagline) {
     const lines = ["BRAND VOICE & TONE:"];
     if (voice?.length) lines.push(`  Voice: ${voice.join(", ")}`);
     if (tone?.length) lines.push(`  Tone: ${tone.join(", ")}`);
     if (writingStyle) lines.push(`  Writing style: ${writingStyle}`);
-    if (tagline) lines.push(`  Tagline: "${tagline}"`);
+    if (tagline) lines.push(`  Primary tagline: "${tagline}"`);
+    if (taglineSecondary) lines.push(`  Secondary tagline: "${taglineSecondary}"`);
+    if (taglineVariations?.length) {
+      lines.push(`  Tagline variations for campaign use:`);
+      taglineVariations.slice(0, 4).forEach(v => lines.push(`    • "${v}"`));
+    }
     if (mission) lines.push(`  Mission: ${mission}`);
+    if (industry) lines.push(`  Industry: ${industry}`);
+    if (targetAudience) lines.push(`  Target audience: ${targetAudience}`);
     blocks.push(lines.join("\n"));
   }
 
@@ -126,6 +137,44 @@ export function buildBrandIntelligenceBlock(
     if (archetype) lines.push(`  Archetype: ${archetype}`);
     if (imagery) lines.push(`  Imagery approach: ${imagery}`);
     blocks.push(lines.join("\n"));
+  }
+
+  // Event context from BrandHub
+  const eventName = brandKnowledge.name as string | undefined;
+  const eventDate = brandKnowledge.date as string | undefined;
+  const eventVenue = brandKnowledge.venue as string | undefined;
+  const eventType = brandKnowledge.eventType as string | undefined;
+  const eventDescription = brandKnowledge.description as string | undefined;
+  const attendeeCount = brandKnowledge.attendeeCount as string | number | undefined;
+  if (eventName || eventVenue || eventDate) {
+    const lines = ["EVENT CONTEXT (from BrandHub):"];
+    if (eventName) lines.push(`  Event: ${eventName}`);
+    if (eventType) lines.push(`  Type: ${eventType}`);
+    if (eventDate) lines.push(`  Date: ${eventDate}`);
+    if (eventVenue) lines.push(`  Venue: ${eventVenue}`);
+    if (attendeeCount) lines.push(`  Expected attendees: ${attendeeCount}`);
+    if (eventDescription) lines.push(`  Description: ${eventDescription}`);
+    lines.push("  Use this context to make designs feel event-specific and timely.");
+    blocks.push(lines.join("\n"));
+  }
+
+  // Content assets — services & values for text-heavy designs
+  const values = brandKnowledge.values as string[] | undefined;
+  const services = brandKnowledge.services as string[] | undefined;
+  if (values?.length || services?.length) {
+    const lines = ["BRAND CONTENT (use in copy-heavy assets):"];
+    if (values?.length) lines.push(`  Brand values: ${values.slice(0, 5).join(", ")}`);
+    if (services?.length) {
+      lines.push("  Services/offerings:");
+      services.slice(0, 4).forEach(s => lines.push(`    • ${s}`));
+    }
+    blocks.push(lines.join("\n"));
+  }
+
+  // Gradients for design use
+  const gradients = brandKnowledge.gradients as string[] | undefined;
+  if (gradients?.length) {
+    blocks.push(`BRAND GRADIENTS:\n${gradients.slice(0, 3).map(g => `  • ${g}`).join("\n")}`);
   }
 
   if (blocks.length === 0) return "";
