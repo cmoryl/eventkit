@@ -74,7 +74,7 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
   const location = useLocation();
   const { user, isAuthenticated, signOut } = useAuth();
   const { logoType, logoUrl, logoUrlDark, logoIconUrl, logoIconUrlDark, isLoading: isLoadingSettings } = useAppSettings();
-  const { activeBrand, brands, setActiveBrand, applyBrandToUI, resetUITheme, isThemeApplied, savedBrandId, projectBrandId } = useActiveBrand();
+  const { activeBrand, brands, setActiveBrand, applyBrandToUI, resetUITheme, isThemeApplied, savedBrandId, projectBrandId, refreshBrands } = useActiveBrand();
   const { resolvedTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showStudiosMenu, setShowStudiosMenu] = useState(false);
@@ -345,6 +345,7 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                 savedBrandId={savedBrandId}
                 projectBrandId={projectBrandId}
                 variant="compact"
+                onBrandsRefresh={refreshBrands}
               />
             )}
             

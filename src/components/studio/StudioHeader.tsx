@@ -94,7 +94,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
   onOpenRenderEngineSettings,
 }) => {
   const { user, isAuthenticated, signOut } = useAuth();
-  const { activeBrand, brands, setActiveBrand, applyBrandToUI, resetUITheme, isThemeApplied, savedBrandId, projectBrandId } = useActiveBrand();
+  const { activeBrand, brands, setActiveBrand, applyBrandToUI, resetUITheme, isThemeApplied, savedBrandId, projectBrandId, refreshBrands } = useActiveBrand();
   const { configuredKeysCount } = useApiSettings();
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [showRenderSettings, setShowRenderSettings] = useState(false);
@@ -227,6 +227,7 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
                 savedBrandId={savedBrandId}
                 projectBrandId={projectBrandId}
                 variant="full"
+                onBrandsRefresh={refreshBrands}
               />
             )}
 
