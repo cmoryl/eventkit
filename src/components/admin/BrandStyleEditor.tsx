@@ -55,6 +55,7 @@ interface BrandStyle {
   mood_keywords?: string[];
   tone_keywords?: string[];
   brand_voice?: string[];
+  writing_style?: string;
   imagery_style?: string;
   pattern_style?: string;
   icon_style?: string;
@@ -186,18 +187,43 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         {
           brandId: brand.id,
           brandName: brand.name,
+          // Core identity
           colors: style.color_palette,
-          fonts: { heading: style.heading_font, body: style.body_font },
+          fonts: { heading: style.heading_font, body: style.body_font, accent: style.accent_font },
           mood: style.mood_keywords,
+          tone: style.tone_keywords,
           industry: style.industry,
           voice: style.brand_voice,
+          writingStyle: style.writing_style,
           imagery: style.imagery_style,
+          // Photography
+          photographyStyle: style.photography_style,
+          photographyDos: style.photography_dos,
+          photographyDonts: style.photography_donts,
+          // Logo rules
+          logoClearSpace: style.logo_clear_space,
+          logoMinSize: style.logo_min_size,
+          logoPlacementRules: style.logo_placement_rules,
+          logoBackgrounds: style.logo_backgrounds,
+          // Identity
+          tagline: style.tagline,
+          mission: style.mission,
+          archetype: style.archetype,
+          culturalContext: style.cultural_context,
+          targetAudience: style.target_audience,
+          // Layout & restrictions
+          approvedLayouts: style.approved_layouts,
+          restrictedElements: style.restricted_elements,
+          // Social
+          socialHandles: style.social_handles,
+          hashtags: style.hashtags,
+          // Prompts
           customPrompts: style.custom_prompts,
           lastUpdated: new Date().toISOString(),
           ...brandData
         }
       );
-      console.log('Brand knowledge recorded to AI brain');
+      console.log('Brand knowledge recorded to AI brain (comprehensive)');
     } catch (error) {
       console.error('Error recording brand knowledge:', error);
     }
@@ -239,17 +265,40 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           })
           .eq('id', brand.id);
         
-        // Record to AI knowledge
+        // Record comprehensive brand + event knowledge to AI brain
         await recordBrandKnowledge({
           syncedFrom: 'brandhub',
           syncTimestamp: now,
-          hubBrandName: data.brand.name
+          hubBrandName: data.brand.name,
+          ...(data.hasEventData ? { eventData: data.event } : {}),
         });
+
+        // If event data is available, also store it as separate knowledge
+        if (data.hasEventData && data.event && user?.id) {
+          try {
+            await addOrUpdateKnowledge(
+              user.id,
+              'brand_preference',
+              `${brand.name}_event`,
+              `brandhub_event_${brand.id}`,
+              {
+                source: 'brandhub_creator',
+                brandId: brand.id,
+                ...data.event,
+                importedAt: now,
+              }
+            );
+            console.log('Event data from BrandHub stored in AI knowledge');
+          } catch (e) {
+            console.error('Error storing event knowledge:', e);
+          }
+        }
         
         // Apply brand colors to UI theme using extracted values
         applyBrandTheme(extractedColors);
         
-        toast.success('Brand synced from BrandHub');
+        const eventNote = data.hasEventData ? ` (event data included: ${data.event?.name || 'unnamed'})` : '';
+        toast.success(`Brand synced from BrandHub${eventNote}`);
       }
     } catch (error) {
       console.error('Error syncing from BrandHub:', error);
@@ -560,19 +609,41 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
         setLinkedToken(shareToken);
         setLastSynced(now);
         
-        // Record to AI knowledge
+        // Record comprehensive brand + event data to AI knowledge
         await recordBrandKnowledge({
           syncedFrom: 'brandhub',
           syncTimestamp: now,
-          hubBrandName: data.brand.name
+          hubBrandName: data.brand.name,
+          ...(data.hasEventData ? { eventData: data.event } : {}),
         });
+
+        // Store event data as separate knowledge entry if available
+        if (data.hasEventData && data.event && user?.id) {
+          try {
+            await addOrUpdateKnowledge(
+              user.id,
+              'brand_preference',
+              `${brand.name}_event`,
+              `brandhub_event_${brand.id}`,
+              {
+                source: 'brandhub_creator_import',
+                brandId: brand.id,
+                ...data.event,
+                importedAt: now,
+              }
+            );
+          } catch (e) {
+            console.error('Error storing event knowledge:', e);
+          }
+        }
 
         setBrandHubUrl('');
         
         // Apply brand colors to UI theme using extracted values
         applyBrandTheme(extractedColors);
         
-        toast.success(`Imported and linked "${data.brand.name || 'brand'}" from BrandHub`, { duration: 5000 });
+        const eventNote = data.hasEventData ? ` + event "${data.event?.name || ''}"` : '';
+        toast.success(`Imported and linked "${data.brand.name || 'brand'}"${eventNote} from BrandHub`, { duration: 5000 });
       } else {
         toast.warning('No brand data found at this share link');
       }
@@ -627,8 +698,9 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 
       if (analysisResult?.extractedStyle) {
         const extracted = analysisResult.extractedStyle;
+        const sectionsFound = analysisResult.sectionsExtracted || 0;
         
-        // Merge extracted values with current style
+        // Merge ALL extracted values with current style (comprehensive)
         setStyle(prev => ({
           ...prev,
           primary_color: extracted.primary_color || prev.primary_color,
@@ -639,12 +711,60 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
             : prev.color_palette,
           heading_font: extracted.heading_font || prev.heading_font,
           body_font: extracted.body_font || prev.body_font,
+          accent_font: extracted.accent_font || prev.accent_font,
           mood_keywords: extracted.mood_keywords?.length > 0
             ? [...new Set([...(prev.mood_keywords || []), ...extracted.mood_keywords])]
             : prev.mood_keywords,
+          tone_keywords: extracted.tone_keywords?.length > 0
+            ? [...new Set([...(prev.tone_keywords || []), ...extracted.tone_keywords])]
+            : prev.tone_keywords,
+          brand_voice: extracted.brand_voice?.length > 0
+            ? [...new Set([...(prev.brand_voice || []), ...extracted.brand_voice])]
+            : prev.brand_voice,
+          writing_style: extracted.writing_style || prev.writing_style,
           imagery_style: extracted.imagery_style || prev.imagery_style,
+          photography_style: extracted.photography_style || prev.photography_style,
+          photography_dos: extracted.photography_dos?.length > 0
+            ? [...new Set([...(prev.photography_dos || []), ...extracted.photography_dos])]
+            : prev.photography_dos,
+          photography_donts: extracted.photography_donts?.length > 0
+            ? [...new Set([...(prev.photography_donts || []), ...extracted.photography_donts])]
+            : prev.photography_donts,
+          pattern_style: extracted.pattern_style || prev.pattern_style,
+          icon_style: extracted.icon_style || prev.icon_style,
+          logo_clear_space: extracted.logo_clear_space || prev.logo_clear_space,
+          logo_min_size: extracted.logo_min_size || prev.logo_min_size,
+          logo_placement_rules: extracted.logo_placement_rules?.length > 0
+            ? [...new Set([...(prev.logo_placement_rules || []), ...extracted.logo_placement_rules])]
+            : prev.logo_placement_rules,
+          logo_backgrounds: extracted.logo_backgrounds?.length > 0
+            ? [...new Set([...(prev.logo_backgrounds || []), ...extracted.logo_backgrounds])]
+            : prev.logo_backgrounds,
+          tagline: extracted.tagline || prev.tagline,
+          mission: extracted.mission || prev.mission,
+          archetype: extracted.archetype || prev.archetype,
           industry: extracted.industry || prev.industry,
-          target_audience: extracted.target_audience || prev.target_audience
+          target_audience: extracted.target_audience || prev.target_audience,
+          cultural_context: extracted.cultural_context || prev.cultural_context,
+          social_handles: extracted.social_handles 
+            ? { ...(prev.social_handles || {}), ...extracted.social_handles }
+            : prev.social_handles,
+          hashtags: extracted.hashtags?.length > 0
+            ? [...new Set([...(prev.hashtags || []), ...extracted.hashtags])]
+            : prev.hashtags,
+          approved_layouts: extracted.approved_layouts?.length > 0
+            ? [...new Set([...(prev.approved_layouts || []), ...extracted.approved_layouts])]
+            : prev.approved_layouts,
+          restricted_elements: extracted.restricted_elements?.length > 0
+            ? [...new Set([...(prev.restricted_elements || []), ...extracted.restricted_elements])]
+            : prev.restricted_elements,
+          custom_prompts: extracted.approved_color_combinations || extracted.gradients
+            ? { 
+                ...(prev.custom_prompts || {}),
+                ...(extracted.approved_color_combinations ? { approvedColorCombinations: extracted.approved_color_combinations } : {}),
+                ...(extracted.gradients ? { gradients: extracted.gradients } : {}),
+              }
+            : prev.custom_prompts,
         }));
 
         // Apply brand colors to UI theme
@@ -655,8 +775,43 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
           color_palette: extracted.color_palette
         });
 
+        // Wire comprehensive data into AI knowledge base
+        await recordBrandKnowledge({
+          importedFrom: 'brand_guide_upload',
+          fileName: file.name,
+          importTimestamp: new Date().toISOString(),
+          sectionsExtracted: sectionsFound,
+          // Store all extracted sections for AI Brain consumption
+          photographyRules: {
+            style: extracted.photography_style,
+            dos: extracted.photography_dos,
+            donts: extracted.photography_donts,
+          },
+          logoRules: {
+            clearSpace: extracted.logo_clear_space,
+            minSize: extracted.logo_min_size,
+            placement: extracted.logo_placement_rules,
+            approvedBackgrounds: extracted.logo_backgrounds,
+          },
+          voiceAndTone: {
+            voice: extracted.brand_voice,
+            tone: extracted.tone_keywords,
+            writingStyle: extracted.writing_style,
+          },
+          identity: {
+            tagline: extracted.tagline,
+            mission: extracted.mission,
+            archetype: extracted.archetype,
+            culturalContext: extracted.cultural_context,
+          },
+          layoutRestrictions: {
+            approved: extracted.approved_layouts,
+            restricted: extracted.restricted_elements,
+          },
+        });
+
         setUploadedGuideUrl(file.name);
-        toast.success('Brand guide analyzed! Style settings updated.');
+        toast.success(`Brand guide analyzed — ${sectionsFound} sections extracted and synced to AI Brain!`);
       } else {
         toast.warning('Could not extract style information from the document');
       }
