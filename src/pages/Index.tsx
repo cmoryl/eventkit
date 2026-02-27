@@ -175,7 +175,11 @@ const Index: React.FC = () => {
         }
         
         if (project.generated_assets && Array.isArray(project.generated_assets)) {
-          setGeneratedAssets(project.generated_assets as unknown as GeneratedAsset[]);
+          const assets = (project.generated_assets as any[]).map((a: any) => ({
+            ...a,
+            isLoading: false,
+          }));
+          setGeneratedAssets(assets as unknown as GeneratedAsset[]);
         }
         
         if (project.folders && Array.isArray(project.folders)) {
@@ -656,25 +660,58 @@ const Index: React.FC = () => {
 
     setIsSavingToCloud(true);
     try {
-      // Prepare asset data (without large base64 images in JSONB to avoid db bloat)
-      const assetSummary = generatedAssets.map(a => ({
-        id: a.id,
-        type: a.type,
-        title: a.title,
-        isLoading: a.isLoading,
-        isFavorite: a.isFavorite,
-        folderId: a.folderId,
-        // Store content reference, not full base64
-        hasContent: !!a.content,
-        contentType: typeof a.content,
-      }));
-
-      // Check if user already has a project
+      // Check if user already has a project for this event
       const { data: existingProject } = await supabase
         .from('projects')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
+
+      const projectId = existingProject?.id || crypto.randomUUID();
+
+      // Upload asset images to storage and build asset records with URLs
+      const savedAssets = await Promise.all(generatedAssets.map(async (asset) => {
+        const assetRecord: Record<string, any> = {
+          id: asset.id,
+          type: asset.type,
+          title: asset.title,
+          isLoading: false,
+          isFavorite: asset.isFavorite,
+          folderId: asset.folderId,
+          content: null as string | null,
+          backContent: asset.backContent || null,
+        };
+
+        // Upload main content to storage
+        if (typeof asset.content === 'string' && asset.content.startsWith('data:')) {
+          try {
+            const match = asset.content.match(/^data:([^;]+);base64,(.+)$/);
+            if (match) {
+              const mimeType = match[1];
+              const ext = mimeType.split('/')[1] || 'png';
+              const base64 = match[2];
+              const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+              const filePath = `${user.id}/${projectId}/${asset.id}.${ext}`;
+              
+              await supabase.storage.from('asset-images').upload(filePath, bytes, {
+                contentType: mimeType,
+                upsert: true,
+              });
+              
+              const { data: urlData } = supabase.storage.from('asset-images').getPublicUrl(filePath);
+              assetRecord.content = urlData.publicUrl;
+            }
+          } catch (e) {
+            console.warn('Failed to upload asset image:', asset.id, e);
+            // Keep null content if upload fails
+          }
+        } else if (typeof asset.content === 'string' && (asset.content.startsWith('http') || asset.content.startsWith('/'))) {
+          // Already a URL, keep it
+          assetRecord.content = asset.content;
+        }
+
+        return assetRecord;
+      }));
 
       const projectData = {
         user_id: user.id,
@@ -683,12 +720,11 @@ const Index: React.FC = () => {
         event_details: JSON.parse(JSON.stringify(eventDetails)),
         color_palette: JSON.parse(JSON.stringify(colorPalette)),
         folders: JSON.parse(JSON.stringify(folders)),
-        generated_assets: JSON.parse(JSON.stringify(assetSummary)),
+        generated_assets: savedAssets,
       };
 
       let error;
       if (existingProject) {
-        // Update existing project - omit user_id for update
         const { user_id, ...updateData } = projectData;
         const result = await supabase
           .from('projects')
@@ -696,10 +732,9 @@ const Index: React.FC = () => {
           .eq('id', existingProject.id);
         error = result.error;
       } else {
-        // Insert new project
         const result = await supabase
           .from('projects')
-          .insert([projectData]);
+          .insert([{ ...projectData, id: projectId }]);
         error = result.error;
       }
 
