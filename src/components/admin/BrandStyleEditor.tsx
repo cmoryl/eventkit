@@ -118,6 +118,117 @@ const industryOptions = [
   'Sports', 'Corporate', 'Retail', 'Creative Agency', 'Wellness'
 ];
 
+// Sub-component: AI Brain Knowledge Panel for a brand
+const BrandKnowledgePanel: React.FC<{ brandId: string; brandName: string }> = ({ brandId, brandName }) => {
+  const [entries, setEntries] = useState<Array<{ id: string; knowledge_type: string; category: string | null; key: string; value: Record<string, unknown>; confidence_score: number | null; usage_count: number | null; success_rate: number | null; updated_at: string }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchKnowledge = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from('ai_knowledge')
+        .select('*')
+        .or(`key.ilike.%${brandId}%,key.ilike.%${brandName}%,category.ilike.%${brandName}%`)
+        .order('updated_at', { ascending: false });
+      setEntries((data as typeof entries) || []);
+      setLoading(false);
+    };
+    fetchKnowledge();
+  }, [brandId, brandName]);
+
+  const typeIcons: Record<string, string> = {
+    brand_preference: '🎨',
+    style_preference: '✨',
+    prompt_pattern: '💡',
+    cultural_mapping: '🌍',
+    asset_template: '📐',
+    sponsor_recognition: '🤝',
+    brief_preference: '📋',
+  };
+
+  const formatValue = (val: unknown): string => {
+    if (typeof val === 'string') return val;
+    if (Array.isArray(val)) return val.join(', ');
+    if (val && typeof val === 'object') return JSON.stringify(val, null, 2);
+    return String(val ?? '—');
+  };
+
+  return (
+    <section>
+      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <Brain className="w-5 h-5 text-primary" />
+        AI Brain Knowledge
+        <span className="text-xs font-normal text-muted-foreground ml-1">
+          ({entries.length} entries)
+        </span>
+      </h3>
+
+      {loading ? (
+        <div className="flex items-center gap-2 text-muted-foreground text-sm py-4">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading knowledge entries…
+        </div>
+      ) : entries.length === 0 ? (
+        <div className="text-sm text-muted-foreground bg-muted/30 rounded-xl p-4 text-center">
+          No AI knowledge recorded for this brand yet. Sync from BrandHub, upload a brand guide, or provide feedback to start learning.
+        </div>
+      ) : (
+        <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+          {entries.map(entry => (
+            <div key={entry.id} className="rounded-xl border border-border bg-card/60 overflow-hidden">
+              <button
+                className="w-full flex items-center gap-3 p-3 text-left hover:bg-muted/40 transition-colors"
+                onClick={() => setExpanded(expanded === entry.id ? null : entry.id)}
+              >
+                <span className="text-lg">{typeIcons[entry.knowledge_type] || '🧠'}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate">{entry.key}</div>
+                  <div className="text-xs text-muted-foreground">{entry.knowledge_type.replace(/_/g, ' ')}</div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                  {entry.confidence_score != null && (
+                    <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                      {Math.round(entry.confidence_score * 100)}%
+                    </span>
+                  )}
+                  <svg className={`w-4 h-4 transition-transform ${expanded === entry.id ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
+              </button>
+              {expanded === entry.id && (
+                <div className="px-3 pb-3 border-t border-border pt-2 space-y-2">
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="bg-muted/30 rounded-lg p-2">
+                      <div className="text-muted-foreground">Confidence</div>
+                      <div className="font-medium">{entry.confidence_score != null ? `${Math.round(entry.confidence_score * 100)}%` : '—'}</div>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-2">
+                      <div className="text-muted-foreground">Uses</div>
+                      <div className="font-medium">{entry.usage_count ?? 0}</div>
+                    </div>
+                    <div className="bg-muted/30 rounded-lg p-2">
+                      <div className="text-muted-foreground">Success</div>
+                      <div className="font-medium">{entry.success_rate != null ? `${Math.round(entry.success_rate * 100)}%` : '—'}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Updated {new Date(entry.updated_at).toLocaleDateString()}
+                  </div>
+                  <pre className="text-xs bg-muted/20 rounded-lg p-2 overflow-x-auto max-h-48 whitespace-pre-wrap break-all">
+                    {formatValue(entry.value)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
 export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
   brand,
   onClose,
@@ -1522,6 +1633,9 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
               />
             </div>
           </section>
+
+          {/* AI Brain Knowledge Section */}
+          <BrandKnowledgePanel brandId={brand.id} brandName={brand.name} />
 
           {/* Preview Section */}
           <section>
