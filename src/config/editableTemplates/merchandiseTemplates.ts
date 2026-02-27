@@ -253,6 +253,19 @@ export const HAT_TEMPLATES: EditableTemplate[] = [
       createTextField('year', 'Year', { x: 50, y: 60, width: 45, height: 18 }, { placeholder: '2024', style: { fontSize: 10, color: 'rgba(255,255,255,0.7)' } })
     ],
     tags: ['hat', 'cap', 'side-panel']
+  },
+  {
+    id: 'hat-bucket', name: 'Bucket Hat', description: 'Trendy bucket hat design',
+    assetType: AssetType.Hat, category: 'universal', dimensions: createDimensions(5, 2.5, 0, 0.125),
+    background: { type: 'solid', value: 'transparent' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#000000', secondary: '#ffffff', accent: '#f59e0b', text: '#000000', background: 'transparent' },
+    colorMode: 'RGB', dpi: 300,
+    fields: [
+      createLogoField('logo', 'Center Logo', { x: 35, y: 10, width: 30, height: 60 }, { placeholder: 'Logo' }),
+      createTextField('rim-text', 'Rim Text', { x: 10, y: 80, width: 80, height: 15 }, { placeholder: 'SUMMER VIBES', style: { fontSize: 12, fontWeight: 'bold', textAlign: 'center', letterSpacing: 2 } })
+    ],
+    tags: ['hat', 'bucket', 'trendy', 'casual']
   }
 ];
 

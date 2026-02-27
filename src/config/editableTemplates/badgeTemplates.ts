@@ -323,6 +323,29 @@ export const SECURITY_BADGE_TEMPLATES: EditableTemplate[] = [
       createTextField('event', 'Event', { x: 5, y: 82, width: 90, height: 10 }, { placeholder: 'Annual Conference 2024', style: { fontSize: 10, color: '#0f172a', fontWeight: '500' } })
     ],
     tags: ['security', 'minimal', 'clean']
+  },
+  {
+    id: 'security-badge-access',
+    name: 'Access Control Red',
+    description: 'High-security access control badge',
+    assetType: AssetType.SecurityBadge,
+    category: 'universal',
+    dimensions: createDimensions(2.125, 3.375, 0.125, 0.125), // Portrait
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#dc2626', secondary: '#000000', accent: '#ffffff', text: '#000000', background: '#ffffff' },
+    colorMode: 'CMYK',
+    dpi: 300,
+    fields: [
+      { id: 'header', type: 'shape', name: 'Header', position: { x: 0, y: 0, width: 100, height: 15 }, style: { backgroundColor: '#dc2626' } },
+      createTextField('level', 'Level', { x: 5, y: 3, width: 90, height: 8 }, { placeholder: 'LEVEL 5 ACCESS', style: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createImageField('photo', 'Photo', { x: 15, y: 20, width: 70, height: 45 }, { placeholder: 'Photo', style: { borderColor: '#dc2626', borderWidth: 2 } }),
+      createTextField('name', 'Name', { x: 5, y: 68, width: 90, height: 8 }, { placeholder: 'GUARD NAME', style: { fontSize: 16, fontWeight: 'bold', textAlign: 'center' } }),
+      createTextField('id', 'ID', { x: 5, y: 78, width: 90, height: 6 }, { placeholder: 'ID: 8842-A', style: { fontSize: 12, textAlign: 'center', color: '#666666' } }),
+      { id: 'footer', type: 'shape', name: 'Footer', position: { x: 0, y: 90, width: 100, height: 10 }, style: { backgroundColor: '#000000' } },
+      createLogoField('logo', 'Logo', { x: 35, y: 91, width: 30, height: 8 }, { placeholder: 'Logo' })
+    ],
+    tags: ['security', 'access', 'red', 'portrait']
   }
 ];
 
