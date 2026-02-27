@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import LandingPage from '../components/landing/LandingPage';
 import { v4 as uuidv4 } from 'uuid';
 import { AssetType } from '../types';
@@ -48,6 +49,7 @@ import { toast } from 'sonner';
 const ensureProtocol = (url: string) => url && !url.match(/^[a-zA-Z]+:\/\//) ? `https://${url}` : url;
 
 const Index: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
   const { insights, isReady: isBrainReady } = useAIBrain();
   const { notifyGenerationComplete, notifyAssetComplete } = useNotifications();
@@ -137,6 +139,59 @@ const Index: React.FC = () => {
     };
     prepareLogoBase64();
   }, [logos]);
+
+  // Load project from URL parameter
+  useEffect(() => {
+    const projectId = searchParams.get('project');
+    if (!projectId || !user) return;
+    
+    const loadProjectFromUrl = async () => {
+      try {
+        const { data: project, error } = await supabase
+          .from('projects')
+          .select('*')
+          .eq('id', projectId)
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error || !project) {
+          console.error('Failed to load project:', error);
+          return;
+        }
+        
+        const details = project.event_details as Record<string, unknown>;
+        setEventDetails({
+          name: (details?.name as string) || project.name || '',
+          description: (details?.description as string) || '',
+          date: (details?.date as string) || '',
+          location: (details?.location as string) || '',
+          website: (details?.website as string) || '',
+          email: (details?.email as string) || '',
+          incorporateLocationStyle: (details?.incorporateLocationStyle as boolean) || false,
+        });
+        
+        if (project.color_palette && Array.isArray(project.color_palette)) {
+          setColorPalette(project.color_palette as unknown as ColorInfo[]);
+        }
+        
+        if (project.generated_assets && Array.isArray(project.generated_assets)) {
+          setGeneratedAssets(project.generated_assets as unknown as GeneratedAsset[]);
+        }
+        
+        if (project.folders && Array.isArray(project.folders)) {
+          setFolders(project.folders as { id: string; name: string }[]);
+        }
+        
+        setView('studio');
+        searchParams.delete('project');
+        setSearchParams(searchParams, { replace: true });
+      } catch (err) {
+        console.error('Error loading project from URL:', err);
+      }
+    };
+    
+    loadProjectFromUrl();
+  }, [user, searchParams]);
 
   // Queued generation with priority and retries
   const {
