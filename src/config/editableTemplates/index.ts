@@ -8,5 +8,7 @@ export * from './merchandiseTemplates';
 export * from './socialTemplates';
 export * from './localVendorTemplates';
 export * from './largeEventSignageTemplates';
+export * from './eventEssentialsTemplates';
+export * from './digitalMiscTemplates';
 export * from './allTemplates';
 export * from './templateHelpers';
