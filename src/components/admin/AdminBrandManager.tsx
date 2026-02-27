@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Settings, Link, Paintbrush, Link2 } from 'lucide-react';
+import { Plus, Palette, Trash2, Check, X, Star, AlertCircle, Settings, Link, Paintbrush, Link2, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { BrandStyleEditor } from './BrandStyleEditor';
 import { applyBrandTheme } from '@/services/brandThemeService';
 import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
+import { addOrUpdateKnowledge } from '@/services/aiBrain/learningService';
 
 interface BrandStyle {
   primary_color?: string;
@@ -38,6 +39,7 @@ export const AdminBrandManager: React.FC = () => {
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [newBrand, setNewBrand] = useState({ name: '', description: '' });
   const [showBrandHubImport, setShowBrandHubImport] = useState(false);
+  const [resyncingBrandId, setResyncingBrandId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -139,6 +141,64 @@ export const AdminBrandManager: React.FC = () => {
     } catch (error) {
       console.error('Error setting default:', error);
       toast.error('Failed to update default brand');
+    }
+  };
+
+  const handleResync = async (brand: Brand) => {
+    if (!user || !brand.brandhub_share_token) return;
+    setResyncingBrandId(brand.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
+        body: { shareToken: brand.brandhub_share_token }
+      });
+      if (error || data?.success === false) {
+        toast.error(data?.error || 'Failed to fetch from BrandHub');
+        return;
+      }
+      const hubBrand = data?.brand;
+      if (!hubBrand) { toast.error('No brand data returned'); return; }
+
+      const brandName = (hubBrand.name as string) || brand.name;
+      await supabase.from('brands').update({
+        name: brandName,
+        logo_url: (hubBrand.logo_url as string) || brand.logo_url || null,
+        logo_monochrome_url: (hubBrand.logo_monochrome_url as string) || null,
+        logo_reversed_url: (hubBrand.logo_reversed_url as string) || null,
+        brandhub_last_synced: new Date().toISOString(),
+      }).eq('id', brand.id);
+
+      // Update brand styles
+      const colors = (hubBrand.colors || []) as Array<{ hex: string; name?: string }>;
+      const fonts = (hubBrand.fonts || []) as Array<{ fontFamily?: string; name?: string; usage?: string }>;
+      const styleUpdate: Record<string, unknown> = {
+        primary_color: colors[0]?.hex || null,
+        secondary_color: colors[1]?.hex || null,
+        accent_color: colors[2]?.hex || null,
+        color_palette: colors.map(c => ({ hex: c.hex, name: c.name || '' })),
+        heading_font: fonts.find(f => f.usage?.toLowerCase().includes('head'))?.fontFamily || fonts[0]?.fontFamily || null,
+        body_font: fonts.find(f => f.usage?.toLowerCase().includes('body'))?.fontFamily || fonts[1]?.fontFamily || null,
+      };
+      const { data: existingStyle } = await supabase.from('brand_styles').select('id').eq('brand_id', brand.id).maybeSingle();
+      if (existingStyle) {
+        await supabase.from('brand_styles').update(styleUpdate).eq('id', existingStyle.id);
+      } else {
+        await supabase.from('brand_styles').insert({ brand_id: brand.id, ...styleUpdate });
+      }
+
+      // Store event knowledge if available
+      if (data.hasEventData && data.event) {
+        await addOrUpdateKnowledge(user.id, 'brand_preference', `${brandName}_event`, `brandhub_event_${brand.id}`, {
+          source: 'brandhub_creator', brandId: brand.id, ...data.event, importedAt: new Date().toISOString(),
+        });
+      }
+
+      toast.success(`"${brandName}" re-synced from BrandHub`);
+      loadBrands();
+    } catch (err) {
+      console.error('Re-sync error:', err);
+      toast.error('Failed to re-sync brand');
+    } finally {
+      setResyncingBrandId(null);
     }
   };
 
@@ -286,7 +346,24 @@ export const AdminBrandManager: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
+                {/* Re-sync from BrandHub */}
+                {brand.brandhub_share_token && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={resyncingBrandId === brand.id}
+                    onClick={() => handleResync(brand)}
+                    title={brand.brandhub_last_synced ? `Last synced: ${new Date(brand.brandhub_last_synced).toLocaleDateString()}` : 'Sync from BrandHub'}
+                    className="text-violet-500 hover:text-violet-600 hover:bg-violet-500/10"
+                  >
+                    {resyncingBrandId === brand.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
                 {/* Apply Theme Button */}
                 {brand.brand_styles?.[0] && (brand.brand_styles[0].primary_color || brand.brand_styles[0].accent_color) && (
                   <Button 
