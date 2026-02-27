@@ -151,10 +151,10 @@ export const TemplateWorkflowModal: React.FC<TemplateWorkflowModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent className="max-w-6xl h-[90vh] p-0 overflow-hidden" hideClose onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] sm:h-[90vh] p-0 overflow-hidden" hideClose onInteractOutside={(e) => e.preventDefault()}>
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b bg-muted/30">
+          <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b bg-muted/30">
             <div className="flex items-center gap-4">
               {currentStep !== 'select' && (
                 <Button variant="ghost" size="icon" onClick={goBack}>

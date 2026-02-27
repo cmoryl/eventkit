@@ -381,27 +381,27 @@ export const CreationStudio: React.FC = () => {
         variant="outline"
         size="sm"
         onClick={() => setShowProductionPanel(!showProductionPanel)}
-        className="hidden md:flex"
+        className="hidden lg:flex"
       >
         <Sliders className="h-4 w-4 mr-2" />
-        Production
+        <span className="hidden xl:inline">Production</span>
       </Button>
 
       <Button
         variant={showAccessibility ? 'secondary' : 'outline'}
         size="sm"
         onClick={() => setShowAccessibility(!showAccessibility)}
-        className="hidden md:flex"
+        className="hidden lg:flex"
         title="Accessibility Analysis"
       >
         <Accessibility className="h-4 w-4 mr-2" />
-        A11y
+        <span className="hidden xl:inline">A11y</span>
       </Button>
 
       <Button
         variant={showBrandsPanel ? 'secondary' : 'outline'}
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 hidden md:flex"
         onClick={() => setShowBrandsPanel(!showBrandsPanel)}
         title={showBrandsPanel ? 'Hide Brands Panel' : 'Show Brands Panel'}
       >
@@ -415,7 +415,8 @@ export const CreationStudio: React.FC = () => {
       {selectedAssets.length > 0 && (
         <Button size="sm" className={`bg-gradient-to-r ${studio.gradient}`}>
           <Download className="h-4 w-4 mr-2" />
-          Export ({selectedAssets.length})
+          <span className="hidden sm:inline">Export ({selectedAssets.length})</span>
+          <span className="sm:hidden">{selectedAssets.length}</span>
         </Button>
       )}
     </>
@@ -438,7 +439,7 @@ export const CreationStudio: React.FC = () => {
         isSavingToCloud={isSavingToCloud}
       />
 
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Sidebar - Categories */}
         <StudioSidebar
           studio={studio}
@@ -447,7 +448,7 @@ export const CreationStudio: React.FC = () => {
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-3 sm:p-6 min-w-0">
           {/* Category Header */}
           <div className="mb-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
@@ -460,21 +461,21 @@ export const CreationStudio: React.FC = () => {
               </span>
             </div>
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-bold">
+                <h2 className="text-xl sm:text-2xl font-bold">
                   {activeCategory === 'all' 
                     ? 'All Asset Types' 
                     : studio.categories.find(c => c.id === activeCategory)?.name}
                 </h2>
-                <p className="text-muted-foreground mt-1">
+                <p className="text-muted-foreground mt-1 text-sm">
                   {activeCategory === 'all'
                     ? studio.description
                     : studio.categories.find(c => c.id === activeCategory)?.description}
                 </p>
               </div>
               
-              <Button className={`bg-gradient-to-r ${studio.gradient}`}>
+              <Button className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Generate All
               </Button>
@@ -505,7 +506,7 @@ export const CreationStudio: React.FC = () => {
           />
         </main>
 
-        {/* Brands Panel */}
+        {/* Brands Panel - hidden on small screens */}
         <AnimatePresence>
           {showBrandsPanel && (
             <motion.div
@@ -513,7 +514,7 @@ export const CreationStudio: React.FC = () => {
               animate={{ width: 288, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden"
+              className="overflow-hidden hidden md:block"
             >
               <BrandsPanel
                 brands={brands}

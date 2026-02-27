@@ -1,7 +1,8 @@
 // Visual Editor - Main component combining all parts with advanced graphic designer features
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Layers, LayoutTemplate, Download, Brain, Users } from 'lucide-react';
+import { X, Sparkles, Layers, LayoutTemplate, Download, Brain, Users, Menu } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -53,6 +54,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [hasSelectedTemplate, setHasSelectedTemplate] = useState(false);
 
+  const isMobile = useIsMobile();
   const editor = useVisualEditor(initialWidth, initialHeight);
   const {
     state,
@@ -145,95 +147,99 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
         className="fixed inset-0 z-50 bg-background flex flex-col"
       >
         {/* Header */}
-        <div className="h-14 border-b flex items-center justify-between px-4 bg-background">
-          <div className="flex items-center gap-3">
+        <div className="h-14 border-b flex items-center justify-between px-2 sm:px-4 bg-background">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <Button size="icon" variant="ghost" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
-            <div>
-              <h2 className="font-semibold text-lg">{assetName || 'Visual Editor'}</h2>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-base sm:text-lg truncate">{assetName || 'Visual Editor'}</h2>
               {assetType && (
-                <p className="text-xs text-muted-foreground">{assetType}</p>
+                <p className="text-xs text-muted-foreground truncate">{assetType}</p>
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="gap-2"
+                  className="gap-1 sm:gap-2"
                   onClick={() => setShowTemplateGallery(true)}
                 >
                   <LayoutTemplate className="h-4 w-4" />
-                  Templates
+                  <span className="hidden sm:inline">Templates</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Browse design templates</TooltipContent>
             </Tooltip>
             
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant={showLayers ? 'secondary' : 'ghost'}
-                  className="gap-2"
-                  onClick={() => setShowLayers(!showLayers)}
-                >
-                  <Layers className="h-4 w-4" />
-                  Layers
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Toggle layer panel</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  size="sm" 
-                  variant={showAITools ? 'secondary' : 'outline'}
-                  className="gap-2"
-                  onClick={() => {
-                    setShowAITools(!showAITools);
-                    if (!showAITools) setShowCollaboration(false);
-                  }}
-                >
-                  <Brain className="h-4 w-4" />
-                  AI Tools
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>AI-powered design assistance</TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button 
-                  size="sm" 
-                  variant={showCollaboration ? 'secondary' : 'outline'}
-                  className="gap-2"
-                  onClick={() => {
-                    setShowCollaboration(!showCollaboration);
-                    if (!showCollaboration) setShowAITools(false);
-                  }}
-                >
-                  <Users className="h-4 w-4" />
-                  Collaborate
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Comments, history & sharing</TooltipContent>
-            </Tooltip>
+            {!isMobile && (
+              <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant={showLayers ? 'secondary' : 'ghost'}
+                      className="gap-2"
+                      onClick={() => setShowLayers(!showLayers)}
+                    >
+                      <Layers className="h-4 w-4" />
+                      <span className="hidden lg:inline">Layers</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Toggle layer panel</TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant={showAITools ? 'secondary' : 'outline'}
+                      className="gap-2"
+                      onClick={() => {
+                        setShowAITools(!showAITools);
+                        if (!showAITools) setShowCollaboration(false);
+                      }}
+                    >
+                      <Brain className="h-4 w-4" />
+                      <span className="hidden lg:inline">AI Tools</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>AI-powered design assistance</TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      size="sm" 
+                      variant={showCollaboration ? 'secondary' : 'outline'}
+                      className="gap-2"
+                      onClick={() => {
+                        setShowCollaboration(!showCollaboration);
+                        if (!showCollaboration) setShowAITools(false);
+                      }}
+                    >
+                      <Users className="h-4 w-4" />
+                      <span className="hidden lg:inline">Collaborate</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Comments, history & sharing</TooltipContent>
+                </Tooltip>
+              </>
+            )}
             
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button 
                   size="sm" 
                   variant="default"
-                  className="gap-2"
+                  className="gap-1 sm:gap-2"
                   onClick={handleExport}
                 >
                   <Download className="h-4 w-4" />
-                  Export
+                  <span className="hidden sm:inline">Export</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Advanced export options</TooltipContent>
@@ -257,11 +263,13 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
         {/* Main Content */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Element Sidebar */}
-          <ElementSidebar
-            onAddElement={handleAddElement}
-            brandColors={brandColors}
-          />
+          {/* Element Sidebar - hidden on mobile */}
+          {!isMobile && (
+            <ElementSidebar
+              onAddElement={handleAddElement}
+              brandColors={brandColors}
+            />
+          )}
 
           {/* Canvas */}
           <EditorCanvas
@@ -280,8 +288,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             activeTool={activeTool}
           />
 
-          {/* Layer Panel (optional) */}
-          {showLayers && !showAITools && !showCollaboration && (
+          {/* Layer Panel (optional) - hidden on mobile */}
+          {!isMobile && showLayers && !showAITools && !showCollaboration && (
             <LayerPanel
               elements={state.elements}
               selectedIds={state.selectedIds}
@@ -292,8 +300,8 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
             />
           )}
 
-          {/* Properties Panel */}
-          {!showAITools && !showCollaboration && (
+          {/* Properties Panel - hidden on mobile */}
+          {!isMobile && !showAITools && !showCollaboration && (
             <PropertiesPanel
               selectedElements={selectedElements}
               onUpdateElement={updateElement}
@@ -305,7 +313,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* AI Design Tools Panel */}
           <AnimatePresence>
-            {showAITools && (
+            {showAITools && !isMobile && (
               <AIDesignToolsPanel
                 isOpen={showAITools}
                 onClose={() => setShowAITools(false)}
@@ -318,7 +326,7 @@ export const VisualEditor: React.FC<VisualEditorProps> = ({
 
           {/* Collaboration Panel */}
           <AnimatePresence>
-            {showCollaboration && (
+            {showCollaboration && !isMobile && (
               <CollaborationPanel
                 isOpen={showCollaboration}
                 onClose={() => setShowCollaboration(false)}
