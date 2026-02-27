@@ -1,10 +1,11 @@
 // Active Brand Indicator - Shows the currently active brand with quick actions
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Palette, ChevronDown, Check, PaintBucket, RotateCcw, CheckCircle2, Circle, Settings2, X } from 'lucide-react';
+import { Palette, ChevronDown, Check, PaintBucket, RotateCcw, CheckCircle2, Circle, Settings2, X, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { BrandHubImportModal } from './BrandHubImportModal';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,7 @@ interface ActiveBrandIndicatorProps {
   projectBrandId?: string | null;
   variant?: 'compact' | 'full';
   className?: string;
+  onBrandsRefresh?: () => void;
 }
 
 export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
@@ -56,9 +58,11 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
   savedBrandId,
   projectBrandId,
   variant = 'compact',
-  className
+  className,
+  onBrandsRefresh
 }) => {
   const [showThemeSettings, setShowThemeSettings] = useState(false);
+  const [showBrandHubImport, setShowBrandHubImport] = useState(false);
 
   if (!activeBrand) return null;
 
@@ -319,8 +323,24 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
               })}
             </div>
           )}
+
+          {/* Import from BrandHub */}
+          <DropdownMenuSeparator />
+          <div className="p-1">
+            <DropdownMenuItem onClick={() => setShowBrandHubImport(true)} className="gap-2">
+              <Link2 className="w-4 h-4 text-violet-500" />
+              <span>Import from BrandHub</span>
+            </DropdownMenuItem>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* BrandHub Import Modal */}
+      <BrandHubImportModal
+        isOpen={showBrandHubImport}
+        onClose={() => setShowBrandHubImport(false)}
+        onBrandImported={() => onBrandsRefresh?.()}
+      />
 
       {/* Theme Settings Modal */}
       <Dialog open={showThemeSettings} onOpenChange={setShowThemeSettings}>

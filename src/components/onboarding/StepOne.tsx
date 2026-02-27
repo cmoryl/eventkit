@@ -1,11 +1,12 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 import type { EventDetails, LogoAsset } from '../../types';
 import EventTypeSelector from './EventTypeSelector';
 import VenueLocationFinder from '../VenueLocationFinder';
-import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, Globe, Mail } from 'lucide-react';
+import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, Globe, Mail, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
 
 interface StepOneProps {
   eventDetails: EventDetails;
@@ -16,6 +17,7 @@ interface StepOneProps {
 
 const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos, setLogos }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showBrandHubImport, setShowBrandHubImport] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -182,6 +184,34 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
           className="hidden"
         />
       </motion.div>
+
+      {/* Import from BrandHub */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.45 }}
+      >
+        <motion.button
+          onClick={() => setShowBrandHubImport(true)}
+          className="w-full py-4 rounded-2xl border-2 border-dashed border-violet-500/30 hover:border-violet-500/60 flex items-center justify-center gap-3 text-muted-foreground hover:text-foreground transition-all group"
+          whileHover={{ scale: 1.01, background: 'linear-gradient(to right, rgba(139, 92, 246, 0.05), rgba(168, 85, 247, 0.05))' }}
+          whileTap={{ scale: 0.99 }}
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center">
+            <Link2 className="w-5 h-5 text-violet-500" />
+          </div>
+          <div className="text-left">
+            <span className="block text-sm font-semibold">Import from BrandHub</span>
+            <span className="text-xs text-muted-foreground">Auto-fill brand identity, colors, fonts & event data</span>
+          </div>
+        </motion.button>
+      </motion.div>
+
+      <BrandHubImportModal
+        isOpen={showBrandHubImport}
+        onClose={() => setShowBrandHubImport(false)}
+        onBrandImported={() => setShowBrandHubImport(false)}
+      />
 
       {/* Optional Details - Collapsible */}
       <motion.details 
