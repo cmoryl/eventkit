@@ -419,10 +419,12 @@ export const AdminBrandManager: React.FC = () => {
       {/* BrandHub Import Modal */}
       <BrandHubImportModal
         isOpen={showBrandHubImport}
-        onClose={() => setShowBrandHubImport(false)}
+        onClose={() => {
+          setShowBrandHubImport(false);
+          loadBrands();
+        }}
         onBrandImported={() => {
           loadBrands();
-          setShowBrandHubImport(false);
         }}
       />
     </div>
