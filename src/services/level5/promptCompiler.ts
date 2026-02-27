@@ -5,8 +5,10 @@ import { logoPlacementPresets } from "../../config/level5/logoPlacementPresets";
 /**
  * Compile a Level5Template into a complete prompt string.
  * Merges DNA, anchors, layout, logo rules, design spec, scene, and guards.
- * Template variables ({{eventName}}, etc.) are left as placeholders for the
- * merge step to fill in with actual event data.
+ *
+ * Upgrades:
+ * - #2: Quality Gate block with explicit self-check preflight
+ * - #3: Graphic-only assets skip photoreal scene entirely
  */
 export function compileLevel5Prompt(t: Level5Template): string {
   const preset = logoPlacementPresets[t.assetType];
@@ -26,10 +28,12 @@ export function compileLevel5Prompt(t: Level5Template): string {
     ? `DIMENSIONS: ${t.dimensions.size} | ${t.dimensions.dpi} DPI | ${t.dimensions.colorMode}${t.dimensions.bleed ? ` | Bleed: ${t.dimensions.bleed}` : ""}${t.dimensions.safeMargin ? ` | Safe: ${t.dimensions.safeMargin}` : ""}`
     : "";
 
+  const isGraphicOnly = t.scene.environment.startsWith("N/A");
+
   const lines = [
     "[MASTER_WRAPPER]",
-    'ROLE: You are a production design system that outputs print-ready, brand-consistent layouts.',
-    'OUTPUT: A single design concept with precise layout, hierarchy, styles, and spacing.',
+    "ROLE: You are a production design system that outputs print-ready, brand-consistent layouts.",
+    "OUTPUT: A single design concept with precise layout, hierarchy, styles, and spacing.",
     "",
     "HARD REQUIREMENTS:",
     "- Brand fidelity: use provided brand colors/typography; if missing, choose safe defaults",
@@ -51,8 +55,10 @@ export function compileLevel5Prompt(t: Level5Template): string {
     `  Finishes: ${t.dna.finishes}`,
     `  Typography: ${t.dna.typeBehavior}`,
     `  Motif: ${t.dna.graphicMotif}`,
-    `  Lighting: ${t.dna.lightingIntent}`,
-    `  Camera: ${t.dna.cameraLanguage}`,
+    ...(isGraphicOnly ? [] : [
+      `  Lighting: ${t.dna.lightingIntent}`,
+      `  Camera: ${t.dna.cameraLanguage}`,
+    ]),
     "",
     "ANCHORS (KEEP CONSISTENT):",
     ...t.anchors.map(a => `  • ${a}`),
@@ -65,17 +71,33 @@ export function compileLevel5Prompt(t: Level5Template): string {
     "DESIGN SPECIFICATION:",
     ...t.prompt.designSpec.map(l => `  ${l}`),
     "",
-    "PHOTOREAL SCENE DIRECTION:",
-    ...t.prompt.photorealScene.map(l => `  ${l}`),
-    "",
-    "SCENE CONTEXT:",
-    `  Environment: ${t.scene.environment}`,
-    `  Mounting: ${t.scene.mounting}`,
-    `  People: ${t.scene.people}`,
-    `  Lighting: ${t.scene.lighting}`,
-    "  Realism Constraints:",
-    ...t.scene.realismConstraints.map(c => `    - ${c}`),
-    "",
+  ];
+
+  // Photoreal scene: only for physical assets
+  if (!isGraphicOnly) {
+    lines.push(
+      "PHOTOREAL SCENE DIRECTION:",
+      ...t.prompt.photorealScene.map(l => `  ${l}`),
+      "",
+      "SCENE CONTEXT:",
+      `  Environment: ${t.scene.environment}`,
+      `  Mounting: ${t.scene.mounting}`,
+      `  People: ${t.scene.people}`,
+      `  Lighting: ${t.scene.lighting}`,
+      "  Realism Constraints:",
+      ...t.scene.realismConstraints.map(c => `    - ${c}`),
+      "",
+    );
+  } else {
+    lines.push(
+      "OUTPUT MODE: PURE GRAPHIC DESIGN",
+      "  Do NOT render as a photograph of a printed item, mockup, or physical object.",
+      "  Output a clean, high-resolution design file — vector-sharp edges, flat or gradient fills, no camera simulation.",
+      "",
+    );
+  }
+
+  lines.push(
     "VARIATION CONTROLS:",
     "  Allowed:",
     ...t.variationControls.allowed.map(a => `    ✓ ${a}`),
@@ -85,14 +107,25 @@ export function compileLevel5Prompt(t: Level5Template): string {
     "ROBUSTNESS GUARDS:",
     ...t.robustnessGuards.map(g => `  ⚑ ${g}`),
     "",
-    "OUTPUT CHECKLIST:",
-    `  ☐ ${t.dimensions?.colorMode === "CMYK" ? "Bleed extends to edges; safe zone clear" : "Digital dimensions correct"}`,
-    "  ☐ Hierarchy passes 3-second scan test",
-    "  ☐ Logo: exact reproduction, correct placement, proper sizing, adequate contrast",
-    "  ☐ All text readable at intended viewing distance",
-    "  ☐ Color palette applied cohesively",
-    "  ☐ Typography clean and sharp",
-  ];
+
+    // ── Quality Gate (Upgrade #2) ──
+    "═══════════════════════════════════════",
+    "QUALITY GATE — PREFLIGHT CHECKLIST (MANDATORY):",
+    "Before finalizing the output, verify ALL of the following:",
+    "  ✓ Logo is present, sharp, correctly placed per placement rules, not distorted",
+    "  ✓ Visual hierarchy is instantly readable (3-second scan test passes)",
+    "  ✓ No warped, melted, or AI-smudged text anywhere",
+    ...(isGraphicOnly ? [] : [
+      "  ✓ Physical mounting is correct and realistic (no floating mockups)",
+    ]),
+    "  ✓ No visual clutter, fake sponsors, or invented marks",
+    "  ✓ Color palette applied cohesively; contrast meets WCAG AA",
+    "  ✓ Typography clean, sharp, and readable at intended viewing distance",
+    `  ✓ ${t.dimensions?.colorMode === "CMYK" ? "Bleed extends to edges; content within safe zone" : "Digital dimensions and resolution correct"}`,
+    "",
+    "If ANY check fails, regenerate internally and output ONLY a passing result.",
+    "═══════════════════════════════════════",
+  );
 
   return lines.filter(l => l !== undefined).join("\n");
 }

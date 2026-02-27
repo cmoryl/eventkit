@@ -9,7 +9,9 @@ export {
   getTemplate,
   getVariantsForAsset,
   getTemplateCount,
+  generateUniquenessSeed,
 } from "./templateGenerator";
+export { getCameraPreset, isGraphicOnlyCategory } from "./cameraPresets";
 export type {
   Level5Template,
   Level5AssetType,

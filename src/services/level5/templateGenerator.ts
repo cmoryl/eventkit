@@ -1,14 +1,13 @@
 // Level-5 Template Factory — runtime expansion using getAssetDefault + getVariantProfile merge
 import type { Level5Template, Level5AssetType, LogoRules, SceneSpec } from "../../types/eventTemplateSystem";
-import { getAssetDefault } from "../../config/level5/assetDefaults";
+import { getAssetDefault, type AssetCategory } from "../../config/level5/assetDefaults";
 import { getLogoRulesForAsset } from "../../config/level5/logoPlacementPresets";
 import { variantPacks } from "../../config/level5/allAssetVariantPacks";
 import { getVariantProfile } from "../../config/level5/variantDNA";
+import { getCameraPreset, isGraphicOnlyCategory } from "./cameraPresets";
 
-/**
- * A strict, reusable logo rules block. Placement/size are finalized later by
- * compileLevel5Prompt() via logoPlacementPresets, so keep this generic but non-negotiable.
- */
+// ─── Logo Rules ──────────────────────────────────────────────────────────────
+
 function baseLogoRules(assetType: Level5AssetType): LogoRules {
   const presetRules = getLogoRulesForAsset(assetType);
   return {
@@ -32,12 +31,37 @@ function baseLogoRules(assetType: Level5AssetType): LogoRules {
   };
 }
 
-/** Generates a stable ID from assetType + variantName. */
+// ─── Uniqueness Seed ─────────────────────────────────────────────────────────
+
+/**
+ * Generate a deterministic uniqueness seed from event context.
+ * This ensures each render is distinct but still on-template.
+ */
+export function generateUniquenessSeed(
+  eventName: string,
+  assetType: string,
+  variantName: string,
+  eventDate?: string,
+  eventLocation?: string
+): string {
+  const raw = [eventName, assetType, variantName, eventDate ?? "", eventLocation ?? ""].join("|");
+  // Simple hash to produce a short hex-like seed
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const char = raw.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0; // Convert to 32-bit integer
+  }
+  const seed = Math.abs(hash).toString(36).toUpperCase().slice(0, 8);
+  return `SEED-${seed}`;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function makeId(assetType: string, variantName: string) {
   return `${assetType.toLowerCase()}_${variantName.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`.replace(/_+/g, "_");
 }
 
-/** Provides reasonable default tags by category + variant name. */
 function deriveTags(assetType: Level5AssetType, category: string, variantName: string) {
   const tags = new Set<string>();
   tags.add(category);
@@ -61,11 +85,13 @@ function deriveTags(assetType: Level5AssetType, category: string, variantName: s
   return Array.from(tags);
 }
 
+// ─── Main Factory ────────────────────────────────────────────────────────────
+
 /**
  * Converts asset defaults + variant DNA into a complete Level5Template.
  *
- * Logo placement/size are enforced later by compileLevel5Prompt() via logoPlacementPresets.
- * This factory ensures every template has DNA, anchors, scene, guards, and prompt fragments.
+ * Upgrade #3: For Branding/Digital categories, scene is set to undefined
+ * and photoreal fragments are removed to prevent "fake photo of logo on paper" artifacts.
  */
 export function buildLevel5Template(args: {
   assetType: Level5AssetType;
@@ -74,33 +100,64 @@ export function buildLevel5Template(args: {
   extraLayoutRules?: string[];
   extraGuards?: string[];
   sceneContextOverride?: Partial<SceneSpec>;
+  // Event context for uniqueness seed generation
+  eventName?: string;
+  eventDate?: string;
+  eventLocation?: string;
 }): Level5Template {
-  const { assetType, variantName, variablesOverride, extraLayoutRules, extraGuards, sceneContextOverride } = args;
+  const {
+    assetType, variantName, variablesOverride, extraLayoutRules,
+    extraGuards, sceneContextOverride, eventName, eventDate, eventLocation,
+  } = args;
 
   const base = getAssetDefault(assetType);
   const variant = getVariantProfile(variantName);
+  const category = base.category as AssetCategory;
+  const graphicOnly = isGraphicOnlyCategory(category);
 
-  // Scene merge: base scene (if any) + variant overrides + caller overrides
-  const sceneBase: SceneSpec = base.sceneBase ?? {
-    environment: "Neutral studio environment (fallback) — keep it realistic and physically grounded",
-    mounting: "Physically plausible mounting/printing for the asset type",
-    people: "Optional blurred silhouettes; never block key info",
-    lighting: "Neutral soft light with natural shadow falloff",
-    realismConstraints: ["No floating designs", "Readable text", "Natural shadows"],
+  // ── Camera preset (Upgrade #3) ──
+  const cameraPreset = getCameraPreset(assetType, category);
+
+  // Override DNA camera language with the deterministic preset
+  const finalDna = {
+    ...variant.dna,
+    cameraLanguage: graphicOnly ? "N/A — graphic output, no camera simulation" : cameraPreset,
   };
 
-  const mergedScene: SceneSpec = {
-    ...sceneBase,
-    ...(variant.sceneOverrides ?? {}),
-    ...(sceneContextOverride ?? {}),
-    realismConstraints: [
-      ...new Set([
-        ...(sceneBase.realismConstraints ?? []),
-        ...((variant.sceneOverrides?.realismConstraints as string[] | undefined) ?? []),
-        ...((sceneContextOverride?.realismConstraints as string[] | undefined) ?? []),
-      ]),
-    ],
-  };
+  // ── Scene merge (Upgrade #3: null for graphic-only) ──
+  let mergedScene: SceneSpec;
+
+  if (graphicOnly) {
+    // Branding & Digital: NO photoreal scene — pure graphic output
+    mergedScene = {
+      environment: "N/A — pure graphic design output",
+      mounting: "N/A",
+      people: "N/A",
+      lighting: "N/A — use design lighting only (gradients, color fields)",
+      realismConstraints: ["Do NOT render as a photograph of a printed item", "Output clean vector/raster design only"],
+    };
+  } else {
+    const sceneBase: SceneSpec = base.sceneBase ?? {
+      environment: "Neutral studio environment — keep it realistic and physically grounded",
+      mounting: "Physically plausible mounting/printing for the asset type",
+      people: "Optional blurred silhouettes; never block key info",
+      lighting: "Neutral soft light with natural shadow falloff",
+      realismConstraints: ["No floating designs", "Readable text", "Natural shadows"],
+    };
+
+    mergedScene = {
+      ...sceneBase,
+      ...(variant.sceneOverrides ?? {}),
+      ...(sceneContextOverride ?? {}),
+      realismConstraints: [
+        ...new Set([
+          ...(sceneBase.realismConstraints ?? []),
+          ...((variant.sceneOverrides?.realismConstraints as string[] | undefined) ?? []),
+          ...((sceneContextOverride?.realismConstraints as string[] | undefined) ?? []),
+        ]),
+      ],
+    };
+  }
 
   // Variation controls
   const variationControls = variant.variationControls ?? {
@@ -134,28 +191,45 @@ export function buildLevel5Template(args: {
 
   const variables = variablesOverride ?? base.variables;
 
-  // Prompt fragments
+  // ── Uniqueness seed (Upgrade #1) ──
+  const seed = eventName
+    ? generateUniquenessSeed(eventName, assetType, variantName, eventDate, eventLocation)
+    : undefined;
+
+  // ── Prompt fragments ──
   const designSpec: string[] = [
     base.dimensions
       ? `Design to spec: ${base.dimensions.size}, ${base.dimensions.dpi} DPI, ${base.dimensions.colorMode}${base.dimensions.bleed ? `, bleed ${base.dimensions.bleed}` : ""}${base.dimensions.safeMargin ? `, safe margin ${base.dimensions.safeMargin}` : ""}.`
       : "Design a brand-consistent system output (no physical scene required unless explicitly requested).",
-    `Apply the template DNA: ${variant.dna.influence}.`,
-    `Composition: ${variant.dna.composition}.`,
-    `Materials/Finishes guidance: ${variant.dna.materialStory}; ${variant.dna.finishes}.`,
-    `Typography behavior: ${variant.dna.typeBehavior}.`,
-    `Graphic motif: ${variant.dna.graphicMotif}.`,
+    `Apply the template DNA: ${finalDna.influence}.`,
+    `Composition: ${finalDna.composition}.`,
+    `Materials/Finishes guidance: ${finalDna.materialStory}; ${finalDna.finishes}.`,
+    `Typography behavior: ${finalDna.typeBehavior}.`,
+    `Graphic motif: ${finalDna.graphicMotif}.`,
     "Enforce clean hierarchy and legibility for the intended viewing distance/format.",
     "Do not add extra logos, fake sponsors, or invented marks.",
   ];
 
-  const photorealScene: string[] = [
-    `Environment: ${mergedScene.environment}.`,
-    `Mounting/physical reality: ${mergedScene.mounting}.`,
-    `People: ${mergedScene.people}.`,
-    `Lighting: ${mergedScene.lighting}.`,
-    `Camera language: ${variant.dna.cameraLanguage}.`,
-    ...mergedScene.realismConstraints.map((r) => `Realism constraint: ${r}.`),
-  ];
+  // Inject uniqueness seed instruction
+  if (seed) {
+    designSpec.push(
+      `UNIQUENESS SEED: ${seed}`,
+      "Use this seed to vary ONLY allowed elements (pattern micro-variation, background texture grain, secondary shape placement, subtle color temperature shift within palette).",
+      "Do NOT change anchors, hierarchy, logo placement, or composition structure based on the seed.",
+    );
+  }
+
+  // Photoreal scene: only for physical assets
+  const photorealScene: string[] = graphicOnly
+    ? ["This is a pure graphic design output — do NOT simulate a photograph of a printed item or mockup."]
+    : [
+        `Environment: ${mergedScene.environment}.`,
+        `Mounting/physical reality: ${mergedScene.mounting}.`,
+        `People: ${mergedScene.people}.`,
+        `Lighting: ${mergedScene.lighting}.`,
+        `Camera: ${cameraPreset}.`,
+        ...mergedScene.realismConstraints.map((r) => `Realism constraint: ${r}.`),
+      ];
 
   return {
     id: makeId(assetType, variantName),
@@ -164,7 +238,7 @@ export function buildLevel5Template(args: {
     tags: deriveTags(assetType, base.category, variantName),
     dimensions: base.dimensions,
     variables,
-    dna: variant.dna,
+    dna: finalDna,
     anchors: variant.anchors,
     layout: layoutRules,
     logoRules: baseLogoRules(assetType),
@@ -175,57 +249,51 @@ export function buildLevel5Template(args: {
   };
 }
 
-/** Convenience: build the 5-pack for an asset type given the variant names. */
+// ─── Convenience wrappers ────────────────────────────────────────────────────
+
 export function buildTemplatePack(args: {
   assetType: Level5AssetType;
   variantNames: string[];
   variablesOverride?: string[];
   sceneContextOverride?: Partial<SceneSpec>;
+  eventName?: string;
+  eventDate?: string;
+  eventLocation?: string;
 }) {
-  const { assetType, variantNames, variablesOverride, sceneContextOverride } = args;
+  const { assetType, variantNames, variablesOverride, sceneContextOverride, eventName, eventDate, eventLocation } = args;
   return variantNames.map((variantName) =>
-    buildLevel5Template({ assetType, variantName, variablesOverride, sceneContextOverride })
+    buildLevel5Template({ assetType, variantName, variablesOverride, sceneContextOverride, eventName, eventDate, eventLocation })
   );
 }
 
-// ─── Public convenience API (backwards-compatible) ───────────────────────────
-
-/** Generate a single template by asset type and variant name. */
 export function generateTemplate(assetType: Level5AssetType, variantName: string): Level5Template {
   return buildLevel5Template({ assetType, variantName });
 }
 
-/** Generate ALL templates for a given asset type (all 5 variants). */
 export function generateTemplatesForAsset(assetType: Level5AssetType): Level5Template[] {
   const variants = variantPacks[assetType];
   if (!variants) return [];
   return buildTemplatePack({ assetType, variantNames: [...variants] });
 }
 
-/** Generate ALL templates across ALL asset types. */
 export function generateAllTemplates(): Level5Template[] {
   const allTypes = Object.keys(variantPacks) as Level5AssetType[];
   return allTypes.flatMap(generateTemplatesForAsset);
 }
 
-/** Get a specific template by asset type and optional variant name. */
 export function getTemplate(assetType: Level5AssetType, variantName?: string): Level5Template | null {
   const variants = variantPacks[assetType];
   if (!variants || variants.length === 0) return null;
-
   const targetVariant = variantName
     ? variants.find((v) => v.toLowerCase() === variantName.toLowerCase()) ?? variants[0]
     : variants[0];
-
   return buildLevel5Template({ assetType, variantName: targetVariant });
 }
 
-/** List all available variant names for an asset type. */
 export function getVariantsForAsset(assetType: Level5AssetType): readonly string[] {
   return variantPacks[assetType] ?? [];
 }
 
-/** Get the total count of templates in the system. */
 export function getTemplateCount(): number {
   return Object.values(variantPacks).reduce((sum, v) => sum + v.length, 0);
 }
