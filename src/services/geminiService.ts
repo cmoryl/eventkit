@@ -526,6 +526,8 @@ NOTES:
 // Import VenueIntelligence from main types
 import type { VenueIntelligence } from '../types';
 import type { BrandContext } from '../types/brand.types';
+import { compileGenerationPrompt } from './aiBrain/promptCompiler';
+import type { GenerationContext } from './aiBrain/types';
 
 // Generate AI image for an asset - OPTIMIZED to use cached analysis and pass to backend
 export const generateAssetImage = async (
@@ -565,16 +567,58 @@ export const generateAssetImage = async (
     const effectiveColorPalette = brandContext?.colorPalette?.length 
       ? brandContext.colorPalette.map(c => c.hex)
       : colorPalette;
+
+    // ── Compile prompt with Level-5 DNA + Brand Intelligence ──
+    const generationContext: GenerationContext = {
+      eventName,
+      eventDescription,
+      assetType: assetTypeStr,
+      styleDescription,
+      colorPalette: effectiveColorPalette,
+      location,
+      logoBase64,
+      vibeImageBase64: Array.isArray(vibeImageBase64) ? vibeImageBase64[0] : vibeImageBase64,
+      masterPatternBase64: Array.isArray(masterPatternBase64) ? masterPatternBase64[0] : masterPatternBase64,
+    };
+
+    // Build brand knowledge record from brandContext for the compiler
+    const brandKnowledge: Record<string, unknown> | undefined = brandContext ? {
+      photographyStyle: brandContext.photographyStyle,
+      photographyDos: brandContext.photographyDos,
+      photographyDonts: brandContext.photographyDonts,
+      logoPlacementRules: brandContext.logoPlacementRules,
+      logoClearSpace: brandContext.logoClearSpace,
+      logoMinSize: brandContext.logoMinSize,
+      logoBackgrounds: brandContext.logoBackgrounds,
+      voice: brandContext.brandVoice,
+      tone: brandContext.toneKeywords,
+      writingStyle: brandContext.writingStyle,
+      tagline: brandContext.tagline,
+      mission: brandContext.mission,
+      restrictedElements: brandContext.restrictedElements,
+      approvedLayouts: brandContext.approvedLayouts,
+      imagery: brandContext.imageryStyle,
+      archetype: brandContext.archetype,
+    } : undefined;
+
+    const compiledStyleDescription = compileGenerationPrompt({
+      basePrompt: styleDescription,
+      context: generationContext,
+      brandKnowledge,
+    });
+
+    console.log('Compiled prompt with brand intelligence for', assetTypeStr,
+      brandKnowledge ? '(brand context attached)' : '(no brand context)');
     
     const { data, error } = await supabase.functions.invoke('generate-image', {
       body: {
         assetType: assetTypeStr,
         eventName,
         eventDescription,
-        eventDate, // Pass for template variable merging
-        eventLocation: location, // Pass as eventLocation for template merging
-        eventType, // Pass event type for template variable merging
-        styleDescription,
+        eventDate,
+        eventLocation: location,
+        eventType,
+        styleDescription: compiledStyleDescription,
         colorPalette: effectiveColorPalette,
         logoBase64,
         location,
@@ -582,9 +626,9 @@ export const generateAssetImage = async (
         vibeImageBase64,
         masterPatternBase64,
         venueImageBase64,
-        imageAnalysis, // Pass analysis to avoid inline re-analysis
-        venueIntelligence, // Pass AI-researched venue data
-        brandContext, // Pass comprehensive brand intelligence
+        imageAnalysis,
+        venueIntelligence,
+        brandContext,
       },
     });
 
