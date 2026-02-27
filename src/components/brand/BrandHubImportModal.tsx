@@ -125,11 +125,14 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
 
       // Extract and save brand styles
       const colors = (hubBrand.colors || []) as Array<{ hex: string; name?: string; cmyk?: string; pantone?: string; usage?: string }>;
-      const fonts = (hubBrand.fonts || []) as Array<{ fontFamily?: string; name?: string; usage?: string }>;
+      const fonts = (hubBrand.fonts || []) as Array<{ fontFamily?: string; family?: string; name?: string; usage?: string; role?: string; id?: string }>;
       const guideData = (hubBrand.guide_data || {}) as Record<string, unknown>;
 
-      const headingFont = fonts.find(f => f.name?.toLowerCase().includes('heading') || f.usage?.toLowerCase().includes('headline'))?.fontFamily || fonts[0]?.fontFamily;
-      const bodyFont = fonts.find(f => f.name?.toLowerCase().includes('body') || f.usage?.toLowerCase().includes('paragraph'))?.fontFamily || fonts[1]?.fontFamily;
+      // BrandHub returns 'family' from event guide_data, 'fontFamily' from share endpoint
+      const getFamily = (f: typeof fonts[0]) => f.fontFamily || f.family;
+      const headingFont = fonts.find(f => f.role === 'heading' || f.role === 'display' || f.name?.toLowerCase().includes('heading') || f.usage?.toLowerCase().includes('headline'));
+      const bodyFont = fonts.find(f => f.role === 'body' || f.role === 'paragraph' || f.name?.toLowerCase().includes('body') || f.usage?.toLowerCase().includes('paragraph'));
+      const accentFont = fonts.find(f => f.role === 'accent' || f.role === 'caption');
 
       const photographyData = (guideData.photography || hubBrand.photography || {}) as Record<string, unknown>;
       const logoRules = (guideData.logoRules || hubBrand.logo_rules || {}) as Record<string, unknown>;
@@ -142,8 +145,9 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
         secondary_color: colors[1]?.hex || (hubBrand.secondary_color as string) || null,
         accent_color: colors[2]?.hex || (hubBrand.accent_color as string) || null,
         color_palette: colors.map(c => ({ hex: c.hex, name: c.name || '' })),
-        heading_font: headingFont || null,
-        body_font: bodyFont || null,
+        heading_font: getFamily(headingFont || fonts[0]) || null,
+        body_font: getFamily(bodyFont || fonts[1]) || null,
+        accent_font: getFamily(accentFont || fonts[2]) || null,
         brand_voice: (hubBrand.voice as string[]) || [],
         tone_keywords: (hubBrand.tone_keywords as string[]) || [],
         mood_keywords: (hubBrand.mood_keywords as string[]) || [],
@@ -181,7 +185,14 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       // Store AI knowledge for the brand
       const knowledgePromises: Promise<boolean>[] = [];
 
+      // Voice, tagline, mission — core brand identity for prompt injection
       if (hubBrand.voice || hubBrand.mission || hubBrand.tagline) {
+        // Extract tagline variations from guide_data if available
+        const taglineSection = (guideData.tagline || {}) as Record<string, unknown>;
+        const taglineVariations = Array.isArray(taglineSection.variations)
+          ? taglineSection.variations.map((v: Record<string, unknown>) => String(v.text || v))
+          : [];
+
         knowledgePromises.push(addOrUpdateKnowledge(
           user.id, 'brand_preference', brandName,
           `brand_voice_${brandId}`,
@@ -189,12 +200,60 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
             voice: (hubBrand.voice as string[]) || [],
             mission: hubBrand.mission,
             tagline: hubBrand.tagline,
+            taglineSecondary: taglineSection.secondary || null,
+            taglineVariations,
             archetype: hubBrand.archetype,
+            writingStyle: hubBrand.writing_style || guideData.writingStyle,
+            industry: hubBrand.industry,
+            targetAudience: hubBrand.target_audience,
           }
         ));
       }
 
-      // Event data
+      // Visual assets — gradients, patterns, brand icons for design reference
+      const gradients = hubBrand.gradients as Array<{ name?: string; css?: string }> | undefined;
+      const patterns = hubBrand.patterns as Array<{ name?: string; url?: string }> | undefined;
+      const brandIcons = hubBrand.brandIcons as Array<{ name?: string; url?: string }> | undefined;
+      if (gradients?.length || patterns?.length || brandIcons?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_visual_assets`,
+          `brand_visuals_${brandId}`,
+          {
+            gradients: gradients?.map(g => g.css).filter(Boolean) || [],
+            patternUrls: patterns?.map(p => p.url).filter(Boolean) || [],
+            brandIconUrls: brandIcons?.map(i => i.url).filter(Boolean) || [],
+          }
+        ));
+      }
+
+      // Services & values — useful for content-heavy assets (brochures, presentations)
+      const values = hubBrand.values as string[] | undefined;
+      const services = hubBrand.services as Array<{ name?: string; description?: string }> | undefined;
+      if (values?.length || services?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_content`,
+          `brand_content_${brandId}`,
+          {
+            values: values || [],
+            services: services?.map(s => `${s.name}: ${s.description}`).filter(Boolean) || [],
+          }
+        ));
+      }
+
+      // Sponsor data — critical for sponsor walls, step-and-repeat, etc.
+      const sponsors = hubBrand.sponsors as Array<{ name?: string; url?: string; tier?: string }> | undefined;
+      if (sponsors?.length) {
+        knowledgePromises.push(addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_sponsors`,
+          `brand_sponsors_${brandId}`,
+          {
+            sponsors: sponsors.map(s => ({ name: s.name, logoUrl: s.url, tier: s.tier })),
+            totalCount: sponsors.length,
+          }
+        ));
+      }
+
+      // Event data — name, date, venue, attendees for contextual generation
       if (data.hasEventData && data.event) {
         knowledgePromises.push(addOrUpdateKnowledge(
           user.id, 'brand_preference', `${brandName}_event`,
