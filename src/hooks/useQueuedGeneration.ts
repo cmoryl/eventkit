@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { BrandContext } from '@/types/brand.types';
 import { 
   generationQueue, 
   GenerationJob, 
@@ -263,6 +264,7 @@ export function useQueuedGeneration({
       masterPatternBase64?: string | string[];
       venueImageBase64?: string;
       styleDesc?: string;
+      brandContext?: BrandContext | null;
     }
   ) => {
     // Reset counters
@@ -289,6 +291,7 @@ export function useQueuedGeneration({
         masterPatternBase64: effectivePatternBase64,
         venueImageBase64: effectiveVenueBase64,
         renderEngine,
+        brandContext: overrides?.brandContext,
       }
     );
     
