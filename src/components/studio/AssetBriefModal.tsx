@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { TYPOGRAPHY_LAYOUT_STYLES } from '@/config/typographyLayoutStyles';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sparkles, ArrowRight, Palette, Type, ImageIcon, Wand2, 
@@ -162,6 +163,9 @@ export interface AssetBrief {
   
   // Reference/inspiration
   referencePrompt?: string;
+  
+  // Typography layout style (from AI Brain reference)
+  typographyLayoutId?: string;
   
   // Reference images (base64)
   referenceImages?: string[];
@@ -923,6 +927,45 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                             >
                               <span>{option.icon}</span>
                               <span>{option.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Typography Layout Style (AI Brain Reference) */}
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground mb-1 block">
+                          Typography Layout
+                        </label>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Choose a professional lettering composition style
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => setBrief(prev => ({ ...prev, typographyLayoutId: undefined }))}
+                            className={cn(
+                              "p-2 rounded-lg border-2 text-xs text-center transition-all",
+                              !brief.typographyLayoutId
+                                ? "border-primary bg-primary/10"
+                                : "border-border hover:border-muted-foreground/50"
+                            )}
+                          >
+                            <span className="block text-base mb-1">🤖</span>
+                            AI Picks
+                          </button>
+                          {TYPOGRAPHY_LAYOUT_STYLES.map(layout => (
+                            <button
+                              key={layout.id}
+                              onClick={() => setBrief(prev => ({ ...prev, typographyLayoutId: layout.id }))}
+                              className={cn(
+                                "p-2 rounded-lg border-2 text-xs text-left transition-all",
+                                brief.typographyLayoutId === layout.id
+                                  ? "border-primary bg-primary/10"
+                                  : "border-border hover:border-muted-foreground/50"
+                              )}
+                              title={layout.description}
+                            >
+                              <span className="font-medium block truncate">{layout.name.replace(' Layout', '')}</span>
                             </button>
                           ))}
                         </div>

@@ -59,7 +59,7 @@ export class AIBrain {
         : this.buildDefaultPrompt(context);
 
       // 3. Apply learned insights
-      prompt = applyLearnedInsights(prompt, this.learnedInsights);
+      prompt = applyLearnedInsights(prompt, this.learnedInsights, { assetType: context.assetType });
 
       // 4. Get render engine (use provided or default)
       const engine = context.renderEngine || this.defaultEngine;
