@@ -165,7 +165,7 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
                     className="group relative rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-lg transition-all cursor-pointer overflow-hidden"
-                    onClick={onGetStarted}
+                    onClick={() => navigate(`/?project=${project.id}`)}
                   >
                     {/* Preview Area */}
                     <div className="aspect-[4/3] bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative overflow-hidden">
