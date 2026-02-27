@@ -8,6 +8,7 @@ export * from './suggestionService';
 
 import { supabase } from '@/integrations/supabase/client';
 import type { GenerationContext, GenerationResult, RenderEngine, LearnedInsight } from './types';
+import { compileGenerationPrompt } from './promptCompiler';
 import { getDefaultRenderEngine } from './renderEngineService';
 import { 
   recordGeneration, 
@@ -54,11 +55,18 @@ export class AIBrain {
       const template = await getBestPromptTemplate(context.assetType);
       
       // 2. Build base prompt from template or use default
-      let prompt = template 
+      let basePrompt = template 
         ? buildPromptFromTemplate(template, context)
         : this.buildDefaultPrompt(context);
 
-      // 3. Apply learned insights
+      // 3. Compile robust prompt (DNA + anchors + seed + quality gate + scene rules)
+      let prompt = compileGenerationPrompt({
+        basePrompt,
+        context,
+        variantName: template?.templateName,
+      });
+
+      // 4. Apply learned insights AFTER compiler (so insights tweak within rules)
       prompt = applyLearnedInsights(prompt, this.learnedInsights, { assetType: context.assetType });
 
       // 4. Get render engine (use provided or default)
