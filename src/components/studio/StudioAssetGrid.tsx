@@ -759,11 +759,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                 })()}
                 
                 {/* Open Studio Overlay - Click anywhere opens the studio */}
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-                  <div className="flex items-center gap-2">
+                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 sm:gap-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
+                  <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 px-2">
                     <Button
                       size="sm"
-                      className={cn("bg-gradient-to-r shadow-lg pointer-events-auto", studioGradient)}
+                      className={cn("bg-gradient-to-r shadow-lg pointer-events-auto w-full sm:w-auto text-xs sm:text-sm h-7 sm:h-8", studioGradient)}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleGenerate(assetType);
@@ -771,55 +771,57 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                       disabled={isGenerating}
                     >
                       {isGenerating ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
                       ) : (
                         <>
-                          <Sparkles className="w-4 h-4 mr-1" />
+                          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
                           AI Studio
                         </>
                       )}
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="shadow-lg pointer-events-auto gap-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenVisualEditor(assetType, info.name);
-                      }}
-                      title="Open Visual Editor"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      Design
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="shadow-lg pointer-events-auto gap-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenTemplate(assetType, info.name);
-                      }}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                      Template
-                    </Button>
+                    <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="shadow-lg pointer-events-auto gap-1 flex-1 sm:flex-none text-xs sm:text-sm h-7 sm:h-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenVisualEditor(assetType, info.name);
+                        }}
+                        title="Open Visual Editor"
+                      >
+                        <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        Design
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="shadow-lg pointer-events-auto gap-1 flex-1 sm:flex-none text-xs sm:text-sm h-7 sm:h-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenTemplate(assetType, info.name);
+                        }}
+                      >
+                        <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        Template
+                      </Button>
+                    </div>
                     {isAnimatableAsset(assetType) && (
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="shadow-lg pointer-events-auto gap-1 border-primary/30 text-primary"
+                        className="shadow-lg pointer-events-auto gap-1 border-primary/30 text-primary w-full sm:w-auto text-xs sm:text-sm h-7 sm:h-8"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenAnimatedBanner(assetType, info.name);
                         }}
                       >
-                        <Film className="w-3.5 h-3.5" />
+                        <Film className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                         Animate
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-white/70">Choose your editing mode</p>
+                  <p className="text-[10px] sm:text-xs text-white/70">Choose your editing mode</p>
                 </div>
                 
                 {/* Loading Overlay with Enhanced Animation */}
