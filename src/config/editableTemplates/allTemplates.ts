@@ -11,6 +11,7 @@ import { ALL_LOCAL_VENDOR_TEMPLATES } from './localVendorTemplates';
 import { ALL_LARGE_EVENT_SIGNAGE_TEMPLATES } from './largeEventSignageTemplates';
 import { ALL_EVENT_ESSENTIALS_TEMPLATES } from './eventEssentialsTemplates';
 import { ALL_DIGITAL_MISC_TEMPLATES } from './digitalMiscTemplates';
+import { ALL_PRESENTATION_TEMPLATES } from './presentationTemplates';
 
 // Master collection of all editable templates
 export const ALL_EDITABLE_TEMPLATES: EditableTemplate[] = [
@@ -23,7 +24,8 @@ export const ALL_EDITABLE_TEMPLATES: EditableTemplate[] = [
   ...ALL_LOCAL_VENDOR_TEMPLATES,
   ...ALL_LARGE_EVENT_SIGNAGE_TEMPLATES,
   ...ALL_EVENT_ESSENTIALS_TEMPLATES,
-  ...ALL_DIGITAL_MISC_TEMPLATES
+  ...ALL_DIGITAL_MISC_TEMPLATES,
+  ...ALL_PRESENTATION_TEMPLATES
 ];
 
 // Template counts by category
