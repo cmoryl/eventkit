@@ -10,5 +10,6 @@ export * from './localVendorTemplates';
 export * from './largeEventSignageTemplates';
 export * from './eventEssentialsTemplates';
 export * from './digitalMiscTemplates';
+export * from './presentationTemplates';
 export * from './allTemplates';
 export * from './templateHelpers';
