@@ -40,6 +40,8 @@ import { generationQueue } from '../services/generationQueue';
 import { generatePlaceholderContent } from '../services/assetGenerator';
 import { getAssetConfig } from '../config/assetConfig';
 import { generateBrandStyleGuide } from '../services/brandGuideGenerator';
+import { loadFullBrandContext } from '../services/brandContextLoader';
+import { useActiveBrand } from '../hooks/useActiveBrand';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -49,6 +51,7 @@ const Index: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const { insights, isReady: isBrainReady } = useAIBrain();
   const { notifyGenerationComplete, notifyAssetComplete } = useNotifications();
+  const { activeBrand, brandAdherenceMode } = useActiveBrand();
   
   const [view, setView] = useState<'landing' | 'onboarding' | 'studio'>('landing');
   const [eventDetails, setEventDetails] = useState<EventDetails>({
@@ -386,6 +389,11 @@ const Index: React.FC = () => {
           styleDesc: data.styleDescription,
         });
       } else {
+        // Load full brand context (with all_imagery) for generation
+        const fullBrandContext = activeBrand?.id
+          ? await loadFullBrandContext(activeBrand.id, brandAdherenceMode)
+          : null;
+
         // Standard parallel generation
         await generateAssets(
           assetsToGenerate, 
@@ -394,7 +402,9 @@ const Index: React.FC = () => {
           data.vibeImages,
           data.masterPatterns,
           data.venueImage,
-          data.venueVideoAnalysis
+          data.venueVideoAnalysis,
+          undefined, // renderEngine
+          fullBrandContext
         );
       }
       
@@ -557,6 +567,11 @@ const Index: React.FC = () => {
       a.id === asset.id ? { ...a, isLoading: true } : a
     ));
     
+    // Load full brand context for regeneration
+    const fullBrandContext = activeBrand?.id
+      ? await loadFullBrandContext(activeBrand.id, brandAdherenceMode)
+      : null;
+
     // Regenerate with the selected engine
     console.log('Regenerating with engine:', engine?.displayName || 'Lovable AI (Default)');
     await generateAssets(
@@ -567,7 +582,8 @@ const Index: React.FC = () => {
       masterPatterns,  // masterPatternFiles  
       null,  // venueImageFile
       venueVideoAnalysis,  // venueVideoAnalysisData
-      engine  // renderEngine
+      engine,  // renderEngine
+      fullBrandContext
     );
     showToast(`${asset.title} regenerated`, "success");
   };
