@@ -4,13 +4,14 @@ import { v4 as uuidv4 } from 'uuid';
 import type { EventDetails, LogoAsset } from '../../types';
 import EventTypeSelector from './EventTypeSelector';
 import VenueLocationFinder from '../VenueLocationFinder';
-import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, Globe, Mail, Link2, Sparkles, CalendarDays, MapPin, CheckCircle2 } from 'lucide-react';
+import { Users, DollarSign, Hash, Shirt, Plus, X, Upload, ChevronRight, Calendar, Globe, Mail, Link2, Sparkles, CalendarDays, MapPin, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { addOrUpdateKnowledge } from '@/services/aiBrain/learningService';
 
 interface StepOneProps {
   eventDetails: EventDetails;
@@ -40,6 +41,7 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
   const { user, isAuthenticated } = useAuth();
   const [brandEvents, setBrandEvents] = useState<BrandEvent[]>([]);
   const [hasAutoFilled, setHasAutoFilled] = useState(false);
+  const [isResyncing, setIsResyncing] = useState(false);
 
   // Load events for active brand
   const loadBrandEvents = useCallback(async () => {
@@ -82,6 +84,53 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
     }));
     setHasAutoFilled(true);
     toast.success('Event fields auto-filled from BrandHub');
+  };
+
+  const handleResync = async () => {
+    if (!user || !activeBrand?.brandhub_share_token) return;
+    setIsResyncing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
+        body: { shareToken: activeBrand.brandhub_share_token }
+      });
+      if (error || data?.success === false) {
+        toast.error(data?.error || 'Failed to re-sync from BrandHub');
+        return;
+      }
+      if (!data?.brand) {
+        toast.error('No brand data returned');
+        return;
+      }
+
+      const hubBrand = data.brand;
+      const brandName = (hubBrand.name as string) || activeBrand.name;
+
+      // Update brand record
+      await supabase.from('brands').update({
+        name: brandName,
+        logo_url: (hubBrand.logo_url as string) || null,
+        logo_monochrome_url: (hubBrand.logo_monochrome_url as string) || null,
+        logo_reversed_url: (hubBrand.logo_reversed_url as string) || null,
+        brandhub_last_synced: new Date().toISOString(),
+      }).eq('id', activeBrand.id);
+
+      // Re-sync event data
+      if (data.hasEventData && data.event) {
+        await addOrUpdateKnowledge(
+          user.id, 'brand_preference', `${brandName}_event`,
+          `brandhub_event_${activeBrand.id}`,
+          { source: 'brandhub_creator', brandId: activeBrand.id, ...data.event, importedAt: new Date().toISOString() }
+        );
+      }
+
+      await loadBrandEvents();
+      toast.success(`"${brandName}" re-synced from BrandHub`);
+    } catch (err) {
+      console.error('Re-sync error:', err);
+      toast.error('Failed to re-sync');
+    } finally {
+      setIsResyncing(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -145,6 +194,20 @@ const StepOne: React.FC<StepOneProps> = ({ eventDetails, setEventDetails, logos,
                 <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
                   ACTIVE BRAND
                 </span>
+                {activeBrand.brandhub_share_token && (
+                  <button
+                    onClick={handleResync}
+                    disabled={isResyncing}
+                    className="ml-auto flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium text-muted-foreground hover:text-primary hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all disabled:opacity-50"
+                  >
+                    {isResyncing ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-3 h-3" />
+                    )}
+                    {isResyncing ? 'Syncing...' : 'Re-sync'}
+                  </button>
+                )}
               </div>
 
               {/* Event cards */}
