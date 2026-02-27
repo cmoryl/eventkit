@@ -19,7 +19,8 @@ import {
   applyLearnedInsights,
   recordSponsorLogoAnalysis,
   getSponsorKnowledge,
-  buildSponsorAwarePrompt
+  buildSponsorAwarePrompt,
+  getKnowledge
 } from './learningService';
 import { parseAIError, handleAIError, type AIError } from '../aiErrorHandler';
 
@@ -59,11 +60,22 @@ export class AIBrain {
         ? buildPromptFromTemplate(template, context)
         : this.buildDefaultPrompt(context);
 
-      // 3. Compile robust prompt (DNA + anchors + seed + quality gate + scene rules)
+      // 3. Fetch brand knowledge for this user to inject into prompt
+      const brandKnowledgeEntries = await getKnowledge(this.userId, 'brand_preference');
+      // Merge all brand knowledge values into a single object for the compiler
+      const mergedBrandKnowledge: Record<string, unknown> = {};
+      brandKnowledgeEntries.forEach(entry => {
+        if (entry.value && typeof entry.value === 'object') {
+          Object.assign(mergedBrandKnowledge, entry.value);
+        }
+      });
+
+      // 3b. Compile robust prompt (DNA + anchors + seed + quality gate + scene rules + brand intelligence)
       let prompt = compileGenerationPrompt({
         basePrompt,
         context,
         variantName: template?.templateName,
+        brandKnowledge: Object.keys(mergedBrandKnowledge).length > 0 ? mergedBrandKnowledge : undefined,
       });
 
       // 3b. Apply sponsor-aware prompt for sponsor-heavy assets
