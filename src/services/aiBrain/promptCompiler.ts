@@ -177,6 +177,87 @@ export function buildBrandIntelligenceBlock(
     blocks.push(`BRAND GRADIENTS:\n${gradients.slice(0, 3).map(g => `  • ${g}`).join("\n")}`);
   }
 
+  // Color combinations — approved/rejected for design guidance
+  const colorCombos = brandKnowledge.colorCombinations as { approved?: Array<{ name?: string; colors?: string[]; notes?: string }>; rejected?: Array<{ name?: string; colors?: string[]; notes?: string }> } | undefined;
+  if (colorCombos?.approved?.length || colorCombos?.rejected?.length) {
+    const lines = ["APPROVED COLOR COMBINATIONS:"];
+    if (colorCombos.approved?.length) {
+      colorCombos.approved.slice(0, 4).forEach(c => {
+        lines.push(`  ✓ "${c.name}": ${(c.colors || []).join(" + ")}${c.notes ? ` — ${c.notes}` : ''}`);
+      });
+    }
+    if (colorCombos.rejected?.length) {
+      lines.push("  REJECTED COMBINATIONS (avoid):");
+      colorCombos.rejected.slice(0, 3).forEach(c => {
+        lines.push(`  ✗ "${c.name}": ${(c.colors || []).join(" + ")}${c.notes ? ` — ${c.notes}` : ''}`);
+      });
+    }
+    blocks.push(lines.join("\n"));
+  }
+
+  // Linked regional events — for multi-event context
+  const linkedEvents = brandKnowledge.linkedEvents as Array<{ name?: string; region?: string; location?: string; dates?: string; venue?: string }> | undefined;
+  if (linkedEvents?.length) {
+    const lines = ["REGIONAL EVENT SERIES:"];
+    linkedEvents.slice(0, 6).forEach(e => {
+      lines.push(`  • ${e.name} — ${e.location || e.region}${e.dates ? `, ${e.dates}` : ''}${e.venue ? ` at ${e.venue}` : ''}`);
+    });
+    lines.push("  Design should feel part of this cohesive global event series.");
+    blocks.push(lines.join("\n"));
+  }
+
+  // Event schedule — for agenda-related assets
+  const schedule = brandKnowledge.schedule as Array<{ title?: string; time?: string; track?: string }> | undefined;
+  if (schedule?.length) {
+    const lines = ["EVENT SCHEDULE (for agenda/program assets):"];
+    schedule.slice(0, 8).forEach(s => {
+      lines.push(`  ${s.time || ''}: ${s.title}${s.track ? ` [${s.track}]` : ''}`);
+    });
+    blocks.push(lines.join("\n"));
+  }
+
+  // Sponsor list
+  const sponsors = brandKnowledge.sponsors as Array<{ name?: string; tier?: string }> | undefined;
+  if (sponsors?.length) {
+    const lines = ["EVENT SPONSORS:"];
+    sponsors.slice(0, 10).forEach(s => {
+      lines.push(`  • ${s.name}${s.tier ? ` (${s.tier})` : ''}`);
+    });
+    blocks.push(lines.join("\n"));
+  }
+
+  // Partner divisions/booths
+  const divisions = brandKnowledge.divisions as Array<{ name?: string; tagline?: string; services?: string[] }> | undefined;
+  if (divisions?.length) {
+    const lines = ["BRAND DIVISIONS/PARTNERS:"];
+    divisions.slice(0, 6).forEach(d => {
+      lines.push(`  • ${d.name}${d.tagline ? `: "${d.tagline}"` : ''}${d.services?.length ? ` — ${d.services.slice(0, 3).join(', ')}` : ''}`);
+    });
+    blocks.push(lines.join("\n"));
+  }
+
+  // Social platform specs
+  const socialSpecs = brandKnowledge.socialPlatforms as Array<{ platform?: string; postSize?: string; directive?: string }> | undefined;
+  if (socialSpecs?.length) {
+    const lines = ["SOCIAL MEDIA SPECS:"];
+    socialSpecs.slice(0, 6).forEach(s => {
+      lines.push(`  ${s.platform}: ${s.postSize || ''}${s.directive ? ` — ${s.directive}` : ''}`);
+    });
+    blocks.push(lines.join("\n"));
+  }
+
+  // Event details (dates, hashtag, registration)
+  const eventDetailsData = brandKnowledge.eventDetailsData as Record<string, unknown> | undefined;
+  if (eventDetailsData) {
+    const lines: string[] = [];
+    if (eventDetailsData.hashtag) lines.push(`  Hashtag: ${eventDetailsData.hashtag}`);
+    if (eventDetailsData.registrationUrl) lines.push(`  Registration: ${eventDetailsData.registrationUrl}`);
+    if (eventDetailsData.eventDates) lines.push(`  Dates: ${eventDetailsData.eventDates}`);
+    if (lines.length) {
+      blocks.push(["EVENT DETAILS:", ...lines].join("\n"));
+    }
+  }
+
   if (blocks.length === 0) return "";
 
   return `\n=== BRAND INTELLIGENCE ===\n${blocks.join("\n\n")}\n=== END BRAND INTELLIGENCE ===\n`;
