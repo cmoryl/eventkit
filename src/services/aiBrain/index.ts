@@ -66,10 +66,21 @@ export class AIBrain {
         variantName: template?.templateName,
       });
 
+      // 3b. Apply sponsor-aware prompt for sponsor-heavy assets
+      const sponsorHeavyAssets = new Set([
+        'STEP_AND_REPEAT', 'MAIN_STAGE_BACKDROP', 'BACK_WALL',
+        'PROGRAM_BOOKLET', 'SPONSOR_PACKAGE', 'BANNER',
+        'REGISTRATION_COUNTER', 'SPONSOR_WALL',
+      ]);
+      if (sponsorHeavyAssets.has(context.assetType)) {
+        const sponsorKnowledge = await getSponsorKnowledge(this.userId);
+        prompt = buildSponsorAwarePrompt(prompt, sponsorKnowledge);
+      }
+
       // 4. Apply learned insights AFTER compiler (so insights tweak within rules)
       prompt = applyLearnedInsights(prompt, this.learnedInsights, { assetType: context.assetType });
 
-      // 4. Get render engine (use provided or default)
+      // 5. Get render engine (use provided or default)
       const engine = context.renderEngine || this.defaultEngine;
 
       // 5. Generate image
