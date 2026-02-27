@@ -25,13 +25,25 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [importedBrandName, setImportedBrandName] = useState<string | null>(null);
 
-  const extractToken = (url: string): string | null => {
-    // Support full URL or bare token
-    const urlPattern = /brandhubcreator\.lovable\.app\/share\/([a-zA-Z0-9-]+)/;
-    const match = url.match(urlPattern);
-    if (match) return match[1];
+  const extractTokenOrSlug = (url: string): { shareToken?: string; slug?: string } | null => {
+    const trimmed = url.trim();
+    // Support share URL: brandhubcreator.lovable.app/share/TOKEN
+    const sharePattern = /brandhubcreator\.lovable\.app\/share\/([a-zA-Z0-9-]+)/;
+    const shareMatch = trimmed.match(sharePattern);
+    if (shareMatch) return { shareToken: shareMatch[1] };
+
+    // Support event/product URLs: brandhubcreator.lovable.app/event/SLUG or /product/SLUG
+    const slugPattern = /brandhubcreator\.lovable\.app\/(?:event|product)\/([a-zA-Z0-9-]+)/;
+    const slugMatch = trimmed.match(slugPattern);
+    if (slugMatch) return { slug: slugMatch[1] };
+
+    // Also support the Lovable project preview URL pattern
+    const previewPattern = /lovableproject\.com\/(?:event|product)\/([a-zA-Z0-9-]+)/;
+    const previewMatch = trimmed.match(previewPattern);
+    if (previewMatch) return { slug: previewMatch[1] };
+
     // If it looks like a bare token (UUID-like)
-    if (/^[a-zA-Z0-9-]{8,}$/.test(url.trim())) return url.trim();
+    if (/^[a-zA-Z0-9-]{8,}$/.test(trimmed)) return { shareToken: trimmed };
     return null;
   };
 
@@ -41,9 +53,9 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       return;
     }
 
-    const shareToken = extractToken(shareUrl);
-    if (!shareToken) {
-      toast.error('Please enter a valid BrandHub share URL or token');
+    const parsed = extractTokenOrSlug(shareUrl);
+    if (!parsed) {
+      toast.error('Please enter a valid BrandHub share URL, event URL, or token');
       return;
     }
 
@@ -52,7 +64,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
-        body: { shareToken }
+        body: { shareToken: parsed.shareToken, slug: parsed.slug }
       });
 
       if (data?.success === false || error) {
@@ -73,7 +85,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
         .from('brands')
         .select('id')
         .eq('user_id', user.id)
-        .eq('brandhub_share_token', shareToken)
+        .eq('brandhub_share_token', data.resolvedToken || parsed.shareToken || parsed.slug || '')
         .maybeSingle();
 
       let brandId: string;
@@ -98,7 +110,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
             logo_url: (hubBrand.logo_url as string) || null,
             logo_monochrome_url: (hubBrand.logo_monochrome_url as string) || null,
             logo_reversed_url: (hubBrand.logo_reversed_url as string) || null,
-            brandhub_share_token: shareToken,
+            brandhub_share_token: data.resolvedToken || parsed.shareToken || parsed.slug || '',
             brandhub_last_synced: new Date().toISOString(),
           })
           .select('id')
@@ -255,11 +267,11 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                 <Input
                   value={shareUrl}
                   onChange={(e) => setShareUrl(e.target.value)}
-                  placeholder="https://brandhubcreator.lovable.app/share/abc123..."
+                  placeholder="https://brandhubcreator.lovable.app/event/your-event..."
                   disabled={isImporting}
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Get this from your BrandHub Creator project's Share button
+                  Paste an event URL, product URL, share URL, or token from BrandHub
                 </p>
               </div>
 

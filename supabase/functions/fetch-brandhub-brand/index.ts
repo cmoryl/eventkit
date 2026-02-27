@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const BRANDHUB_API_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/functions/v1/get-shared-brand";
+const BRANDHUB_REST_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1";
+const BRANDHUB_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
 
 function json(status: number, payload: unknown) {
   return new Response(JSON.stringify(payload), {
@@ -21,18 +23,81 @@ serve(async (req) => {
   }
 
   try {
-    const { shareToken, includeEvent } = await req.json();
+    const { shareToken, slug, includeEvent } = await req.json();
 
-    if (!shareToken) {
-      return json(200, { success: false, error: "Share token is required" });
+    if (!shareToken && !slug) {
+      return json(200, { success: false, error: "Share token or slug is required" });
     }
 
-    console.log("Fetching brand from BrandHub with token:", shareToken);
+    let resolvedToken = shareToken;
+
+    // If slug provided, try to resolve via BrandHub REST API (brands table, then events table)
+    if (!resolvedToken && slug) {
+      console.log("Resolving slug to share token:", slug);
+      
+      // Try brands table first
+      const brandRes = await fetch(
+        `${BRANDHUB_REST_URL}/brands?slug=eq.${encodeURIComponent(slug)}&is_public=eq.true&select=share_token`,
+        { headers: { "apikey": BRANDHUB_ANON_KEY, "Authorization": `Bearer ${BRANDHUB_ANON_KEY}` } }
+      );
+      if (brandRes.ok) {
+        const rows = await brandRes.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].share_token) {
+          resolvedToken = rows[0].share_token;
+          console.log("Resolved brand slug to token:", resolvedToken);
+        }
+      }
+
+      // Try events table (event slugs like globallink-next)
+      if (!resolvedToken) {
+        console.log("Trying events table for slug:", slug);
+        const eventRes = await fetch(
+          `${BRANDHUB_REST_URL}/events?slug=eq.${encodeURIComponent(slug)}&select=id,name,slug,guide_data`,
+          { headers: { "apikey": BRANDHUB_ANON_KEY, "Authorization": `Bearer ${BRANDHUB_ANON_KEY}` } }
+        );
+        if (eventRes.ok) {
+          const events = await eventRes.json();
+          if (Array.isArray(events) && events.length > 0) {
+            const eventData = events[0];
+            console.log("Found event by slug:", eventData.name);
+            // Extract brand data directly from the event's guide_data
+            const guideData = eventData.guide_data || {};
+            // Check if event has a parent_brand_id with a share_token
+            if (eventData.parent_brand_id) {
+              const parentRes = await fetch(
+                `${BRANDHUB_REST_URL}/brands?id=eq.${eventData.parent_brand_id}&select=share_token`,
+                { headers: { "apikey": BRANDHUB_ANON_KEY, "Authorization": `Bearer ${BRANDHUB_ANON_KEY}` } }
+              );
+              if (parentRes.ok) {
+                const parents = await parentRes.json();
+                if (Array.isArray(parents) && parents.length > 0 && parents[0].share_token) {
+                  resolvedToken = parents[0].share_token;
+                  console.log("Resolved event parent brand to token:", resolvedToken);
+                }
+              }
+            }
+            
+            // If still no token, build brand data directly from event guide_data
+            if (!resolvedToken && guideData) {
+              console.log("Building brand data directly from event guide_data");
+              return buildBrandFromEventGuideData(eventData, guideData);
+            }
+          }
+        }
+      }
+
+      if (!resolvedToken) {
+        console.warn("Could not resolve slug, trying slug as token fallback");
+        resolvedToken = slug;
+      }
+    }
+
+    console.log("Fetching brand from BrandHub with token:", resolvedToken);
 
     const response = await fetch(BRANDHUB_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ shareToken, includeEvent: includeEvent ?? true }),
+      body: JSON.stringify({ shareToken: resolvedToken, includeEvent: includeEvent ?? true }),
     });
 
     const data = await response.json();
@@ -242,6 +307,7 @@ serve(async (req) => {
       event: eventData,
       hasEventData: !!(eventData.name || eventData.date || eventData.venue),
       sectionsImported: sectionCount,
+      resolvedToken: resolvedToken,
     });
   } catch (error) {
     console.error("Error fetching BrandHub brand:", error);
@@ -361,4 +427,105 @@ One entry per image, in order.`;
   }
 
   return photos;
+}
+
+/**
+ * Build a normalized brand response directly from BrandHub event guide_data
+ * when we can't resolve a share token.
+ */
+function buildBrandFromEventGuideData(
+  eventData: Record<string, unknown>,
+  guideData: Record<string, unknown>
+): Response {
+  const hero = (guideData.hero as Record<string, unknown>) || {};
+  const identity = (guideData.identity as Record<string, unknown>) || {};
+  const taglineData = (guideData.tagline as Record<string, unknown>) || {};
+  const colors = Array.isArray(guideData.colors) ? guideData.colors : [];
+  const typography = Array.isArray(guideData.typography) ? guideData.typography : [];
+  const logos = Array.isArray(guideData.logos) ? guideData.logos : [];
+  const patterns = Array.isArray(guideData.patterns) ? guideData.patterns : [];
+  const gradients = Array.isArray(guideData.gradients) ? guideData.gradients : [];
+  const brandIcons = Array.isArray(guideData.brandIcons) ? guideData.brandIcons : [];
+  const imagery = Array.isArray(guideData.imagery) ? guideData.imagery : [];
+  const social = Array.isArray(guideData.social) ? guideData.social : [];
+  const values = Array.isArray(guideData.values) ? guideData.values : [];
+  const services = Array.isArray(guideData.services) ? guideData.services : [];
+  const sponsorLogos = Array.isArray(guideData.sponsorLogos) ? guideData.sponsorLogos : [];
+
+  const headingFont = typography.find((f: Record<string, unknown>) => f.role === 'heading' || f.role === 'display');
+  const bodyFont = typography.find((f: Record<string, unknown>) => f.role === 'body' || f.role === 'paragraph');
+  const accentFont = typography.find((f: Record<string, unknown>) => f.role === 'accent' || f.role === 'caption');
+
+  const primaryLogo = logos.find((l: Record<string, unknown>) => l.variant === 'primary') || logos[0];
+  const socialHandles: Record<string, string> = {};
+  social.forEach((h: Record<string, unknown>) => {
+    if (h.platform && h.handle) socialHandles[String(h.platform)] = String(h.handle);
+  });
+
+  const colorPalette = colors.map((c: Record<string, unknown>) => ({
+    hex: c.hex, name: c.name || '', role: c.role || '', usage: c.usage || '',
+  }));
+
+  const normalizedBrand = {
+    id: eventData.id,
+    name: hero.name || eventData.name,
+    slug: eventData.slug,
+    tagline: taglineData.primary || hero.tagline || null,
+    mission: identity.missionStatement || null,
+    industry: guideData.industry || null,
+    voice: Array.isArray(identity.toneOfVoice) ? identity.toneOfVoice : [],
+    primary_color: colorPalette[0]?.hex,
+    secondary_color: colorPalette[1]?.hex,
+    accent_color: colorPalette[2]?.hex,
+    colors: colorPalette,
+    fonts: typography.map((t: Record<string, unknown>) => ({ id: t.id, role: t.role, family: t.fontFamily || t.family, weight: t.weight })),
+    heading_font: headingFont?.fontFamily || headingFont?.family,
+    body_font: bodyFont?.fontFamily || bodyFont?.family,
+    accent_font: accentFont?.fontFamily || accentFont?.family,
+    logo_url: primaryLogo?.url || hero.logoUrl || null,
+    logo_monochrome_url: logos.find((l: Record<string, unknown>) => l.variant === 'monochrome')?.url || null,
+    logo_reversed_url: logos.find((l: Record<string, unknown>) => l.variant === 'reversed')?.url || null,
+    brandIcons: brandIcons.map((i: Record<string, unknown>) => ({ id: i.id, name: i.name, url: i.url })),
+    patterns: patterns.map((p: Record<string, unknown>) => ({ id: p.id, name: p.name, url: p.url })),
+    gradients: gradients.map((g: Record<string, unknown>) => ({ id: g.id, name: g.name, css: g.css })),
+    photography_dos: imagery.filter((i: Record<string, unknown>) => i.type === 'do').map((i: Record<string, unknown>) => String(i.description || '')),
+    photography_donts: imagery.filter((i: Record<string, unknown>) => i.type === 'dont').map((i: Record<string, unknown>) => String(i.description || '')),
+    social_handles: socialHandles,
+    hashtags: values.slice(0, 10).map((v: Record<string, unknown>) => v.text ? `#${String(v.text).replace(/\\s+/g, '')}` : null).filter(Boolean),
+    values: values.map((v: Record<string, unknown>) => v.text).filter(Boolean),
+    services: services.map((s: Record<string, unknown>) => ({ name: s.name, description: s.description })),
+    sponsors: sponsorLogos.map((s: Record<string, unknown>) => ({ id: s.id, name: s.name, url: s.url, tier: s.tier })),
+    heroSettings: { coverImage: hero.coverImage || null, coverVideo: hero.coverVideo || null, useVideo: hero.useVideo || false },
+    allImagery: { all: [], byType: {}, totalCount: 0 },
+    guide_data: guideData,
+  };
+
+  const venue = (guideData.venue as Record<string, unknown>) || {};
+  const eventDetails = {
+    name: hero.name || eventData.name,
+    description: hero.subtitle || hero.description,
+    date: guideData.eventDate,
+    eventType: guideData.eventType || guideData.category,
+    venue: venue.name,
+    venueAddress: venue.address,
+    venueCity: venue.city,
+    tagline: taglineData.primary || hero.tagline,
+  };
+
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+
+  return new Response(JSON.stringify({
+    success: true,
+    brand: normalizedBrand,
+    event: eventDetails,
+    hasEventData: !!(eventDetails.name || eventDetails.date || eventDetails.venue),
+    sectionsImported: Object.keys(normalizedBrand).filter(k => (normalizedBrand as any)[k] != null).length,
+    resolvedToken: String(eventData.slug),
+  }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
