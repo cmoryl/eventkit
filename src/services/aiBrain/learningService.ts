@@ -10,6 +10,7 @@ import type {
   GenerationContext,
   LearnedInsight 
 } from './types';
+import { buildTypographyLayoutPrompt, TYPOGRAPHY_LAYOUT_STYLES } from '@/config/typographyLayoutStyles';
 
 // ============ GENERATION TRACKING ============
 
@@ -243,7 +244,8 @@ export const getLearnedInsights = async (
 
 export const applyLearnedInsights = (
   basePrompt: string,
-  insights: LearnedInsight[]
+  insights: LearnedInsight[],
+  options?: { assetType?: string; typographyLayoutId?: string }
 ): string => {
   let enhancedPrompt = basePrompt;
 
@@ -259,6 +261,23 @@ export const applyLearnedInsights = (
   if (culturalInsights.length > 0) {
     const culturalEnhancements = culturalInsights.map(i => i.value).join('. ');
     enhancedPrompt += ` Cultural context: ${culturalEnhancements}.`;
+  }
+
+  // Apply typography layout knowledge for typography-heavy assets
+  const typographyAssets = [
+    'SLOGANS', 'LOGO', 'LOGO_MONOCHROME', 'LOGO_REVERSED',
+    'STICKERS', 'SOCIAL_POST', 'SOCIAL_STORY', 'INVITATION',
+    'CERTIFICATE', 'BANNER', 'ROLLUP_BANNER', 'THANK_YOU_NOTE',
+    'RSVP_CARD', 'TABLE_TENT', 'PLACE_CARD', 'MENU', 'COASTER_DESIGN',
+    'NAPKIN_DESIGN', 'PROGRAM_BOOKLET', 'TICKET',
+  ];
+  
+  const assetType = options?.assetType?.toUpperCase();
+  if (assetType && typographyAssets.includes(assetType)) {
+    const layoutPrompt = buildTypographyLayoutPrompt(options?.typographyLayoutId, options?.assetType);
+    if (layoutPrompt) {
+      enhancedPrompt += layoutPrompt;
+    }
   }
 
   return enhancedPrompt;
