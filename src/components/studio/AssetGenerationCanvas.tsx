@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Sparkles, RefreshCw, Check, ArrowLeft, Loader2, 
@@ -68,8 +68,32 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [showBriefModal, setShowBriefModal] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100); // Zoom percentage
   const [brandKnowledge, setBrandKnowledge] = useState<Record<string, unknown> | null>(null);
+  const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
-  // Get brand colors for accents
+  // Fit-to-window: calculate optimal zoom so the image fits the container with padding
+  const fitToWindow = useCallback(() => {
+    const container = previewContainerRef.current;
+    if (!container || !imageNaturalSize) {
+      setZoomLevel(100);
+      return;
+    }
+    const padding = 48; // 24px padding on each side
+    const availableW = container.clientWidth - padding;
+    const availableH = container.clientHeight - padding;
+    const scaleX = availableW / imageNaturalSize.width;
+    const scaleY = availableH / imageNaturalSize.height;
+    const bestScale = Math.min(scaleX, scaleY, 2); // cap at 200%
+    setZoomLevel(Math.max(25, Math.round(bestScale * 100)));
+  }, [imageNaturalSize]);
+
+  // Auto fit-to-window when first image loads
+  useEffect(() => {
+    if (imageNaturalSize && previewContainerRef.current) {
+      fitToWindow();
+    }
+  }, [imageNaturalSize, fitToWindow]);
+
   const brandPrimary = brand?.styles?.primary_color || activeBrand?.styles?.primary_color;
   const brandSecondary = brand?.styles?.secondary_color || activeBrand?.styles?.secondary_color;
   const brandAccent = brand?.styles?.accent_color || activeBrand?.styles?.accent_color;
@@ -742,7 +766,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                       size="sm"
                       variant="ghost"
                       className="h-7 w-7 p-0"
-                      onClick={() => setZoomLevel(100)}
+                      onClick={fitToWindow}
                       title="Fit to window"
                     >
                       <Maximize2 className="h-3.5 w-3.5" />
@@ -789,6 +813,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 
                 {/* Preview Image - Scrollable & Pannable */}
                 <div 
+                  ref={previewContainerRef}
                   className="flex-1 relative overflow-auto bg-[repeating-conic-gradient(hsl(var(--muted))_0%_25%,hsl(var(--background))_0%_50%)] bg-[length:20px_20px] cursor-grab active:cursor-grabbing"
                   onMouseDown={(e) => {
                     const el = e.currentTarget;
@@ -831,8 +856,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                               }}
                               draggable={false}
                               onLoad={(e) => {
-                                // After load, use natural dimensions for proper scaling
                                 const img = e.currentTarget;
+                                setImageNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
                                 img.style.width = `${img.naturalWidth * scale}px`;
                                 img.style.height = `${img.naturalHeight * scale}px`;
                               }}
