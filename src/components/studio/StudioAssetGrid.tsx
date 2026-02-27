@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil, Edit3 } from 'lucide-react';
+import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil, Edit3, Film } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,8 @@ import { toast } from 'sonner';
 import { AssetGenerationCanvas } from './AssetGenerationCanvas';
 import { TemplateWorkflowModal } from './TemplateWorkflowModal';
 import { VisualEditor } from '@/components/visualEditor';
+import { AnimatedBannerEditor } from '@/components/animatedBanner';
+import { isAnimatableAsset } from '@/config/animationPresets';
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
 import demoNameTag from '@/assets/demos/demo-name-tag.jpg';
@@ -372,6 +374,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   const [visualEditorAssetType, setVisualEditorAssetType] = useState<string | null>(null);
   const [visualEditorAssetName, setVisualEditorAssetName] = useState<string>('');
   
+  // Animated banner editor state
+  const [animatedBannerOpen, setAnimatedBannerOpen] = useState(false);
+  const [animatedBannerAssetType, setAnimatedBannerAssetType] = useState<string | null>(null);
+  const [animatedBannerAssetName, setAnimatedBannerAssetName] = useState<string>('');
+  
   // Open full-screen canvas for generation with variations
   const handleGenerate = (assetType: string) => {
     if (!brand) {
@@ -395,6 +402,13 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
     setVisualEditorAssetType(assetType);
     setVisualEditorAssetName(assetName);
     setVisualEditorOpen(true);
+  };
+  
+  // Open animated banner editor
+  const handleOpenAnimatedBanner = (assetType: string, assetName: string) => {
+    setAnimatedBannerAssetType(assetType);
+    setAnimatedBannerAssetName(assetName);
+    setAnimatedBannerOpen(true);
   };
   
   // Get dimensions for visual editor
@@ -533,6 +547,20 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  {isAnimatableAsset(assetType) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 border-primary/30 text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenAnimatedBanner(assetType, info.name);
+                      }}
+                    >
+                      <Film className="w-3.5 h-3.5" />
+                      Animate
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
@@ -776,6 +804,20 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                       <Pencil className="w-3.5 h-3.5" />
                       Template
                     </Button>
+                    {isAnimatableAsset(assetType) && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="shadow-lg pointer-events-auto gap-1 border-primary/30 text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenAnimatedBanner(assetType, info.name);
+                        }}
+                      >
+                        <Film className="w-3.5 h-3.5" />
+                        Animate
+                      </Button>
+                    )}
                   </div>
                   <p className="text-xs text-white/70">Choose your editing mode</p>
                 </div>
@@ -903,6 +945,23 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
             toast.success('Exporting design...');
             console.log('Export state:', state);
           }}
+        />
+      )}
+      
+      {/* Animated Banner Editor */}
+      {animatedBannerAssetType && (
+        <AnimatedBannerEditor
+          isOpen={animatedBannerOpen}
+          onClose={() => {
+            setAnimatedBannerOpen(false);
+            setAnimatedBannerAssetType(null);
+          }}
+          assetType={animatedBannerAssetType}
+          assetName={animatedBannerAssetName}
+          brand={brand}
+          backgroundImage={generatedImages[animatedBannerAssetType]}
+          initialWidth={getEditorDimensions(animatedBannerAssetType).width}
+          initialHeight={getEditorDimensions(animatedBannerAssetType).height}
         />
       )}
     </>
