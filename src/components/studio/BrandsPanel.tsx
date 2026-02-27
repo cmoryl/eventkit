@@ -158,7 +158,7 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
 
   return (
     <TooltipProvider>
-      <div className="w-72 border-l border-border bg-card/50 flex flex-col h-[calc(100vh-4rem)]">
+      <div className="w-64 lg:w-72 border-l border-border bg-card/50 flex flex-col h-[calc(100vh-4rem)]">
         {/* Project Brand Section */}
         {onSetProjectBrand && (
           <div className="p-4 border-b border-border bg-primary/5">

@@ -27,7 +27,7 @@ export const StudioProductionPanel: React.FC<StudioProductionPanelProps> = ({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 320, opacity: 0 }}
       transition={{ type: 'spring', damping: 25 }}
-      className="w-80 border-l border-border bg-card min-h-[calc(100vh-65px)] p-4 overflow-y-auto"
+      className="w-72 lg:w-80 border-l border-border bg-card min-h-[calc(100vh-65px)] p-3 lg:p-4 overflow-y-auto"
     >
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-semibold text-foreground">Production Settings</h3>

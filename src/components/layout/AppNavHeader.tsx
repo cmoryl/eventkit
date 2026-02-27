@@ -4,8 +4,10 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Sparkles, Home, Settings, ChevronDown, LogIn, LogOut,
   User, Shield, Palette, FolderOpen, Bell, HelpCircle,
-  LayoutGrid, Layers, Save, Upload, Download, Cloud, Loader2
+  LayoutGrid, Layers, Save, Upload, Download, Cloud, Loader2,
+  Menu, X
 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -145,7 +147,78 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Left: Logo + Navigation */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3 sm:gap-6">
+            {/* Mobile Menu */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button size="icon" variant="ghost" className="md:hidden h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-0">
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <span className="text-lg font-bold text-foreground">EventKIT</span>
+                  </div>
+                </div>
+                <nav className="p-4 space-y-1">
+                  <button
+                    onClick={() => navigate('/')}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActivePath('/') ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <Home className="w-4 h-4" />
+                    Home
+                  </button>
+
+                  {/* Studios in mobile menu */}
+                  <div className="pt-3 pb-1">
+                    <p className="px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Studios</p>
+                  </div>
+                  {studioGroups.map((group) => (
+                    <div key={group.label} className="space-y-0.5">
+                      <p className="px-3 pt-2 text-[10px] text-muted-foreground">{group.label}</p>
+                      {group.studios.map((studio) => (
+                        <button
+                          key={studio.id}
+                          onClick={() => navigate(studio.route)}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                            currentStudioId === studio.id
+                              ? "bg-primary/10 text-primary"
+                              : "text-foreground hover:bg-muted"
+                          )}
+                        >
+                          <div className={cn("w-7 h-7 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0", studio.gradient)}>
+                            <Sparkles className="w-3.5 h-3.5 text-white" />
+                          </div>
+                          <span className="truncate">{studio.shortName}</span>
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+
+                  {isAuthenticated && (
+                    <button
+                      onClick={() => navigate('/admin')}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mt-2",
+                        isActivePath('/admin') ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <Shield className="w-4 h-4" />
+                      Admin
+                    </button>
+                  )}
+                </nav>
+              </SheetContent>
+            </Sheet>
+
             {/* Logo */}
             <motion.button
               onClick={() => navigate('/')}
