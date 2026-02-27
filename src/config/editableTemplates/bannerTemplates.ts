@@ -371,6 +371,47 @@ export const BANNER_TEMPLATES: EditableTemplate[] = [
       )
     ],
     tags: ['product', 'showcase', 'clean', 'minimal']
+  },
+  // Abstract Modern Banner
+  {
+    id: 'banner-abstract-modern',
+    name: 'Abstract Modern',
+    description: 'Artistic abstract design for creative brands',
+    assetType: AssetType.Banner,
+    category: 'universal',
+    dimensions: createDimensions(33.5, 79, 0, 3),
+    background: { type: 'image', value: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1000&q=80' },
+    defaultFonts: { heading: 'Playfair Display', body: 'Lato' },
+    defaultColors: { primary: '#2d2d2d', secondary: '#ffffff', accent: '#d4af37', text: '#ffffff', background: '#2d2d2d' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 10, y: 5, width: 30, height: 10 }, { placeholder: 'Logo' }),
+      createTextField('headline', 'Headline', { x: 10, y: 20, width: 80, height: 15 }, { placeholder: 'Artistry in Motion', style: { fontSize: 64, fontWeight: 'bold', color: '#ffffff' } }),
+      createTextField('subtext', 'Subtext', { x: 10, y: 38, width: 80, height: 8 }, { placeholder: 'Creative solutions for the modern age', style: { fontSize: 24, color: '#ffffff' } }),
+      createTextField('website', 'Website', { x: 10, y: 90, width: 80, height: 4 }, { placeholder: 'www.creative.com', style: { fontSize: 18, color: '#ffffff' } })
+    ],
+    tags: ['banner', 'abstract', 'creative', 'modern']
+  },
+  // Minimalist Typographic Banner
+  {
+    id: 'banner-minimal-type',
+    name: 'Minimalist Typographic',
+    description: 'Clean design focused on bold typography',
+    assetType: AssetType.Banner,
+    category: 'universal',
+    dimensions: createDimensions(33.5, 79, 0, 3),
+    background: { type: 'solid', value: '#f3f4f6' },
+    defaultFonts: { heading: 'Helvetica', body: 'Arial' },
+    defaultColors: { primary: '#000000', secondary: '#9ca3af', accent: '#000000', text: '#000000', background: '#f3f4f6' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('big-text', 'Big Text', { x: 5, y: 15, width: 90, height: 40 }, { placeholder: 'WE\nARE\nHERE', style: { fontSize: 120, fontWeight: '900', lineHeight: 0.9, color: '#000000' } }),
+      createTextField('details', 'Details', { x: 5, y: 60, width: 90, height: 10 }, { placeholder: 'Join the revolution.', style: { fontSize: 24, color: '#4b5563' } }),
+      createLogoField('logo', 'Logo', { x: 5, y: 85, width: 40, height: 10 }, { placeholder: 'Logo' })
+    ],
+    tags: ['banner', 'minimal', 'typography', 'clean']
   }
 ];
 

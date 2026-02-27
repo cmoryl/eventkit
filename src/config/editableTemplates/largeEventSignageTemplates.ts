@@ -204,6 +204,29 @@ export const STEP_REPEAT_TEMPLATES: EditableTemplate[] = [
     ],
     tags: ['step-repeat', 'backdrop', '10x8', 'wide', 'sponsors'],
     isSystemTemplate: true
+  },
+  {
+    id: 'step-repeat-geometric',
+    name: 'Step & Repeat Geometric',
+    description: 'Modern geometric pattern step and repeat',
+    assetType: AssetType.StepAndRepeat,
+    category: 'universal',
+    dimensions: createDimensions(96, 96, 2, 6),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#e5e7eb', accent: '#3b82f6', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      { id: 'pattern', type: 'shape', name: 'Pattern Overlay', position: { x: 0, y: 0, width: 100, height: 100 }, style: { backgroundColor: '#e5e7eb', opacity: 0.1 } },
+      createLogoField('logo-center', 'Main Logo', { x: 35, y: 40, width: 30, height: 20 }, { placeholder: 'Main Logo' }),
+      createLogoField('logo-tl', 'Logo TL', { x: 5, y: 5, width: 15, height: 10 }, { placeholder: 'Logo' }),
+      createLogoField('logo-tr', 'Logo TR', { x: 80, y: 5, width: 15, height: 10 }, { placeholder: 'Logo' }),
+      createLogoField('logo-bl', 'Logo BL', { x: 5, y: 85, width: 15, height: 10 }, { placeholder: 'Logo' }),
+      createLogoField('logo-br', 'Logo BR', { x: 80, y: 85, width: 15, height: 10 }, { placeholder: 'Logo' })
+    ],
+    tags: ['step-repeat', 'geometric', 'modern'],
+    isSystemTemplate: true
   }
 ];
 
@@ -341,6 +364,72 @@ export const STAGE_BACKDROP_TEMPLATES: EditableTemplate[] = [
       },
     ],
     tags: ['stage', 'backdrop', '20x10', 'large', 'summit'],
+    isSystemTemplate: true
+  },
+  // Panel Design
+  {
+    id: 'stage-backdrop-panel',
+    name: 'Stage Backdrop - Panel Design',
+    description: 'Three-panel vertical design layout',
+    assetType: AssetType.MainStageBackdrop,
+    category: 'universal',
+    dimensions: createDimensions(240, 120, 3, 12, 100),
+    background: { type: 'solid', value: '#1f2937' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#3b82f6', secondary: '#1f2937', accent: '#60a5fa', text: '#ffffff', background: '#1f2937' },
+    colorMode: 'CMYK',
+    dpi: 100,
+    fields: [
+      { id: 'left-panel', type: 'shape', name: 'Left Panel', position: { x: 5, y: 5, width: 28, height: 90 }, style: { backgroundColor: '#111827', borderRadius: 0 } },
+      { id: 'center-panel', type: 'shape', name: 'Center Panel', position: { x: 36, y: 5, width: 28, height: 90 }, style: { backgroundColor: '#111827', borderRadius: 0 } },
+      { id: 'right-panel', type: 'shape', name: 'Right Panel', position: { x: 67, y: 5, width: 28, height: 90 }, style: { backgroundColor: '#111827', borderRadius: 0 } },
+      createLogoField('logo-center', 'Center Logo', { x: 40, y: 20, width: 20, height: 20 }, { placeholder: 'Logo' }),
+      createTextField('title', 'Event Title', { x: 38, y: 50, width: 24, height: 10 }, { placeholder: 'SUMMIT', style: { fontSize: 80, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createImageField('img-left', 'Left Image', { x: 7, y: 10, width: 24, height: 80 }, { placeholder: 'Visual 1' }),
+      createImageField('img-right', 'Right Image', { x: 69, y: 10, width: 24, height: 80 }, { placeholder: 'Visual 2' })
+    ],
+    tags: ['stage', 'backdrop', 'panels', 'triptych'],
+    isSystemTemplate: true
+  },
+  // Curved LED Simulation
+  {
+    id: 'stage-backdrop-led',
+    name: 'Stage Backdrop - LED Video Wall',
+    description: 'High-impact graphics for LED walls',
+    assetType: AssetType.MainStageBackdrop,
+    category: 'universal',
+    dimensions: createDimensions(360, 120, 0, 0, 100),
+    background: { type: 'gradient', value: 'linear-gradient(90deg, #4f46e5 0%, #06b6d4 100%)' },
+    defaultFonts: { heading: 'Montserrat', body: 'Open Sans' },
+    defaultColors: { primary: '#ffffff', secondary: '#4f46e5', accent: '#06b6d4', text: '#ffffff', background: '#4f46e5' },
+    colorMode: 'RGB', // LED walls are RGB
+    dpi: 100,
+    fields: [
+      createTextField('headline', 'Headline', { x: 5, y: 35, width: 90, height: 30 }, { placeholder: 'IMMERSIVE EXPERIENCE', style: { fontSize: 200, fontWeight: '900', textAlign: 'center', color: '#ffffff', letterSpacing: 10 } }),
+      createLogoField('logo', 'Logo', { x: 45, y: 10, width: 10, height: 15 }, { placeholder: 'Logo' }),
+      { id: 'glow-bar', type: 'shape', name: 'Glow Bar', position: { x: 0, y: 80, width: 100, height: 2 }, style: { backgroundColor: '#ffffff', opacity: 0.5, shadow: '0 0 50px white' } }
+    ],
+    tags: ['stage', 'backdrop', 'led', 'video-wall'],
+    isSystemTemplate: true
+  },
+  // Minimalist Center
+  {
+    id: 'stage-backdrop-minimal',
+    name: 'Stage Backdrop - Minimalist',
+    description: 'Clean, focus-pulling center design',
+    assetType: AssetType.MainStageBackdrop,
+    category: 'universal',
+    dimensions: createDimensions(240, 120, 3, 12, 100),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Helvetica', body: 'Arial' },
+    defaultColors: { primary: '#000000', secondary: '#ffffff', accent: '#000000', text: '#000000', background: '#ffffff' },
+    colorMode: 'CMYK',
+    dpi: 100,
+    fields: [
+      createLogoField('logo', 'Center Logo', { x: 35, y: 35, width: 30, height: 30 }, { placeholder: 'Logo' }),
+      createTextField('url', 'Website', { x: 35, y: 70, width: 30, height: 5 }, { placeholder: 'event.com', style: { fontSize: 48, textAlign: 'center', color: '#000000' } })
+    ],
+    tags: ['stage', 'backdrop', 'minimal', 'clean'],
     isSystemTemplate: true
   }
 ];
@@ -498,6 +587,133 @@ export const BOOTH_PANEL_TEMPLATES: EditableTemplate[] = [
     ],
     tags: ['booth', 'trade-show', '10x20', 'island', 'large'],
     isSystemTemplate: true
+  },
+  // Product Demo Wall
+  {
+    id: 'booth-backwall-demo',
+    name: 'Booth - Product Demo',
+    description: 'Backwall with product focus areas',
+    assetType: AssetType.BackWall,
+    category: 'universal',
+    dimensions: createDimensions(120, 96, 1, 6),
+    background: { type: 'solid', value: '#f3f4f6' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#111827', secondary: '#e5e7eb', accent: '#3b82f6', text: '#111827', background: '#f3f4f6' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('header', 'Header', { x: 5, y: 10, width: 90, height: 10 }, { placeholder: 'Our Products', style: { fontSize: 72, fontWeight: 'bold', color: '#111827' } }),
+      createImageField('prod-1', 'Product 1', { x: 10, y: 30, width: 20, height: 20 }, { placeholder: 'Image' }),
+      createTextField('desc-1', 'Desc 1', { x: 10, y: 55, width: 20, height: 10 }, { placeholder: 'Description 1', style: { fontSize: 24 } }),
+      createImageField('prod-2', 'Product 2', { x: 40, y: 30, width: 20, height: 20 }, { placeholder: 'Image' }),
+      createTextField('desc-2', 'Desc 2', { x: 40, y: 55, width: 20, height: 10 }, { placeholder: 'Description 2', style: { fontSize: 24 } }),
+      createImageField('prod-3', 'Product 3', { x: 70, y: 30, width: 20, height: 20 }, { placeholder: 'Image' }),
+      createTextField('desc-3', 'Desc 3', { x: 70, y: 55, width: 20, height: 10 }, { placeholder: 'Description 3', style: { fontSize: 24 } })
+    ],
+    tags: ['booth', 'demo', 'products'],
+    isSystemTemplate: true
+  },
+  // Lounge Setting
+  {
+    id: 'booth-backwall-lounge',
+    name: 'Booth - Lounge Vibe',
+    description: 'Relaxed atmosphere backwall',
+    assetType: AssetType.BackWall,
+    category: 'universal',
+    dimensions: createDimensions(120, 96, 1, 6),
+    background: { type: 'image', value: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1000&q=80' },
+    defaultFonts: { heading: 'Playfair Display', body: 'Lato' },
+    defaultColors: { primary: '#ffffff', secondary: '#000000', accent: '#d4af37', text: '#ffffff', background: '#000000' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      { id: 'overlay', type: 'shape', name: 'Dark Overlay', position: { x: 0, y: 0, width: 100, height: 100 }, style: { backgroundColor: 'rgba(0,0,0,0.4)' } },
+      createLogoField('logo', 'Logo', { x: 35, y: 20, width: 30, height: 20 }, { placeholder: 'Logo (White)' }),
+      createTextField('welcome', 'Welcome', { x: 20, y: 50, width: 60, height: 10 }, { placeholder: 'Relax & Connect', style: { fontSize: 64, color: '#ffffff', textAlign: 'center', fontStyle: 'italic' } })
+    ],
+    tags: ['booth', 'lounge', 'relaxed'],
+    isSystemTemplate: true
+  },
+  // Interactive Screen
+  {
+    id: 'booth-backwall-screen',
+    name: 'Booth - Screen Integration',
+    description: 'Backwall designed for mounted TV/Monitor',
+    assetType: AssetType.BackWall,
+    category: 'universal',
+    dimensions: createDimensions(120, 96, 1, 6),
+    background: { type: 'solid', value: '#2563eb' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#2563eb', accent: '#1e40af', text: '#ffffff', background: '#2563eb' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('title', 'Title', { x: 5, y: 10, width: 90, height: 10 }, { placeholder: 'Interactive Demo', style: { fontSize: 72, fontWeight: 'bold', color: '#ffffff' } }),
+      { id: 'screen-area', type: 'shape', name: 'TV Mount Area', position: { x: 30, y: 30, width: 40, height: 40 }, style: { backgroundColor: '#1e40af', borderStyle: 'dashed', borderColor: '#ffffff', borderWidth: 2 } },
+      createTextField('screen-label', 'Screen Placeholder', { x: 35, y: 45, width: 30, height: 10 }, { placeholder: 'MOUNT TV HERE', style: { fontSize: 36, textAlign: 'center', color: '#ffffff', opacity: 0.5 } }),
+      createLogoField('logo', 'Logo', { x: 80, y: 80, width: 15, height: 10 }, { placeholder: 'Logo' })
+    ],
+    tags: ['booth', 'tv', 'screen', 'interactive'],
+    isSystemTemplate: true
+  },
+  // Circular Hanging Sign
+  {
+    id: 'hanging-sign-circular',
+    name: 'Circular Hanging Sign',
+    description: 'Round ceiling sign for visibility',
+    assetType: AssetType.HangingSignage,
+    category: 'universal',
+    dimensions: createDimensions(60, 60, 0, 0),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#000000', secondary: '#ffffff', accent: '#000000', text: '#000000', background: '#ffffff' },
+    colorMode: 'CMYK',
+    dpi: 100,
+    fields: [
+      { id: 'ring', type: 'shape', name: 'Ring', position: { x: 0, y: 0, width: 100, height: 100 }, style: { backgroundColor: 'transparent', borderColor: '#000000', borderWidth: 5, borderRadius: 50 } },
+      createLogoField('logo', 'Logo', { x: 25, y: 25, width: 50, height: 50 }, { placeholder: 'Logo' })
+    ],
+    tags: ['hanging', 'circle', 'round'],
+    isSystemTemplate: true
+  },
+  // Triangle Hanging Sign
+  {
+    id: 'hanging-sign-triangle',
+    name: 'Triangle Hanging Sign',
+    description: 'Three-sided hanging display',
+    assetType: AssetType.HangingSignage,
+    category: 'universal',
+    dimensions: createDimensions(96, 48, 0, 0),
+    background: { type: 'solid', value: '#2563eb' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#2563eb', accent: '#1e40af', text: '#ffffff', background: '#2563eb' },
+    colorMode: 'CMYK',
+    dpi: 100,
+    fields: [
+      createTextField('text', 'Message', { x: 10, y: 30, width: 80, height: 40 }, { placeholder: 'ZONE A', style: { fontSize: 96, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } })
+    ],
+    tags: ['hanging', 'triangle', '3-sided'],
+    isSystemTemplate: true
+  },
+  // Tapered Circle
+  {
+    id: 'hanging-sign-tapered',
+    name: 'Tapered Circle Sign',
+    description: 'Tapered round hanging structure',
+    assetType: AssetType.HangingSignage,
+    category: 'universal',
+    dimensions: createDimensions(120, 60, 0, 0),
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #1f2937 0%, #000000 100%)' },
+    defaultFonts: { heading: 'Montserrat', body: 'Open Sans' },
+    defaultColors: { primary: '#ffffff', secondary: '#000000', accent: '#fbbf24', text: '#ffffff', background: '#000000' },
+    colorMode: 'CMYK',
+    dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 10, width: 40, height: 40 }, { placeholder: 'Logo' }),
+      createTextField('url', 'Website', { x: 20, y: 70, width: 60, height: 10 }, { placeholder: 'www.brand.com', style: { fontSize: 32, textAlign: 'center', color: '#fbbf24' } })
+    ],
+    tags: ['hanging', 'tapered', 'structure'],
+    isSystemTemplate: true
   }
 ];
 
@@ -607,6 +823,65 @@ export const HANGING_SIGN_TEMPLATES: EditableTemplate[] = [
       }
     ],
     tags: ['hanging', 'ceiling', '8x4', 'zone', 'wayfinding'],
+    isSystemTemplate: true
+  },
+  // Social Distancing / Queue
+  {
+    id: 'floor-decal-queue',
+    name: 'Queue Marker',
+    description: 'Floor marker for line management',
+    assetType: AssetType.FloorDecal,
+    category: 'universal',
+    dimensions: createDimensions(18, 18, 0, 0),
+    background: { type: 'solid', value: '#ef4444' },
+    defaultFonts: { heading: 'Arial', body: 'Arial' },
+    defaultColors: { primary: '#ffffff', secondary: '#ef4444', accent: '#ffffff', text: '#ffffff', background: '#ef4444' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      { id: 'circle', type: 'shape', name: 'Circle', position: { x: 0, y: 0, width: 100, height: 100 }, style: { backgroundColor: '#ef4444', borderRadius: 50 } },
+      createTextField('text', 'Text', { x: 10, y: 40, width: 80, height: 20 }, { placeholder: 'WAIT HERE', style: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } })
+    ],
+    tags: ['floor', 'queue', 'marker'],
+    isSystemTemplate: true
+  },
+  // Welcome Mat
+  {
+    id: 'floor-decal-welcome',
+    name: 'Welcome Floor Graphic',
+    description: 'Entrance welcome floor decal',
+    assetType: AssetType.FloorDecal,
+    category: 'universal',
+    dimensions: createDimensions(48, 36, 0, 0),
+    background: { type: 'solid', value: '#111827' },
+    defaultFonts: { heading: 'Playfair Display', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#111827', accent: '#d4af37', text: '#ffffff', background: '#111827' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('welcome', 'Welcome', { x: 10, y: 30, width: 80, height: 40 }, { placeholder: 'Welcome', style: { fontSize: 72, textAlign: 'center', color: '#ffffff', fontStyle: 'italic' } }),
+      createLogoField('logo', 'Logo', { x: 40, y: 70, width: 20, height: 20 }, { placeholder: 'Logo' })
+    ],
+    tags: ['floor', 'welcome', 'entrance'],
+    isSystemTemplate: true
+  },
+  // 3D Illusion
+  {
+    id: 'floor-decal-3d',
+    name: '3D Illusion Graphic',
+    description: 'Eye-catching 3D effect floor graphic',
+    assetType: AssetType.FloorDecal,
+    category: 'universal',
+    dimensions: createDimensions(60, 60, 0, 0),
+    background: { type: 'image', value: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=1000&q=80' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#000000', secondary: '#ffffff', accent: '#ff0000', text: '#000000', background: '#ffffff' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('stop', 'Stop', { x: 20, y: 40, width: 60, height: 20 }, { placeholder: 'STOP', style: { fontSize: 72, fontWeight: '900', textAlign: 'center', color: '#ffffff', shadow: '5px 5px 0px #000000' } })
+    ],
+    tags: ['floor', '3d', 'illusion'],
     isSystemTemplate: true
   }
 ];
@@ -720,6 +995,143 @@ export const FLOOR_GRAPHICS_TEMPLATES: EditableTemplate[] = [
       ),
     ],
     tags: ['floor', 'runner', '3x6', 'pathway', 'directional'],
+    isSystemTemplate: true
+  },
+  // Frosted Effect
+  {
+    id: 'window-cling-frosted',
+    name: 'Frosted Window Design',
+    description: 'Subtle frosted glass effect',
+    assetType: AssetType.WindowCling,
+    category: 'universal',
+    dimensions: createDimensions(48, 48, 0, 0),
+    background: { type: 'solid', value: 'rgba(255,255,255,0.7)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#000000', secondary: 'transparent', accent: '#000000', text: '#000000', background: 'rgba(255,255,255,0.7)' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 30, width: 40, height: 40 }, { placeholder: 'Logo Cutout' })
+    ],
+    tags: ['window', 'frosted', 'subtle'],
+    isSystemTemplate: true
+  },
+  // Hours & Info
+  {
+    id: 'window-cling-hours',
+    name: 'Hours & Info Cling',
+    description: 'Store hours and contact info',
+    assetType: AssetType.WindowCling,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0, 0),
+    background: { type: 'solid', value: 'transparent' },
+    defaultFonts: { heading: 'Helvetica', body: 'Helvetica' },
+    defaultColors: { primary: '#ffffff', secondary: 'transparent', accent: '#ffffff', text: '#ffffff', background: 'transparent' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('hours', 'Hours', { x: 10, y: 10, width: 80, height: 80 }, { placeholder: 'OPEN DAILY\n9AM - 9PM', style: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } })
+    ],
+    tags: ['window', 'hours', 'info'],
+    isSystemTemplate: true
+  },
+  // Sale Promo
+  {
+    id: 'window-cling-sale',
+    name: 'Sale Promo Cling',
+    description: 'Bright sale promotion window cling',
+    assetType: AssetType.WindowCling,
+    category: 'universal',
+    dimensions: createDimensions(36, 36, 0, 0),
+    background: { type: 'solid', value: '#ef4444' },
+    defaultFonts: { heading: 'Arial Black', body: 'Arial' },
+    defaultColors: { primary: '#ffffff', secondary: '#ef4444', accent: '#f59e0b', text: '#ffffff', background: '#ef4444' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('sale', 'Sale', { x: 10, y: 35, width: 80, height: 30 }, { placeholder: '50% OFF', style: { fontSize: 64, fontWeight: '900', textAlign: 'center', color: '#ffffff' } })
+    ],
+    tags: ['window', 'sale', 'promo'],
+    isSystemTemplate: true
+  },
+  // Menu Board
+  {
+    id: 'aframe-menu',
+    name: 'A-Frame Menu',
+    description: 'Sidewalk menu board',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0, 0),
+    background: { type: 'solid', value: '#1f2937' },
+    defaultFonts: { heading: 'Chalkboard SE', body: 'Arial' },
+    defaultColors: { primary: '#ffffff', secondary: '#1f2937', accent: '#f59e0b', text: '#ffffff', background: '#1f2937' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('specials', 'Specials', { x: 10, y: 10, width: 80, height: 10 }, { placeholder: 'TODAY\'S SPECIALS', style: { fontSize: 36, textAlign: 'center', color: '#ffffff' } }),
+      createTextField('items', 'Items', { x: 10, y: 30, width: 80, height: 60 }, { placeholder: 'Coffee...$3\nLatte...$4\nMuffin...$3', style: { fontSize: 24, textAlign: 'center', color: '#d1d5db' } })
+    ],
+    tags: ['aframe', 'menu', 'chalkboard'],
+    isSystemTemplate: true
+  },
+  // Directional Arrow
+  {
+    id: 'aframe-directional',
+    name: 'Directional A-Frame',
+    description: 'Big arrow directional sign',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0, 0),
+    background: { type: 'solid', value: '#2563eb' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#2563eb', accent: '#ffffff', text: '#ffffff', background: '#2563eb' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      { id: 'arrow', type: 'icon', name: 'Arrow', position: { x: 20, y: 20, width: 60, height: 40 }, placeholder: '↑', style: { color: '#ffffff' } },
+      createTextField('text', 'Text', { x: 10, y: 70, width: 80, height: 20 }, { placeholder: 'CHECK-IN', style: { fontSize: 48, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } })
+    ],
+    tags: ['aframe', 'directional', 'arrow'],
+    isSystemTemplate: true
+  },
+  // QR Code Scan
+  {
+    id: 'aframe-qr',
+    name: 'QR Scan A-Frame',
+    description: 'Large QR code for scanning',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0, 0),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#000000', secondary: '#ffffff', accent: '#000000', text: '#000000', background: '#ffffff' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      { id: 'qr', type: 'qrcode', name: 'QR', position: { x: 10, y: 10, width: 80, height: 50 }, placeholder: 'Scan Me', style: { backgroundColor: '#ffffff' } },
+      createTextField('text', 'Text', { x: 10, y: 70, width: 80, height: 20 }, { placeholder: 'SCAN TO ORDER', style: { fontSize: 36, fontWeight: 'bold', textAlign: 'center', color: '#000000' } })
+    ],
+    tags: ['aframe', 'qr', 'scan'],
+    isSystemTemplate: true
+  },
+  // Event Schedule
+  {
+    id: 'aframe-schedule',
+    name: 'Event Schedule A-Frame',
+    description: 'Schedule of events display',
+    assetType: AssetType.AFrameSign,
+    category: 'universal',
+    dimensions: createDimensions(24, 36, 0, 0),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#ffffff', accent: '#3b82f6', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK',
+    dpi: 150,
+    fields: [
+      createTextField('title', 'Title', { x: 10, y: 5, width: 80, height: 10 }, { placeholder: 'SCHEDULE', style: { fontSize: 36, fontWeight: 'bold', textAlign: 'center', color: '#3b82f6' } }),
+      createTextField('list', 'List', { x: 10, y: 20, width: 80, height: 70 }, { placeholder: '9:00 AM - Keynote\n10:30 AM - Break\n11:00 AM - Session 1', style: { fontSize: 24, lineHeight: 1.5, color: '#1a1a1a' } })
+    ],
+    tags: ['aframe', 'schedule', 'list'],
     isSystemTemplate: true
   }
 ];
