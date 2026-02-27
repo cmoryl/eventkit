@@ -2,3 +2,4 @@
 export { ActiveBrandIndicator } from './ActiveBrandIndicator';
 export { BrandColorBar } from './BrandColorBar';
 export { BrandHubImportModal } from './BrandHubImportModal';
+export { BrandEventSelector } from './BrandEventSelector';

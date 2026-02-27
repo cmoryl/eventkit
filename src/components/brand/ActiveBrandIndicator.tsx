@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { BrandHubImportModal } from './BrandHubImportModal';
+import { BrandEventSelector } from './BrandEventSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -231,7 +232,12 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
             )}
           </div>
 
-        {/* Theme Actions */}
+        {/* Event Selector for active brand */}
+        <div className="px-3 py-1.5 border-b border-border">
+          <BrandEventSelector activeBrandId={activeBrand.id} />
+        </div>
+
+
         {(onApplyTheme || onResetTheme) && (
           <>
             <div className="p-1">
