@@ -12,6 +12,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import { AssetType } from '@/types';
 import type { VenueVideoAnalysis, ColorInfo, EventDetails, GeneratedAsset } from '@/types';
+import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
+import type { GenerationContext } from '@/services/aiBrain/types';
 
 interface VenuePreviewGeneratorProps {
   isOpen: boolean;
@@ -174,11 +176,30 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
         eventDescription: eventDetails.description,
         styleDescription,
         duration: 5,
-        // Pass compiled AI Brain prompt so the edge function uses it untouched
-        customPrompt: styleDescription
-          ? `Transform this venue into a professionally branded event space for "${eventDetails.name}". ${eventDetails.description ? `Event: ${eventDetails.description}. ` : ''}Style: ${styleDescription}. Preserve venue architecture, match lighting, maintain perspective. All inserted assets must be pixel-faithful reproductions—no redrawing or reinterpretation.`
-          : undefined,
       };
+
+      // Build a full AI Brain compiled prompt with DNA, anchors, seed, and quality gate
+      const generationContext: GenerationContext = {
+        eventName: eventDetails.name,
+        eventDescription: eventDetails.description,
+        assetType: 'VENUE_PREVIEW',
+        styleDescription,
+        colorPalette: colorPalette.map(c => c.hex),
+      };
+
+      const basePrompt = [
+        `Transform this venue into a professionally branded event space for "${eventDetails.name}".`,
+        eventDetails.description ? `Event: ${eventDetails.description}.` : '',
+        styleDescription ? `Style: ${styleDescription}.` : '',
+        `Preserve venue architecture, match lighting, maintain perspective.`,
+        `All inserted assets must be pixel-faithful reproductions—no redrawing or reinterpretation.`,
+      ].filter(Boolean).join(' ');
+
+      requestBody.customPrompt = compileGenerationPrompt({
+        basePrompt,
+        context: generationContext,
+        variantName: styleDescription,
+      });
 
       if (assetMode === 'specific' && selectedAssets.length > 0) {
         // Use specific generated assets
