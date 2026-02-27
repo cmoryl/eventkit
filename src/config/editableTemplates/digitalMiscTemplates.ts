@@ -107,9 +107,9 @@ export const EMAIL_HEADER_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
-// ============= WIFI SIGN TEMPLATES =============
+// ============= WIFI SIGN TEMPLATES (DIGITAL) =============
 
-export const WIFI_SIGN_TEMPLATES: EditableTemplate[] = [
+export const DIGITAL_WIFI_SIGN_TEMPLATES: EditableTemplate[] = [
   {
     id: 'wifi-sign-modern', name: 'Modern WiFi Sign', description: 'Clean modern WiFi info sign',
     assetType: AssetType.WifiSign, category: 'universal', dimensions: createDimensions(8.5, 5.5, 0, 0.25),
@@ -484,7 +484,7 @@ export const SPEAKER_INTRO_TEMPLATES: EditableTemplate[] = [
 
 export const ALL_DIGITAL_MISC_TEMPLATES: EditableTemplate[] = [
   ...EMAIL_HEADER_TEMPLATES,
-  ...WIFI_SIGN_TEMPLATES,
+  ...DIGITAL_WIFI_SIGN_TEMPLATES,
   ...THANK_YOU_NOTE_TEMPLATES,
   ...PHOTO_BOOTH_FRAME_TEMPLATES,
   ...SPEAKER_INTRO_TEMPLATES
