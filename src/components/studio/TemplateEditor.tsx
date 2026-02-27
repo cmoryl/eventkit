@@ -393,8 +393,28 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
           </div>
         </div>
 
-        {/* Canvas */}
-        <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
+        {/* Canvas - Scrollable & Pannable */}
+        <div 
+          className="flex-1 overflow-auto cursor-grab active:cursor-grabbing"
+          onMouseDown={(e) => {
+            const el = e.currentTarget;
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const scrollLeft = el.scrollLeft;
+            const scrollTop = el.scrollTop;
+            const onMove = (ev: MouseEvent) => {
+              el.scrollLeft = scrollLeft - (ev.clientX - startX);
+              el.scrollTop = scrollTop - (ev.clientY - startY);
+            };
+            const onUp = () => {
+              window.removeEventListener('mousemove', onMove);
+              window.removeEventListener('mouseup', onUp);
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+          }}
+        >
+          <div className="min-w-full min-h-full flex items-center justify-center p-8">
           <div 
             className="relative bg-white shadow-2xl"
             style={{
@@ -533,6 +553,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = ({
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
       </div>

@@ -414,7 +414,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-background"
+        className="fixed inset-0 z-50 bg-background flex flex-col"
       >
         {/* Brand Color Accent Bar */}
         {hasBrandColors && (
@@ -491,10 +491,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         </header>
 
         {/* Main Content - Split View Layout */}
-        <main className={cn(
-          "flex-1 overflow-hidden",
-          hasBrandColors ? "h-[calc(100vh-4.25rem)]" : "h-[calc(100vh-4rem)]"
-        )}>
+        <main className="flex-1 overflow-hidden">
           <div className={cn(
             "h-full grid gap-6 p-6 transition-all duration-300",
             selectedVariation ? "grid-cols-1 lg:grid-cols-[280px,1fr]" : "grid-cols-1"
@@ -755,38 +752,62 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                   </div>
                 </div>
 
-                {/* Preview Image */}
-                <div className="flex-1 relative overflow-auto p-6 flex items-center justify-center bg-[repeating-conic-gradient(hsl(var(--muted))_0%_25%,hsl(var(--background))_0%_50%)] bg-[length:20px_20px]">
-                  {(() => {
-                    const variation = variations.find(v => v.id === selectedVariation);
-                    if (variation?.imageUrl) {
-                      return (
-                        <motion.div
-                          key={variation.imageUrl}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="relative"
-                          style={{ 
-                            transform: `scale(${zoomLevel / 100})`,
-                            transformOrigin: 'center center',
-                            transition: 'transform 0.2s ease-out'
-                          }}
-                        >
-                          <img
-                            src={variation.imageUrl}
-                            alt="Preview"
-                            className="max-w-none object-contain rounded-lg shadow-2xl"
-                            style={{ 
-                              maxHeight: zoomLevel === 100 ? 'calc(100vh - 280px)' : 'none',
-                              maxWidth: zoomLevel === 100 ? '100%' : 'none'
-                            }}
-                            draggable={false}
-                          />
-                        </motion.div>
-                      );
-                    }
-                    return null;
-                  })()}
+                {/* Preview Image - Scrollable & Pannable */}
+                <div 
+                  className="flex-1 relative overflow-auto bg-[repeating-conic-gradient(hsl(var(--muted))_0%_25%,hsl(var(--background))_0%_50%)] bg-[length:20px_20px] cursor-grab active:cursor-grabbing"
+                  onMouseDown={(e) => {
+                    const el = e.currentTarget;
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const scrollLeft = el.scrollLeft;
+                    const scrollTop = el.scrollTop;
+                    const onMove = (ev: MouseEvent) => {
+                      el.scrollLeft = scrollLeft - (ev.clientX - startX);
+                      el.scrollTop = scrollTop - (ev.clientY - startY);
+                    };
+                    const onUp = () => {
+                      window.removeEventListener('mousemove', onMove);
+                      window.removeEventListener('mouseup', onUp);
+                    };
+                    window.addEventListener('mousemove', onMove);
+                    window.addEventListener('mouseup', onUp);
+                  }}
+                >
+                  <div className="min-w-full min-h-full flex items-center justify-center p-6">
+                    {(() => {
+                      const variation = variations.find(v => v.id === selectedVariation);
+                      if (variation?.imageUrl) {
+                        const scale = zoomLevel / 100;
+                        return (
+                          <motion.div
+                            key={variation.imageUrl}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="relative flex-shrink-0"
+                          >
+                            <img
+                              src={variation.imageUrl}
+                              alt="Preview"
+                              className="object-contain rounded-lg shadow-2xl"
+                              style={{
+                                width: `${scale * 100}%`,
+                                maxWidth: 'none',
+                                minWidth: scale > 1 ? `${scale * 100}%` : undefined,
+                              }}
+                              draggable={false}
+                              onLoad={(e) => {
+                                // After load, use natural dimensions for proper scaling
+                                const img = e.currentTarget;
+                                img.style.width = `${img.naturalWidth * scale}px`;
+                                img.style.height = `${img.naturalHeight * scale}px`;
+                              }}
+                            />
+                          </motion.div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                 </div>
 
                 {/* Preview Footer - Actions */}
