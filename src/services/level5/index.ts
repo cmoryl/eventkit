@@ -1,6 +1,8 @@
 // Level-5 Template System — barrel export
 export { compileLevel5Prompt, mergeLevel5Variables } from "./promptCompiler";
 export {
+  buildLevel5Template,
+  buildTemplatePack,
   generateTemplate,
   generateTemplatesForAsset,
   generateAllTemplates,
