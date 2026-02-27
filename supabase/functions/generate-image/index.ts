@@ -3,12 +3,14 @@ import { corsHeaders, handleCors, jsonResponse, errorResponse } from "../_shared
 import type { GenerateImageRequest, ImageAnalysis } from "../_shared/types.ts";
 import { getBasePrompt, isPrintAsset } from "../_shared/asset-prompts.ts";
 import { 
+  buildMasterWrapper,
   buildBrandContext, 
   buildLocationContext, 
   buildVenueContext, 
   buildLogoInstructions,
   buildAnalysisInstructions,
   buildPrintRequirements,
+  buildOutputChecklist,
   fetchPromptTemplate,
   mergeTemplateWithVariables,
   incrementTemplateUsage
@@ -189,8 +191,13 @@ PHOTOREALISTIC RENDERING - CRITICAL:
     const targetDPI = body.printDPI || (isPrint ? 300 : 150);
     const printRequirements = buildPrintRequirements(isPrint, targetDPI);
 
-    // BUILD FULL PROMPT
-    const fullPrompt = `Generate an image: ${basePrompt}
+    // BUILD FULL PROMPT — prefixed with Master Wrapper
+    const masterWrapper = buildMasterWrapper();
+    const outputChecklist = buildOutputChecklist(isPrint, !!logoBase64);
+    
+    const fullPrompt = `${masterWrapper}
+
+Generate an image: ${basePrompt}
 
 Event: "${eventName}"
 ${eventDescription ? `Event Description: ${eventDescription}` : ''}
@@ -219,7 +226,9 @@ ${isPrint ? '- PRINT-OPTIMIZED: CMYK-safe colors, crisp text, production-ready q
 ${imageAnalysis ? '- APPLY ALL DESIGN INTELLIGENCE FROM IMAGE ANALYSIS' : ''}
 ${venueIntelligence ? '- APPLY VENUE INTELLIGENCE TO CREATE VENUE-SPECIFIC DESIGN' : ''}
 ${brandContext ? '- THE DESIGN MUST BE UNMISTAKABLY ON-BRAND' : ''}
-${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}`;
+${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}
+
+${outputChecklist}`;
 
     console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}`);
 
