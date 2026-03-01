@@ -9,6 +9,13 @@ interface FormatSettings {
 }
 
 type ExportSpeed = "quality" | "fast";
+type ExportFormat = "mp4" | "webm" | "gif";
+
+const FORMAT_CONFIG: Record<ExportFormat, { ext: string; mime: string }> = {
+  mp4: { ext: 'mp4', mime: 'video/mp4' },
+  webm: { ext: 'webm', mime: 'video/webm' },
+  gif: { ext: 'gif', mime: 'image/gif' },
+};
 
 const CDN_URLS = [
   {
@@ -69,7 +76,8 @@ export const useVideoEditor = () => {
     startTime: number,
     endTime: number,
     formatSettings?: FormatSettings,
-    exportSpeed: ExportSpeed = "quality"
+    exportSpeed: ExportSpeed = "quality",
+    exportFormat: ExportFormat = "mp4"
   ): Promise<Blob> => {
     setIsLoading(true);
     setProgress(0);
@@ -82,29 +90,56 @@ export const useVideoEditor = () => {
 
       const ffmpeg = ffmpegRef.current;
       const inputName = 'input.mp4';
-      const outputName = 'output.mp4';
+      const { ext, mime } = FORMAT_CONFIG[exportFormat];
+      const outputName = `output.${ext}`;
 
       await ffmpeg.writeFile(inputName, await fetchFile(videoFile));
 
       const duration = endTime - startTime;
       const ffmpegArgs: string[] = ['-i', inputName, '-ss', startTime.toString(), '-t', duration.toString()];
 
-      if (formatSettings) {
+      if (exportFormat === 'gif') {
+        // GIF: generate palette then use it for high-quality output
         const { getFFmpegFilterString } = await import('@/lib/videoFormatUtils');
-        const filterString = getFFmpegFilterString(formatSettings);
-        const preset = exportSpeed === "fast" ? "fast" : "medium";
-        const crf = exportSpeed === "fast" ? "23" : "20";
-
+        const scaleFilter = formatSettings ? getFFmpegFilterString(formatSettings) : 'scale=-1:-1';
+        const fps = 15;
         ffmpegArgs.push(
-          '-vf', filterString,
-          '-c:v', 'libx264', '-preset', preset, '-crf', crf,
-          '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
-          '-movflags', '+faststart',
-          '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-ar', '44100',
-          '-max_muxing_queue_size', '1024', '-vsync', 'cfr'
+          '-vf', `${scaleFilter},fps=${fps},split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse`,
+          '-loop', '0'
+        );
+      } else if (exportFormat === 'webm') {
+        const preset = exportSpeed === "fast" ? "realtime" : "good";
+        const crf = exportSpeed === "fast" ? "30" : "25";
+        if (formatSettings) {
+          const { getFFmpegFilterString } = await import('@/lib/videoFormatUtils');
+          const filterString = getFFmpegFilterString(formatSettings);
+          ffmpegArgs.push('-vf', filterString);
+        }
+        ffmpegArgs.push(
+          '-c:v', 'libvpx-vp9', '-crf', crf, '-b:v', '0',
+          '-deadline', preset, '-cpu-used', exportSpeed === "fast" ? '4' : '2',
+          '-pix_fmt', 'yuv420p',
+          '-c:a', 'libopus', '-b:a', '128k',
+          '-row-mt', '1'
         );
       } else {
-        ffmpegArgs.push('-c', 'copy');
+        // MP4
+        if (formatSettings) {
+          const { getFFmpegFilterString } = await import('@/lib/videoFormatUtils');
+          const filterString = getFFmpegFilterString(formatSettings);
+          const preset = exportSpeed === "fast" ? "fast" : "medium";
+          const crf = exportSpeed === "fast" ? "23" : "20";
+          ffmpegArgs.push(
+            '-vf', filterString,
+            '-c:v', 'libx264', '-preset', preset, '-crf', crf,
+            '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
+            '-movflags', '+faststart',
+            '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-ar', '44100',
+            '-max_muxing_queue_size', '1024', '-vsync', 'cfr'
+          );
+        } else {
+          ffmpegArgs.push('-c', 'copy');
+        }
       }
 
       ffmpegArgs.push(outputName);
@@ -112,7 +147,7 @@ export const useVideoEditor = () => {
 
       const data = await ffmpeg.readFile(outputName);
       const uint8Array = new Uint8Array(data instanceof Uint8Array ? data : []);
-      const blob = new Blob([uint8Array], { type: 'video/mp4' });
+      const blob = new Blob([uint8Array], { type: mime });
 
       await ffmpeg.deleteFile(inputName);
       await ffmpeg.deleteFile(outputName);
@@ -121,7 +156,7 @@ export const useVideoEditor = () => {
       return blob;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(`Failed to trim video: ${errorMessage}`);
+      setError(`Failed to process video: ${errorMessage}`);
       setIsLoading(false);
       throw err;
     }
