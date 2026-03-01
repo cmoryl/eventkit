@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Copy, Check, Plus, Trash2, RotateCcw, Download, Shuffle,
-  Pipette, ArrowLeft, Palette, Sparkles, Lock, Unlock
+  Pipette, ArrowLeft, Palette, Sparkles, Lock, Unlock, Upload, ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -151,6 +151,12 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [editingHex, setEditingHex] = useState('');
   const wheelRef = useRef<HTMLCanvasElement>(null);
+  const eyedropperCanvasRef = useRef<HTMLCanvasElement>(null);
+  const eyedropperImgRef = useRef<HTMLImageElement | null>(null);
+  const [eyedropperImage, setEyedropperImage] = useState<string | null>(null);
+  const [eyedropperActive, setEyedropperActive] = useState(false);
+  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const [sampledColors, setSampledColors] = useState<string[]>([]);
 
   // Keep editingHex in sync
   useEffect(() => {
@@ -321,6 +327,106 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
     toast.success('CSS variables copied to clipboard');
   };
 
+  // ─── Eyedropper Logic ───────────────────────────────────────────
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setEyedropperImage(ev.target?.result as string);
+      setSampledColors([]);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Draw uploaded image onto hidden canvas for pixel sampling
+  useEffect(() => {
+    if (!eyedropperImage) return;
+    const canvas = eyedropperCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      eyedropperImgRef.current = img;
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.drawImage(img, 0, 0);
+    };
+    img.src = eyedropperImage;
+  }, [eyedropperImage]);
+
+  const sampleColorAt = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = eyedropperCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+    const pixel = ctx.getImageData(x, y, 1, 1).data;
+    const hex = `#${pixel[0].toString(16).padStart(2, '0')}${pixel[1].toString(16).padStart(2, '0')}${pixel[2].toString(16).padStart(2, '0')}`.toUpperCase();
+    return hex;
+  };
+
+  const handleEyedropperHover = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!eyedropperActive) return;
+    const hex = sampleColorAt(e);
+    if (hex) setHoveredColor(hex);
+  };
+
+  const handleEyedropperClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const hex = sampleColorAt(e);
+    if (!hex) return;
+
+    if (eyedropperActive) {
+      // Add sampled color to the sampled list
+      setSampledColors(prev => prev.includes(hex) ? prev : [...prev.slice(-9), hex]);
+      // Also update the selected swatch
+      updateSwatch(selectedIndex, hex);
+      toast.success(`Sampled ${hex}`);
+    }
+  };
+
+  const addSampledToSwatches = (hex: string) => {
+    if (swatches.length >= 10) {
+      toast.error('Maximum 10 swatches');
+      return;
+    }
+    setSwatches(prev => [...prev, {
+      id: `sampled-${Date.now()}`,
+      hex,
+      locked: false,
+      name: 'Sampled',
+    }]);
+    setSelectedIndex(swatches.length);
+    toast.success(`Added ${hex} to palette`);
+  };
+
+  const addAllSampled = () => {
+    const available = 10 - swatches.length;
+    if (available <= 0) { toast.error('Palette is full'); return; }
+    const toAdd = sampledColors.slice(0, available);
+    setSwatches(prev => [
+      ...prev,
+      ...toAdd.map((hex, i) => ({
+        id: `sampled-${Date.now()}-${i}`,
+        hex,
+        locked: false,
+        name: 'Sampled',
+      })),
+    ]);
+    toast.success(`Added ${toAdd.length} colors`);
+  };
+
   const selected = swatches[selectedIndex];
   const [selH, selS, selL] = selected ? hexToHsl(selected.hex) : [0, 0, 0];
   const contrastWhite = selected ? contrastRatio(selected.hex, '#FFFFFF') : 0;
@@ -467,6 +573,103 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
                     onClick={handleWheelClick}
                   />
                   <p className="text-[10px] text-muted-foreground">Click ring for hue, center for saturation/lightness</p>
+                </div>
+
+                {/* Eyedropper / Image Sampler */}
+                <div className="sm:col-span-2 border border-border rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-medium text-foreground flex items-center gap-2">
+                      <Pipette className="h-3.5 w-3.5 text-primary" />
+                      Eyedropper — Sample from Image
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      {eyedropperImage && (
+                        <Button
+                          variant={eyedropperActive ? 'default' : 'outline'}
+                          size="sm"
+                          className={cn("h-7 text-[10px] gap-1", eyedropperActive && "bg-primary")}
+                          onClick={() => setEyedropperActive(!eyedropperActive)}
+                        >
+                          <Pipette className="h-3 w-3" />
+                          {eyedropperActive ? 'Sampling…' : 'Pick Color'}
+                        </Button>
+                      )}
+                      <label className="cursor-pointer">
+                        <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                        <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-border text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                          <Upload className="h-3 w-3" />
+                          {eyedropperImage ? 'Change' : 'Upload Image'}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {!eyedropperImage ? (
+                    <label className="cursor-pointer block">
+                      <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                      <div className="border-2 border-dashed border-border rounded-lg p-8 flex flex-col items-center gap-2 hover:border-primary/50 transition-colors">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                        <span className="text-xs text-muted-foreground">Drop a brand image or click to upload</span>
+                        <span className="text-[10px] text-muted-foreground/60">PNG, JPG, SVG supported</span>
+                      </div>
+                    </label>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="relative rounded-lg overflow-hidden border border-border bg-muted/30">
+                        <canvas
+                          ref={eyedropperCanvasRef}
+                          className={cn(
+                            "w-full max-h-[200px] object-contain",
+                            eyedropperActive ? "cursor-crosshair" : "cursor-default"
+                          )}
+                          style={{ imageRendering: 'auto' }}
+                          onMouseMove={handleEyedropperHover}
+                          onClick={handleEyedropperClick}
+                        />
+                        {/* Hovered color indicator */}
+                        {eyedropperActive && hoveredColor && (
+                          <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-background/90 backdrop-blur-sm rounded-lg px-2 py-1 border border-border shadow-sm">
+                            <div className="w-5 h-5 rounded border border-border" style={{ backgroundColor: hoveredColor }} />
+                            <span className="text-[10px] font-mono text-foreground">{hoveredColor}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Sampled Colors */}
+                      {sampledColors.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground font-medium">Sampled Colors ({sampledColors.length})</span>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={addAllSampled}>
+                                <Plus className="h-2.5 w-2.5 mr-0.5" />
+                                Add All
+                              </Button>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => setSampledColors([])}>
+                                <Trash2 className="h-2.5 w-2.5 mr-0.5" />
+                                Clear
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 flex-wrap">
+                            {sampledColors.map((hex, i) => (
+                              <button
+                                key={`${hex}-${i}`}
+                                className="group/sample relative w-8 h-8 rounded-lg border border-border shadow-sm hover:ring-2 hover:ring-primary/50 transition-all"
+                                style={{ backgroundColor: hex }}
+                                onClick={() => addSampledToSwatches(hex)}
+                                title={`${hex} — click to add to palette`}
+                              >
+                                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/sample:opacity-100 transition-opacity bg-background/40 rounded-lg">
+                                  <Plus className="h-3 w-3 text-foreground" />
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* HSL Sliders + Hex Input */}
