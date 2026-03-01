@@ -5,18 +5,27 @@ const VARIANT_BG: Record<SlideData['variant'], string> = {
   default: 'FFFFFF',
   dark: '0F172A',
   gradient: '1E293B',
+  minimal: 'F8FAFC',
+  brand: '6366F1',
+  bold: '000000',
 };
 
 const VARIANT_TEXT: Record<SlideData['variant'], string> = {
   default: '0F172A',
   dark: 'FFFFFF',
   gradient: 'FFFFFF',
+  minimal: '1E293B',
+  brand: 'FFFFFF',
+  bold: 'FFFFFF',
 };
 
 const VARIANT_MUTED: Record<SlideData['variant'], string> = {
   default: '64748B',
   dark: '94A3B8',
   gradient: 'CBD5E1',
+  minimal: '94A3B8',
+  brand: 'E0E7FF',
+  bold: 'A3A3A3',
 };
 
 export async function exportSlidesToPptx(slides: SlideData[], deckTitle: string) {
