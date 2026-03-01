@@ -327,6 +327,86 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
     toast.success('CSS variables copied to clipboard');
   };
 
+  const exportTailwind = () => {
+    const colors: Record<string, string> = {};
+    swatches.forEach((s, i) => {
+      const key = s.name?.toLowerCase().replace(/\s+/g, '-') || `color-${i + 1}`;
+      colors[key] = s.hex;
+    });
+    const config = `// tailwind.config colors\ncolors: ${JSON.stringify(colors, null, 2)}`;
+    navigator.clipboard.writeText(config);
+    toast.success('Tailwind config copied to clipboard');
+  };
+
+  const exportASE = () => {
+    // Build a minimal ASE (Adobe Swatch Exchange) binary file
+    const hexToRgbFloat = (hex: string) => {
+      const h = hex.replace('#', '');
+      return [
+        parseInt(h.substring(0, 2), 16) / 255,
+        parseInt(h.substring(2, 4), 16) / 255,
+        parseInt(h.substring(4, 6), 16) / 255,
+      ];
+    };
+
+    const entries: ArrayBuffer[] = [];
+    for (const s of swatches) {
+      const name = s.name || s.hex;
+      // Encode name as UTF-16BE with null terminator
+      const nameLen = name.length + 1;
+      const nameBytes = new ArrayBuffer(nameLen * 2);
+      const nameView = new DataView(nameBytes);
+      for (let i = 0; i < name.length; i++) nameView.setUint16(i * 2, name.charCodeAt(i));
+      nameView.setUint16((nameLen - 1) * 2, 0);
+
+      const rgb = hexToRgbFloat(s.hex);
+      // Block: type(2) + blockLen(4) + nameLen(2) + nameBytes + colorModel(4) + 3 floats(12) + colorType(2)
+      const blockDataLen = 2 + nameLen * 2 + 4 + 12 + 2;
+      const block = new ArrayBuffer(6 + blockDataLen);
+      const bv = new DataView(block);
+      bv.setUint16(0, 0x0001); // color entry
+      bv.setUint32(2, blockDataLen);
+      bv.setUint16(6, nameLen);
+      const blockU8 = new Uint8Array(block);
+      blockU8.set(new Uint8Array(nameBytes), 8);
+      const colorOff = 8 + nameLen * 2;
+      // "RGB " as 4 ASCII chars
+      bv.setUint8(colorOff, 82); bv.setUint8(colorOff + 1, 71);
+      bv.setUint8(colorOff + 2, 66); bv.setUint8(colorOff + 3, 32);
+      // Write floats
+      const dv = new DataView(block);
+      dv.setFloat32(colorOff + 4, rgb[0]);
+      dv.setFloat32(colorOff + 8, rgb[1]);
+      dv.setFloat32(colorOff + 12, rgb[2]);
+      dv.setUint16(colorOff + 16, 0); // global color type
+      entries.push(block);
+    }
+
+    // Header: ASEF(4) + version(4) + numBlocks(4)
+    const totalSize = 12 + entries.reduce((sum, e) => sum + e.byteLength, 0);
+    const ase = new ArrayBuffer(totalSize);
+    const av = new DataView(ase);
+    // "ASEF"
+    av.setUint8(0, 65); av.setUint8(1, 83); av.setUint8(2, 69); av.setUint8(3, 70);
+    av.setUint32(4, 0x00010000); // version 1.0
+    av.setUint32(8, swatches.length);
+    const au8 = new Uint8Array(ase);
+    let offset = 12;
+    for (const entry of entries) {
+      au8.set(new Uint8Array(entry), offset);
+      offset += entry.byteLength;
+    }
+
+    const blob = new Blob([ase], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'palette.ase';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('ASE swatch file downloaded');
+  };
+
   // ─── Eyedropper Logic ───────────────────────────────────────────
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -455,10 +535,19 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportCSS} className="hidden sm:flex gap-1 h-8 text-xs">
-              <Copy className="h-3 w-3" />
-              CSS
-            </Button>
+            <div className="hidden sm:flex items-center gap-1">
+              <Button variant="outline" size="sm" onClick={exportCSS} className="gap-1 h-8 text-xs rounded-r-none border-r-0">
+                <Copy className="h-3 w-3" />
+                CSS
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportTailwind} className="gap-1 h-8 text-xs rounded-none border-r-0">
+                Tailwind
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportASE} className="gap-1 h-8 text-xs rounded-l-none">
+                <Download className="h-3 w-3" />
+                ASE
+              </Button>
+            </div>
             <Button size="sm" onClick={handleSave} className="bg-gradient-to-r from-violet-500 to-purple-600 h-8 text-xs gap-1">
               <Download className="h-3 w-3" />
               Save Palette
