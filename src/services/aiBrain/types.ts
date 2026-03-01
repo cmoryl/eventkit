@@ -1,7 +1,7 @@
 // AI Brain Type Definitions
 // Centralized types for the learning and render engine system
 
-export type RenderProvider = 'lovable' | 'openai' | 'stability' | 'replicate' | 'midjourney';
+export type RenderProvider = 'lovable' | 'lovable-hq' | 'openai' | 'stability' | 'replicate' | 'midjourney';
 export type VideoProvider = 'lovable-veo3' | 'replicate-luma' | 'replicate-minimax';
 export type EngineType = 'image' | 'video';
 

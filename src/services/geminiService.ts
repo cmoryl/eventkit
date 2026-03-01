@@ -546,7 +546,8 @@ export const generateAssetImage = async (
   venueIntelligence?: VenueIntelligence | null,
   eventDate?: string,
   eventType?: string,
-  brandContext?: BrandContext | null
+  brandContext?: BrandContext | null,
+  imageModel?: 'fast' | 'quality'
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 
@@ -629,6 +630,7 @@ export const generateAssetImage = async (
         imageAnalysis,
         venueIntelligence,
         brandContext,
+        imageModel,
       },
     });
 

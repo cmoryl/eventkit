@@ -47,7 +47,8 @@ serve(async (req) => {
       renderMode = 'hyperrealistic',
       imageAnalysis: providedAnalysis,
       venueIntelligence,
-      brandContext
+      brandContext,
+      imageModel = 'fast',
     } = body;
 
     // Normalize to arrays for multi-image support
@@ -239,7 +240,7 @@ ${outputChecklist}`;
     allPatternImages.forEach(img => referenceImages.push(img));
     if (venueImageBase64) referenceImages.push(venueImageBase64);
 
-    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages);
+    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages, 2, imageModel);
     
     console.log(`Successfully generated ${isPrint ? 'PRINT-READY' : renderMode} image for ${assetType}`);
 

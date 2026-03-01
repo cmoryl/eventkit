@@ -15,10 +15,17 @@ interface ProviderInfo {
 
 const IMAGE_PROVIDER_INFO: Record<RenderProvider, ProviderInfo> = {
   lovable: {
-    name: 'Lovable AI',
-    description: 'Built-in AI powered by Google Gemini. Fast (Nano Banana) or high-quality (Pro) modes.',
+    name: 'Lovable AI (Fast)',
+    description: 'Built-in AI powered by Google Gemini. Fast generation with great quality.',
     requiresKey: false,
-    models: ['gemini-2.5-flash-image (Fast)', 'gemini-3-pro-image-preview (Quality)'],
+    models: ['gemini-2.5-flash-image'],
+    type: 'image',
+  },
+  'lovable-hq': {
+    name: 'Lovable AI (HQ)',
+    description: 'High-quality mode using next-gen Gemini. Slower but produces superior results.',
+    requiresKey: false,
+    models: ['gemini-3-pro-image-preview'],
     type: 'image',
   },
   openai: {

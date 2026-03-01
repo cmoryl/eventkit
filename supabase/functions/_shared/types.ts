@@ -105,6 +105,7 @@ export interface GenerateImageRequest {
   imageAnalysis?: ImageAnalysis;
   venueIntelligence?: VenueIntelligence;
   brandContext?: BrandContext;
+  imageModel?: 'fast' | 'quality'; // fast = gemini-2.5-flash-image, quality = gemini-3-pro-image-preview
 }
 
 // Error types for consistent error handling

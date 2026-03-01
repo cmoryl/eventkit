@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Key, Video } from 'lucide-react';
+import { Sparkles, Zap, Key, Video, Crown } from 'lucide-react';
 import type { RenderEngine, RenderProvider, VideoProvider } from '@/services/aiBrain/types';
 import { getUserRenderEngines, getAllProviders } from '@/services/aiBrain/renderEngineService';
 import { cn } from '@/lib/utils';
@@ -48,19 +48,33 @@ export function RenderEngineSelector({
     setLoading(false);
   };
 
-  // Create default Lovable engine option
-  const defaultEngine: RenderEngine = {
-    id: 'lovable-default',
-    userId,
-    provider: 'lovable',
-    displayName: 'Lovable AI',
-    isActive: true,
-    isDefault: true,
-    config: { model: 'gemini-2.5-flash-image' },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    engineType: 'image',
-  };
+  // Create built-in engine options
+  const builtInEngines: RenderEngine[] = [
+    {
+      id: 'lovable-default',
+      userId,
+      provider: 'lovable',
+      displayName: 'Lovable AI (Fast)',
+      isActive: true,
+      isDefault: true,
+      config: { model: 'gemini-2.5-flash-image' },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      engineType: 'image',
+    },
+    {
+      id: 'lovable-hq',
+      userId,
+      provider: 'lovable-hq',
+      displayName: 'Lovable AI (HQ)',
+      isActive: true,
+      isDefault: false,
+      config: { model: 'gemini-3-pro-image-preview', quality: 'hd' },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      engineType: 'image',
+    },
+  ];
 
   // Filter engines by type
   const filteredEngines = engines.filter(e => {
@@ -68,8 +82,8 @@ export function RenderEngineSelector({
     return e.isActive && (e.engineType === engineType || !e.engineType);
   });
 
-  const allEngines = [defaultEngine, ...filteredEngines];
-  const selectedEngine = allEngines.find(e => e.id === value) || defaultEngine;
+  const allEngines = [...builtInEngines, ...filteredEngines];
+  const selectedEngine = allEngines.find(e => e.id === value) || builtInEngines[0];
 
   const handleChange = (engineId: string) => {
     const engine = allEngines.find(e => e.id === engineId);
@@ -83,6 +97,8 @@ export function RenderEngineSelector({
     switch (provider) {
       case 'lovable':
         return <Sparkles className={cn("text-primary", compact ? "w-3 h-3" : "w-4 h-4")} />;
+      case 'lovable-hq':
+        return <Crown className={cn("text-amber-500", compact ? "w-3 h-3" : "w-4 h-4")} />;
       default:
         return <Zap className={cn("text-muted-foreground", compact ? "w-3 h-3" : "w-4 h-4")} />;
     }
@@ -100,7 +116,7 @@ export function RenderEngineSelector({
   };
 
   const isBuiltIn = (provider: AnyProvider) => {
-    return provider === 'lovable' || provider === 'lovable-veo3';
+    return provider === 'lovable' || provider === 'lovable-hq' || provider === 'lovable-veo3';
   };
 
   if (loading) {
@@ -132,7 +148,9 @@ export function RenderEngineSelector({
               {getProviderIcon(engine.provider)}
               <span className="flex-1">{engine.displayName}</span>
               {isBuiltIn(engine.provider) ? (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Built-in</Badge>
+                <Badge variant="secondary" className={cn("text-[10px] px-1.5 py-0", engine.provider === 'lovable-hq' && "bg-amber-500/10 text-amber-600 border-amber-500/30")}>
+                  {engine.provider === 'lovable-hq' ? 'HQ' : 'Built-in'}
+                </Badge>
               ) : (
                 <Key className="w-3 h-3 text-muted-foreground" />
               )}
@@ -172,7 +190,7 @@ export function RenderEngineBadge({
     }
   };
 
-  const isBuiltIn = provider === 'lovable' || provider === 'lovable-veo3';
+  const isBuiltIn = provider === 'lovable' || provider === 'lovable-hq' || provider === 'lovable-veo3';
 
   return (
     <Badge 
