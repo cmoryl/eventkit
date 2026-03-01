@@ -217,6 +217,7 @@ export class AIBrain {
         vibeImageBase64: context.vibeImageBase64,
         masterPatternBase64: context.masterPatternBase64,
         customPrompt: prompt,
+        imageModel: context.renderEngine?.provider === 'lovable-hq' ? 'quality' : 'fast',
       },
     });
 

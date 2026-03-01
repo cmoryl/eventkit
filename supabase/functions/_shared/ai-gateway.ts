@@ -83,12 +83,20 @@ Respond with ONLY a JSON object with these exact fields:
 /**
  * Generate image with retry logic
  */
+export type ImageModelTier = 'fast' | 'quality';
+
+const IMAGE_MODELS: Record<ImageModelTier, string> = {
+  fast: 'google/gemini-2.5-flash-image',
+  quality: 'google/gemini-3-pro-image-preview',
+};
+
 export async function generateImageWithRetry(
   apiKey: string,
   prompt: string,
   assetType: string,
   referenceImages: string[] = [],
-  maxRetries = 2
+  maxRetries = 2,
+  modelTier: ImageModelTier = 'fast'
 ): Promise<string> {
   let lastError: Error | null = null;
   
@@ -121,7 +129,7 @@ export async function generateImageWithRetry(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image",
+          model: IMAGE_MODELS[modelTier],
           messages: [
             {
               role: "user",
