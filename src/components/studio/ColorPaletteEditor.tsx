@@ -811,29 +811,52 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
                               {extracting ? 'Analyzing image…' : `Dominant Colors (${dominantColors.length})`}
                             </span>
                             {dominantColors.length > 0 && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 text-[10px] px-2"
-                                onClick={() => {
-                                  const available = 10 - swatches.length;
-                                  if (available <= 0) { toast.error('Palette is full'); return; }
-                                  const toAdd = dominantColors.slice(0, available);
-                                  setSwatches(prev => [
-                                    ...prev,
-                                    ...toAdd.map((c, i) => ({
-                                      id: `dominant-${Date.now()}-${i}`,
-                                      hex: c.hex,
-                                      locked: false,
-                                      name: `Dominant ${i + 1}`,
-                                    })),
-                                  ]);
-                                  toast.success(`Added ${toAdd.length} dominant colors`);
-                                }}
-                              >
-                                <Plus className="h-2.5 w-2.5 mr-0.5" />
-                                Add All
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {/* Re-extract with count options */}
+                                <div className="flex items-center border border-border rounded-md overflow-hidden">
+                                  {[3, 5, 8, 10].map((n) => (
+                                    <button
+                                      key={n}
+                                      className={cn(
+                                        "h-6 px-2 text-[10px] font-medium transition-colors",
+                                        dominantColors.length === n
+                                          ? "bg-primary text-primary-foreground"
+                                          : "text-muted-foreground hover:bg-muted"
+                                      )}
+                                      onClick={() => {
+                                        const canvas = eyedropperCanvasRef.current;
+                                        if (canvas) extractDominantColors(canvas, n);
+                                      }}
+                                      disabled={extracting}
+                                    >
+                                      {n}
+                                    </button>
+                                  ))}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 text-[10px] px-2"
+                                  onClick={() => {
+                                    const available = 10 - swatches.length;
+                                    if (available <= 0) { toast.error('Palette is full'); return; }
+                                    const toAdd = dominantColors.slice(0, available);
+                                    setSwatches(prev => [
+                                      ...prev,
+                                      ...toAdd.map((c, i) => ({
+                                        id: `dominant-${Date.now()}-${i}`,
+                                        hex: c.hex,
+                                        locked: false,
+                                        name: `Dominant ${i + 1}`,
+                                      })),
+                                    ]);
+                                    toast.success(`Added ${toAdd.length} dominant colors`);
+                                  }}
+                                >
+                                  <Plus className="h-2.5 w-2.5 mr-0.5" />
+                                  Add All
+                                </Button>
+                              </div>
                             )}
                           </div>
                           {extracting ? (
