@@ -13,9 +13,12 @@ import { VisualEditor } from '@/components/visualEditor';
 import { AnimatedBannerEditor } from '@/components/animatedBanner';
 import { isAnimatableAsset } from '@/config/animationPresets';
 import { SlideEditor } from '@/components/slides/SlideEditor';
+import { VideoStudioEditor } from '@/components/videoStudio/VideoStudioEditor';
 
 // Presentation asset types that should open the slide editor
 const PRESENTATION_ASSET_TYPES = ['PRESENTATION_SLIDE', 'WEBINAR_SLIDE'];
+// Video asset types that should open the video studio editor
+const VIDEO_ASSET_TYPES = ['VIDEO_TEASER', 'MOTION_GRAPHIC', 'DIGITAL_SIGNAGE_LOOP'];
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
 import demoNameTag from '@/assets/demos/demo-name-tag.jpg';
@@ -388,6 +391,9 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   const [slideEditorAssetType, setSlideEditorAssetType] = useState<string | null>(null);
   const [slideEditorAssetName, setSlideEditorAssetName] = useState<string>('');
   
+  // Video studio editor state
+  const [videoStudioOpen, setVideoStudioOpen] = useState(false);
+  
   // Open full-screen canvas for generation with variations
   const handleGenerate = (assetType: string) => {
     if (!brand) {
@@ -412,6 +418,10 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
       setSlideEditorAssetType(assetType);
       setSlideEditorAssetName(assetName);
       setSlideEditorOpen(true);
+      return;
+    }
+    if (VIDEO_ASSET_TYPES.includes(assetType)) {
+      setVideoStudioOpen(true);
       return;
     }
     setVisualEditorAssetType(assetType);
@@ -995,6 +1005,12 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           brand={brand}
         />
       )}
+
+      {/* Video Studio Editor */}
+      <VideoStudioEditor
+        isOpen={videoStudioOpen}
+        onClose={() => setVideoStudioOpen(false)}
+      />
     </>
   );
 };
