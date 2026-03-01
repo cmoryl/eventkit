@@ -15,6 +15,7 @@ import { isAnimatableAsset } from '@/config/animationPresets';
 import { SlideEditor } from '@/components/slides/SlideEditor';
 import { VideoStudioEditor } from '@/components/videoStudio/VideoStudioEditor';
 import MerchMockupOverlay, { MERCH_MOCKUP_TYPES } from './MerchMockupOverlay';
+import SocialDeviceFrame, { SOCIAL_FRAME_TYPES } from './SocialDeviceFrame';
 import BleedSafeZoneOverlay from '@/components/BleedSafeZoneOverlay';
 import { AssetType } from '@/types';
 import { ColorPaletteEditor } from './ColorPaletteEditor';
@@ -831,6 +832,23 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                         <div className="absolute top-2 left-10 z-10 bg-primary rounded-full px-2 py-0.5 flex items-center gap-1">
                           <Sparkles className="w-3 h-3 text-primary-foreground" />
                           <span className="text-[10px] font-medium text-primary-foreground">Mockup</span>
+                        </div>
+                      </>
+                    );
+                  }
+                  
+                  // Show device frame for social items with generated images
+                  const isSocial = SOCIAL_FRAME_TYPES.has(assetType);
+                  if (isSocial && hasGenerated && generatedImages[assetType]) {
+                    return (
+                      <>
+                        <SocialDeviceFrame
+                          assetType={assetType}
+                          imageUrl={generatedImages[assetType]}
+                        />
+                        <div className="absolute top-2 left-10 z-10 bg-primary rounded-full px-2 py-0.5 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-primary-foreground" />
+                          <span className="text-[10px] font-medium text-primary-foreground">Device Preview</span>
                         </div>
                       </>
                     );
