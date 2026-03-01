@@ -12,6 +12,10 @@ import { TemplateWorkflowModal } from './TemplateWorkflowModal';
 import { VisualEditor } from '@/components/visualEditor';
 import { AnimatedBannerEditor } from '@/components/animatedBanner';
 import { isAnimatableAsset } from '@/config/animationPresets';
+import { SlideEditor } from '@/components/slides/SlideEditor';
+
+// Presentation asset types that should open the slide editor
+const PRESENTATION_ASSET_TYPES = ['PRESENTATION_SLIDE', 'WEBINAR_SLIDE'];
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
 import demoNameTag from '@/assets/demos/demo-name-tag.jpg';
@@ -379,6 +383,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   const [animatedBannerAssetType, setAnimatedBannerAssetType] = useState<string | null>(null);
   const [animatedBannerAssetName, setAnimatedBannerAssetName] = useState<string>('');
   
+  // Slide editor state
+  const [slideEditorOpen, setSlideEditorOpen] = useState(false);
+  const [slideEditorAssetType, setSlideEditorAssetType] = useState<string | null>(null);
+  const [slideEditorAssetName, setSlideEditorAssetName] = useState<string>('');
+  
   // Open full-screen canvas for generation with variations
   const handleGenerate = (assetType: string) => {
     if (!brand) {
@@ -397,8 +406,14 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
     setTemplateModalOpen(true);
   };
   
-  // Open visual editor (Canva-style)
+  // Open visual editor (Canva-style) or slide editor for presentations
   const handleOpenVisualEditor = (assetType: string, assetName: string) => {
+    if (PRESENTATION_ASSET_TYPES.includes(assetType)) {
+      setSlideEditorAssetType(assetType);
+      setSlideEditorAssetName(assetName);
+      setSlideEditorOpen(true);
+      return;
+    }
     setVisualEditorAssetType(assetType);
     setVisualEditorAssetName(assetName);
     setVisualEditorOpen(true);
@@ -964,6 +979,20 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           backgroundImage={generatedImages[animatedBannerAssetType]}
           initialWidth={getEditorDimensions(animatedBannerAssetType).width}
           initialHeight={getEditorDimensions(animatedBannerAssetType).height}
+        />
+      )}
+
+      {/* Slide Editor for Presentations */}
+      {slideEditorAssetType && (
+        <SlideEditor
+          isOpen={slideEditorOpen}
+          onClose={() => {
+            setSlideEditorOpen(false);
+            setSlideEditorAssetType(null);
+          }}
+          assetType={slideEditorAssetType}
+          assetName={slideEditorAssetName}
+          brand={brand}
         />
       )}
     </>
