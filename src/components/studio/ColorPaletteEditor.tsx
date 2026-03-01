@@ -157,6 +157,8 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
   const [eyedropperActive, setEyedropperActive] = useState(false);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const [sampledColors, setSampledColors] = useState<string[]>([]);
+  const [dominantColors, setDominantColors] = useState<{ hex: string; pct: number }[]>([]);
+  const [extracting, setExtracting] = useState(false);
 
   // Keep editingHex in sync
   useEffect(() => {
@@ -418,11 +420,86 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
     }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      setEyedropperImage(ev.target?.result as string);
+      const dataUrl = ev.target?.result as string;
+      setEyedropperImage(dataUrl);
       setSampledColors([]);
+      setDominantColors([]);
     };
     reader.readAsDataURL(file);
   };
+
+  // ─── Dominant Color Extraction (quantized k-means) ──────────────
+  const extractDominantColors = useCallback((canvas: HTMLCanvasElement, count = 5) => {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+    setExtracting(true);
+
+    // Sample pixels on a smaller grid for speed
+    const step = Math.max(1, Math.floor(Math.sqrt((canvas.width * canvas.height) / 10000)));
+    const pixels: [number, number, number][] = [];
+    for (let y = 0; y < canvas.height; y += step) {
+      for (let x = 0; x < canvas.width; x += step) {
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        if (d[3] < 128) continue; // skip transparent
+        pixels.push([d[0], d[1], d[2]]);
+      }
+    }
+
+    if (pixels.length === 0) { setExtracting(false); return; }
+
+    // Simple k-means
+    let centroids: [number, number, number][] = [];
+    for (let i = 0; i < count; i++) {
+      centroids.push(pixels[Math.floor(Math.random() * pixels.length)]);
+    }
+
+    const dist = (a: number[], b: number[]) =>
+      (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+
+    for (let iter = 0; iter < 15; iter++) {
+      const clusters: [number, number, number][][] = centroids.map(() => []);
+      for (const p of pixels) {
+        let minD = Infinity, minI = 0;
+        for (let c = 0; c < centroids.length; c++) {
+          const d = dist(p, centroids[c]);
+          if (d < minD) { minD = d; minI = c; }
+        }
+        clusters[minI].push(p);
+      }
+      for (let c = 0; c < centroids.length; c++) {
+        const cl = clusters[c];
+        if (cl.length === 0) continue;
+        centroids[c] = [
+          Math.round(cl.reduce((s, p) => s + p[0], 0) / cl.length),
+          Math.round(cl.reduce((s, p) => s + p[1], 0) / cl.length),
+          Math.round(cl.reduce((s, p) => s + p[2], 0) / cl.length),
+        ];
+      }
+    }
+
+    // Count pixels per centroid for percentages
+    const counts = new Array(count).fill(0);
+    for (const p of pixels) {
+      let minD = Infinity, minI = 0;
+      for (let c = 0; c < centroids.length; c++) {
+        const d = dist(p, centroids[c]);
+        if (d < minD) { minD = d; minI = c; }
+      }
+      counts[minI]++;
+    }
+
+    const toHex = (rgb: number[]) =>
+      `#${rgb.map(v => Math.min(255, Math.max(0, v)).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+
+    const results = centroids
+      .map((c, i) => ({ hex: toHex(c), pct: Math.round((counts[i] / pixels.length) * 100) }))
+      .filter(r => r.pct > 0)
+      .sort((a, b) => b.pct - a.pct)
+      .slice(0, count);
+
+    setDominantColors(results);
+    setExtracting(false);
+  }, []);
 
   // Draw uploaded image onto hidden canvas for pixel sampling
   useEffect(() => {
@@ -438,9 +515,10 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
       ctx.drawImage(img, 0, 0);
+      extractDominantColors(canvas, 5);
     };
     img.src = eyedropperImage;
-  }, [eyedropperImage]);
+  }, [eyedropperImage, extractDominantColors]);
 
   const sampleColorAt = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = eyedropperCanvasRef.current;
@@ -723,6 +801,71 @@ export const ColorPaletteEditor: React.FC<ColorPaletteEditorProps> = ({
                           </div>
                         )}
                       </div>
+
+                      {/* Dominant Colors */}
+                      {(dominantColors.length > 0 || extracting) && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5">
+                              <Sparkles className="h-3 w-3 text-primary" />
+                              {extracting ? 'Analyzing image…' : `Dominant Colors (${dominantColors.length})`}
+                            </span>
+                            {dominantColors.length > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-[10px] px-2"
+                                onClick={() => {
+                                  const available = 10 - swatches.length;
+                                  if (available <= 0) { toast.error('Palette is full'); return; }
+                                  const toAdd = dominantColors.slice(0, available);
+                                  setSwatches(prev => [
+                                    ...prev,
+                                    ...toAdd.map((c, i) => ({
+                                      id: `dominant-${Date.now()}-${i}`,
+                                      hex: c.hex,
+                                      locked: false,
+                                      name: `Dominant ${i + 1}`,
+                                    })),
+                                  ]);
+                                  toast.success(`Added ${toAdd.length} dominant colors`);
+                                }}
+                              >
+                                <Plus className="h-2.5 w-2.5 mr-0.5" />
+                                Add All
+                              </Button>
+                            )}
+                          </div>
+                          {extracting ? (
+                            <div className="flex gap-1.5">
+                              {[...Array(5)].map((_, i) => (
+                                <div key={i} className="w-10 h-10 rounded-lg bg-muted animate-pulse" />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex gap-1.5">
+                              {dominantColors.map((c, i) => (
+                                <button
+                                  key={`${c.hex}-${i}`}
+                                  className="group/dom relative flex flex-col items-center gap-1"
+                                  onClick={() => addSampledToSwatches(c.hex)}
+                                  title={`${c.hex} (${c.pct}%) — click to add`}
+                                >
+                                  <div
+                                    className="w-10 h-10 rounded-lg border border-border shadow-sm hover:ring-2 hover:ring-primary/50 transition-all"
+                                    style={{ backgroundColor: c.hex }}
+                                  >
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/dom:opacity-100 transition-opacity bg-background/40 rounded-lg">
+                                      <Plus className="h-3 w-3 text-foreground" />
+                                    </div>
+                                  </div>
+                                  <span className="text-[8px] text-muted-foreground font-mono">{c.pct}%</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {/* Sampled Colors */}
                       {sampledColors.length > 0 && (
