@@ -4,9 +4,11 @@ import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
   ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download, Upload,
-  Replace, ImagePlus
+  Replace, ImagePlus, Quote, BarChart3, Maximize2, GitCompare,
+  AlignLeft, AlignCenter, AlignRight, Palette, LayoutTemplate
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/types/studio.types';
-import { SlideData, DEFAULT_SLIDES } from './slideTypes';
+import { SlideData, DEFAULT_SLIDES, SLIDE_TEMPLATES } from './slideTypes';
 import { SlideRenderer } from './SlideRenderer';
 import { SlideThumbnail } from './SlideThumbnail';
 import { CenteredScaledSlide } from './ScaledSlide';
@@ -34,6 +36,10 @@ const LAYOUT_OPTIONS: { value: SlideData['layout']; label: string; icon: React.E
   { value: 'image-left', label: 'Image Left', icon: SplitSquareHorizontal },
   { value: 'image-right', label: 'Image Right', icon: Columns },
   { value: 'two-column', label: 'Two Column', icon: Columns },
+  { value: 'quote', label: 'Quote', icon: Quote },
+  { value: 'stats', label: 'Stats', icon: BarChart3 },
+  { value: 'full-image', label: 'Full Image', icon: Maximize2 },
+  { value: 'comparison', label: 'Comparison', icon: GitCompare },
   { value: 'section', label: 'Section Break', icon: Square },
   { value: 'blank', label: 'Blank', icon: Square },
 ];
@@ -245,6 +251,36 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 </Button>
               </div>
 
+              {/* Templates */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <LayoutTemplate className="h-3.5 w-3.5 mr-1.5" />
+                    Templates
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="end">
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground px-2 py-1">Start from a template</p>
+                    {SLIDE_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.name}
+                        className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors"
+                        onClick={() => {
+                          const newSlides = tpl.slides.map((s, i) => ({ ...s, id: `tpl-${Date.now()}-${i}` } as SlideData));
+                          setSlides(newSlides);
+                          setActiveIndex(0);
+                          toast.success(`Loaded "${tpl.name}" template`);
+                        }}
+                      >
+                        <span className="font-medium">{tpl.name}</span>
+                        <span className="text-xs text-muted-foreground ml-2">{tpl.slides.length} slides</span>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <Button size="sm" variant="default" onClick={() => setIsAIGeneratorOpen(true)}>
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                 AI Generate
@@ -388,8 +424,93 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                       <SelectItem value="default">Light</SelectItem>
                       <SelectItem value="dark">Dark</SelectItem>
                       <SelectItem value="gradient">Gradient</SelectItem>
+                      <SelectItem value="minimal">Minimal</SelectItem>
+                      <SelectItem value="brand">Brand</SelectItem>
+                      <SelectItem value="bold">Bold</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Background color override */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Palette className="h-3 w-3" />
+                    Background Color
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={activeSlide.bgColor || '#ffffff'}
+                      onChange={(e) => updateSlide(activeIndex, { bgColor: e.target.value })}
+                      className="h-8 w-8 rounded border border-border cursor-pointer"
+                    />
+                    <Input
+                      className="h-8 text-xs font-mono flex-1"
+                      value={activeSlide.bgColor || ''}
+                      onChange={(e) => updateSlide(activeIndex, { bgColor: e.target.value || undefined })}
+                      placeholder="Auto (from theme)"
+                    />
+                    {activeSlide.bgColor && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateSlide(activeIndex, { bgColor: undefined })}>
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Text alignment */}
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">Text Alignment</label>
+                  <div className="flex gap-1">
+                    {([['left', AlignLeft], ['center', AlignCenter], ['right', AlignRight]] as const).map(([val, Icon]) => (
+                      <Button
+                        key={val}
+                        variant={(activeSlide.textAlign || 'left') === val ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-8 flex-1"
+                        onClick={() => updateSlide(activeIndex, { textAlign: val })}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Font size controls */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-medium text-muted-foreground">Heading Size</label>
+                    <Select
+                      value={String(activeSlide.headingSize || 0)}
+                      onValueChange={(v) => updateSlide(activeIndex, { headingSize: Number(v) || undefined })}
+                    >
+                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Auto" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Auto</SelectItem>
+                        <SelectItem value="48">Small (48)</SelectItem>
+                        <SelectItem value="64">Medium (64)</SelectItem>
+                        <SelectItem value="80">Large (80)</SelectItem>
+                        <SelectItem value="96">XL (96)</SelectItem>
+                        <SelectItem value="120">XXL (120)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-medium text-muted-foreground">Body Size</label>
+                    <Select
+                      value={String(activeSlide.bodySize || 0)}
+                      onValueChange={(v) => updateSlide(activeIndex, { bodySize: Number(v) || undefined })}
+                    >
+                      <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Auto" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">Auto</SelectItem>
+                        <SelectItem value="24">Small (24)</SelectItem>
+                        <SelectItem value="32">Medium (32)</SelectItem>
+                        <SelectItem value="40">Large (40)</SelectItem>
+                        <SelectItem value="48">XL (48)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Title */}
@@ -415,15 +536,95 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 )}
 
                 {/* Body text */}
-                {activeSlide.layout !== 'title' && activeSlide.layout !== 'section' && activeSlide.layout !== 'blank' && (
+                {activeSlide.layout !== 'title' && activeSlide.layout !== 'section' && activeSlide.layout !== 'blank' && activeSlide.layout !== 'quote' && activeSlide.layout !== 'stats' && (
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">Body Text</label>
+                    <label className="text-xs font-medium text-muted-foreground">
+                      {(activeSlide.layout === 'two-column' || activeSlide.layout === 'comparison') ? 'Body Text (use --- to split columns)' : 'Body Text'}
+                    </label>
                     <Textarea
                       className="text-sm min-h-[120px]"
                       value={activeSlide.body || ''}
                       onChange={(e) => updateSlide(activeIndex, { body: e.target.value })}
-                      placeholder="Enter content... Use new lines for bullet points"
+                      placeholder={
+                        (activeSlide.layout === 'two-column' || activeSlide.layout === 'comparison')
+                          ? "Left column text\n---\nRight column text"
+                          : "Enter content... Use new lines for bullet points"
+                      }
                     />
+                  </div>
+                )}
+
+                {/* Quote author */}
+                {activeSlide.layout === 'quote' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Attribution</label>
+                    <Input
+                      className="h-8 text-sm"
+                      value={activeSlide.quoteAuthor || ''}
+                      onChange={(e) => updateSlide(activeIndex, { quoteAuthor: e.target.value })}
+                      placeholder="Quote author name"
+                    />
+                  </div>
+                )}
+
+                {/* Stats entries */}
+                {activeSlide.layout === 'stats' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-muted-foreground">Statistics</label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => {
+                          const current = activeSlide.stats || [];
+                          if (current.length >= 5) return;
+                          updateSlide(activeIndex, { stats: [...current, { value: '0', label: 'Label' }] });
+                        }}
+                        disabled={(activeSlide.stats || []).length >= 5}
+                      >
+                        <Plus className="h-3 w-3 mr-0.5" /> Add
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      {(activeSlide.stats || [{ value: '—', label: 'Metric' }]).map((stat, si) => (
+                        <div key={si} className="flex gap-1.5 items-center">
+                          <Input
+                            className="h-7 text-xs font-bold flex-1"
+                            value={stat.value}
+                            onChange={(e) => {
+                              const updated = [...(activeSlide.stats || [])];
+                              updated[si] = { ...updated[si], value: e.target.value };
+                              updateSlide(activeIndex, { stats: updated });
+                            }}
+                            placeholder="Value"
+                          />
+                          <Input
+                            className="h-7 text-xs flex-1"
+                            value={stat.label}
+                            onChange={(e) => {
+                              const updated = [...(activeSlide.stats || [])];
+                              updated[si] = { ...updated[si], label: e.target.value };
+                              updateSlide(activeIndex, { stats: updated });
+                            }}
+                            placeholder="Label"
+                          />
+                          {(activeSlide.stats || []).length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 shrink-0"
+                              onClick={() => {
+                                const updated = (activeSlide.stats || []).filter((_, i) => i !== si);
+                                updateSlide(activeIndex, { stats: updated });
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
