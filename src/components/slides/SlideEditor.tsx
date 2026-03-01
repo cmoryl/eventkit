@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
-  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download, Upload
+  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download, Upload,
+  Replace, ImagePlus
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -426,16 +427,114 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                   </div>
                 )}
 
-                {/* Image URL for image layouts */}
-                {(activeSlide.layout === 'image-left' || activeSlide.layout === 'image-right') && (
+                {/* Slide Images */}
+                {(activeSlide.images && activeSlide.images.length > 0) || activeSlide.imageUrl ? (
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-muted-foreground">Image URL</label>
-                    <Input
-                      className="h-8 text-sm"
-                      value={activeSlide.imageUrl || ''}
-                      onChange={(e) => updateSlide(activeIndex, { imageUrl: e.target.value })}
-                      placeholder="https://..."
-                    />
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-muted-foreground">Images</label>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            e.target.value = '';
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const dataUrl = reader.result as string;
+                              const currentImages = activeSlide.images || [];
+                              updateSlide(activeIndex, {
+                                images: [...currentImages, dataUrl],
+                                imageUrl: activeSlide.imageUrl || dataUrl,
+                              });
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs gap-1" asChild>
+                          <span><ImagePlus className="h-3 w-3" /> Add</span>
+                        </Button>
+                      </label>
+                    </div>
+                    <div className="space-y-2 max-h-[240px] overflow-y-auto">
+                      {(activeSlide.images || (activeSlide.imageUrl ? [activeSlide.imageUrl] : [])).map((imgSrc, imgIdx) => (
+                        <div key={imgIdx} className="relative group rounded-md border overflow-hidden bg-muted/50">
+                          <img src={imgSrc} alt={`Slide image ${imgIdx + 1}`} className="w-full h-20 object-cover" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                            <label className="cursor-pointer">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  e.target.value = '';
+                                  const reader = new FileReader();
+                                  reader.onload = () => {
+                                    const dataUrl = reader.result as string;
+                                    const imgs = [...(activeSlide.images || [])];
+                                    imgs[imgIdx] = dataUrl;
+                                    updateSlide(activeIndex, {
+                                      images: imgs,
+                                      imageUrl: imgIdx === 0 ? dataUrl : activeSlide.imageUrl,
+                                    });
+                                  };
+                                  reader.readAsDataURL(file);
+                                }}
+                              />
+                              <Button size="sm" variant="secondary" className="h-7 px-2 text-xs gap-1" asChild>
+                                <span><Replace className="h-3 w-3" /> Replace</span>
+                              </Button>
+                            </label>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-7 px-2 text-xs gap-1"
+                              onClick={() => {
+                                const imgs = (activeSlide.images || []).filter((_, i) => i !== imgIdx);
+                                updateSlide(activeIndex, {
+                                  images: imgs.length > 0 ? imgs : undefined,
+                                  imageUrl: imgs.length > 0 ? imgs[0] : undefined,
+                                });
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" /> Remove
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Images</label>
+                    <label className="cursor-pointer block">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          e.target.value = '';
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            const dataUrl = reader.result as string;
+                            updateSlide(activeIndex, {
+                              images: [dataUrl],
+                              imageUrl: dataUrl,
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                      <Button size="sm" variant="outline" className="w-full gap-1.5 text-xs" asChild>
+                        <span><ImagePlus className="h-3.5 w-3.5" /> Add Image</span>
+                      </Button>
+                    </label>
                   </div>
                 )}
 
