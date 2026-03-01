@@ -15,9 +15,12 @@ import { isAnimatableAsset } from '@/config/animationPresets';
 import { SlideEditor } from '@/components/slides/SlideEditor';
 import { VideoStudioEditor } from '@/components/videoStudio/VideoStudioEditor';
 import MerchMockupOverlay, { MERCH_MOCKUP_TYPES } from './MerchMockupOverlay';
+import { ColorPaletteEditor } from './ColorPaletteEditor';
 
 // Presentation asset types that should open the slide editor
 const PRESENTATION_ASSET_TYPES = ['PRESENTATION_SLIDE', 'WEBINAR_SLIDE'];
+// Asset types that open the palette editor
+const PALETTE_ASSET_TYPES = ['PALETTE'];
 // Video asset types that should open the video studio editor
 const VIDEO_ASSET_TYPES = ['VIDEO_TEASER', 'MOTION_GRAPHIC', 'DIGITAL_SIGNAGE_LOOP'];
 // Demo imagery imports - Core assets
@@ -395,10 +398,19 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   // Video studio editor state
   const [videoStudioOpen, setVideoStudioOpen] = useState(false);
   
+  // Palette editor state
+  const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
+  
   // Open full-screen canvas for generation with variations
   const handleGenerate = (assetType: string) => {
     if (!brand) {
       toast.error('Please select a brand first');
+      return;
+    }
+    
+    // Intercept PALETTE type to open color palette editor
+    if (PALETTE_ASSET_TYPES.includes(assetType)) {
+      setPaletteEditorOpen(true);
       return;
     }
     
@@ -1040,6 +1052,17 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
       <VideoStudioEditor
         isOpen={videoStudioOpen}
         onClose={() => setVideoStudioOpen(false)}
+      />
+
+      {/* Color Palette Editor */}
+      <ColorPaletteEditor
+        isOpen={paletteEditorOpen}
+        onClose={() => setPaletteEditorOpen(false)}
+        brand={brand}
+        onSavePalette={(colors) => {
+          console.log('Palette saved:', colors);
+          toast.success('Palette saved!');
+        }}
       />
     </>
   );
