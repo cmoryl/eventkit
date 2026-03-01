@@ -30,6 +30,20 @@ interface FormatSettings {
   resolution: "480p" | "720p" | "1080p" | "1440p" | "4k";
 }
 
+type ExportFormat = "mp4" | "webm" | "gif";
+
+const FORMAT_LABELS: Record<ExportFormat, string> = {
+  mp4: "MP4 (H.264)",
+  webm: "WebM (VP9)",
+  gif: "GIF (Animated)",
+};
+
+const FORMAT_EXTENSIONS: Record<ExportFormat, string> = {
+  mp4: "mp4",
+  webm: "webm",
+  gif: "gif",
+};
+
 interface VideoStudioEditorProps {
   isOpen: boolean;
   onClose: () => void;
@@ -66,6 +80,7 @@ export function VideoStudioEditor({ isOpen, onClose }: VideoStudioEditorProps) {
   });
   const [exportSpeed, setExportSpeed] = useState<"quality" | "fast">("quality");
   const [exportMode, setExportMode] = useState<"combined" | "separate">("separate");
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("mp4");
   const [videoPlayerWidth, setVideoPlayerWidth] = useState(50);
   const [exporting, setExporting] = useState(false);
 
@@ -196,29 +211,36 @@ export function VideoStudioEditor({ isOpen, onClose }: VideoStudioEditorProps) {
       }
 
       const resolutionStr = formatResolutionString(formatSettings);
+      const ext = FORMAT_EXTENSIONS[exportFormat];
 
-      if (exportMode === "separate") {
+      if (exportFormat === "gif" && exportMode === "combined" && segments.length > 1) {
+        toast.info("GIF export uses separate mode for multiple segments");
+      }
+
+      const useSeparate = exportMode === "separate" || (exportFormat === "gif" && segments.length > 1);
+
+      if (useSeparate) {
         for (let i = 0; i < segments.length; i++) {
           const seg = segments[i];
           toast.info(`Processing segment ${i + 1}/${segments.length}...`);
-          const blob = await trimVideo(videoFileRef.current!, seg.start_time, seg.end_time, formatSettings, exportSpeed);
+          const blob = await trimVideo(videoFileRef.current!, seg.start_time, seg.end_time, formatSettings, exportSpeed, exportFormat);
           if (!blob) throw new Error(`Failed segment ${i + 1}`);
 
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = `${projectName}_${resolutionStr}_segment_${i + 1}.mp4`;
+          a.download = `${projectName}_${resolutionStr}_segment_${i + 1}.${ext}`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
         }
-        toast.success(`${segments.length} video(s) exported!`);
+        toast.success(`${segments.length} ${ext.toUpperCase()} file(s) exported!`);
       } else {
         const blobs: Blob[] = [];
         for (let i = 0; i < segments.length; i++) {
           toast.info(`Processing segment ${i + 1}/${segments.length}...`);
-          const blob = await trimVideo(videoFileRef.current!, segments[i].start_time, segments[i].end_time, formatSettings, exportSpeed);
+          const blob = await trimVideo(videoFileRef.current!, segments[i].start_time, segments[i].end_time, formatSettings, exportSpeed, exportFormat);
           if (!blob) throw new Error(`Failed segment ${i + 1}`);
           blobs.push(blob);
         }
@@ -227,12 +249,12 @@ export function VideoStudioEditor({ isOpen, onClose }: VideoStudioEditorProps) {
         const url = URL.createObjectURL(combined);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${projectName}_${resolutionStr}_combined.mp4`;
+        a.download = `${projectName}_${resolutionStr}_combined.${ext}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        toast.success("Combined video exported!");
+        toast.success(`Combined ${ext.toUpperCase()} exported!`);
       }
     } catch (err: any) {
       toast.error(err.message || "Export failed");
@@ -401,7 +423,21 @@ export function VideoStudioEditor({ isOpen, onClose }: VideoStudioEditorProps) {
                     {originalResolution && <p className="text-xs text-muted-foreground">Original: {originalResolution}</p>}
                   </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl">
+                  <div className="space-y-2">
+                    <Label>Export Format</Label>
+                    <Select value={exportFormat} onValueChange={(v: ExportFormat) => setExportFormat(v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(FORMAT_LABELS) as ExportFormat[]).map((fmt) => (
+                          <SelectItem key={fmt} value={fmt}>{FORMAT_LABELS[fmt]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {exportFormat === "gif" && (
+                      <p className="text-xs text-muted-foreground">15 fps, palette-optimized</p>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <Label>Export Speed</Label>
                     <Select value={exportSpeed} onValueChange={(v: "quality" | "fast") => setExportSpeed(v)}>
@@ -414,7 +450,11 @@ export function VideoStudioEditor({ isOpen, onClose }: VideoStudioEditorProps) {
                   </div>
                   <div className="space-y-2">
                     <Label>Export Mode</Label>
-                    <Select value={exportMode} onValueChange={(v: "combined" | "separate") => setExportMode(v)}>
+                    <Select
+                      value={exportFormat === "gif" && segments.length > 1 ? "separate" : exportMode}
+                      onValueChange={(v: "combined" | "separate") => setExportMode(v)}
+                      disabled={exportFormat === "gif" && segments.length > 1}
+                    >
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="separate">Separate Files</SelectItem>
