@@ -48,6 +48,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [isDarkCanvas, setIsDarkCanvas] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(220);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragPosition, setDragPosition] = useState<'above' | 'below' | null>(null);
 
   const activeSlide = slides[activeIndex];
 
@@ -97,6 +100,66 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     setSlides(prev => prev.filter((_, i) => i !== index));
     setActiveIndex(prev => Math.min(prev, slides.length - 2));
   }, [slides.length]);
+
+  const reorderSlide = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    setSlides(prev => {
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+    setActiveIndex(toIndex);
+  }, []);
+
+  const handleDragStart = useCallback((index: number) => (e: React.DragEvent) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.5';
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+    setDragPosition(null);
+  }, []);
+
+  const handleDragOver = useCallback((index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragIndex === null || dragIndex === index) {
+      setDragOverIndex(null);
+      setDragPosition(null);
+      return;
+    }
+    const rect = e.currentTarget.getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    setDragOverIndex(index);
+    setDragPosition(e.clientY < midY ? 'above' : 'below');
+  }, [dragIndex]);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverIndex(null);
+    setDragPosition(null);
+  }, []);
+
+  const handleDrop = useCallback((index: number) => (e: React.DragEvent) => {
+    e.preventDefault();
+    if (dragIndex === null) return;
+    let targetIndex = index;
+    if (dragPosition === 'below') targetIndex = index + 1;
+    if (dragIndex < targetIndex) targetIndex--;
+    reorderSlide(dragIndex, targetIndex);
+    setDragIndex(null);
+    setDragOverIndex(null);
+    setDragPosition(null);
+  }, [dragIndex, dragPosition, reorderSlide]);
 
   if (isPresentationMode) {
     return (
@@ -167,8 +230,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
             <div className="w-[220px] border-r bg-muted/30 flex flex-col shrink-0">
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {slides.map((slide, i) => (
-                  <div key={slide.id} className="relative group">
-                    <SlideThumbnail slideNumber={i + 1} isActive={i === activeIndex} onClick={() => setActiveIndex(i)}>
+                  <div key={slide.id} className={cn("relative group", dragIndex === i && 'opacity-50')}>
+                    <SlideThumbnail
+                      slideNumber={i + 1}
+                      isActive={i === activeIndex}
+                      onClick={() => setActiveIndex(i)}
+                      dragPosition={dragOverIndex === i ? dragPosition : null}
+                      onDragStart={handleDragStart(i)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver(i)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop(i)}
+                    >
                       <SlideRenderer slide={slide} brandColors={brandColors} brandFonts={brandFonts} />
                     </SlideThumbnail>
                     {/* Hover actions */}
