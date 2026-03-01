@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
-  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download
+  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download, Upload
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import { FloatingMenu } from './FloatingMenu';
 import { v4 as uuidv4 } from 'uuid';
 import { AISlideGenerator } from './AISlideGenerator';
 import { exportSlidesToPptx } from './exportPptx';
+import { parsePptxFile } from './importPptx';
+import { toast } from 'sonner';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -169,6 +171,22 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     setActiveIndex(0);
   }, []);
 
+  const handleImportPptx = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so re-selecting the same file triggers onChange
+    e.target.value = '';
+    try {
+      const imported = await parsePptxFile(file);
+      setSlides(imported);
+      setActiveIndex(0);
+      toast.success(`Imported ${imported.length} slides from ${file.name}`);
+    } catch (err: any) {
+      console.error('PPTX import error:', err);
+      toast.error(err.message || 'Failed to import PPTX file');
+    }
+  }, []);
+
   if (isPresentationMode) {
     return (
       <PresentationMode
@@ -231,9 +249,19 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 AI Generate
               </Button>
 
+              <label>
+                <input type="file" accept=".pptx" className="hidden" onChange={handleImportPptx} />
+                <Button size="sm" variant="outline" asChild>
+                  <span>
+                    <Upload className="h-3.5 w-3.5 mr-1.5" />
+                    Import
+                  </span>
+                </Button>
+              </label>
+
               <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName)}>
                 <Download className="h-3.5 w-3.5 mr-1.5" />
-                Export PPTX
+                Export
               </Button>
 
               <Button size="sm" variant="outline" onClick={() => setIsPresentationMode(true)}>
