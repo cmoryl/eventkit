@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
-  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown
+  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { CenteredScaledSlide } from './ScaledSlide';
 import { PresentationMode } from './PresentationMode';
 import { FloatingMenu } from './FloatingMenu';
 import { v4 as uuidv4 } from 'uuid';
+import { AISlideGenerator } from './AISlideGenerator';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -51,6 +52,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragPosition, setDragPosition] = useState<'above' | 'below' | null>(null);
+  const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
 
   const activeSlide = slides[activeIndex];
 
@@ -161,6 +163,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     setDragPosition(null);
   }, [dragIndex, dragPosition, reorderSlide]);
 
+  const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
+    setSlides(newSlides);
+    setActiveIndex(0);
+  }, []);
+
   if (isPresentationMode) {
     return (
       <PresentationMode
@@ -175,6 +182,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   }
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={() => onClose()}>
       <DialogContent
         className="max-w-[100vw] w-[100vw] h-[100vh] p-0 overflow-hidden rounded-none border-none"
@@ -216,6 +224,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                   <Maximize className="h-3 w-3" />
                 </Button>
               </div>
+
+              <Button size="sm" variant="default" onClick={() => setIsAIGeneratorOpen(true)}>
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                AI Generate
+              </Button>
 
               <Button size="sm" variant="outline" onClick={() => setIsPresentationMode(true)}>
                 <Play className="h-3.5 w-3.5 mr-1.5" />
@@ -408,6 +421,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
         </div>
       </DialogContent>
     </Dialog>
+
+    <AISlideGenerator
+      isOpen={isAIGeneratorOpen}
+      onClose={() => setIsAIGeneratorOpen(false)}
+      onSlidesGenerated={handleAISlidesGenerated}
+      brandName={brand?.name}
+    />
+    </>
   );
 }
 
