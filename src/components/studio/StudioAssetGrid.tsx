@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil, Edit3, Film } from 'lucide-react';
+import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil, Edit3, Film, Ruler } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,8 @@ import { isAnimatableAsset } from '@/config/animationPresets';
 import { SlideEditor } from '@/components/slides/SlideEditor';
 import { VideoStudioEditor } from '@/components/videoStudio/VideoStudioEditor';
 import MerchMockupOverlay, { MERCH_MOCKUP_TYPES } from './MerchMockupOverlay';
+import BleedSafeZoneOverlay from '@/components/BleedSafeZoneOverlay';
+import { AssetType } from '@/types';
 import { ColorPaletteEditor } from './ColorPaletteEditor';
 
 // Presentation asset types that should open the slide editor
@@ -23,6 +25,15 @@ const PRESENTATION_ASSET_TYPES = ['PRESENTATION_SLIDE', 'WEBINAR_SLIDE'];
 const PALETTE_ASSET_TYPES = ['PALETTE'];
 // Video asset types that should open the video studio editor
 const VIDEO_ASSET_TYPES = ['VIDEO_TEASER', 'MOTION_GRAPHIC', 'DIGITAL_SIGNAGE_LOOP'];
+// Print studio asset types that support bleed/safe-zone overlay
+const PRINT_ASSET_TYPES = new Set([
+  'BANNER', 'NAME_TAG', 'NAME_TAG_BACK', 'EVENT_SIGNAGE', 'HANGING_SIGNAGE',
+  'OUTDOOR_SIGNAGE', 'DOOR_SIGNAGE', 'EASEL_SIGNAGE', 'LOCATION_SIGNAGE',
+  'ROOM_SIGNAGE', 'STAND_UP_PILLAR_BANNER', 'FEATHER_FLAG', 'TEARDROP_FLAG',
+  'FOLDER', 'MENU', 'INVITATION_CARD', 'PLACE_CARD', 'TABLE_NUMBER',
+  'TABLE_TENT', 'TICKET_DESIGN', 'VIP_BADGE', 'PARKING_PASS',
+  'STICKER_SHEET', 'CERTIFICATE_AWARD', 'PROGRAM_BOOKLET',
+]);
 // Demo imagery imports - Core assets
 import demoBanner from '@/assets/demos/demo-banner.jpg';
 import demoNameTag from '@/assets/demos/demo-name-tag.jpg';
@@ -401,6 +412,9 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   // Palette editor state
   const [paletteEditorOpen, setPaletteEditorOpen] = useState(false);
   
+  // Print guides state — per-asset toggles
+  const [printGuidesVisible, setPrintGuidesVisible] = useState<Set<string>>(new Set());
+  
   // Open full-screen canvas for generation with variations
   const handleGenerate = (assetType: string) => {
     if (!brand) {
@@ -583,7 +597,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                         <ImageIcon className="w-6 h-6 text-muted-foreground" />
                       </div>
                     );
-                  })()}
+                   })()}
+                   {/* Bleed overlay on list thumbnail */}
+                   {PRINT_ASSET_TYPES.has(assetType) && printGuidesVisible.has(assetType) && (
+                     <BleedSafeZoneOverlay assetType={assetType as AssetType} showBleed={true} showSafeZone={true} />
+                   )}
                 </div>
                 
                 <div className="flex-1">
@@ -596,6 +614,26 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  {PRINT_ASSET_TYPES.has(assetType) && (
+                    <Button
+                      size="sm"
+                      variant={printGuidesVisible.has(assetType) ? 'secondary' : 'outline'}
+                      className={cn("gap-1", printGuidesVisible.has(assetType) && "border-cyan-500/50 text-cyan-600 dark:text-cyan-400")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPrintGuidesVisible(prev => {
+                          const next = new Set(prev);
+                          if (next.has(assetType)) next.delete(assetType);
+                          else next.add(assetType);
+                          return next;
+                        });
+                      }}
+                      title="Toggle bleed & safe zone"
+                    >
+                      <Ruler className="w-3.5 h-3.5" />
+                      <span className="hidden xl:inline">Guides</span>
+                    </Button>
+                  )}
                   {isAnimatableAsset(assetType) && (
                     <Button
                       size="sm"
@@ -824,6 +862,39 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                     </>
                   );
                 })()}
+                
+                {/* Print Bleed & Safe Zone Overlay */}
+                {PRINT_ASSET_TYPES.has(assetType) && printGuidesVisible.has(assetType) && (
+                  <BleedSafeZoneOverlay
+                    assetType={assetType as AssetType}
+                    showBleed={true}
+                    showSafeZone={true}
+                  />
+                )}
+                
+                {/* Print Guides Toggle */}
+                {PRINT_ASSET_TYPES.has(assetType) && (getDisplayImage(assetType, info)) && (
+                  <button
+                    className={cn(
+                      "absolute bottom-2 right-2 z-10 p-1.5 rounded-lg transition-all",
+                      printGuidesVisible.has(assetType)
+                        ? "bg-cyan-500/90 text-white shadow-md"
+                        : "bg-black/20 text-white/70 hover:bg-black/40 hover:text-white opacity-0 group-hover:opacity-100"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPrintGuidesVisible(prev => {
+                        const next = new Set(prev);
+                        if (next.has(assetType)) next.delete(assetType);
+                        else next.add(assetType);
+                        return next;
+                      });
+                    }}
+                    title={printGuidesVisible.has(assetType) ? 'Hide print guides' : 'Show bleed & safe zone'}
+                  >
+                    <Ruler className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 
                 {/* Open Studio Overlay - Click anywhere opens the studio */}
                 <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 sm:gap-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
