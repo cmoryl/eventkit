@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
-  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles
+  ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { PresentationMode } from './PresentationMode';
 import { FloatingMenu } from './FloatingMenu';
 import { v4 as uuidv4 } from 'uuid';
 import { AISlideGenerator } from './AISlideGenerator';
+import { exportSlidesToPptx } from './exportPptx';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -228,6 +229,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
               <Button size="sm" variant="default" onClick={() => setIsAIGeneratorOpen(true)}>
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
                 AI Generate
+              </Button>
+
+              <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName)}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                Export PPTX
               </Button>
 
               <Button size="sm" variant="outline" onClick={() => setIsPresentationMode(true)}>
