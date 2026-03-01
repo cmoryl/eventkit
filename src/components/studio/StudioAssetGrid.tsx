@@ -14,6 +14,7 @@ import { AnimatedBannerEditor } from '@/components/animatedBanner';
 import { isAnimatableAsset } from '@/config/animationPresets';
 import { SlideEditor } from '@/components/slides/SlideEditor';
 import { VideoStudioEditor } from '@/components/videoStudio/VideoStudioEditor';
+import MerchMockupOverlay, { MERCH_MOCKUP_TYPES } from './MerchMockupOverlay';
 
 // Presentation asset types that should open the slide editor
 const PRESENTATION_ASSET_TYPES = ['PRESENTATION_SLIDE', 'WEBINAR_SLIDE'];
@@ -538,6 +539,17 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                   {(() => {
                     const displayImage = getDisplayImage(assetType, info);
                     const hasGenerated = !!generatedImages[assetType];
+                    const isMerch = MERCH_MOCKUP_TYPES.has(assetType);
+                    
+                    if (isMerch && hasGenerated && generatedImages[assetType]) {
+                      return (
+                        <MerchMockupOverlay
+                          assetType={assetType}
+                          imageUrl={generatedImages[assetType]}
+                        />
+                      );
+                    }
+                    
                     return displayImage ? (
                       <>
                         <img 
@@ -756,6 +768,24 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                 {(() => {
                   const displayImage = getDisplayImage(assetType, info);
                   const hasGenerated = !!generatedImages[assetType];
+                  const isMerch = MERCH_MOCKUP_TYPES.has(assetType);
+                  
+                  // Show product mockup for merch items with generated images
+                  if (isMerch && hasGenerated && generatedImages[assetType]) {
+                    return (
+                      <>
+                        <MerchMockupOverlay
+                          assetType={assetType}
+                          imageUrl={generatedImages[assetType]}
+                        />
+                        <div className="absolute top-2 left-10 z-10 bg-primary rounded-full px-2 py-0.5 flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-primary-foreground" />
+                          <span className="text-[10px] font-medium text-primary-foreground">Mockup</span>
+                        </div>
+                      </>
+                    );
+                  }
+                  
                   return displayImage ? (
                     <>
                       <img 
