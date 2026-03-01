@@ -115,13 +115,17 @@ export function CenteredScaledSlide({
     <SlideScaleContext.Provider value={finalScale}>
       <div
         ref={containerRef}
-        className={cn("flex items-center justify-center w-full h-full overflow-hidden", containerClassName)}
+        className={cn("relative w-full h-full overflow-hidden", containerClassName)}
       >
         <div
-          className={cn("relative shadow-2xl rounded-lg overflow-hidden flex-shrink-0 isolate", className)}
+          className={cn("absolute shadow-2xl rounded-lg overflow-hidden isolate", className)}
           style={{
             width: SLIDE_WIDTH,
             height: SLIDE_HEIGHT,
+            left: '50%',
+            top: '50%',
+            marginLeft: -(SLIDE_WIDTH / 2),
+            marginTop: -(SLIDE_HEIGHT / 2),
             transform: `scale(${finalScale})`,
             transformOrigin: 'center center',
           }}
