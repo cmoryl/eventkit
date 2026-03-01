@@ -2,14 +2,53 @@ import JSZip from 'jszip';
 import { v4 as uuidv4 } from 'uuid';
 import type { SlideData } from './slideTypes';
 
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'svg', 'emf', 'wmf'];
+
 /**
- * Parse a PPTX file and extract slides as SlideData[].
- * PPTX is a ZIP archive with XML slide files inside.
+ * Parse a PPTX file and extract slides as SlideData[], including embedded images.
  */
 export async function parsePptxFile(file: File): Promise<SlideData[]> {
   const zip = await JSZip.loadAsync(file);
 
-  // Find all slide XML files and sort numerically
+  // 1. Build a map of all media files → base64 data URLs
+  const mediaMap = new Map<string, string>();
+  for (const [path, zipEntry] of Object.entries(zip.files)) {
+    if (!path.startsWith('ppt/media/')) continue;
+    const ext = path.split('.').pop()?.toLowerCase() || '';
+    if (!IMAGE_EXTENSIONS.includes(ext)) continue;
+    // Skip unsupported vector formats for display
+    if (ext === 'emf' || ext === 'wmf') continue;
+    const blob = await zipEntry.async('blob');
+    const mimeType = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
+    const dataUrl = await blobToDataUrl(blob, mimeType);
+    // Store with just the filename (e.g. "image1.png")
+    const filename = path.split('/').pop()!;
+    mediaMap.set(filename, dataUrl);
+  }
+
+  // 2. Build a map of relationship files: slideN → list of image filenames
+  const slideImageMap = new Map<number, string[]>();
+  for (const [path, zipEntry] of Object.entries(zip.files)) {
+    const match = path.match(/^ppt\/slides\/_rels\/slide(\d+)\.xml\.rels$/);
+    if (!match) continue;
+    const slideNum = parseInt(match[1]);
+    const relsXml = await zipEntry.async('text');
+    const images: string[] = [];
+    // Find relationships pointing to ../media/imageX.ext
+    const relRegex = /Target="\.\.\/media\/([^"]+)"/g;
+    let relMatch;
+    while ((relMatch = relRegex.exec(relsXml)) !== null) {
+      const mediaFilename = relMatch[1];
+      if (mediaMap.has(mediaFilename)) {
+        images.push(mediaFilename);
+      }
+    }
+    if (images.length > 0) {
+      slideImageMap.set(slideNum, images);
+    }
+  }
+
+  // 3. Find all slide XML files and sort numerically
   const slideFiles = Object.keys(zip.files)
     .filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name))
     .sort((a, b) => {
@@ -22,7 +61,7 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     throw new Error('No slides found in the PPTX file');
   }
 
-  // Try to load notes
+  // 4. Load notes
   const notesMap = new Map<number, string>();
   for (const name of Object.keys(zip.files)) {
     const match = name.match(/^ppt\/notesSlides\/notesSlide(\d+)\.xml$/);
@@ -34,6 +73,7 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     }
   }
 
+  // 5. Build SlideData[]
   const slides: SlideData[] = [];
 
   for (let i = 0; i < slideFiles.length; i++) {
@@ -41,8 +81,15 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const slideNum = i + 1;
 
     const textBlocks = extractTextBlocks(xml);
-    const layout = inferLayout(textBlocks, i, slideFiles.length);
+    const slideImages = slideImageMap.get(slideNum) || [];
+    const hasImages = slideImages.length > 0;
+    const layout = inferLayout(textBlocks, i, slideFiles.length, hasImages);
     const variant = inferVariant(xml, i, slideFiles.length);
+
+    // Resolve image data URLs
+    const imageDataUrls = slideImages
+      .map(filename => mediaMap.get(filename))
+      .filter((url): url is string => !!url);
 
     const slide: SlideData = {
       id: uuidv4(),
@@ -51,7 +98,13 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
       variant,
     };
 
-    // Second block as subtitle for title/section layouts, or body for content
+    // Assign images
+    if (imageDataUrls.length > 0) {
+      slide.imageUrl = imageDataUrls[0]; // Primary image for image-left/right layouts
+      slide.images = imageDataUrls;
+    }
+
+    // Text content
     if (textBlocks.length > 1) {
       if (layout === 'title' || layout === 'section') {
         slide.subtitle = textBlocks[1].text;
@@ -73,17 +126,28 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
   return slides;
 }
 
+function blobToDataUrl(blob: Blob, mimeType: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Replace the auto-detected mime with the correct one
+      const result = reader.result as string;
+      const base64 = result.split(',')[1];
+      resolve(`data:${mimeType};base64,${base64}`);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 interface TextBlock {
   text: string;
   fontSize: number;
   isBold: boolean;
 }
 
-/** Extract all text runs from slide XML grouped by text frame (sp/shape) */
 function extractTextBlocks(xml: string): TextBlock[] {
   const blocks: TextBlock[] = [];
-
-  // Match each shape (sp) element
   const shapeRegex = /<p:sp\b[^>]*>([\s\S]*?)<\/p:sp>/g;
   let shapeMatch;
 
@@ -93,39 +157,27 @@ function extractTextBlocks(xml: string): TextBlock[] {
     let maxFontSize = 0;
     let hasBold = false;
 
-    // Extract paragraphs
     const paraRegex = /<a:p\b[^>]*>([\s\S]*?)<\/a:p>/g;
     let paraMatch;
 
     while ((paraMatch = paraRegex.exec(shapeContent)) !== null) {
       const paraContent = paraMatch[1];
       const lineTexts: string[] = [];
-
-      // Check for bullet list markers
       const hasBullet = /<a:buChar/.test(paraContent) || /<a:buAutoNum/.test(paraContent);
 
-      // Extract text runs
       const runRegex = /<a:r>([\s\S]*?)<\/a:r>/g;
       let runMatch;
 
       while ((runMatch = runRegex.exec(paraContent)) !== null) {
         const runContent = runMatch[1];
-
-        // Get font size
         const szMatch = runContent.match(/sz="(\d+)"/);
         if (szMatch) {
-          const sz = parseInt(szMatch[1]) / 100; // convert hundredths of a point
+          const sz = parseInt(szMatch[1]) / 100;
           if (sz > maxFontSize) maxFontSize = sz;
         }
-
-        // Check bold
         if (/\bb="1"/.test(runContent)) hasBold = true;
-
-        // Get text
         const textMatch = runContent.match(/<a:t>([\s\S]*?)<\/a:t>/);
-        if (textMatch) {
-          lineTexts.push(textMatch[1]);
-        }
+        if (textMatch) lineTexts.push(textMatch[1]);
       }
 
       const lineText = lineTexts.join('').trim();
@@ -140,13 +192,10 @@ function extractTextBlocks(xml: string): TextBlock[] {
     }
   }
 
-  // Sort by font size descending so the title (largest text) comes first
   blocks.sort((a, b) => b.fontSize - a.fontSize || (b.isBold ? 1 : 0) - (a.isBold ? 1 : 0));
-
   return blocks;
 }
 
-/** Simple text extraction for notes */
 function extractTextFromXml(xml: string): string {
   const texts: string[] = [];
   const regex = /<a:t>([\s\S]*?)<\/a:t>/g;
@@ -157,24 +206,19 @@ function extractTextFromXml(xml: string): string {
   return texts.join(' ').replace(/\s+/g, ' ').trim();
 }
 
-function inferLayout(blocks: TextBlock[], index: number, total: number): SlideData['layout'] {
-  if (index === 0) return 'title';
+function inferLayout(blocks: TextBlock[], index: number, total: number, hasImages: boolean): SlideData['layout'] {
+  if (index === 0 && !hasImages) return 'title';
+  if (hasImages) return index % 2 === 0 ? 'image-left' : 'image-right';
   if (index === total - 1 && blocks.length <= 2) return 'section';
 
-  // If there's body text with bullets, it's a content slide
   const bodyText = blocks.slice(1).map(b => b.text).join('\n');
   if (bodyText.includes('•') || bodyText.includes('\n')) return 'content';
-
-  // Short text only → section
   if (blocks.length <= 2 && bodyText.length < 60) return 'section';
-
   return 'content';
 }
 
 function inferVariant(xml: string, index: number, total: number): SlideData['variant'] {
-  // Check for dark background fills
   const hasDarkBg = /srgbClr val="[0-3][0-9a-fA-F]{5}"/.test(xml);
-
   if (index === 0) return 'gradient';
   if (index === total - 1) return 'dark';
   if (hasDarkBg) return 'dark';

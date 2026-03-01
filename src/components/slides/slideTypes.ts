@@ -6,6 +6,8 @@ export interface SlideData {
   subtitle?: string;
   body?: string;
   imageUrl?: string;
+  /** Extracted images as data URLs */
+  images?: string[];
   notes?: string;
   variant: 'default' | 'dark' | 'gradient';
 }
