@@ -915,69 +915,69 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                 )}
                 
                 {/* Open Studio Overlay - Click anywhere opens the studio */}
-                <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2 sm:gap-3 opacity-0 group-hover:opacity-100 transition-all pointer-events-none">
-                  <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2 px-2">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all pointer-events-none p-3">
+                  {/* Primary action */}
+                  <Button
+                    size="sm"
+                    className={cn("bg-gradient-to-r shadow-lg pointer-events-auto w-full max-w-[160px] text-xs h-8", studioGradient)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGenerate(assetType);
+                    }}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        AI Studio
+                      </>
+                    )}
+                  </Button>
+                  {/* Secondary actions row */}
+                  <div className="flex items-center gap-1.5 pointer-events-auto">
                     <Button
                       size="sm"
-                      className={cn("bg-gradient-to-r shadow-lg pointer-events-auto w-full sm:w-auto text-xs sm:text-sm h-7 sm:h-8", studioGradient)}
+                      variant="secondary"
+                      className="shadow-lg gap-1 text-xs h-7 px-2.5"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleGenerate(assetType);
+                        handleOpenVisualEditor(assetType, info.name);
                       }}
-                      disabled={isGenerating}
+                      title="Open Visual Editor"
                     >
-                      {isGenerating ? (
-                        <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
-                          AI Studio
-                        </>
-                      )}
+                      <Edit3 className="w-3 h-3" />
+                      Design
                     </Button>
-                    <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="shadow-lg pointer-events-auto gap-1 flex-1 sm:flex-none text-xs sm:text-sm h-7 sm:h-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenVisualEditor(assetType, info.name);
-                        }}
-                        title="Open Visual Editor"
-                      >
-                        <Edit3 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        Design
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="shadow-lg pointer-events-auto gap-1 flex-1 sm:flex-none text-xs sm:text-sm h-7 sm:h-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenTemplate(assetType, info.name);
-                        }}
-                      >
-                        <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                        Template
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="shadow-lg gap-1 text-xs h-7 px-2.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenTemplate(assetType, info.name);
+                      }}
+                    >
+                      <Pencil className="w-3 h-3" />
+                      Template
+                    </Button>
                     {isAnimatableAsset(assetType) && (
                       <Button
                         size="sm"
                         variant="secondary"
-                        className="shadow-lg pointer-events-auto gap-1 border-primary/30 text-primary w-full sm:w-auto text-xs sm:text-sm h-7 sm:h-8"
+                        className="shadow-lg gap-1 text-xs h-7 px-2.5 border-primary/30 text-primary"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleOpenAnimatedBanner(assetType, info.name);
                         }}
                       >
-                        <Film className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                        <Film className="w-3 h-3" />
                         Animate
                       </Button>
                     )}
                   </div>
-                  <p className="text-[10px] sm:text-xs text-white/70">Choose your editing mode</p>
+                  <p className="text-[10px] text-white/60 mt-0.5">Choose your editing mode</p>
                 </div>
                 
                 {/* Loading Overlay with Enhanced Animation */}
