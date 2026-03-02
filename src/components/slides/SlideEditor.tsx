@@ -5,7 +5,7 @@ import {
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
   ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download, Upload,
   Replace, ImagePlus, Quote, BarChart3, Maximize2, GitCompare,
-  AlignLeft, AlignCenter, AlignRight, Palette, LayoutTemplate
+  AlignLeft, AlignCenter, AlignRight, Palette, LayoutTemplate, Grid3X3
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -64,6 +64,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [dragPosition, setDragPosition] = useState<'above' | 'below' | null>(null);
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [slideTransition, setSlideTransition] = useState<SlideTransition>('fade');
+  const [isGridView, setIsGridView] = useState(false);
 
   const activeSlide = slides[activeIndex];
 
@@ -316,6 +317,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 </SelectContent>
               </Select>
 
+              <Button
+                size="sm"
+                variant={isGridView ? 'default' : 'outline'}
+                onClick={() => setIsGridView(!isGridView)}
+              >
+                <Grid3X3 className="h-3.5 w-3.5 mr-1.5" />
+                Grid
+              </Button>
+
               <Button size="sm" variant="outline" onClick={() => setIsPresentationMode(true)}>
                 <Play className="h-3.5 w-3.5 mr-1.5" />
                 Present
@@ -325,7 +335,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
 
           {/* Main area */}
           <div className="flex flex-1 min-h-0">
-            {/* Sidebar - thumbnails */}
+            {/* Sidebar - thumbnails (hidden in grid view) */}
+            {!isGridView && (
             <div className="w-[220px] border-r bg-muted/30 flex flex-col shrink-0">
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {slides.map((slide, i) => (
@@ -364,7 +375,81 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 </Button>
               </div>
             </div>
+            )}
 
+            {/* Grid View */}
+            {isGridView ? (
+              <div className="flex-1 overflow-y-auto p-6 bg-muted/50">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {slides.map((slide, i) => (
+                    <div
+                      key={slide.id}
+                      className={cn(
+                        "group relative cursor-pointer rounded-lg border-2 overflow-hidden transition-all hover:shadow-lg",
+                        i === activeIndex
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/50"
+                      )}
+                      draggable
+                      onDragStart={handleDragStart(i)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={handleDragOver(i)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop(i)}
+                      onClick={() => {
+                        setActiveIndex(i);
+                        setIsGridView(false);
+                      }}
+                    >
+                      <div className="aspect-video bg-white dark:bg-slate-900 overflow-hidden">
+                        <div className="origin-top-left pointer-events-none" style={{ transform: 'scale(0.167)', width: '600%', height: '600%' }}>
+                          <SlideRenderer slide={slide} brandColors={brandColors} brandFonts={brandFonts} />
+                        </div>
+                      </div>
+                      {/* Slide number badge */}
+                      <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm text-foreground text-xs font-mono px-1.5 py-0.5 rounded">
+                        {i + 1}
+                      </div>
+                      {/* Hover actions */}
+                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-6 w-6 bg-background/90 backdrop-blur-sm"
+                          onClick={(e) => { e.stopPropagation(); duplicateSlide(i); }}
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        {slides.length > 1 && (
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="h-6 w-6 bg-background/90 backdrop-blur-sm hover:bg-destructive hover:text-destructive-foreground"
+                            onClick={(e) => { e.stopPropagation(); deleteSlide(i); }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                      {/* Title label */}
+                      <div className="px-2 py-1.5 bg-card border-t">
+                        <p className="text-xs font-medium truncate">{slide.title || 'Untitled'}</p>
+                        <p className="text-[10px] text-muted-foreground capitalize">{slide.layout}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Add slide card */}
+                  <button
+                    className="aspect-video rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    onClick={() => addSlide(slides.length - 1)}
+                  >
+                    <Plus className="h-8 w-8" />
+                    <span className="text-xs font-medium">Add Slide</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+            <>
             {/* Canvas */}
             <div className={cn("flex-1 flex flex-col min-w-0", isDarkCanvas ? 'bg-slate-900' : 'bg-muted/50')}>
               {/* Slide canvas */}
@@ -766,6 +851,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 </div>
               </div>
             </div>
+            </>
+            )}
           </div>
         </div>
       </DialogContent>
