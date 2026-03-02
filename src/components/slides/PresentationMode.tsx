@@ -1,5 +1,36 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { ScaledSlide } from './ScaledSlide';
+
+export type SlideTransition = 'none' | 'fade' | 'slide' | 'zoom' | 'flip';
+
+const transitionVariants: Record<SlideTransition, { initial: any; animate: any; exit: any }> = {
+  none: {
+    initial: {},
+    animate: {},
+    exit: {},
+  },
+  fade: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+  },
+  slide: {
+    initial: { x: '100%', opacity: 0 },
+    animate: { x: 0, opacity: 1 },
+    exit: { x: '-100%', opacity: 0 },
+  },
+  zoom: {
+    initial: { scale: 0.6, opacity: 0 },
+    animate: { scale: 1, opacity: 1 },
+    exit: { scale: 1.4, opacity: 0 },
+  },
+  flip: {
+    initial: { rotateY: 90, opacity: 0 },
+    animate: { rotateY: 0, opacity: 1 },
+    exit: { rotateY: -90, opacity: 0 },
+  },
+};
 
 interface PresentationModeProps {
   children: (slideIndex: number) => React.ReactNode;
@@ -7,9 +38,17 @@ interface PresentationModeProps {
   activeIndex: number;
   onIndexChange: (index: number) => void;
   onExit: () => void;
+  transition?: SlideTransition;
 }
 
-export function PresentationMode({ children, slideCount, activeIndex, onIndexChange, onExit }: PresentationModeProps) {
+export function PresentationMode({ children, slideCount, activeIndex, onIndexChange, onExit, transition = 'fade' }: PresentationModeProps) {
+  const [direction, setDirection] = useState(1);
+
+  const goTo = useCallback((idx: number) => {
+    setDirection(idx > activeIndex ? 1 : -1);
+    onIndexChange(idx);
+  }, [activeIndex, onIndexChange]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       switch (e.key) {
@@ -17,12 +56,12 @@ export function PresentationMode({ children, slideCount, activeIndex, onIndexCha
         case 'ArrowDown':
         case ' ':
           e.preventDefault();
-          if (activeIndex < slideCount - 1) onIndexChange(activeIndex + 1);
+          if (activeIndex < slideCount - 1) goTo(activeIndex + 1);
           break;
         case 'ArrowLeft':
         case 'ArrowUp':
           e.preventDefault();
-          if (activeIndex > 0) onIndexChange(activeIndex - 1);
+          if (activeIndex > 0) goTo(activeIndex - 1);
           break;
         case 'Escape':
           e.preventDefault();
@@ -30,15 +69,15 @@ export function PresentationMode({ children, slideCount, activeIndex, onIndexCha
           break;
         case 'Home':
           e.preventDefault();
-          onIndexChange(0);
+          goTo(0);
           break;
         case 'End':
           e.preventDefault();
-          onIndexChange(slideCount - 1);
+          goTo(slideCount - 1);
           break;
       }
     },
-    [activeIndex, slideCount, onIndexChange, onExit]
+    [activeIndex, slideCount, goTo, onExit]
   );
 
   useEffect(() => {
@@ -60,11 +99,28 @@ export function PresentationMode({ children, slideCount, activeIndex, onIndexCha
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  const tv = transitionVariants[transition];
+  const slideInitial = transition === 'slide'
+    ? { x: direction > 0 ? '100%' : '-100%', opacity: 0 }
+    : tv.initial;
+  const slideExit = transition === 'slide'
+    ? { x: direction > 0 ? '-100%' : '100%', opacity: 0 }
+    : tv.exit;
+
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center">
-      <div className="w-full h-full flex items-center justify-center">
-        <ScaledSlide>{children(activeIndex)}</ScaledSlide>
-      </div>
+    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden" style={{ perspective: transition === 'flip' ? 1200 : undefined }}>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={activeIndex}
+          initial={slideInitial}
+          animate={tv.animate}
+          exit={slideExit}
+          transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="w-full h-full flex items-center justify-center"
+        >
+          <ScaledSlide>{children(activeIndex)}</ScaledSlide>
+        </motion.div>
+      </AnimatePresence>
       <div className="absolute bottom-4 right-4 text-white/60 text-sm font-medium">
         {activeIndex + 1} / {slideCount}
       </div>

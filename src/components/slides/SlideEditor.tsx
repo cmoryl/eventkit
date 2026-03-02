@@ -20,7 +20,7 @@ import { SlideData, DEFAULT_SLIDES, SLIDE_TEMPLATES } from './slideTypes';
 import { SlideRenderer } from './SlideRenderer';
 import { SlideThumbnail } from './SlideThumbnail';
 import { CenteredScaledSlide } from './ScaledSlide';
-import { PresentationMode } from './PresentationMode';
+import { PresentationMode, SlideTransition } from './PresentationMode';
 import { FloatingMenu } from './FloatingMenu';
 import { v4 as uuidv4 } from 'uuid';
 import { AISlideGenerator } from './AISlideGenerator';
@@ -63,6 +63,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragPosition, setDragPosition] = useState<'above' | 'below' | null>(null);
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
+  const [slideTransition, setSlideTransition] = useState<SlideTransition>('fade');
 
   const activeSlide = slides[activeIndex];
 
@@ -201,6 +202,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
         activeIndex={activeIndex}
         onIndexChange={setActiveIndex}
         onExit={() => setIsPresentationMode(false)}
+        transition={slideTransition}
       >
         {(idx) => <SlideRenderer slide={slides[idx]} brandColors={brandColors} brandFonts={brandFonts} />}
       </PresentationMode>
@@ -300,6 +302,19 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 <Download className="h-3.5 w-3.5 mr-1.5" />
                 Export
               </Button>
+
+              <Select value={slideTransition} onValueChange={(v) => setSlideTransition(v as SlideTransition)}>
+                <SelectTrigger className="h-8 w-[100px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Transition</SelectItem>
+                  <SelectItem value="fade">Fade</SelectItem>
+                  <SelectItem value="slide">Slide</SelectItem>
+                  <SelectItem value="zoom">Zoom</SelectItem>
+                  <SelectItem value="flip">Flip</SelectItem>
+                </SelectContent>
+              </Select>
 
               <Button size="sm" variant="outline" onClick={() => setIsPresentationMode(true)}>
                 <Play className="h-3.5 w-3.5 mr-1.5" />
