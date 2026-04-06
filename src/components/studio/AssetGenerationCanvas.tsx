@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import { AIImageEditModal } from '@/components/AIImageEditModal';
 import { AssetBriefModal, type AssetBrief } from './AssetBriefModal';
+import { LogoOverrideSelector } from './LogoOverrideSelector';
 import { 
   recordBriefPreference, 
   getBriefPreference,
@@ -644,6 +645,15 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                 </span>
               </div>
             )}
+
+            {/* Per-Asset Logo Override */}
+            <LogoOverrideSelector
+              overrideLogoUrl={assetLogoOverride}
+              brandLogoUrl={projectLogoOverride || brand?.logo_url || activeBrand?.logo_url}
+              onLogoChange={setAssetLogoOverride}
+              label="Logo"
+              compact
+            />
             
             <Button 
               variant="outline" 
