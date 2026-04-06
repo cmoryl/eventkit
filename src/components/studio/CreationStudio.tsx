@@ -652,6 +652,13 @@ export const CreationStudio: React.FC = () => {
         onLogoChange={setProjectLogoOverride}
         label="Logo"
       />
+
+      {/* Project Font Selection */}
+      <FontPickerDropdown
+        selectedFonts={projectFontSelection}
+        onFontsChange={setProjectFontSelection}
+        compact
+      />
       
       <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
         <Button
