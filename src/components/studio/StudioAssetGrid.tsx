@@ -199,6 +199,7 @@ interface StudioAssetGridProps {
   selectedAssets: string[];
   onSelectAsset: (id: string) => void;
   studioGradient: string;
+  projectLogoOverride?: string | null;
 }
 
 // Asset display info with demo imagery - FULLY UNIQUE IMAGES
