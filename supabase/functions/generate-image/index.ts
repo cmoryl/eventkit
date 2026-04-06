@@ -16,7 +16,7 @@ import {
   mergeTemplateWithVariables,
   incrementTemplateUsage
 } from "../_shared/prompt-builder.ts";
-import { performInlineAnalysis, generateImageWithRetry } from "../_shared/ai-gateway.ts";
+import { performInlineAnalysis, generateImageWithRetry, analyzeLogoDetails } from "../_shared/ai-gateway.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
