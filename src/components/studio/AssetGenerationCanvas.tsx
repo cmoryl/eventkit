@@ -10,8 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import { AIImageEditModal } from '@/components/AIImageEditModal';
-import { AssetBriefModal, type AssetBrief } from './AssetBriefModal';
+import { AssetBriefModal, type AssetBrief, type GoogleFontSelection } from './AssetBriefModal';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
+import { FontPickerDropdown } from './FontPickerDropdown';
 import { 
   recordBriefPreference, 
   getBriefPreference,
@@ -73,6 +74,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [brandKnowledge, setBrandKnowledge] = useState<Record<string, unknown> | null>(null);
   const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [assetLogoOverride, setAssetLogoOverride] = useState<string | null>(null);
+  const [selectedFonts, setSelectedFonts] = useState<GoogleFontSelection | null>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Logo priority: asset-level > project-level > brand default
@@ -157,6 +159,11 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const handleBriefSubmit = async (brief: AssetBrief) => {
     setCurrentBrief(brief);
     setShowBriefModal(false);
+    
+    // Sync brief font selection to canvas font picker
+    if (brief.customFonts) {
+      setSelectedFonts(brief.customFonts);
+    }
     
     // Record brief preference for AI learning
     if (user?.id) {
@@ -245,8 +252,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               secondaryColor: effectiveBrand.styles?.secondary_color,
               accentColor: effectiveBrand.styles?.accent_color,
               colorPalette: effectiveBrand.styles?.color_palette,
-              headingFont: effectiveBrand.styles?.heading_font,
-              bodyFont: effectiveBrand.styles?.body_font,
+              headingFont: selectedFonts?.heading || effectiveBrand.styles?.heading_font,
+              bodyFont: selectedFonts?.body || effectiveBrand.styles?.body_font,
               industry: effectiveBrand.styles?.industry,
               moodKeywords: effectiveBrand.styles?.mood_keywords,
               imageryStyle: effectiveBrand.styles?.imagery_style,
@@ -258,6 +265,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               toneKeywords: effectiveBrand.styles?.tone_keywords,
               writingStyle: effectiveBrand.styles?.writing_style,
               customPrompts: effectiveBrand.styles?.custom_prompts,
+            } : selectedFonts ? {
+              headingFont: selectedFonts.heading,
+              bodyFont: selectedFonts.body,
             } : null,
             colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
             logoBase64: effectiveLogoUrl,
@@ -474,8 +484,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             secondaryColor: effectiveBrand.styles?.secondary_color,
             accentColor: effectiveBrand.styles?.accent_color,
             colorPalette: effectiveBrand.styles?.color_palette,
-            headingFont: effectiveBrand.styles?.heading_font,
-            bodyFont: effectiveBrand.styles?.body_font,
+            headingFont: selectedFonts?.heading || effectiveBrand.styles?.heading_font,
+            bodyFont: selectedFonts?.body || effectiveBrand.styles?.body_font,
             moodKeywords: effectiveBrand.styles?.mood_keywords,
             imageryStyle: effectiveBrand.styles?.imagery_style,
             industry: effectiveBrand.styles?.industry,
@@ -487,6 +497,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             toneKeywords: effectiveBrand.styles?.tone_keywords,
             writingStyle: effectiveBrand.styles?.writing_style,
             customPrompts: effectiveBrand.styles?.custom_prompts,
+          } : selectedFonts ? {
+            headingFont: selectedFonts.heading,
+            bodyFont: selectedFonts.body,
           } : null,
           colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
           logoBase64: effectiveLogoUrl,
@@ -652,6 +665,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               brandLogoUrl={projectLogoOverride || brand?.logo_url || activeBrand?.logo_url}
               onLogoChange={setAssetLogoOverride}
               label="Logo"
+              compact
+            />
+
+            {/* Font Picker */}
+            <FontPickerDropdown
+              selectedFonts={selectedFonts}
+              onFontsChange={setSelectedFonts}
               compact
             />
             
