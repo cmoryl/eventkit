@@ -632,6 +632,14 @@ export const CreationStudio: React.FC = () => {
         onCreateBrand={() => navigate('/admin?tab=brands')}
       />
       
+      {/* Project Logo Override */}
+      <LogoOverrideSelector
+        overrideLogoUrl={projectLogoOverride}
+        brandLogoUrl={selectedBrand?.logo_url}
+        onLogoChange={setProjectLogoOverride}
+        label="Logo"
+      />
+      
       <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
         <Button
           variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
