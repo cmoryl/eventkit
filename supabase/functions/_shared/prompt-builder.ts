@@ -4,6 +4,17 @@ import { getLocationCulturalContext } from "./location-context.ts";
 import { getBasePrompt, isPrintAsset } from "./asset-prompts.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+export interface LogoAnalysis {
+  shape: string;
+  textContent: string;
+  colors: string[];
+  style: string;
+  distinctiveFeatures: string[];
+  aspectRatio: string;
+  iconDescription?: string;
+  fontStyle?: string;
+}
+
 /**
  * Build brand context string from brand data
  */
