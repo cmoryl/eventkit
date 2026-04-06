@@ -513,6 +513,57 @@ export const CreationStudio: React.FC = () => {
     };
   }, []);
 
+  // Determine if there are unsaved changes
+  const hasUnsavedChanges = autoSaveStatus === 'pending' || autoSaveStatus === 'error';
+
+  // Browser beforeunload warning
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [hasUnsavedChanges]);
+
+  // React Router navigation blocker
+  const blocker = useBlocker(hasUnsavedChanges);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [isSavingBeforeLeave, setIsSavingBeforeLeave] = useState(false);
+
+  useEffect(() => {
+    if (blocker.state === 'blocked') {
+      setShowUnsavedDialog(true);
+    }
+  }, [blocker.state]);
+
+  const handleDiscardAndLeave = () => {
+    setShowUnsavedDialog(false);
+    previousImagesRef.current = JSON.stringify(generatedImages);
+    setAutoSaveStatus('idle');
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    blocker.proceed?.();
+  };
+
+  const handleSaveAndLeave = async () => {
+    setIsSavingBeforeLeave(true);
+    try {
+      await performAutoSave();
+    } catch (e) {
+      console.error('Save before leave failed:', e);
+    } finally {
+      setIsSavingBeforeLeave(false);
+      setShowUnsavedDialog(false);
+      blocker.proceed?.();
+    }
+  };
+
+  const handleCancelLeave = () => {
+    setShowUnsavedDialog(false);
+    blocker.reset?.();
+  };
+
   if (!studio) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
