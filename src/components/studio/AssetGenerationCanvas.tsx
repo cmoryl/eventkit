@@ -199,12 +199,17 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         
         // Use the brand prop or fall back to activeBrand from the hook
         const effectiveBrand = brand || (activeBrand ? {
+          id: activeBrand.id,
+          user_id: '',
           name: activeBrand.name,
+          is_default: activeBrand.is_default,
+          created_at: activeBrand.created_at,
+          updated_at: activeBrand.updated_at,
           styles: activeBrand.styles ? {
             color_palette: activeBrand.styles.color_palette,
             primary_color: activeBrand.styles.primary_color,
             secondary_color: activeBrand.styles.secondary_color,
-            accent_color: activeBrand.styles.accent_color,
+            accent_color: (activeBrand.styles as any).accent_color,
             heading_font: activeBrand.styles.heading_font,
             body_font: activeBrand.styles.body_font,
             industry: (activeBrand.styles as any).industry,
@@ -218,10 +223,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             cultural_context: (activeBrand.styles as any).cultural_context,
             tone_keywords: (activeBrand.styles as any).tone_keywords,
             writing_style: (activeBrand.styles as any).writing_style,
-            archetype: (activeBrand.styles as any).archetype,
-            tagline: (activeBrand.styles as any).tagline,
-            mission: (activeBrand.styles as any).mission,
-          } : undefined,
+          } as any : undefined,
           logo_url: activeBrand.logo_url,
         } as Brand : null);
 
