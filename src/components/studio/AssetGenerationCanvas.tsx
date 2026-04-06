@@ -13,6 +13,7 @@ import { AIImageEditModal } from '@/components/AIImageEditModal';
 import { AssetBriefModal, type AssetBrief, type GoogleFontSelection } from './AssetBriefModal';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
 import { FontPickerDropdown } from './FontPickerDropdown';
+import { FontPreviewPanel } from './FontPreviewPanel';
 import { 
   recordBriefPreference, 
   getBriefPreference,
@@ -697,6 +698,12 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             </Button>
           </div>
         </header>
+
+        {/* Font Preview Strip */}
+        <FontPreviewPanel
+          selectedFonts={selectedFonts}
+          eventName={eventName}
+        />
 
         {/* Main Content - Split View Layout */}
         <main className="flex-1 overflow-hidden">
