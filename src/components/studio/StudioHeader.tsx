@@ -232,7 +232,18 @@ const StudioHeader: React.FC<StudioHeaderProps> = ({
               />
             )}
 
-            {/* Theme Toggle */}
+            {/* Brand Sync Status */}
+            {isAuthenticated && activeBrand?.brandhub_share_token && (
+              <BrandSyncStatus
+                brandId={activeBrand.id}
+                brandName={activeBrand.name}
+                shareToken={activeBrand.brandhub_share_token}
+                lastSynced={activeBrand.brandhub_last_synced}
+                lastChecked={activeBrand.brandhub_last_checked}
+                autoSync={activeBrand.brandhub_auto_sync}
+                onSyncComplete={refreshBrands}
+              />
+            )}
             <ThemeToggle />
 
             {/* Undo/Redo */}
