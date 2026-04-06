@@ -26,6 +26,7 @@ import { StudioReferenceChat } from './StudioReferenceChat';
 import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { LogoOverrideSelector } from './LogoOverrideSelector';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -63,6 +64,7 @@ export const CreationStudio: React.FC = () => {
   const [isLoadingProject, setIsLoadingProject] = useState(false);
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
+  const [projectLogoOverride, setProjectLogoOverride] = useState<string | null>(null);
   
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
