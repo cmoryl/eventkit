@@ -1,5 +1,74 @@
 // AI Gateway utilities for image generation
 import type { ImageAnalysis } from "./types.ts";
+import type { LogoAnalysis } from "./prompt-builder.ts";
+
+/**
+ * Pre-analyze a logo image to extract detailed structural description
+ * This description is injected into the generation prompt so the AI has
+ * a textual blueprint to cross-check its reproduction against.
+ */
+export async function analyzeLogoDetails(
+  apiKey: string,
+  logoBase64: string
+): Promise<LogoAnalysis | null> {
+  const prompt = `You are a logo analysis system. Examine this logo image with extreme precision and return a JSON object describing every visual detail. This will be used to verify AI reproduction accuracy.
+
+Return ONLY a JSON object with these exact fields:
+{
+  "shape": "overall shape/structure description, e.g. 'circular emblem with wordmark below' or 'horizontal lockup with icon left'",
+  "textContent": "exact text visible in logo, letter by letter, e.g. 'ACME CORP' — if no text, say 'none'",
+  "colors": ["#hex1", "#hex2", ...list ALL colors present],
+  "style": "design style, e.g. 'modern minimalist', 'vintage hand-drawn', 'corporate geometric'",
+  "distinctiveFeatures": ["feature1", "feature2", ...list unique identifying elements like 'swoosh above A', 'star inside circle', 'gradient from blue to purple'],
+  "aspectRatio": "approximate ratio, e.g. 'square 1:1', 'landscape 3:1', 'portrait 1:2'",
+  "iconDescription": "detailed description of any icon/symbol, null if text-only",
+  "fontStyle": "typography description if text present, e.g. 'bold sans-serif uppercase with tight tracking', null if no text"
+}`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: \`Bearer \${apiKey}\`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: logoBase64 } }
+            ],
+          },
+        ],
+        temperature: 0.1,
+      }),
+    });
+
+    if (!response.ok) {
+      console.warn('Logo analysis failed:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content;
+
+    if (content) {
+      const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log('Logo analysis complete:', parsed.textContent, parsed.shape);
+        return parsed as LogoAnalysis;
+      }
+    }
+  } catch (e) {
+    console.warn('Logo analysis error:', e);
+  }
+
+  return null;
+}
 
 /**
  * Perform inline image analysis when no pre-computed analysis is provided
