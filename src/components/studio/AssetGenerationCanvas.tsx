@@ -515,13 +515,39 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     }
   };
 
-  const handleUseSelected = () => {
+  const handleUseSelected = async () => {
     const variation = variations.find(v => v.id === selectedVariation);
-    if (variation?.imageUrl) {
-      onImageGenerated?.(variation.imageUrl);
-      onClose();
-      toast.success(`${assetName} saved to your project`);
+    if (!variation?.imageUrl) return;
+
+    let finalUrl = variation.imageUrl;
+
+    // Persist base64 images to storage for durability
+    if (finalUrl.startsWith('data:')) {
+      try {
+        const base64Data = finalUrl.split(',')[1];
+        const mimeMatch = finalUrl.match(/data:(image\/\w+);/);
+        const ext = mimeMatch ? mimeMatch[1].split('/')[1] : 'png';
+        const blob = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+        const fileName = `studio/${assetType}_${Date.now()}.${ext}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('asset-images')
+          .upload(fileName, blob, { contentType: mimeMatch?.[1] || 'image/png', upsert: true });
+
+        if (!uploadError && uploadData?.path) {
+          const { data: urlData } = supabase.storage.from('asset-images').getPublicUrl(uploadData.path);
+          if (urlData?.publicUrl) {
+            finalUrl = urlData.publicUrl;
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to persist image to storage, using base64:', e);
+      }
     }
+
+    onImageGenerated?.(finalUrl);
+    onClose();
+    toast.success(`${assetName} saved to your project`);
   };
 
   const completedCount = variations.filter(v => v.status === 'complete').length;
