@@ -29,7 +29,7 @@ Return ONLY a JSON object with these exact fields:
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: \`Bearer \${apiKey}\`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -56,7 +56,7 @@ Return ONLY a JSON object with these exact fields:
     const content = data.choices?.[0]?.message?.content;
 
     if (content) {
-      const jsonMatch = content.match(/\\{[\\s\\S]*\\}/);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
         console.log('Logo analysis complete:', parsed.textContent, parsed.shape);
