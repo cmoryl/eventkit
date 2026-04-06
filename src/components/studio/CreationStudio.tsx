@@ -851,6 +851,22 @@ export const CreationStudio: React.FC = () => {
         onCancel={handleCancelLeave}
         isSaving={isSavingBeforeLeave}
       />
+
+      {/* Batch Generation Modal */}
+      <BatchGenerationModal
+        isOpen={showBatchGeneration}
+        onClose={() => setShowBatchGeneration(false)}
+        assetTypes={filteredAssetTypes}
+        brand={selectedBrand}
+        eventName={selectedBrand?.name || 'Your Event'}
+        studioGradient={studio.gradient}
+        projectLogoOverride={projectLogoOverride}
+        assetDisplayInfo={assetDisplayInfo}
+        onImagesGenerated={(newImages) => {
+          setBatchGeneratedImages(prev => ({ ...prev, ...newImages }));
+          setGeneratedImages(prev => ({ ...prev, ...newImages }));
+        }}
+      />
     </div>
   );
 };
