@@ -785,6 +785,15 @@ export const CreationStudio: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Unsaved Changes Dialog */}
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onDiscard={handleDiscardAndLeave}
+        onSaveAndLeave={handleSaveAndLeave}
+        onCancel={handleCancelLeave}
+        isSaving={isSavingBeforeLeave}
+      />
     </div>
   );
 };
