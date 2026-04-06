@@ -39,7 +39,6 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
     if (!user) return;
     
     try {
-      // Get recent projects
       const { data: projects, error: projectsError } = await supabase
         .from('projects')
         .select('id, name, description, updated_at, generated_assets')
@@ -49,20 +48,35 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
 
       if (projectsError) throw projectsError;
       
-      // For each project, try to get a saved asset thumbnail
+      // Extract thumbnail from generated_assets JSON or fall back to project_assets table
       const projectsWithThumbnails = await Promise.all(
         (projects || []).map(async (project) => {
-          const { data: assets } = await supabase
-            .from('project_assets')
-            .select('content')
-            .eq('project_id', project.id)
-            .limit(1);
-          
-          const thumbnail = assets?.[0]?.content;
-          return {
-            ...project,
-            thumbnail_url: typeof thumbnail === 'string' && thumbnail.startsWith('http') ? thumbnail : null
-          };
+          // First try: get image URL from generated_assets JSON array
+          let thumbnail: string | null = null;
+          if (Array.isArray(project.generated_assets)) {
+            const assetWithImage = project.generated_assets.find(
+              (a: any) => a?.imageUrl && typeof a.imageUrl === 'string' && a.imageUrl.startsWith('http')
+            );
+            if (assetWithImage) {
+              thumbnail = (assetWithImage as any).imageUrl;
+            }
+          }
+
+          // Fallback: check project_assets table
+          if (!thumbnail) {
+            const { data: assets } = await supabase
+              .from('project_assets')
+              .select('content')
+              .eq('project_id', project.id)
+              .limit(1);
+            
+            const content = assets?.[0]?.content;
+            if (typeof content === 'string' && content.startsWith('http')) {
+              thumbnail = content;
+            }
+          }
+
+          return { ...project, thumbnail_url: thumbnail };
         })
       );
       
