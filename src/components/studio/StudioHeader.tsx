@@ -35,6 +35,7 @@ import { ApiSettingsModal } from '../settings/ApiSettingsModal';
 import { useApiSettings } from '@/hooks/useApiSettings';
 import { ActiveBrandIndicator } from '@/components/brand/ActiveBrandIndicator';
 import { BrandColorBar } from '@/components/brand/BrandColorBar';
+import { BrandSyncStatus } from '@/components/brand/BrandSyncStatus';
 
 interface StudioHeaderProps {
   eventName: string;
