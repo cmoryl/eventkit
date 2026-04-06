@@ -552,7 +552,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       tagline: (hubBrand.tagline as string) || null,
       mission: (hubBrand.mission as string) || null,
       industry: (hubBrand.industry as string) || null,
-      all_imagery: (hubBrand.allImagery as Record<string, unknown>) || {},
+      all_imagery: JSON.parse(JSON.stringify((hubBrand.allImagery as Record<string, unknown>) || {})),
     };
 
     const { data: existingStyle } = await supabase
