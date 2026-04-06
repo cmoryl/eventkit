@@ -761,8 +761,12 @@ export const CreationStudio: React.FC = () => {
                 </p>
               </div>
               
-              <Button className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button 
+                className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} 
+                size="sm"
+                onClick={() => setShowBatchGeneration(true)}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
                 Generate All
               </Button>
             </div>
