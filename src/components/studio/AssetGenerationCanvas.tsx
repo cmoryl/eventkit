@@ -426,7 +426,35 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 
     try {
       const prompt = buildPrompt(styleVariants[index]);
-      const effectiveBrand = brand || null;
+      // Use brand prop or fall back to activeBrand (same logic as initial generation)
+      const effectiveBrand = brand || (activeBrand ? {
+        id: activeBrand.id,
+        user_id: '',
+        name: activeBrand.name,
+        is_default: activeBrand.is_default,
+        created_at: activeBrand.created_at,
+        updated_at: activeBrand.updated_at,
+        styles: activeBrand.styles ? {
+          color_palette: activeBrand.styles.color_palette,
+          primary_color: activeBrand.styles.primary_color,
+          secondary_color: activeBrand.styles.secondary_color,
+          accent_color: (activeBrand.styles as any).accent_color,
+          heading_font: activeBrand.styles.heading_font,
+          body_font: activeBrand.styles.body_font,
+          industry: (activeBrand.styles as any).industry,
+          mood_keywords: activeBrand.styles.mood_keywords,
+          imagery_style: (activeBrand.styles as any).imagery_style,
+          brand_voice: (activeBrand.styles as any).brand_voice,
+          custom_prompts: (activeBrand.styles as any).custom_prompts,
+          pattern_style: (activeBrand.styles as any).pattern_style,
+          icon_style: (activeBrand.styles as any).icon_style,
+          target_audience: (activeBrand.styles as any).target_audience,
+          cultural_context: (activeBrand.styles as any).cultural_context,
+          tone_keywords: (activeBrand.styles as any).tone_keywords,
+          writing_style: (activeBrand.styles as any).writing_style,
+        } as any : undefined,
+        logo_url: activeBrand.logo_url,
+      } as Brand : null);
       
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
@@ -445,10 +473,18 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             imageryStyle: effectiveBrand.styles?.imagery_style,
             industry: effectiveBrand.styles?.industry,
             brandVoice: effectiveBrand.styles?.brand_voice,
+            patternStyle: effectiveBrand.styles?.pattern_style,
+            iconStyle: effectiveBrand.styles?.icon_style,
+            targetAudience: effectiveBrand.styles?.target_audience,
+            culturalContext: effectiveBrand.styles?.cultural_context,
+            toneKeywords: effectiveBrand.styles?.tone_keywords,
+            writingStyle: effectiveBrand.styles?.writing_style,
+            customPrompts: effectiveBrand.styles?.custom_prompts,
           } : null,
           colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
           logoBase64: effectiveBrand?.logo_url,
-          dimensions: parseDimensions(dimensions)
+          dimensions: parseDimensions(dimensions),
+          customContent: currentBrief?.customContent
         }
       });
 
