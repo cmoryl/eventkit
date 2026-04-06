@@ -411,7 +411,107 @@ export const CreationStudio: React.FC = () => {
     }
   };
 
-  if (!studio) {
+  // Auto-save: detect changes to generatedImages and trigger background save
+  const performAutoSave = useCallback(async () => {
+    if (!user || !selectedBrand || !studio) return;
+    const imageEntries = Object.entries(generatedImages);
+    if (imageEntries.length === 0) return;
+
+    setAutoSaveStatus('saving');
+    try {
+      const persistedAssets = await Promise.all(
+        imageEntries.map(async ([assetType, imageUrl]) => {
+          let persistentUrl = imageUrl;
+          if (imageUrl.startsWith('data:')) {
+            try {
+              const base64Data = imageUrl.split(',')[1];
+              const mimeMatch = imageUrl.match(/data:(image\/\w+);/);
+              const ext = mimeMatch ? mimeMatch[1].split('/')[1] : 'png';
+              const blob = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+              const fileName = `studio/${user.id}/${studio.id}/${assetType}_${Date.now()}.${ext}`;
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('asset-images')
+                .upload(fileName, blob, { contentType: mimeMatch?.[1] || 'image/png', upsert: true });
+              if (!uploadError && uploadData?.path) {
+                const { data: urlData } = supabase.storage.from('asset-images').getPublicUrl(uploadData.path);
+                if (urlData?.publicUrl) persistentUrl = urlData.publicUrl;
+              }
+            } catch (e) {
+              console.warn(`Auto-save: failed to persist ${assetType}`, e);
+            }
+          }
+          return { assetType, imageUrl: persistentUrl, hasContent: true };
+        })
+      );
+
+      // Update local state with persisted URLs
+      const updatedImages: Record<string, string> = {};
+      persistedAssets.forEach(a => { updatedImages[a.assetType] = a.imageUrl; });
+      setGeneratedImages(updatedImages);
+
+      const projectName = `${selectedBrand.name} - ${studio.name}`;
+      const projectPayload = {
+        user_id: user.id,
+        name: projectName,
+        description: `Created in ${studio.name}`,
+        event_details: JSON.parse(JSON.stringify({ name: selectedBrand.name, studioId: studio.id })),
+        generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
+      };
+
+      const { data: existing } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('name', projectName)
+        .maybeSingle();
+
+      if (existing) {
+        const { user_id, ...updateData } = projectPayload;
+        await supabase.from('projects').update(updateData).eq('id', existing.id);
+      } else {
+        await supabase.from('projects').insert([projectPayload]);
+      }
+
+      previousImagesRef.current = JSON.stringify(updatedImages);
+      setAutoSaveStatus('saved');
+      setLastSavedAt(new Date());
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      setAutoSaveStatus('error');
+    }
+  }, [user, selectedBrand, studio, generatedImages]);
+
+  // Watch for changes and schedule auto-save (30s debounce)
+  useEffect(() => {
+    const currentSnapshot = JSON.stringify(generatedImages);
+    if (currentSnapshot === previousImagesRef.current || Object.keys(generatedImages).length === 0) {
+      return;
+    }
+    
+    setAutoSaveStatus('pending');
+    
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    
+    autoSaveTimerRef.current = setTimeout(() => {
+      if (user && selectedBrand) {
+        performAutoSave();
+      }
+    }, 30000); // 30 seconds
+
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [generatedImages, user, selectedBrand, performAutoSave]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, []);
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">Loading studio...</div>
