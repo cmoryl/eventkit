@@ -778,6 +778,7 @@ export const CreationStudio: React.FC = () => {
               );
             }}
             studioGradient={studio.gradient}
+            projectLogoOverride={projectLogoOverride}
           />
 
           {/* AI Reference Chat */}
