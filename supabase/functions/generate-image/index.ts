@@ -195,7 +195,7 @@ ${allPatternImages.length} MASTER PATTERN(S) provided. You MUST:
     const venueInstructions = venueImageBase64
       ? `
 VENUE COMPOSITING - CRITICAL:
-Reference Image #${(logoBase64 ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + (masterPatternBase64 ? 1 : 0) + 1} is the ACTUAL VENUE PHOTO where this asset will be displayed.
+Reference Image #${(logoData ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + (masterPatternBase64 ? 1 : 0) + 1} is the ACTUAL VENUE PHOTO where this asset will be displayed.
 You MUST:
 1. Composite the branded asset INTO this actual venue environment
 2. Match the lighting, perspective, and shadows of the venue photo
