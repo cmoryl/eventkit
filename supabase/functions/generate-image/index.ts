@@ -52,6 +52,34 @@ serve(async (req) => {
       imageModel = 'fast',
     } = body;
 
+    // Normalize logo: if it's an HTTP URL (not base64), fetch and convert
+    let logoData = logoBase64;
+    if (logoData && (logoData.startsWith('http://') || logoData.startsWith('https://')) && !logoData.startsWith('data:')) {
+      try {
+        console.log('Logo is a URL, fetching and converting to base64...');
+        const logoResp = await fetch(logoData);
+        if (logoResp.ok) {
+          const logoBlob = await logoResp.arrayBuffer();
+          const contentType = logoResp.headers.get('content-type') || 'image/png';
+          const base64Str = btoa(String.fromCharCode(...new Uint8Array(logoBlob)));
+          logoData = `data:${contentType};base64,${base64Str}`;
+        } else {
+          console.warn('Failed to fetch logo URL, skipping logo:', logoResp.status);
+          logoData = undefined;
+        }
+      } catch (e) {
+        console.warn('Error fetching logo URL:', e);
+        logoData = undefined;
+      }
+    }
+
+    // Normalize brand colorPalette to array of hex strings
+    if (brandContext?.colorPalette && Array.isArray(brandContext.colorPalette)) {
+      brandContext.colorPalette = brandContext.colorPalette.map((c: any) => 
+        typeof c === 'string' ? c : (c?.hex || String(c))
+      );
+    }
+
     // Normalize to arrays for multi-image support
     const vibeImageBase64 = Array.isArray(rawVibeImage) ? rawVibeImage[0] : rawVibeImage;
     const allVibeImages = Array.isArray(rawVibeImage) ? rawVibeImage : (rawVibeImage ? [rawVibeImage] : []);
