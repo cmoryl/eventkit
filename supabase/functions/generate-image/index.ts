@@ -223,7 +223,7 @@ PHOTOREALISTIC RENDERING - CRITICAL:
 
     // BUILD FULL PROMPT — prefixed with Master Wrapper
     const masterWrapper = buildMasterWrapper();
-    const outputChecklist = buildOutputChecklist(isPrint, !!logoBase64);
+    const outputChecklist = buildOutputChecklist(isPrint, !!logoData);
     
     const fullPrompt = `${masterWrapper}
 
@@ -260,11 +260,11 @@ ${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}
 
 ${outputChecklist}`;
 
-    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}`);
+    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}${logoData ? ' [logo]' : ''}`);
 
     // Collect all reference images with labels so the AI knows what each one is
     const referenceImages: LabeledImage[] = [];
-    if (logoBase64) referenceImages.push({ url: logoBase64, label: 'LOGO - incorporate this logo into the design' });
+    if (logoData) referenceImages.push({ url: logoData, label: 'LOGO - incorporate this logo into the design' });
     allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
     allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
     if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
