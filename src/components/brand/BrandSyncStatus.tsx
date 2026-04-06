@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { checkAndSyncBrand } from '@/services/brandAutoSync';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
 interface BrandSyncStatusProps {
@@ -27,11 +28,10 @@ export const BrandSyncStatus: React.FC<BrandSyncStatusProps> = ({
   brandName,
   shareToken,
   lastSynced,
-  lastChecked,
-  autoSync,
   onSyncComplete,
   className,
 }) => {
+  const { user } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [justSynced, setJustSynced] = useState(false);
 
@@ -43,13 +43,10 @@ export const BrandSyncStatus: React.FC<BrandSyncStatusProps> = ({
     : true;
 
   const handleSync = async () => {
+    if (!user) return;
     setIsSyncing(true);
     try {
-      const updated = await checkAndSyncBrand({
-        id: brandId,
-        brandhub_share_token: shareToken,
-        brandhub_last_checked: lastChecked || null,
-      });
+      const updated = await checkAndSyncBrand(brandId, user.id, { silent: true });
       if (updated) {
         setJustSynced(true);
         toast.success(`${brandName} synced from BrandHub`);
@@ -80,7 +77,7 @@ export const BrandSyncStatus: React.FC<BrandSyncStatusProps> = ({
               'relative flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all',
               'hover:bg-accent/50 disabled:opacity-60',
               isStale && !isSyncing && !justSynced
-                ? 'text-amber-400/80'
+                ? 'text-primary/80'
                 : 'text-muted-foreground',
               className,
             )}
@@ -88,15 +85,15 @@ export const BrandSyncStatus: React.FC<BrandSyncStatusProps> = ({
             {/* Pulse ring for stale brands */}
             {isStale && !isSyncing && !justSynced && (
               <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-400" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
               </span>
             )}
 
             {isSyncing ? (
               <RefreshCw className="h-3 w-3 animate-spin" />
             ) : justSynced ? (
-              <Check className="h-3 w-3 text-emerald-400" />
+              <Check className="h-3 w-3 text-accent" />
             ) : isStale ? (
               <CloudOff className="h-3 w-3" />
             ) : (
@@ -115,7 +112,7 @@ export const BrandSyncStatus: React.FC<BrandSyncStatusProps> = ({
               ? `Last synced ${formatDistanceToNow(lastSyncDate, { addSuffix: true })}`
               : 'Not yet synced from BrandHub'}
           </p>
-          {isStale && <p className="text-amber-400 mt-1">Click to sync latest data</p>}
+          {isStale && <p className="text-primary mt-1">Click to sync latest data</p>}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
