@@ -12,6 +12,7 @@ import {
   buildAnalysisInstructions,
   buildPrintRequirements,
   buildOutputChecklist,
+  buildTextManifest,
   fetchPromptTemplate,
   mergeTemplateWithVariables,
   incrementTemplateUsage
