@@ -426,18 +426,28 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 
     try {
       const prompt = buildPrompt(styleVariants[index]);
+      const effectiveBrand = brand || null;
       
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
           prompt,
           assetType,
           eventName,
-          brandContext: brand ? {
-            name: brand.name,
-            colors: brand.styles?.color_palette,
-            primaryColor: brand.styles?.primary_color,
-            secondaryColor: brand.styles?.secondary_color
+          brandContext: effectiveBrand ? {
+            brandName: effectiveBrand.name,
+            primaryColor: effectiveBrand.styles?.primary_color,
+            secondaryColor: effectiveBrand.styles?.secondary_color,
+            accentColor: effectiveBrand.styles?.accent_color,
+            colorPalette: effectiveBrand.styles?.color_palette,
+            headingFont: effectiveBrand.styles?.heading_font,
+            bodyFont: effectiveBrand.styles?.body_font,
+            moodKeywords: effectiveBrand.styles?.mood_keywords,
+            imageryStyle: effectiveBrand.styles?.imagery_style,
+            industry: effectiveBrand.styles?.industry,
+            brandVoice: effectiveBrand.styles?.brand_voice,
           } : null,
+          colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
+          logoBase64: effectiveBrand?.logo_url,
           dimensions: parseDimensions(dimensions)
         }
       });
