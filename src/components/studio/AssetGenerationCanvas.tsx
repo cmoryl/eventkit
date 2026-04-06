@@ -71,7 +71,11 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [zoomLevel, setZoomLevel] = useState(100); // Zoom percentage
   const [brandKnowledge, setBrandKnowledge] = useState<Record<string, unknown> | null>(null);
   const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  const [assetLogoOverride, setAssetLogoOverride] = useState<string | null>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+
+  // Logo priority: asset-level > project-level > brand default
+  const effectiveLogoUrl = assetLogoOverride || projectLogoOverride || brand?.logo_url || activeBrand?.logo_url;
 
   // Fit-to-window: calculate optimal zoom so the image fits the container with padding
   const fitToWindow = useCallback(() => {
