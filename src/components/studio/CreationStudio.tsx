@@ -46,7 +46,7 @@ export const CreationStudio: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   
   const [studio, setStudio] = useState<StudioDefinition | null>(null);
-  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
+  const [selectedBrand, setSelectedBrandState] = useState<Brand | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
