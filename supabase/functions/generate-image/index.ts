@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import type { GenerateImageRequest, ImageAnalysis } from "../_shared/types.ts";
 import { getBasePrompt, isPrintAsset } from "../_shared/asset-prompts.ts";
+import type { LabeledImage } from "../_shared/ai-gateway.ts";
 import { 
   buildMasterWrapper,
   buildBrandContext, 
