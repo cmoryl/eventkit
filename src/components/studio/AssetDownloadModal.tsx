@@ -12,8 +12,10 @@ import {
   Check,
   Loader2,
   Globe,
-  Code
+  Code,
+  Upload,
 } from 'lucide-react';
+import { pushAssetsToBrandHub } from '@/services/pushToBrandHub';
 
 interface AssetDownloadModalProps {
   asset: GeneratedAsset;
