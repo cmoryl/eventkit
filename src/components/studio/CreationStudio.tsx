@@ -31,6 +31,7 @@ import { FontPickerDropdown } from './FontPickerDropdown';
 import { BatchGenerationModal } from './BatchGenerationModal';
 import { assetDisplayInfo } from './StudioAssetGrid';
 import type { GoogleFontSelection } from './AssetBriefModal';
+import { checkAndSyncBrand, forceResyncBrand } from '@/services/brandAutoSync';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
