@@ -90,11 +90,24 @@ const IMAGE_MODELS: Record<ImageModelTier, string> = {
   quality: 'google/gemini-3-pro-image-preview',
 };
 
+/**
+ * Check if a string looks like a usable image reference (base64 data URI or URL)
+ */
+function isValidImageRef(ref: string): boolean {
+  if (!ref || typeof ref !== 'string') return false;
+  return ref.startsWith('data:image') || ref.startsWith('data:application') || ref.startsWith('https://') || ref.startsWith('http://');
+}
+
+export interface LabeledImage {
+  url: string;
+  label?: string; // e.g. "LOGO", "STYLE REFERENCE", "PATTERN", "VENUE PHOTO"
+}
+
 export async function generateImageWithRetry(
   apiKey: string,
   prompt: string,
   assetType: string,
-  referenceImages: string[] = [],
+  referenceImages: (string | LabeledImage)[] = [],
   maxRetries = 2,
   modelTier: ImageModelTier = 'fast'
 ): Promise<string> {
@@ -107,20 +120,43 @@ export async function generateImageWithRetry(
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
 
-      // Build message content - include all reference images
-      const messageContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
-        { type: "text", text: prompt }
-      ];
+      // Build message content with labeled images
+      const messageContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
 
-      // Add all reference images (logo, vibe image, pattern)
-      for (const imageBase64 of referenceImages) {
-        if (imageBase64 && imageBase64.startsWith('data:image')) {
-          messageContent.push({
-            type: "image_url",
-            image_url: { url: imageBase64 }
-          });
+      // Collect valid images and build label annotations
+      const validImages: LabeledImage[] = [];
+      for (const ref of referenceImages) {
+        if (typeof ref === 'string') {
+          if (isValidImageRef(ref)) {
+            validImages.push({ url: ref });
+          }
+        } else if (ref && isValidImageRef(ref.url)) {
+          validImages.push(ref);
         }
       }
+
+      // Build an image map description so the AI knows what each image is
+      let imageMapDescription = '';
+      if (validImages.length > 0) {
+        const labelLines = validImages.map((img, i) => {
+          const label = img.label || `Reference Image`;
+          return `  Image ${i + 1}: ${label}`;
+        });
+        imageMapDescription = `\n\nREFERENCE IMAGES PROVIDED (${validImages.length} total):\n${labelLines.join('\n')}\nUse each image according to its label. The LOGO should be incorporated into the design. STYLE REFERENCE images define the visual aesthetic to match. PATTERN images should be used as decorative/background elements. VENUE PHOTO should be used for realistic compositing.\n`;
+      }
+
+      // Add text prompt with image map
+      messageContent.push({ type: "text", text: prompt + imageMapDescription });
+
+      // Add all valid images
+      for (const img of validImages) {
+        messageContent.push({
+          type: "image_url",
+          image_url: { url: img.url }
+        });
+      }
+
+      console.log(`Sending ${validImages.length} reference images for ${assetType} (labels: ${validImages.map(i => i.label || 'unlabeled').join(', ')})`);
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
