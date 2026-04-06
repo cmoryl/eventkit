@@ -412,7 +412,10 @@ ${isPrint ? '☐ Safe zone: all critical content (text, logos) inside safe area'
 ${hasLogo ? '☐ Logo check: PASS (exact reproduction, correct placement, proper sizing, adequate contrast)' : '☐ N/A — no logo provided'}
 ☐ Contrast check: all text readable against backgrounds (WCAG AA)
 ☐ Color consistency: palette applied cohesively throughout
-☐ Typography: clean, sharp, no orphaned words or awkward line breaks`;
+☐ Typography: clean, sharp, no orphaned words or awkward line breaks
+☐ TEXT SPELLING: re-read every word in the design — verify against the Text Content Manifest
+☐ TEXT EDGES: all characters have crisp, clean edges — no blur, smearing, or partial rendering
+☐ TEXT SPACING: consistent letter-spacing and word-spacing throughout`;
 }
 
 /**
