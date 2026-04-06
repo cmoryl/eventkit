@@ -52,6 +52,34 @@ serve(async (req) => {
       imageModel = 'fast',
     } = body;
 
+    // Normalize logo: if it's an HTTP URL (not base64), fetch and convert
+    let logoData = logoBase64;
+    if (logoData && (logoData.startsWith('http://') || logoData.startsWith('https://')) && !logoData.startsWith('data:')) {
+      try {
+        console.log('Logo is a URL, fetching and converting to base64...');
+        const logoResp = await fetch(logoData);
+        if (logoResp.ok) {
+          const logoBlob = await logoResp.arrayBuffer();
+          const contentType = logoResp.headers.get('content-type') || 'image/png';
+          const base64Str = btoa(String.fromCharCode(...new Uint8Array(logoBlob)));
+          logoData = `data:${contentType};base64,${base64Str}`;
+        } else {
+          console.warn('Failed to fetch logo URL, skipping logo:', logoResp.status);
+          logoData = undefined;
+        }
+      } catch (e) {
+        console.warn('Error fetching logo URL:', e);
+        logoData = undefined;
+      }
+    }
+
+    // Normalize brand colorPalette to array of hex strings
+    if (brandContext?.colorPalette && Array.isArray(brandContext.colorPalette)) {
+      brandContext.colorPalette = brandContext.colorPalette.map((c: any) => 
+        typeof c === 'string' ? c : (c?.hex || String(c))
+      );
+    }
+
     // Normalize to arrays for multi-image support
     const vibeImageBase64 = Array.isArray(rawVibeImage) ? rawVibeImage[0] : rawVibeImage;
     const allVibeImages = Array.isArray(rawVibeImage) ? rawVibeImage : (rawVibeImage ? [rawVibeImage] : []);
@@ -73,7 +101,7 @@ serve(async (req) => {
     const brandContextString = buildBrandContext(brandContext);
     const locationContext = buildLocationContext(location, incorporateLocationStyle);
     const venueIntelligenceContext = buildVenueContext(venueIntelligence);
-    const logoInstructions = buildLogoInstructions(!!logoBase64, assetType);
+    const logoInstructions = buildLogoInstructions(!!logoData, assetType);
     const analysisInstructions = buildAnalysisInstructions(imageAnalysis);
 
     // FETCH PROMPT TEMPLATE FROM DATABASE
@@ -167,7 +195,7 @@ ${allPatternImages.length} MASTER PATTERN(S) provided. You MUST:
     const venueInstructions = venueImageBase64
       ? `
 VENUE COMPOSITING - CRITICAL:
-Reference Image #${(logoBase64 ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + (masterPatternBase64 ? 1 : 0) + 1} is the ACTUAL VENUE PHOTO where this asset will be displayed.
+Reference Image #${(logoData ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + (masterPatternBase64 ? 1 : 0) + 1} is the ACTUAL VENUE PHOTO where this asset will be displayed.
 You MUST:
 1. Composite the branded asset INTO this actual venue environment
 2. Match the lighting, perspective, and shadows of the venue photo
@@ -195,7 +223,7 @@ PHOTOREALISTIC RENDERING - CRITICAL:
 
     // BUILD FULL PROMPT — prefixed with Master Wrapper
     const masterWrapper = buildMasterWrapper();
-    const outputChecklist = buildOutputChecklist(isPrint, !!logoBase64);
+    const outputChecklist = buildOutputChecklist(isPrint, !!logoData);
     
     const fullPrompt = `${masterWrapper}
 
@@ -232,11 +260,11 @@ ${isPrint ? '- This asset WILL BE PRINTED - quality is paramount' : ''}
 
 ${outputChecklist}`;
 
-    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}`);
+    console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}${logoData ? ' [logo]' : ''}`);
 
     // Collect all reference images with labels so the AI knows what each one is
     const referenceImages: LabeledImage[] = [];
-    if (logoBase64) referenceImages.push({ url: logoBase64, label: 'LOGO - incorporate this logo into the design' });
+    if (logoData) referenceImages.push({ url: logoData, label: 'LOGO - incorporate this logo into the design' });
     allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
     allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
     if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
