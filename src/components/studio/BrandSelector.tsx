@@ -126,7 +126,17 @@ export const BrandSelector: React.FC<BrandSelectorProps> = ({
                 )}
               </div>
 
-              <div className="p-2 border-t border-border">
+              <div className="p-2 border-t border-border space-y-1">
+                {selectedBrand && onResyncBrand && (
+                  <button
+                    onClick={() => { onResyncBrand(selectedBrand.id); }}
+                    disabled={isSyncing}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+                    {isSyncing ? 'Syncing...' : 'Re-sync from BrandHub'}
+                  </button>
+                )}
                 <button
                   onClick={() => { onCreateBrand(); setIsOpen(false); }}
                   className="w-full flex items-center gap-2 p-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
