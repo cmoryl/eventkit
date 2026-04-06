@@ -10,8 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import { AIImageEditModal } from '@/components/AIImageEditModal';
-import { AssetBriefModal, type AssetBrief } from './AssetBriefModal';
+import { AssetBriefModal, type AssetBrief, type GoogleFontSelection } from './AssetBriefModal';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
+import { FontPickerDropdown } from './FontPickerDropdown';
 import { 
   recordBriefPreference, 
   getBriefPreference,
