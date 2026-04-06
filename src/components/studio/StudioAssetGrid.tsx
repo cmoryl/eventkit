@@ -378,7 +378,8 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   viewMode,
   selectedAssets,
   onSelectAsset,
-  studioGradient
+  studioGradient,
+  projectLogoOverride
 }) => {
   const [generatingAssets, setGeneratingAssets] = useState<Set<string>>(new Set());
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
