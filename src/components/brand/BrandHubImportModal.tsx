@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, Loader2 } from 'lucide-react';
+import { Link2, Loader2, Grid3X3, Link } from 'lucide-react';
 import { BrandImportSummary } from './BrandImportSummary';
+import { BrandHubGallery } from './BrandHubGallery';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { addOrUpdateKnowledge } from '@/services/aiBrain/learningService';
