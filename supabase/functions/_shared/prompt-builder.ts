@@ -747,3 +747,55 @@ export async function incrementTemplateUsage(templateId: string): Promise<void> 
     // Silent fail - usage tracking is not critical
   }
 }
+
+/**
+ * Build an explicit text content manifest — tells the AI exactly what text to render
+ * and how to spell each word, preventing hallucinated or misspelled text.
+ */
+export function buildTextManifest(
+  eventName?: string,
+  eventDescription?: string,
+  eventDate?: string,
+  eventLocation?: string,
+  brandContext?: BrandContext
+): string {
+  const textItems: string[] = [];
+
+  if (eventName) {
+    // Spell out the event name character by character for verification
+    const spelled = eventName.split('').join(' ');
+    textItems.push(`PRIMARY TEXT (HEADLINE): "${eventName}"
+   Character-by-character: [ ${spelled} ] (${eventName.length} characters total)
+   This MUST appear prominently. Spell it exactly — verify letter count before rendering.`);
+  }
+
+  if (eventDate) {
+    textItems.push(`DATE TEXT: "${eventDate}" — render exactly as provided, do not reformat`);
+  }
+
+  if (eventLocation) {
+    textItems.push(`LOCATION TEXT: "${eventLocation}" — render exactly as provided`);
+  }
+
+  if (brandContext?.tagline) {
+    const spelled = brandContext.tagline.split('').join(' ');
+    textItems.push(`TAGLINE: "${brandContext.tagline}"
+   Character-by-character: [ ${spelled} ] (${brandContext.tagline.length} characters)
+   Must match exactly.`);
+  }
+
+  if (textItems.length === 0) return '';
+
+  return `
+[TEXT_CONTENT_MANIFEST] — EXACT TEXT TO RENDER
+The following text elements MUST appear in the design, spelled EXACTLY as shown.
+Before rendering each text element, internally verify the spelling character-by-character.
+Do NOT add, remove, or modify any text beyond what is listed here.
+Do NOT add placeholder text like "Lorem ipsum" or generic event details not provided.
+
+${textItems.join('\n\n')}
+
+POST-RENDER TEXT VERIFICATION:
+After composing the design, re-read every text element in your output and compare
+character-by-character against this manifest. If ANY character differs, fix it before finalizing.`;
+}
