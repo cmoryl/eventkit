@@ -27,6 +27,8 @@ import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
+import { BatchGenerationModal } from './BatchGenerationModal';
+import { assetDisplayInfo } from './StudioAssetGrid';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -65,6 +67,8 @@ export const CreationStudio: React.FC = () => {
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [projectLogoOverride, setProjectLogoOverride] = useState<string | null>(null);
+  const [showBatchGeneration, setShowBatchGeneration] = useState(false);
+  const [batchGeneratedImages, setBatchGeneratedImages] = useState<Record<string, string>>({});
   
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
