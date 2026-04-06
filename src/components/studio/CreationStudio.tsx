@@ -281,8 +281,12 @@ export const CreationStudio: React.FC = () => {
       // Restore generated images
       const restoredImages: Record<string, string> = {};
       if (projectData.generatedAssets) {
-        await Promise.all(projectData.generatedAssets.map(async (asset: { assetType: string; path: string }) => {
-          if (asset.path.startsWith('assets/')) {
+        await Promise.all(projectData.generatedAssets.map(async (asset: { assetType: string; path?: string; imageUrl?: string }) => {
+          // New format: imageUrl is a persistent storage URL
+          if (asset.imageUrl && !asset.imageUrl.startsWith('data:')) {
+            restoredImages[asset.assetType] = asset.imageUrl;
+          } else if (asset.path && asset.path.startsWith('assets/')) {
+            // Legacy ZIP format: extract base64 from zip
             const assetFile = await zip.file(asset.path)?.async("base64");
             if (assetFile) {
               const ext = asset.path.split('.').pop();
