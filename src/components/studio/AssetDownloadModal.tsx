@@ -21,11 +21,13 @@ interface AssetDownloadModalProps {
   asset: GeneratedAsset;
   eventName: string;
   onClose: () => void;
+  brandId?: string;
 }
 
-const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventName, onClose }) => {
+const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventName, onClose, brandId }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+  const [isPushing, setIsPushing] = useState(false);
   
   const config = getAssetConfig(asset.type);
   const isPrintable = config?.printSpec || printDimensionsMap[asset.type];
