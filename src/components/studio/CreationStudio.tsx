@@ -27,8 +27,10 @@ import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
+import { FontPickerDropdown } from './FontPickerDropdown';
 import { BatchGenerationModal } from './BatchGenerationModal';
 import { assetDisplayInfo } from './StudioAssetGrid';
+import type { GoogleFontSelection } from './AssetBriefModal';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
