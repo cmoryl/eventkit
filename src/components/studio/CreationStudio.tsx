@@ -139,10 +139,29 @@ export const CreationStudio: React.FC = () => {
         
         setBrands(transformedBrands);
         
-        // Set default brand
-        const defaultBrand = transformedBrands.find(b => b.is_default) || transformedBrands[0];
-        if (defaultBrand) {
-          setSelectedBrand(defaultBrand);
+        // Priority: sessionStorage > profile persisted brand > is_default > first brand
+        const sessionBrandId = sessionStorage.getItem('active-brand-id');
+        const sessionBrand = sessionBrandId ? transformedBrands.find(b => b.id === sessionBrandId) : null;
+        
+        if (sessionBrand) {
+          setSelectedBrand(sessionBrand);
+        } else {
+          // Check profile for persisted brand
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('applied_brand_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          const persistedBrand = profileData?.applied_brand_id 
+            ? transformedBrands.find(b => b.id === profileData.applied_brand_id) 
+            : null;
+          
+          const brandToUse = persistedBrand || transformedBrands.find(b => b.is_default) || transformedBrands[0];
+          if (brandToUse) {
+            setSelectedBrand(brandToUse);
+            sessionStorage.setItem('active-brand-id', brandToUse.id);
+          }
         }
       } catch (error) {
         console.error('Error loading brands:', error);
