@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useParams, useNavigate, useBlocker } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Palette, Printer, Shirt, Share2, Presentation, Building,
   Ticket, UtensilsCrossed, Video, FileText, Camera, Shield, Plus,
@@ -527,23 +527,54 @@ export const CreationStudio: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handler);
   }, [hasUnsavedChanges]);
 
-  // React Router navigation blocker
-  const blocker = useBlocker(hasUnsavedChanges);
+  // In-app navigation blocker via popstate (back/forward buttons)
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [isSavingBeforeLeave, setIsSavingBeforeLeave] = useState(false);
+  const pendingNavigationRef = useRef<string | null>(null);
+  const hasUnsavedRef = useRef(hasUnsavedChanges);
+  hasUnsavedRef.current = hasUnsavedChanges;
 
+  // Intercept browser back/forward
   useEffect(() => {
-    if (blocker.state === 'blocked') {
+    if (!hasUnsavedChanges) return;
+    
+    const handlePopState = () => {
+      if (hasUnsavedRef.current) {
+        // Push state back to prevent navigation
+        window.history.pushState(null, '', window.location.href);
+        setShowUnsavedDialog(true);
+        pendingNavigationRef.current = '__back__';
+      }
+    };
+
+    // Push a guard state
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [hasUnsavedChanges]);
+
+  // Wrapped navigate that checks for unsaved changes
+  const safeNavigate = useCallback((path: string) => {
+    if (hasUnsavedRef.current) {
+      pendingNavigationRef.current = path;
       setShowUnsavedDialog(true);
+    } else {
+      navigate(path);
     }
-  }, [blocker.state]);
+  }, [navigate]);
 
   const handleDiscardAndLeave = () => {
     setShowUnsavedDialog(false);
     previousImagesRef.current = JSON.stringify(generatedImages);
     setAutoSaveStatus('idle');
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-    blocker.proceed?.();
+    const dest = pendingNavigationRef.current;
+    pendingNavigationRef.current = null;
+    if (dest === '__back__') {
+      window.history.back();
+    } else if (dest) {
+      navigate(dest);
+    }
   };
 
   const handleSaveAndLeave = async () => {
@@ -555,13 +586,19 @@ export const CreationStudio: React.FC = () => {
     } finally {
       setIsSavingBeforeLeave(false);
       setShowUnsavedDialog(false);
-      blocker.proceed?.();
+      const dest = pendingNavigationRef.current;
+      pendingNavigationRef.current = null;
+      if (dest === '__back__') {
+        window.history.back();
+      } else if (dest) {
+        navigate(dest);
+      }
     }
   };
 
   const handleCancelLeave = () => {
     setShowUnsavedDialog(false);
-    blocker.reset?.();
+    pendingNavigationRef.current = null;
   };
 
   if (!studio) {
