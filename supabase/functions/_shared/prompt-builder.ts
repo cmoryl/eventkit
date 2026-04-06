@@ -257,6 +257,56 @@ HARD REQUIREMENTS:
 - Accessibility: maintain readable contrast (WCAG AA minimum) and avoid tiny type for intended viewing distance
 - All text must be spelled correctly and grammatically accurate
 
+[TEXT_RENDERING_MODULE] — PERFECT TYPOGRAPHY DIRECTIVE
+This module governs ALL text rendered in the design. Text quality is a PASS/FAIL gate.
+
+SPELLING & ACCURACY (NON-NEGOTIABLE):
+- Before rendering ANY word, spell it out letter-by-letter internally and verify correctness
+- Event name "${'{eventName}'}" must be spelled EXACTLY as provided — count every character
+- Do NOT invent, abbreviate, or paraphrase any provided text (dates, taglines, names)
+- If a word has unusual spelling, reproduce it exactly as given — do not "correct" it
+- Numbers and dates must match exactly what was provided
+
+TYPOGRAPHIC RENDERING RULES:
+- Render all text as vector-sharp glyphs — no blur, no anti-aliasing artifacts, no pixelation
+- Each character must have clean, precise edges as if typeset professionally
+- Letter-spacing (tracking) must be uniform and intentional — no irregular gaps
+- Word-spacing must be consistent throughout each text block
+- Line-height must create comfortable reading rhythm (1.2-1.5x for body, 1.0-1.2x for headlines)
+- Baseline alignment must be pixel-perfect across all text in the same line
+
+FONT SELECTION HIERARCHY:
+- If brand fonts are specified, match their visual character precisely
+- Headlines: use bold/heavy weights with high contrast against backgrounds
+- Body text: use regular/medium weights with generous x-height for readability
+- NEVER mix more than 2-3 font families in one design
+- Maintain consistent font usage across the entire design (don't switch styles randomly)
+
+TEXT CONTRAST & READABILITY:
+- Minimum contrast ratio: 4.5:1 for body text, 3:1 for large text (WCAG AA)
+- If text overlays an image or pattern, add a backing treatment:
+  • Semi-transparent overlay panel behind text
+  • Text shadow/outline for guaranteed readability
+  • Solid color band behind text blocks
+- NEVER place small text on busy, textured, or gradient backgrounds without contrast protection
+- White text on dark: ensure pure white (#FFFFFF) or near-white
+- Dark text on light: ensure pure black (#000000) or near-black
+
+TEXT LAYOUT PRECISION:
+- Headings: centered or left-aligned, never justified
+- All text blocks must have adequate margins from design edges (minimum 5% padding)
+- Text must NEVER touch or overlap other elements, borders, or edges
+- Maintain clear visual hierarchy: headline > subheadline > body > caption
+- Text should be placed in "quiet zones" of the design — areas with minimal visual noise
+
+FAILURE CONDITIONS FOR TEXT:
+✗ Any misspelled word (including the event name)
+✗ Text that is blurry, pixelated, or has inconsistent edges
+✗ Text that is unreadable due to poor contrast
+✗ Characters that are malformed, merged, or partially rendered
+✗ Inconsistent spacing between letters or words
+✗ Text placed over busy backgrounds without contrast protection
+
 DELIVERABLE FORMAT (ensure every design addresses):
 1. Layout Map — zones, sizes, spatial relationships
 2. Typography Rules — type styles, sizes, weights, line heights
@@ -362,7 +412,10 @@ ${isPrint ? '☐ Safe zone: all critical content (text, logos) inside safe area'
 ${hasLogo ? '☐ Logo check: PASS (exact reproduction, correct placement, proper sizing, adequate contrast)' : '☐ N/A — no logo provided'}
 ☐ Contrast check: all text readable against backgrounds (WCAG AA)
 ☐ Color consistency: palette applied cohesively throughout
-☐ Typography: clean, sharp, no orphaned words or awkward line breaks`;
+☐ Typography: clean, sharp, no orphaned words or awkward line breaks
+☐ TEXT SPELLING: re-read every word in the design — verify against the Text Content Manifest
+☐ TEXT EDGES: all characters have crisp, clean edges — no blur, smearing, or partial rendering
+☐ TEXT SPACING: consistent letter-spacing and word-spacing throughout`;
 }
 
 /**
@@ -696,4 +749,56 @@ export async function incrementTemplateUsage(templateId: string): Promise<void> 
   } catch (e) {
     // Silent fail - usage tracking is not critical
   }
+}
+
+/**
+ * Build an explicit text content manifest — tells the AI exactly what text to render
+ * and how to spell each word, preventing hallucinated or misspelled text.
+ */
+export function buildTextManifest(
+  eventName?: string,
+  eventDescription?: string,
+  eventDate?: string,
+  eventLocation?: string,
+  brandContext?: BrandContext
+): string {
+  const textItems: string[] = [];
+
+  if (eventName) {
+    // Spell out the event name character by character for verification
+    const spelled = eventName.split('').join(' ');
+    textItems.push(`PRIMARY TEXT (HEADLINE): "${eventName}"
+   Character-by-character: [ ${spelled} ] (${eventName.length} characters total)
+   This MUST appear prominently. Spell it exactly — verify letter count before rendering.`);
+  }
+
+  if (eventDate) {
+    textItems.push(`DATE TEXT: "${eventDate}" — render exactly as provided, do not reformat`);
+  }
+
+  if (eventLocation) {
+    textItems.push(`LOCATION TEXT: "${eventLocation}" — render exactly as provided`);
+  }
+
+  if (brandContext?.tagline) {
+    const spelled = brandContext.tagline.split('').join(' ');
+    textItems.push(`TAGLINE: "${brandContext.tagline}"
+   Character-by-character: [ ${spelled} ] (${brandContext.tagline.length} characters)
+   Must match exactly.`);
+  }
+
+  if (textItems.length === 0) return '';
+
+  return `
+[TEXT_CONTENT_MANIFEST] — EXACT TEXT TO RENDER
+The following text elements MUST appear in the design, spelled EXACTLY as shown.
+Before rendering each text element, internally verify the spelling character-by-character.
+Do NOT add, remove, or modify any text beyond what is listed here.
+Do NOT add placeholder text like "Lorem ipsum" or generic event details not provided.
+
+${textItems.join('\n\n')}
+
+POST-RENDER TEXT VERIFICATION:
+After composing the design, re-read every text element in your output and compare
+character-by-character against this manifest. If ANY character differs, fix it before finalizing.`;
 }

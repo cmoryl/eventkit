@@ -12,6 +12,7 @@ import {
   buildAnalysisInstructions,
   buildPrintRequirements,
   buildOutputChecklist,
+  buildTextManifest,
   fetchPromptTemplate,
   mergeTemplateWithVariables,
   incrementTemplateUsage
@@ -231,8 +232,14 @@ PHOTOREALISTIC RENDERING - CRITICAL:
     const printRequirements = buildPrintRequirements(isPrint, targetDPI);
 
     // BUILD FULL PROMPT — prefixed with Master Wrapper
-    const masterWrapper = buildMasterWrapper();
+    let masterWrapper = buildMasterWrapper();
+    // Inject the actual event name into the text rendering module
+    masterWrapper = masterWrapper.replace('{eventName}', eventName || 'Event');
+    
     const outputChecklist = buildOutputChecklist(isPrint, !!logoData);
+
+    // Build explicit text content manifest so AI knows exactly what to render
+    const textManifest = buildTextManifest(eventName, eventDescription, eventDate, eventLocation, brandContext);
     
     const fullPrompt = `${masterWrapper}
 
@@ -252,6 +259,7 @@ ${patternInstructions}
 ${venueInstructions}
 ${realismRequirements}
 ${printRequirements}
+${textManifest}
 
 REQUIREMENTS:
 - Create a high-quality, professional design
@@ -259,7 +267,7 @@ REQUIREMENTS:
 - Modern, polished aesthetic
 ${brandContext ? '- FOLLOW ALL BRAND GUIDELINES AND VISUAL IDENTITY RULES' : ''}
 ${isPrint ? '- PRINT-OPTIMIZED: CMYK-safe colors, crisp text, production-ready quality' : '- Suitable for digital display'}
-- Ensure text is razor-sharp and perfectly legible
+- ALL TEXT MUST BE VECTOR-SHARP — render as if professionally typeset, no blur or artifacts
 - Maintain visual hierarchy with the event name prominent
 - ALL REFERENCE IMAGES PROVIDED SHOULD INFORM THE FINAL DESIGN
 ${imageAnalysis ? '- APPLY ALL DESIGN INTELLIGENCE FROM IMAGE ANALYSIS' : ''}
