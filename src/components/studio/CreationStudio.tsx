@@ -250,6 +250,7 @@ export const CreationStudio: React.FC = () => {
         selectedAssets,
         activeCategory,
         viewMode,
+        projectLogoOverride: projectLogoOverride || null,
         createdAt: new Date().toISOString(),
       };
 
@@ -311,6 +312,7 @@ export const CreationStudio: React.FC = () => {
       }
 
       setGeneratedImages(restoredImages);
+      if (projectData.projectLogoOverride) setProjectLogoOverride(projectData.projectLogoOverride);
       if (projectData.activeCategory) setActiveCategory(projectData.activeCategory);
       if (projectData.viewMode) setViewMode(projectData.viewMode);
       if (projectData.selectedAssets) setSelectedAssets(projectData.selectedAssets);
@@ -386,6 +388,7 @@ export const CreationStudio: React.FC = () => {
         event_details: JSON.parse(JSON.stringify({
           name: selectedBrand.name,
           studioId: studio?.id,
+          projectLogoOverride: projectLogoOverride || null,
         })),
         generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
       };
@@ -461,7 +464,7 @@ export const CreationStudio: React.FC = () => {
         user_id: user.id,
         name: projectName,
         description: `Created in ${studio.name}`,
-        event_details: JSON.parse(JSON.stringify({ name: selectedBrand.name, studioId: studio.id })),
+        event_details: JSON.parse(JSON.stringify({ name: selectedBrand.name, studioId: studio.id, projectLogoOverride: projectLogoOverride || null })),
         generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
       };
 
