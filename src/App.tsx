@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+const App: React.FC = () => {
   // Initialize brand theme from session on app load
   useEffect(() => {
     initializeBrandTheme();
