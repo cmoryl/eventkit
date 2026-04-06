@@ -394,6 +394,7 @@ export const CreationStudio: React.FC = () => {
           name: selectedBrand.name,
           studioId: studio?.id,
           projectLogoOverride: projectLogoOverride || null,
+          projectFontSelection: projectFontSelection || null,
         })),
         generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
       };
@@ -469,7 +470,7 @@ export const CreationStudio: React.FC = () => {
         user_id: user.id,
         name: projectName,
         description: `Created in ${studio.name}`,
-        event_details: JSON.parse(JSON.stringify({ name: selectedBrand.name, studioId: studio.id, projectLogoOverride: projectLogoOverride || null })),
+        event_details: JSON.parse(JSON.stringify({ name: selectedBrand.name, studioId: studio.id, projectLogoOverride: projectLogoOverride || null, projectFontSelection: projectFontSelection || null })),
         generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
       };
 
