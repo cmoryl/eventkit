@@ -55,6 +55,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   brand,
   eventName = 'Your Event',
   studioGradient = 'from-primary to-accent',
+  projectLogoOverride,
   onImageGenerated
 }) => {
   const { user } = useAuth();
