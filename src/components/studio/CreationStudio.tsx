@@ -62,6 +62,16 @@ export const CreationStudio: React.FC = () => {
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   
+  // Wrap brand selection to persist to sessionStorage
+  const setSelectedBrand = useCallback((brand: Brand | null) => {
+    setSelectedBrandState(brand);
+    if (brand) {
+      sessionStorage.setItem('active-brand-id', brand.id);
+    } else {
+      sessionStorage.removeItem('active-brand-id');
+    }
+  }, []);
+
   // Load studio definition
   useEffect(() => {
     if (studioId) {
