@@ -28,6 +28,9 @@ interface ActiveBrand {
   created_at: string;
   updated_at: string;
   brandhub_share_token?: string;
+  brandhub_last_synced?: string;
+  brandhub_last_checked?: string;
+  brandhub_auto_sync?: boolean;
   styles?: BrandStyleSimple;
 }
 
