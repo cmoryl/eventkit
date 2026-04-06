@@ -32,6 +32,7 @@ interface AssetGenerationCanvasProps {
   brand: Brand | null;
   eventName?: string;
   studioGradient?: string;
+  projectLogoOverride?: string | null;
   onImageGenerated?: (imageUrl: string) => void;
 }
 
