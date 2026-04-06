@@ -4,6 +4,17 @@ import { getLocationCulturalContext } from "./location-context.ts";
 import { getBasePrompt, isPrintAsset } from "./asset-prompts.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+export interface LogoAnalysis {
+  shape: string;
+  textContent: string;
+  colors: string[];
+  style: string;
+  distinctiveFeatures: string[];
+  aspectRatio: string;
+  iconDescription?: string;
+  fontStyle?: string;
+}
+
 /**
  * Build brand context string from brand data
  */
@@ -259,12 +270,26 @@ DELIVERABLE FORMAT (ensure every design addresses):
  * Build logo integration instructions with asset-type-specific placement
  * Implements [LOGO_MODULE_EXACT] from the Interactive Prompt Bible
  */
-export function buildLogoInstructions(hasLogo: boolean, assetType?: string): string {
+export function buildLogoInstructions(hasLogo: boolean, assetType?: string, logoAnalysis?: LogoAnalysis): string {
   if (!hasLogo) return '';
 
   // Determine placement zone based on asset category
   const placementRules = getLogoPlacementForAsset(assetType);
-  
+
+  // Build logo anatomy description from pre-analysis
+  const anatomyBlock = logoAnalysis ? `
+LOGO ANATOMY — USE THIS AS YOUR REPRODUCTION BLUEPRINT:
+- Shape/Structure: ${logoAnalysis.shape}
+- Text in logo: ${logoAnalysis.textContent || 'none detected'}
+- Dominant colors: ${logoAnalysis.colors.join(', ')}
+- Style classification: ${logoAnalysis.style}
+- Key distinctive features: ${logoAnalysis.distinctiveFeatures.join('; ')}
+- Aspect ratio: ${logoAnalysis.aspectRatio}
+${logoAnalysis.iconDescription ? `- Icon/Symbol: ${logoAnalysis.iconDescription}` : ''}
+${logoAnalysis.fontStyle ? `- Font style: ${logoAnalysis.fontStyle}` : ''}
+Cross-check your output against EVERY detail above. If any detail differs, you have failed.
+` : '';
+
   return `
 [LOGO_MODULE_EXACT] — HIGHEST PRIORITY DIRECTIVE
 Reference Image #1 is the EVENT/BRAND LOGO. You MUST reproduce this logo EXACTLY as provided.
@@ -272,13 +297,26 @@ Reference Image #1 is the EVENT/BRAND LOGO. You MUST reproduce this logo EXACTLY
 ═══════════════════════════════════════════════
   THIS IS NOT A SUGGESTION — IT IS A HARD RULE
 ═══════════════════════════════════════════════
-
+${anatomyBlock}
 STEP 1 — EXACT REPRODUCTION MANDATE (NON-NEGOTIABLE):
 - "Use the uploaded logo as-is. Do not redraw, restyle, reinterpret, or 'inspire' from it."
 - Copy the logo PIXEL-FOR-PIXEL from the reference image into the design
+- Preserve EVERY letter, curve, icon, and color exactly as shown
+- Count the letters in any logo text and verify your output has the SAME number of letters in the SAME order
+- If the logo has an icon/symbol, reproduce its EXACT geometry — do not simplify or abstract it
 - Do NOT change any colors, shapes, text, or elements within the logo
 - Do NOT add effects like glow, 3D, bevel, emboss, or drop shadow to the logo itself
+- Do NOT merge, blend, or artistically reinterpret any part of the logo
 - The logo must look IDENTICAL to what was uploaded — treat it as a sacred, untouchable element
+
+STEP 1b — DETAIL VERIFICATION CHECKLIST:
+Before finalizing, verify EACH of these against the reference image:
+  ☐ Every letter/character in logo text matches exactly (spelling, case, spacing)
+  ☐ Icon/symbol shape is geometrically identical (count points, curves, angles)
+  ☐ Color values match the reference (no hue shifts, no saturation changes)
+  ☐ Proportions between text and icon elements are preserved
+  ☐ Line weights and stroke thicknesses are consistent with original
+  ☐ Negative space within the logo is preserved (holes in letters, gaps in icons)
 
 STEP 2 — ASSET-SPECIFIC PLACEMENT & SIZING:
 ${placementRules}
@@ -301,12 +339,15 @@ STEP 4 — BRAND COHESION:
 FAILURE CONDITIONS — A result is FAILED if ANY occur:
 ✗ Logo is missing from the design entirely
 ✗ Logo is distorted, warped, rotated arbitrarily, re-colored incorrectly, "AI-styled," or replaced by text
+✗ Logo text is misspelled, has wrong letters, or wrong letter count
+✗ Logo icon/symbol shape differs from original (simplified, abstracted, or redrawn)
 ✗ Logo is cropped unintentionally
 ✗ Logo is too small to read for the asset's intended viewing distance
 ✗ Logo blends into the background (no contrast protection used when needed)
 ✗ Logo is hard to see due to poor contrast or busy background
 ✗ Logo looks different from the uploaded version (redrawn/reinterpreted)
-✗ Logo colors have been changed or shifted`;
+✗ Logo colors have been changed or shifted
+✗ Logo proportions have been altered (stretched, squished)`;
 }
 
 /**

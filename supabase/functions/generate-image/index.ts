@@ -16,7 +16,7 @@ import {
   mergeTemplateWithVariables,
   incrementTemplateUsage
 } from "../_shared/prompt-builder.ts";
-import { performInlineAnalysis, generateImageWithRetry } from "../_shared/ai-gateway.ts";
+import { performInlineAnalysis, generateImageWithRetry, analyzeLogoDetails } from "../_shared/ai-gateway.ts";
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -98,10 +98,19 @@ serve(async (req) => {
     }
 
     // BUILD CONTEXT STRINGS USING MODULAR BUILDERS
-    const brandContextString = buildBrandContext(brandContext);
-    const locationContext = buildLocationContext(location, incorporateLocationStyle);
-    const venueIntelligenceContext = buildVenueContext(venueIntelligence);
-    const logoInstructions = buildLogoInstructions(!!logoData, assetType);
+    // Run logo analysis and vibe analysis in parallel for efficiency
+    const [logoAnalysis, brandContextString, locationContext, venueIntelligenceContext] = await Promise.all([
+      logoData ? analyzeLogoDetails(LOVABLE_API_KEY, logoData) : Promise.resolve(null),
+      Promise.resolve(buildBrandContext(brandContext)),
+      Promise.resolve(buildLocationContext(location, incorporateLocationStyle)),
+      Promise.resolve(buildVenueContext(venueIntelligence)),
+    ]);
+    
+    if (logoAnalysis) {
+      console.log(`Logo pre-analysis: "${logoAnalysis.textContent}" | ${logoAnalysis.shape} | ${logoAnalysis.colors.join(', ')}`);
+    }
+    
+    const logoInstructions = buildLogoInstructions(!!logoData, assetType, logoAnalysis ?? undefined);
     const analysisInstructions = buildAnalysisInstructions(imageAnalysis);
 
     // FETCH PROMPT TEMPLATE FROM DATABASE
