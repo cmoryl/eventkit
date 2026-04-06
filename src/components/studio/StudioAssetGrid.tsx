@@ -715,6 +715,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
             brand={brand}
             eventName={brand?.name || 'Your Event'}
             studioGradient={studioGradient}
+            projectLogoOverride={projectLogoOverride}
             onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
           />
         )}
@@ -1066,6 +1067,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           brand={brand}
           eventName={brand?.name || 'Your Event'}
           studioGradient={studioGradient}
+          projectLogoOverride={projectLogoOverride}
           onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
         />
       )}
