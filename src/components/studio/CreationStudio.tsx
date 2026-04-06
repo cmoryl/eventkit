@@ -69,6 +69,7 @@ export const CreationStudio: React.FC = () => {
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [projectLogoOverride, setProjectLogoOverride] = useState<string | null>(null);
+  const [projectFontSelection, setProjectFontSelection] = useState<GoogleFontSelection | null>(null);
   const [showBatchGeneration, setShowBatchGeneration] = useState(false);
   const [batchGeneratedImages, setBatchGeneratedImages] = useState<Record<string, string>>({});
   
