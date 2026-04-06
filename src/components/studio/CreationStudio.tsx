@@ -803,6 +803,7 @@ export const CreationStudio: React.FC = () => {
             }}
             studioGradient={studio.gradient}
             projectLogoOverride={projectLogoOverride}
+            projectFontSelection={projectFontSelection}
             batchGeneratedImages={batchGeneratedImages}
           />
 
