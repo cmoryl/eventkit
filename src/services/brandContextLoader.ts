@@ -3,25 +3,32 @@
  * Fetches full brand styles from the database and builds a complete BrandContext
  * for use during asset generation. Unlike useActiveBrand (which loads simplified styles
  * for UI theming), this loads ALL fields including all_imagery, photography rules, etc.
+ * 
+ * Also enriches with AI knowledge entries (gradients, color combos, brand icons,
+ * display specs, sponsor data) stored during BrandHub import.
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { buildBrandContext, type BrandContext, type BrandAdherenceMode } from '@/types/brand.types';
+import { buildBrandContext, type BrandContext, type BrandAdherenceMode, type ColorCombination, type BrandGradient } from '@/types/brand.types';
 
 /**
  * Load full BrandContext for a given brand ID.
  * Fetches the complete brand_styles record (including all_imagery, photography_dos, etc.)
- * and builds a BrandContext ready for the generation pipeline.
+ * and enriches with AI knowledge entries from BrandHub imports.
  */
 export async function loadFullBrandContext(
   brandId: string,
   adherenceMode: BrandAdherenceMode = 'inspired'
 ): Promise<BrandContext | null> {
   try {
-    // Fetch brand with full styles in parallel
-    const [brandResult, stylesResult] = await Promise.all([
+    // Fetch brand, styles, and AI knowledge in parallel
+    const [brandResult, stylesResult, knowledgeResult] = await Promise.all([
       supabase.from('brands').select('*').eq('id', brandId).maybeSingle(),
       supabase.from('brand_styles').select('*').eq('brand_id', brandId).maybeSingle(),
+      supabase.from('ai_knowledge')
+        .select('key, value, knowledge_type')
+        .or(`key.like.%${brandId}%`)
+        .eq('knowledge_type', 'brand_preference'),
     ]);
 
     if (brandResult.error || !brandResult.data) {
@@ -31,9 +38,13 @@ export async function loadFullBrandContext(
 
     const brand = brandResult.data;
     const styles = stylesResult.data;
+    const knowledge = knowledgeResult.data || [];
+
+    // Extract enrichment data from knowledge base
+    const enrichment = extractKnowledgeEnrichment(knowledge, brandId);
 
     // Build full BrandContext using the existing builder
-    return buildBrandContext({
+    const context = buildBrandContext({
       name: brand.name,
       logo_url: brand.logo_url ?? undefined,
       logo_monochrome_url: brand.logo_monochrome_url ?? undefined,
@@ -93,8 +104,74 @@ export async function loadFullBrandContext(
         } | undefined,
       } : undefined,
     }, adherenceMode);
+
+    // Enrich context with knowledge base data
+    if (context && enrichment) {
+      if (enrichment.gradients?.length) {
+        context.gradients = enrichment.gradients;
+      }
+      if (enrichment.colorCombinations?.length) {
+        context.approvedColorCombinations = enrichment.colorCombinations;
+      }
+      if (enrichment.brandIconUrls?.length && context.allImagery) {
+        context.allImagery.byType.brandIcons = [
+          ...(context.allImagery.byType.brandIcons || []),
+          ...enrichment.brandIconUrls,
+        ];
+      }
+      if (enrichment.displaySpecs) {
+        context.customPrompts = {
+          ...context.customPrompts,
+          displayBannerSpecs: enrichment.displaySpecs,
+        };
+      }
+    }
+
+    return context;
   } catch (error) {
     console.error('Failed to load full brand context:', error);
     return null;
   }
+}
+
+/**
+ * Extract enrichment data from AI knowledge entries
+ */
+function extractKnowledgeEnrichment(
+  knowledge: Array<{ key: string; value: unknown; knowledge_type: string }>,
+  brandId: string
+) {
+  const findEntry = (keySuffix: string) =>
+    knowledge.find(k => k.key === `${keySuffix}_${brandId}`)?.value as Record<string, unknown> | undefined;
+
+  const visuals = findEntry('brand_visuals');
+  const colorCombos = findEntry('brand_color_combos');
+  const displaySpecs = findEntry('brand_display_specs');
+
+  const gradients: BrandGradient[] = [];
+  if (visuals?.gradients && Array.isArray(visuals.gradients)) {
+    (visuals.gradients as string[]).forEach((css, i) => {
+      gradients.push({ name: `Gradient ${i + 1}`, colors: [], direction: css });
+    });
+  }
+
+  const colorCombinations: ColorCombination[] = [];
+  if (colorCombos?.approved && Array.isArray(colorCombos.approved)) {
+    (colorCombos.approved as Array<{ name?: string; colors?: string[]; notes?: string }>).forEach(c => {
+      colorCombinations.push({
+        name: c.name || 'Approved combo',
+        colors: c.colors || [],
+        status: 'approved',
+      });
+    });
+  }
+
+  const brandIconUrls = visuals?.brandIconUrls as string[] | undefined;
+
+  return {
+    gradients: gradients.length > 0 ? gradients : undefined,
+    colorCombinations: colorCombinations.length > 0 ? colorCombinations : undefined,
+    brandIconUrls: brandIconUrls?.length ? brandIconUrls : undefined,
+    displaySpecs: displaySpecs || undefined,
+  };
 }

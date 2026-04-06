@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Plus, Check, Palette } from 'lucide-react';
+import { ChevronDown, Plus, Check, Palette, RefreshCw } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,13 +10,17 @@ interface BrandSelectorProps {
   selectedBrand: Brand | null;
   onSelectBrand: (brand: Brand) => void;
   onCreateBrand: () => void;
+  onResyncBrand?: (brandId: string) => void;
+  isSyncing?: boolean;
 }
 
 export const BrandSelector: React.FC<BrandSelectorProps> = ({
   brands,
   selectedBrand,
   onSelectBrand,
-  onCreateBrand
+  onCreateBrand,
+  onResyncBrand,
+  isSyncing,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -122,7 +126,17 @@ export const BrandSelector: React.FC<BrandSelectorProps> = ({
                 )}
               </div>
 
-              <div className="p-2 border-t border-border">
+              <div className="p-2 border-t border-border space-y-1">
+                {selectedBrand && onResyncBrand && (
+                  <button
+                    onClick={() => { onResyncBrand(selectedBrand.id); }}
+                    disabled={isSyncing}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+                    {isSyncing ? 'Syncing...' : 'Re-sync from BrandHub'}
+                  </button>
+                )}
                 <button
                   onClick={() => { onCreateBrand(); setIsOpen(false); }}
                   className="w-full flex items-center gap-2 p-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"

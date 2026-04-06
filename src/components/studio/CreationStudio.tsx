@@ -31,6 +31,7 @@ import { FontPickerDropdown } from './FontPickerDropdown';
 import { BatchGenerationModal } from './BatchGenerationModal';
 import { assetDisplayInfo } from './StudioAssetGrid';
 import type { GoogleFontSelection } from './AssetBriefModal';
+import { checkAndSyncBrand, forceResyncBrand } from '@/services/brandAutoSync';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -72,6 +73,7 @@ export const CreationStudio: React.FC = () => {
   const [projectFontSelection, setProjectFontSelection] = useState<GoogleFontSelection | null>(null);
   const [showBatchGeneration, setShowBatchGeneration] = useState(false);
   const [batchGeneratedImages, setBatchGeneratedImages] = useState<Record<string, string>>({});
+  const [isBrandSyncing, setIsBrandSyncing] = useState(false);
   
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
@@ -198,6 +200,25 @@ export const CreationStudio: React.FC = () => {
     };
     
     loadBrands();
+  }, [user]);
+
+  // Auto-sync BrandHub brands on studio load
+  useEffect(() => {
+    if (selectedBrand && user) {
+      checkAndSyncBrand(selectedBrand.id, user.id, { silent: true }).catch(() => {});
+    }
+  }, [selectedBrand?.id, user?.id]);
+
+  // Manual re-sync handler
+  const handleResyncBrand = useCallback(async (brandId: string) => {
+    if (!user) return;
+    setIsBrandSyncing(true);
+    try {
+      await forceResyncBrand(brandId, user.id);
+      toast.success('Brand re-synced from BrandHub');
+    } finally {
+      setIsBrandSyncing(false);
+    }
   }, [user]);
 
   // Save project as ZIP
@@ -643,6 +664,8 @@ export const CreationStudio: React.FC = () => {
         selectedBrand={selectedBrand}
         onSelectBrand={setSelectedBrand}
         onCreateBrand={() => navigate('/admin?tab=brands')}
+        onResyncBrand={handleResyncBrand}
+        isSyncing={isBrandSyncing}
       />
       
       {/* Project Logo Override */}

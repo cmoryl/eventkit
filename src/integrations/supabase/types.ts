@@ -314,9 +314,54 @@ export type Database = {
           },
         ]
       }
+      brandhub_push_log: {
+        Row: {
+          assets_pushed: Json
+          brand_id: string
+          brandhub_token: string
+          created_at: string
+          error_message: string | null
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assets_pushed?: Json
+          brand_id: string
+          brandhub_token: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assets_pushed?: Json
+          brand_id?: string
+          brandhub_token?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brandhub_push_log_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brands: {
         Row: {
           brandhub_auto_sync: boolean | null
+          brandhub_last_checked: string | null
           brandhub_last_synced: string | null
           brandhub_share_token: string | null
           created_at: string | null
@@ -332,6 +377,7 @@ export type Database = {
         }
         Insert: {
           brandhub_auto_sync?: boolean | null
+          brandhub_last_checked?: string | null
           brandhub_last_synced?: string | null
           brandhub_share_token?: string | null
           created_at?: string | null
@@ -347,6 +393,7 @@ export type Database = {
         }
         Update: {
           brandhub_auto_sync?: boolean | null
+          brandhub_last_checked?: string | null
           brandhub_last_synced?: string | null
           brandhub_share_token?: string | null
           created_at?: string | null

@@ -12,18 +12,22 @@ import {
   Check,
   Loader2,
   Globe,
-  Code
+  Code,
+  Upload,
 } from 'lucide-react';
+import { pushAssetsToBrandHub } from '@/services/pushToBrandHub';
 
 interface AssetDownloadModalProps {
   asset: GeneratedAsset;
   eventName: string;
   onClose: () => void;
+  brandId?: string;
 }
 
-const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventName, onClose }) => {
+const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventName, onClose, brandId }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+  const [isPushing, setIsPushing] = useState(false);
   
   const config = getAssetConfig(asset.type);
   const isPrintable = config?.printSpec || printDimensionsMap[asset.type];
@@ -349,6 +353,35 @@ ${tailwindColors}
             </>
           )}
         </div>
+
+        {/* Push to BrandHub */}
+        {brandId && isImage && (
+          <div className="px-5 pb-3">
+            <button
+              onClick={async () => {
+                setIsPushing(true);
+                try {
+                  await pushAssetsToBrandHub(brandId, [{
+                    imageUrl: asset.content as string,
+                    assetType: asset.type,
+                    title: asset.title,
+                  }]);
+                } finally {
+                  setIsPushing(false);
+                }
+              }}
+              disabled={isPushing}
+              className="w-full flex items-center justify-center gap-2 p-2.5 rounded-lg border border-border bg-muted/30 hover:bg-accent/50 transition-all text-sm font-medium disabled:opacity-50"
+            >
+              {isPushing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Upload className="w-4 h-4" />
+              )}
+              Push to BrandHub
+            </button>
+          </div>
+        )}
 
         {/* Footer with specs */}
         {config?.printSpec && (

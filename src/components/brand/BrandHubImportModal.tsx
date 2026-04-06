@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, Loader2 } from 'lucide-react';
+import { Link2, Loader2, Grid3X3, Link } from 'lucide-react';
 import { BrandImportSummary } from './BrandImportSummary';
+import { BrandHubGallery } from './BrandHubGallery';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { addOrUpdateKnowledge } from '@/services/aiBrain/learningService';
@@ -427,9 +429,154 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
     onClose();
   };
 
+  const handleGallerySelect = (token: string | null, slug: string | null) => {
+    if (token) {
+      setShareUrl(token);
+    } else if (slug) {
+      setShareUrl(`https://brandhubcreator.lovable.app/event/${slug}`);
+    }
+    // Auto-trigger import
+    setTimeout(() => {
+      const parsed = token ? { shareToken: token } : slug ? { slug } : null;
+      if (parsed) {
+        handleImportWithParsed(parsed);
+      }
+    }, 100);
+  };
+
+  const handleImportWithParsed = async (parsed: { shareToken?: string; slug?: string }) => {
+    if (!user) {
+      toast.error('Please sign in to import brands');
+      return;
+    }
+    setIsImporting(true);
+    toast.info('Fetching brand from BrandHub...', { duration: 3000 });
+
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
+        body: { shareToken: parsed.shareToken, slug: parsed.slug }
+      });
+
+      if (data?.success === false || error) {
+        toast.error(data?.error || 'Failed to fetch from BrandHub');
+        return;
+      }
+
+      if (!data?.brand) {
+        toast.error('No brand data returned from BrandHub');
+        return;
+      }
+
+      // Re-use existing import logic by calling handleImport indirectly
+      // Set URL and trigger normal flow
+      if (parsed.shareToken) setShareUrl(parsed.shareToken);
+      else if (parsed.slug) setShareUrl(`https://brandhubcreator.lovable.app/event/${parsed.slug}`);
+
+      // Process the data same as handleImport
+      await processImportedBrand(data);
+    } catch (error) {
+      console.error('BrandHub import error:', error);
+      toast.error('Failed to import from BrandHub');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  // Extract shared import processing
+  const processImportedBrand = async (data: Record<string, unknown>) => {
+    if (!user) return;
+    const hubBrand = data.brand as Record<string, unknown>;
+    const brandName = (hubBrand.name as string) || 'Imported Brand';
+
+    const resolvedToken = (data.resolvedToken as string) || '';
+
+    // Check if brand already exists by token
+    const { data: existingBrand } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('brandhub_share_token', resolvedToken)
+      .maybeSingle();
+
+    let brandId: string;
+
+    if (existingBrand) {
+      brandId = existingBrand.id;
+      await supabase.from('brands').update({
+        name: brandName,
+        logo_url: (hubBrand.logo_url as string) || null,
+        logo_monochrome_url: (hubBrand.logo_monochrome_url as string) || null,
+        logo_reversed_url: (hubBrand.logo_reversed_url as string) || null,
+        brandhub_last_synced: new Date().toISOString(),
+      }).eq('id', brandId);
+    } else {
+      const { data: newBrand, error: createError } = await supabase
+        .from('brands')
+        .insert({
+          user_id: user.id,
+          name: brandName,
+          logo_url: (hubBrand.logo_url as string) || null,
+          logo_monochrome_url: (hubBrand.logo_monochrome_url as string) || null,
+          logo_reversed_url: (hubBrand.logo_reversed_url as string) || null,
+          brandhub_share_token: resolvedToken,
+          brandhub_last_synced: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      if (createError || !newBrand) {
+        toast.error('Failed to create brand');
+        return;
+      }
+      brandId = newBrand.id;
+    }
+
+    // Save styles (same logic as handleImport)
+    const colors = (hubBrand.colors || []) as Array<{ hex: string; name?: string }>;
+    const fonts = (hubBrand.fonts || []) as Array<{ fontFamily?: string; family?: string; role?: string; name?: string; usage?: string }>;
+    const getFamily = (f: typeof fonts[0]) => f.fontFamily || f.family;
+    const headingFont = fonts.find(f => f.role === 'heading' || f.role === 'display');
+    const bodyFont = fonts.find(f => f.role === 'body' || f.role === 'paragraph');
+
+    const styleData = {
+      brand_id: brandId,
+      primary_color: colors[0]?.hex || (hubBrand.primary_color as string) || null,
+      secondary_color: colors[1]?.hex || (hubBrand.secondary_color as string) || null,
+      accent_color: colors[2]?.hex || (hubBrand.accent_color as string) || null,
+      color_palette: colors.map(c => ({ hex: c.hex, name: c.name || '' })),
+      heading_font: getFamily(headingFont || fonts[0]) || null,
+      body_font: getFamily(bodyFont || fonts[1]) || null,
+      brand_voice: (hubBrand.voice as string[]) || [],
+      photography_dos: (hubBrand.photography_dos as string[]) || [],
+      photography_donts: (hubBrand.photography_donts as string[]) || [],
+      tagline: (hubBrand.tagline as string) || null,
+      mission: (hubBrand.mission as string) || null,
+      industry: (hubBrand.industry as string) || null,
+      all_imagery: JSON.parse(JSON.stringify((hubBrand.allImagery as Record<string, unknown>) || {})),
+    };
+
+    const { data: existingStyle } = await supabase
+      .from('brand_styles')
+      .select('id')
+      .eq('brand_id', brandId)
+      .maybeSingle();
+
+    if (existingStyle) {
+      await supabase.from('brand_styles').update(styleData).eq('id', existingStyle.id);
+    } else {
+      await supabase.from('brand_styles').insert(styleData);
+    }
+
+    setImportedBrandName(brandName);
+    setImportedHubBrand(hubBrand);
+    setImportedEventData(data.hasEventData ? (data.event as Record<string, unknown>) : null);
+    toast.success(`"${brandName}" imported from BrandHub`);
+    onBrandImported();
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className={importedHubBrand ? 'max-w-lg' : 'max-w-md'} onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className={importedHubBrand ? 'max-w-lg' : 'max-w-xl'} onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
@@ -439,7 +586,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
           </DialogTitle>
           {!importedHubBrand && (
             <DialogDescription>
-              Paste your BrandHub Creator share URL to import brand identity, colors, fonts, photography rules, and event data.
+              Browse available brands or paste a share URL to import brand identity.
             </DialogDescription>
           )}
         </DialogHeader>
@@ -457,56 +604,65 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
               </Button>
             </>
           ) : (
-            <>
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">
-                  BrandHub Share URL or Token
-                </label>
-                <Input
-                  value={shareUrl}
-                  onChange={(e) => setShareUrl(e.target.value)}
-                  placeholder="https://brandhubcreator.lovable.app/event/your-event..."
-                  disabled={isImporting}
+            <Tabs defaultValue="browse" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="browse" className="gap-1.5">
+                  <Grid3X3 className="h-3.5 w-3.5" />
+                  Browse
+                </TabsTrigger>
+                <TabsTrigger value="url" className="gap-1.5">
+                  <Link className="h-3.5 w-3.5" />
+                  Paste URL
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="browse" className="mt-3">
+                <BrandHubGallery
+                  onSelectBrand={handleGallerySelect}
+                  isImporting={isImporting}
                 />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Paste an event URL, product URL, share URL, or token from BrandHub
-                </p>
-              </div>
+              </TabsContent>
 
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleImport}
-                  disabled={!shareUrl.trim() || isImporting}
-                  className="flex-1 gap-2"
-                >
-                  {isImporting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Link2 className="w-4 h-4" />
-                      Import Brand
-                    </>
-                  )}
-                </Button>
-                <Button variant="outline" onClick={handleClose} disabled={isImporting}>
-                  Cancel
-                </Button>
-              </div>
+              <TabsContent value="url" className="mt-3 space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">
+                    BrandHub Share URL or Token
+                  </label>
+                  <Input
+                    value={shareUrl}
+                    onChange={(e) => setShareUrl(e.target.value)}
+                    placeholder="https://brandhubcreator.lovable.app/event/your-event..."
+                    disabled={isImporting}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Paste an event URL, product URL, share URL, or token
+                  </p>
+                </div>
 
-              <div className="text-xs text-muted-foreground border-t border-border pt-3 space-y-1">
-                <p className="font-medium">What gets imported:</p>
-                <ul className="list-disc pl-4 space-y-0.5">
-                  <li>Brand colors, fonts & typography</li>
-                  <li>Logo variants & usage rules</li>
-                  <li>Photography guidelines</li>
-                  <li>Voice, tone & brand personality</li>
-                  <li>Event details, schedule & sponsors</li>
-                </ul>
-              </div>
-            </>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleImport}
+                    disabled={!shareUrl.trim() || isImporting}
+                    className="flex-1 gap-2"
+                  >
+                    {isImporting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Importing...
+                      </>
+                    ) : (
+                      <>
+                        <Link2 className="w-4 h-4" />
+                        Import Brand
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={handleClose} disabled={isImporting}>
+                    Cancel
+                  </Button>
+                </div>
+              </TabsContent>
+            </Tabs>
           )}
         </div>
       </DialogContent>
