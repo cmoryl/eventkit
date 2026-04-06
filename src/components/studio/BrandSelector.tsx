@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Plus, Check, Palette } from 'lucide-react';
+import { ChevronDown, Plus, Check, Palette, RefreshCw } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,13 +10,17 @@ interface BrandSelectorProps {
   selectedBrand: Brand | null;
   onSelectBrand: (brand: Brand) => void;
   onCreateBrand: () => void;
+  onResyncBrand?: (brandId: string) => void;
+  isSyncing?: boolean;
 }
 
 export const BrandSelector: React.FC<BrandSelectorProps> = ({
   brands,
   selectedBrand,
   onSelectBrand,
-  onCreateBrand
+  onCreateBrand,
+  onResyncBrand,
+  isSyncing,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
