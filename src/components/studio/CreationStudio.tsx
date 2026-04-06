@@ -27,8 +27,10 @@ import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
+import { FontPickerDropdown } from './FontPickerDropdown';
 import { BatchGenerationModal } from './BatchGenerationModal';
 import { assetDisplayInfo } from './StudioAssetGrid';
+import type { GoogleFontSelection } from './AssetBriefModal';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -67,6 +69,7 @@ export const CreationStudio: React.FC = () => {
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [projectLogoOverride, setProjectLogoOverride] = useState<string | null>(null);
+  const [projectFontSelection, setProjectFontSelection] = useState<GoogleFontSelection | null>(null);
   const [showBatchGeneration, setShowBatchGeneration] = useState(false);
   const [batchGeneratedImages, setBatchGeneratedImages] = useState<Record<string, string>>({});
   
@@ -251,6 +254,7 @@ export const CreationStudio: React.FC = () => {
         activeCategory,
         viewMode,
         projectLogoOverride: projectLogoOverride || null,
+        projectFontSelection: projectFontSelection || null,
         createdAt: new Date().toISOString(),
       };
 
@@ -313,6 +317,7 @@ export const CreationStudio: React.FC = () => {
 
       setGeneratedImages(restoredImages);
       if (projectData.projectLogoOverride) setProjectLogoOverride(projectData.projectLogoOverride);
+      if (projectData.projectFontSelection) setProjectFontSelection(projectData.projectFontSelection);
       if (projectData.activeCategory) setActiveCategory(projectData.activeCategory);
       if (projectData.viewMode) setViewMode(projectData.viewMode);
       if (projectData.selectedAssets) setSelectedAssets(projectData.selectedAssets);
@@ -389,6 +394,7 @@ export const CreationStudio: React.FC = () => {
           name: selectedBrand.name,
           studioId: studio?.id,
           projectLogoOverride: projectLogoOverride || null,
+          projectFontSelection: projectFontSelection || null,
         })),
         generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
       };
@@ -464,7 +470,7 @@ export const CreationStudio: React.FC = () => {
         user_id: user.id,
         name: projectName,
         description: `Created in ${studio.name}`,
-        event_details: JSON.parse(JSON.stringify({ name: selectedBrand.name, studioId: studio.id, projectLogoOverride: projectLogoOverride || null })),
+        event_details: JSON.parse(JSON.stringify({ name: selectedBrand.name, studioId: studio.id, projectLogoOverride: projectLogoOverride || null, projectFontSelection: projectFontSelection || null })),
         generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
       };
 
@@ -646,6 +652,13 @@ export const CreationStudio: React.FC = () => {
         onLogoChange={setProjectLogoOverride}
         label="Logo"
       />
+
+      {/* Project Font Selection */}
+      <FontPickerDropdown
+        selectedFonts={projectFontSelection}
+        onFontsChange={setProjectFontSelection}
+        compact
+      />
       
       <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
         <Button
@@ -790,6 +803,7 @@ export const CreationStudio: React.FC = () => {
             }}
             studioGradient={studio.gradient}
             projectLogoOverride={projectLogoOverride}
+            projectFontSelection={projectFontSelection}
             batchGeneratedImages={batchGeneratedImages}
           />
 

@@ -35,6 +35,7 @@ interface AssetGenerationCanvasProps {
   eventName?: string;
   studioGradient?: string;
   projectLogoOverride?: string | null;
+  projectFontSelection?: GoogleFontSelection | null;
   onImageGenerated?: (imageUrl: string) => void;
 }
 
@@ -58,6 +59,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   eventName = 'Your Event',
   studioGradient = 'from-primary to-accent',
   projectLogoOverride,
+  projectFontSelection,
   onImageGenerated
 }) => {
   const { user } = useAuth();
@@ -74,7 +76,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [brandKnowledge, setBrandKnowledge] = useState<Record<string, unknown> | null>(null);
   const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [assetLogoOverride, setAssetLogoOverride] = useState<string | null>(null);
-  const [selectedFonts, setSelectedFonts] = useState<GoogleFontSelection | null>(null);
+  const [selectedFonts, setSelectedFonts] = useState<GoogleFontSelection | null>(projectFontSelection || null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Logo priority: asset-level > project-level > brand default

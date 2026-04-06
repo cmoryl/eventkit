@@ -200,6 +200,7 @@ interface StudioAssetGridProps {
   onSelectAsset: (id: string) => void;
   studioGradient: string;
   projectLogoOverride?: string | null;
+  projectFontSelection?: { heading: string; body: string } | null;
   batchGeneratedImages?: Record<string, string>;
 }
 
@@ -381,6 +382,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   onSelectAsset,
   studioGradient,
   projectLogoOverride,
+  projectFontSelection,
   batchGeneratedImages
 }) => {
   const [generatingAssets, setGeneratingAssets] = useState<Set<string>>(new Set());
@@ -725,6 +727,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
             eventName={brand?.name || 'Your Event'}
             studioGradient={studioGradient}
             projectLogoOverride={projectLogoOverride}
+            projectFontSelection={projectFontSelection}
             onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
           />
         )}
@@ -1077,6 +1080,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           eventName={brand?.name || 'Your Event'}
           studioGradient={studioGradient}
           projectLogoOverride={projectLogoOverride}
+          projectFontSelection={projectFontSelection}
           onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
         />
       )}
