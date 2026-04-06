@@ -11,6 +11,8 @@ interface ResolvedBrandImagery {
   photographyRefs: string[];
   /** Brand pattern images converted to base64 for pattern reference */
   patternRefs: string[];
+  /** Brand icon images converted to base64 for icon style reference */
+  brandIconRefs: string[];
   /** Master visual direction generated from brand analysis */
   masterDirection?: string;
 }
@@ -50,16 +52,17 @@ async function urlToBase64(url: string): Promise<string | null> {
 export async function resolveBrandImagery(
   brandContext: BrandContext | null | undefined,
   maxPhotos = 3,
-  maxPatterns = 2
+  maxPatterns = 2,
+  maxIcons = 2
 ): Promise<ResolvedBrandImagery> {
-  const empty: ResolvedBrandImagery = { photographyRefs: [], patternRefs: [] };
+  const empty: ResolvedBrandImagery = { photographyRefs: [], patternRefs: [], brandIconRefs: [] };
   if (!brandContext?.allImagery) return empty;
 
   // Check cache
   const cacheKey = brandContext.brandName || 'default';
   const cached = imageryCache.get(cacheKey);
   if (cached) {
-    console.log(`Using cached brand imagery for "${cacheKey}" (${cached.photographyRefs.length} photos, ${cached.patternRefs.length} patterns)`);
+    console.log(`Using cached brand imagery for "${cacheKey}" (${cached.photographyRefs.length} photos, ${cached.patternRefs.length} patterns, ${cached.brandIconRefs.length} icons)`);
     return cached;
   }
 
@@ -76,20 +79,27 @@ export async function resolveBrandImagery(
     ...(imagery.byType?.patterns || []),
   ].slice(0, maxPatterns);
 
-  console.log(`Resolving brand imagery: ${photoUrls.length} photos, ${patternUrls.length} patterns for "${cacheKey}"`);
+  // Collect brand icon URLs
+  const iconUrls: string[] = [
+    ...(imagery.byType?.brandIcons || []),
+  ].slice(0, maxIcons);
+
+  console.log(`Resolving brand imagery: ${photoUrls.length} photos, ${patternUrls.length} patterns, ${iconUrls.length} icons for "${cacheKey}"`);
 
   // Fetch all in parallel
-  const [photoResults, patternResults] = await Promise.all([
+  const [photoResults, patternResults, iconResults] = await Promise.all([
     Promise.all(photoUrls.map(urlToBase64)),
     Promise.all(patternUrls.map(urlToBase64)),
+    Promise.all(iconUrls.map(urlToBase64)),
   ]);
 
   const result: ResolvedBrandImagery = {
     photographyRefs: photoResults.filter((r): r is string => r !== null),
     patternRefs: patternResults.filter((r): r is string => r !== null),
+    brandIconRefs: iconResults.filter((r): r is string => r !== null),
   };
 
-  console.log(`Resolved: ${result.photographyRefs.length} photos, ${result.patternRefs.length} patterns`);
+  console.log(`Resolved: ${result.photographyRefs.length} photos, ${result.patternRefs.length} patterns, ${result.brandIconRefs.length} icons`);
 
   // Cache for session
   imageryCache.set(cacheKey, result);
