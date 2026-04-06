@@ -27,6 +27,8 @@ import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
+import { BatchGenerationModal } from './BatchGenerationModal';
+import { assetDisplayInfo } from './StudioAssetGrid';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -65,6 +67,8 @@ export const CreationStudio: React.FC = () => {
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   const [projectLogoOverride, setProjectLogoOverride] = useState<string | null>(null);
+  const [showBatchGeneration, setShowBatchGeneration] = useState(false);
+  const [batchGeneratedImages, setBatchGeneratedImages] = useState<Record<string, string>>({});
   
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
@@ -757,8 +761,12 @@ export const CreationStudio: React.FC = () => {
                 </p>
               </div>
               
-              <Button className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} size="sm">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button 
+                className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} 
+                size="sm"
+                onClick={() => setShowBatchGeneration(true)}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
                 Generate All
               </Button>
             </div>
@@ -779,6 +787,7 @@ export const CreationStudio: React.FC = () => {
             }}
             studioGradient={studio.gradient}
             projectLogoOverride={projectLogoOverride}
+            batchGeneratedImages={batchGeneratedImages}
           />
 
           {/* AI Reference Chat */}
@@ -841,6 +850,22 @@ export const CreationStudio: React.FC = () => {
         onSaveAndLeave={handleSaveAndLeave}
         onCancel={handleCancelLeave}
         isSaving={isSavingBeforeLeave}
+      />
+
+      {/* Batch Generation Modal */}
+      <BatchGenerationModal
+        isOpen={showBatchGeneration}
+        onClose={() => setShowBatchGeneration(false)}
+        assetTypes={filteredAssetTypes}
+        brand={selectedBrand}
+        eventName={selectedBrand?.name || 'Your Event'}
+        studioGradient={studio.gradient}
+        projectLogoOverride={projectLogoOverride}
+        assetDisplayInfo={assetDisplayInfo}
+        onImagesGenerated={(newImages) => {
+          setBatchGeneratedImages(prev => ({ ...prev, ...newImages }));
+          setGeneratedImages(prev => ({ ...prev, ...newImages }));
+        }}
       />
     </div>
   );

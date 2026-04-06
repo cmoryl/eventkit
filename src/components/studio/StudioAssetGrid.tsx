@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Check, Image as ImageIcon, Loader2, MoreVertical, ZoomIn, Pencil, Edit3, Film, Ruler } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
@@ -200,10 +200,11 @@ interface StudioAssetGridProps {
   onSelectAsset: (id: string) => void;
   studioGradient: string;
   projectLogoOverride?: string | null;
+  batchGeneratedImages?: Record<string, string>;
 }
 
 // Asset display info with demo imagery - FULLY UNIQUE IMAGES
-const assetDisplayInfo: Record<string, { name: string; description: string; dimensions?: string; demoImage?: string }> = {
+export const assetDisplayInfo: Record<string, { name: string; description: string; dimensions?: string; demoImage?: string }> = {
   // Branding
   'LOGO': { name: 'Primary Logo', description: 'Main brand logo in full color', dimensions: '1024×1024', demoImage: demoLogo },
   'LOGO_MONOCHROME': { name: 'Monochrome Logo', description: 'Single-color logo variant', dimensions: '1024×1024', demoImage: demoLogoMonochrome },
@@ -379,10 +380,18 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   selectedAssets,
   onSelectAsset,
   studioGradient,
-  projectLogoOverride
+  projectLogoOverride,
+  batchGeneratedImages
 }) => {
   const [generatingAssets, setGeneratingAssets] = useState<Set<string>>(new Set());
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
+
+  // Merge batch-generated images into local state
+  useEffect(() => {
+    if (batchGeneratedImages && Object.keys(batchGeneratedImages).length > 0) {
+      setGeneratedImages(prev => ({ ...prev, ...batchGeneratedImages }));
+    }
+  }, [batchGeneratedImages]);
   const [lightboxImage, setLightboxImage] = useState<{ src: string; title: string } | null>(null);
   
   // Full-screen canvas state
