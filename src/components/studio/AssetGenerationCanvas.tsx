@@ -160,6 +160,11 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     setCurrentBrief(brief);
     setShowBriefModal(false);
     
+    // Sync brief font selection to canvas font picker
+    if (brief.customFonts) {
+      setSelectedFonts(brief.customFonts);
+    }
+    
     // Record brief preference for AI learning
     if (user?.id) {
       const briefData: AssetBriefData = {
