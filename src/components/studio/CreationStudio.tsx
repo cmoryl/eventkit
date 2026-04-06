@@ -787,6 +787,7 @@ export const CreationStudio: React.FC = () => {
             }}
             studioGradient={studio.gradient}
             projectLogoOverride={projectLogoOverride}
+            batchGeneratedImages={batchGeneratedImages}
           />
 
           {/* AI Reference Chat */}
