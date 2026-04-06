@@ -25,6 +25,7 @@ import { BrandsPanel } from './BrandsPanel';
 import { StudioReferenceChat } from './StudioReferenceChat';
 import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
