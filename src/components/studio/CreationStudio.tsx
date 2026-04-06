@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
@@ -24,6 +24,7 @@ import { BrandSelector } from './BrandSelector';
 import { BrandsPanel } from './BrandsPanel';
 import { StudioReferenceChat } from './StudioReferenceChat';
 import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
+import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
