@@ -528,6 +528,11 @@ export const CreationStudio: React.FC = () => {
 
   const studioActions = (
     <>
+      {/* Auto-Save Indicator */}
+      {isAuthenticated && Object.keys(generatedImages).length > 0 && (
+        <AutoSaveIndicator status={autoSaveStatus} lastSavedAt={lastSavedAt} />
+      )}
+      
       {/* Brand Selector */}
       <BrandSelector
         brands={brands}
