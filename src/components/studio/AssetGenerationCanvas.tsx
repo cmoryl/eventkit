@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import { AIImageEditModal } from '@/components/AIImageEditModal';
 import { AssetBriefModal, type AssetBrief } from './AssetBriefModal';
+import { LogoOverrideSelector } from './LogoOverrideSelector';
 import { 
   recordBriefPreference, 
   getBriefPreference,
@@ -32,6 +33,7 @@ interface AssetGenerationCanvasProps {
   brand: Brand | null;
   eventName?: string;
   studioGradient?: string;
+  projectLogoOverride?: string | null;
   onImageGenerated?: (imageUrl: string) => void;
 }
 
@@ -54,6 +56,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   brand,
   eventName = 'Your Event',
   studioGradient = 'from-primary to-accent',
+  projectLogoOverride,
   onImageGenerated
 }) => {
   const { user } = useAuth();
@@ -69,7 +72,11 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [zoomLevel, setZoomLevel] = useState(100); // Zoom percentage
   const [brandKnowledge, setBrandKnowledge] = useState<Record<string, unknown> | null>(null);
   const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
+  const [assetLogoOverride, setAssetLogoOverride] = useState<string | null>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
+
+  // Logo priority: asset-level > project-level > brand default
+  const effectiveLogoUrl = assetLogoOverride || projectLogoOverride || brand?.logo_url || activeBrand?.logo_url;
 
   // Fit-to-window: calculate optimal zoom so the image fits the container with padding
   const fitToWindow = useCallback(() => {
@@ -253,7 +260,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               customPrompts: effectiveBrand.styles?.custom_prompts,
             } : null,
             colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
-            logoBase64: effectiveBrand?.logo_url,
+            logoBase64: effectiveLogoUrl,
             dimensions: parseDimensions(dimensions),
             customContent: brief.customContent
           }
@@ -482,7 +489,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             customPrompts: effectiveBrand.styles?.custom_prompts,
           } : null,
           colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
-          logoBase64: effectiveBrand?.logo_url,
+          logoBase64: effectiveLogoUrl,
           dimensions: parseDimensions(dimensions),
           customContent: currentBrief?.customContent
         }
@@ -638,6 +645,15 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                 </span>
               </div>
             )}
+
+            {/* Per-Asset Logo Override */}
+            <LogoOverrideSelector
+              overrideLogoUrl={assetLogoOverride}
+              brandLogoUrl={projectLogoOverride || brand?.logo_url || activeBrand?.logo_url}
+              onLogoChange={setAssetLogoOverride}
+              label="Logo"
+              compact
+            />
             
             <Button 
               variant="outline" 

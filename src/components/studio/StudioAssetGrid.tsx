@@ -199,6 +199,7 @@ interface StudioAssetGridProps {
   selectedAssets: string[];
   onSelectAsset: (id: string) => void;
   studioGradient: string;
+  projectLogoOverride?: string | null;
 }
 
 // Asset display info with demo imagery - FULLY UNIQUE IMAGES
@@ -377,7 +378,8 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
   viewMode,
   selectedAssets,
   onSelectAsset,
-  studioGradient
+  studioGradient,
+  projectLogoOverride
 }) => {
   const [generatingAssets, setGeneratingAssets] = useState<Set<string>>(new Set());
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
@@ -713,6 +715,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
             brand={brand}
             eventName={brand?.name || 'Your Event'}
             studioGradient={studioGradient}
+            projectLogoOverride={projectLogoOverride}
             onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
           />
         )}
@@ -1064,6 +1067,7 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
           brand={brand}
           eventName={brand?.name || 'Your Event'}
           studioGradient={studioGradient}
+          projectLogoOverride={projectLogoOverride}
           onImageGenerated={(imageUrl) => handleImageFromCanvas(canvasAssetType, imageUrl)}
         />
       )}

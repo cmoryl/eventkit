@@ -26,6 +26,7 @@ import { StudioReferenceChat } from './StudioReferenceChat';
 import { AccessibilityAnalysisPanel } from './AccessibilityAnalysisPanel';
 import { AutoSaveIndicator, AutoSaveStatus } from './AutoSaveIndicator';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { LogoOverrideSelector } from './LogoOverrideSelector';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -63,6 +64,7 @@ export const CreationStudio: React.FC = () => {
   const [isLoadingProject, setIsLoadingProject] = useState(false);
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
+  const [projectLogoOverride, setProjectLogoOverride] = useState<string | null>(null);
   
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
@@ -630,6 +632,14 @@ export const CreationStudio: React.FC = () => {
         onCreateBrand={() => navigate('/admin?tab=brands')}
       />
       
+      {/* Project Logo Override */}
+      <LogoOverrideSelector
+        overrideLogoUrl={projectLogoOverride}
+        brandLogoUrl={selectedBrand?.logo_url}
+        onLogoChange={setProjectLogoOverride}
+        label="Logo"
+      />
+      
       <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
         <Button
           variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
@@ -768,6 +778,7 @@ export const CreationStudio: React.FC = () => {
               );
             }}
             studioGradient={studio.gradient}
+            projectLogoOverride={projectLogoOverride}
           />
 
           {/* AI Reference Chat */}
