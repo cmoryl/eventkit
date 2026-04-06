@@ -73,6 +73,7 @@ export const CreationStudio: React.FC = () => {
   const [projectFontSelection, setProjectFontSelection] = useState<GoogleFontSelection | null>(null);
   const [showBatchGeneration, setShowBatchGeneration] = useState(false);
   const [batchGeneratedImages, setBatchGeneratedImages] = useState<Record<string, string>>({});
+  const [isBrandSyncing, setIsBrandSyncing] = useState(false);
   
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
