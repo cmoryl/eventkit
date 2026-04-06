@@ -35,6 +35,7 @@ interface AssetGenerationCanvasProps {
   eventName?: string;
   studioGradient?: string;
   projectLogoOverride?: string | null;
+  projectFontSelection?: GoogleFontSelection | null;
   onImageGenerated?: (imageUrl: string) => void;
 }
 
