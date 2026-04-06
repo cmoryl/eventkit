@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useBlocker } from 'react-router-dom';
 import { 
   Palette, Printer, Shirt, Share2, Presentation, Building,
   Ticket, UtensilsCrossed, Video, FileText, Camera, Shield, Plus,
