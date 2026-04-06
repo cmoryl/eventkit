@@ -664,6 +664,8 @@ export const CreationStudio: React.FC = () => {
         selectedBrand={selectedBrand}
         onSelectBrand={setSelectedBrand}
         onCreateBrand={() => navigate('/admin?tab=brands')}
+        onResyncBrand={handleResyncBrand}
+        isSyncing={isBrandSyncing}
       />
       
       {/* Project Logo Override */}
