@@ -197,24 +197,61 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       try {
         const prompt = buildPromptWithBrief(brief, styleVariants[index]);
         
+        // Use the brand prop or fall back to activeBrand from the hook
+        const effectiveBrand = brand || (activeBrand ? {
+          name: activeBrand.name,
+          styles: activeBrand.styles ? {
+            color_palette: activeBrand.styles.color_palette,
+            primary_color: activeBrand.styles.primary_color,
+            secondary_color: activeBrand.styles.secondary_color,
+            accent_color: activeBrand.styles.accent_color,
+            heading_font: activeBrand.styles.heading_font,
+            body_font: activeBrand.styles.body_font,
+            industry: (activeBrand.styles as any).industry,
+            mood_keywords: activeBrand.styles.mood_keywords,
+            imagery_style: (activeBrand.styles as any).imagery_style,
+            brand_voice: (activeBrand.styles as any).brand_voice,
+            custom_prompts: (activeBrand.styles as any).custom_prompts,
+            pattern_style: (activeBrand.styles as any).pattern_style,
+            icon_style: (activeBrand.styles as any).icon_style,
+            target_audience: (activeBrand.styles as any).target_audience,
+            cultural_context: (activeBrand.styles as any).cultural_context,
+            tone_keywords: (activeBrand.styles as any).tone_keywords,
+            writing_style: (activeBrand.styles as any).writing_style,
+            archetype: (activeBrand.styles as any).archetype,
+            tagline: (activeBrand.styles as any).tagline,
+            mission: (activeBrand.styles as any).mission,
+          } : undefined,
+          logo_url: activeBrand.logo_url,
+        } as Brand : null);
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: {
             prompt,
             assetType,
             eventName,
-            brandContext: brand ? {
-              name: brand.name,
-              colors: brand.styles?.color_palette,
-              primaryColor: brand.styles?.primary_color,
-              secondaryColor: brand.styles?.secondary_color,
-              headingFont: brand.styles?.heading_font,
-              bodyFont: brand.styles?.body_font,
-              industry: brand.styles?.industry,
-              mood: brand.styles?.mood_keywords,
-              imageryStyle: brand.styles?.imagery_style,
-              brandVoice: brand.styles?.brand_voice,
-              customPrompts: brand.styles?.custom_prompts
+            brandContext: effectiveBrand ? {
+              brandName: effectiveBrand.name,
+              primaryColor: effectiveBrand.styles?.primary_color,
+              secondaryColor: effectiveBrand.styles?.secondary_color,
+              accentColor: effectiveBrand.styles?.accent_color,
+              colorPalette: effectiveBrand.styles?.color_palette,
+              headingFont: effectiveBrand.styles?.heading_font,
+              bodyFont: effectiveBrand.styles?.body_font,
+              industry: effectiveBrand.styles?.industry,
+              moodKeywords: effectiveBrand.styles?.mood_keywords,
+              imageryStyle: effectiveBrand.styles?.imagery_style,
+              brandVoice: effectiveBrand.styles?.brand_voice,
+              patternStyle: effectiveBrand.styles?.pattern_style,
+              iconStyle: effectiveBrand.styles?.icon_style,
+              targetAudience: effectiveBrand.styles?.target_audience,
+              culturalContext: effectiveBrand.styles?.cultural_context,
+              toneKeywords: effectiveBrand.styles?.tone_keywords,
+              writingStyle: effectiveBrand.styles?.writing_style,
+              customPrompts: effectiveBrand.styles?.custom_prompts,
             } : null,
+            colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
+            logoBase64: effectiveBrand?.logo_url,
             dimensions: parseDimensions(dimensions),
             customContent: brief.customContent
           }
