@@ -662,6 +662,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               label="Logo"
               compact
             />
+
+            {/* Font Picker */}
+            <FontPickerDropdown
+              selectedFonts={selectedFonts}
+              onFontsChange={setSelectedFonts}
+              compact
+            />
             
             <Button 
               variant="outline" 
