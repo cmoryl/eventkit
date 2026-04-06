@@ -317,6 +317,7 @@ export const CreationStudio: React.FC = () => {
 
       setGeneratedImages(restoredImages);
       if (projectData.projectLogoOverride) setProjectLogoOverride(projectData.projectLogoOverride);
+      if (projectData.projectFontSelection) setProjectFontSelection(projectData.projectFontSelection);
       if (projectData.activeCategory) setActiveCategory(projectData.activeCategory);
       if (projectData.viewMode) setViewMode(projectData.viewMode);
       if (projectData.selectedAssets) setSelectedAssets(projectData.selectedAssets);
