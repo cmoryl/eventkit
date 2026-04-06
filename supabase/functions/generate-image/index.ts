@@ -234,12 +234,12 @@ ${outputChecklist}`;
 
     console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}`);
 
-    // Collect all reference images in order
-    const referenceImages: string[] = [];
-    if (logoBase64) referenceImages.push(logoBase64);
-    allVibeImages.forEach(img => referenceImages.push(img));
-    allPatternImages.forEach(img => referenceImages.push(img));
-    if (venueImageBase64) referenceImages.push(venueImageBase64);
+    // Collect all reference images with labels so the AI knows what each one is
+    const referenceImages: LabeledImage[] = [];
+    if (logoBase64) referenceImages.push({ url: logoBase64, label: 'LOGO - incorporate this logo into the design' });
+    allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
+    allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
+    if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
 
     const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages, 2, imageModel);
     
