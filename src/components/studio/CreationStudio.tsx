@@ -254,6 +254,7 @@ export const CreationStudio: React.FC = () => {
         activeCategory,
         viewMode,
         projectLogoOverride: projectLogoOverride || null,
+        projectFontSelection: projectFontSelection || null,
         createdAt: new Date().toISOString(),
       };
 
