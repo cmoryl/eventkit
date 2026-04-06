@@ -259,7 +259,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               customPrompts: effectiveBrand.styles?.custom_prompts,
             } : null,
             colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
-            logoBase64: effectiveBrand?.logo_url,
+            logoBase64: effectiveLogoUrl,
             dimensions: parseDimensions(dimensions),
             customContent: brief.customContent
           }
@@ -488,7 +488,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             customPrompts: effectiveBrand.styles?.custom_prompts,
           } : null,
           colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
-          logoBase64: effectiveBrand?.logo_url,
+          logoBase64: effectiveLogoUrl,
           dimensions: parseDimensions(dimensions),
           customContent: currentBrief?.customContent
         }
