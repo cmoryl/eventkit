@@ -319,10 +319,47 @@ export const CreationStudio: React.FC = () => {
 
     setIsSavingToCloud(true);
     try {
-      const assetSummary = Object.entries(generatedImages).map(([assetType, imageUrl]) => ({
-        assetType,
-        hasContent: !!imageUrl,
-      }));
+      // Upload base64 images to storage and collect persistent URLs
+      const persistedAssets = await Promise.all(
+        Object.entries(generatedImages).map(async ([assetType, imageUrl]) => {
+          let persistentUrl = imageUrl;
+          
+          // Convert base64 to storage URL
+          if (imageUrl.startsWith('data:')) {
+            try {
+              const base64Data = imageUrl.split(',')[1];
+              const mimeMatch = imageUrl.match(/data:(image\/\w+);/);
+              const ext = mimeMatch ? mimeMatch[1].split('/')[1] : 'png';
+              const blob = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+              const fileName = `studio/${user.id}/${studio?.id || 'default'}/${assetType}_${Date.now()}.${ext}`;
+
+              const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('asset-images')
+                .upload(fileName, blob, { contentType: mimeMatch?.[1] || 'image/png', upsert: true });
+
+              if (!uploadError && uploadData?.path) {
+                const { data: urlData } = supabase.storage.from('asset-images').getPublicUrl(uploadData.path);
+                if (urlData?.publicUrl) {
+                  persistentUrl = urlData.publicUrl;
+                }
+              }
+            } catch (e) {
+              console.warn(`Failed to persist ${assetType} to storage:`, e);
+            }
+          }
+          
+          return {
+            assetType,
+            imageUrl: persistentUrl,
+            hasContent: true,
+          };
+        })
+      );
+
+      // Update local state with persisted URLs
+      const updatedImages: Record<string, string> = {};
+      persistedAssets.forEach(a => { updatedImages[a.assetType] = a.imageUrl; });
+      setGeneratedImages(updatedImages);
 
       const projectData = {
         user_id: user.id,
@@ -332,7 +369,7 @@ export const CreationStudio: React.FC = () => {
           name: selectedBrand.name,
           studioId: studio?.id,
         })),
-        generated_assets: JSON.parse(JSON.stringify(assetSummary)),
+        generated_assets: JSON.parse(JSON.stringify(persistedAssets)),
       };
 
       const { data: existingProject } = await supabase
