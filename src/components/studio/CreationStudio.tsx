@@ -63,6 +63,12 @@ export const CreationStudio: React.FC = () => {
   const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
   
+  // Auto-save state
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const previousImagesRef = useRef<string>('{}');
+  
   // Wrap brand selection to persist to sessionStorage
   const setSelectedBrand = useCallback((brand: Brand | null) => {
     setSelectedBrandState(brand);
