@@ -202,9 +202,7 @@ Generate 4 distinctly different design approaches. Each should have a unique vis
       toolChoice = { type: "function", function: { name: "suggest_variations" } };
 
     } else if (type === 'master_style_direction') {
-      // Master style direction for visual consistency across an event kit
-      const body = await req.clone().json();
-      const prompt = body.prompt || '';
+      const prompt = reqBody.prompt || '';
       
       systemPrompt = `You are a world-class creative director. You create unified visual direction documents that ensure all assets in an event design kit share a cohesive look and feel. Respond ONLY with the requested JSON format.`;
       userPrompt = prompt;
