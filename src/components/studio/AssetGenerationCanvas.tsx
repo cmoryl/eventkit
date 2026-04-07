@@ -195,6 +195,44 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     });
   };
 
+  // Generate or reuse Master Style Direction when canvas opens
+  useEffect(() => {
+    if (isOpen && !styleAnchor.hasMasterDirection) {
+      const palette: ColorInfo[] = (brand?.styles?.color_palette || []).map((c: any) => ({
+        hex: typeof c === 'string' ? c : c.hex || '#667eea',
+        name: typeof c === 'string' ? c : c.name || 'Color',
+      }));
+      const eventDetails: EventDetails = {
+        name: eventName,
+        description: assetDescription,
+        eventType: brand?.styles?.industry || 'conference',
+      };
+      generateMasterStyleDirection({
+        eventDetails,
+        brandContext: brand?.styles ? {
+          brandName: brand.name,
+          archetype: (brand.styles as any).archetype,
+          brandVoice: brand.styles.brand_voice,
+          imageryStyle: brand.styles.imagery_style,
+          patternStyle: brand.styles.pattern_style,
+          moodKeywords: brand.styles.mood_keywords,
+          photographyDos: (brand.styles as any).photography_dos,
+          photographyDonts: (brand.styles as any).photography_donts,
+          restrictedElements: (brand.styles as any).restricted_elements,
+          headingFont: brand.styles.heading_font,
+          bodyFont: brand.styles.body_font,
+        } as any : null,
+        colorPalette: palette,
+        styleDescription: brand?.styles?.imagery_style,
+      }).then(dir => {
+        if (dir) {
+          styleAnchor.setMasterDirection(dir);
+          console.log('[StyleAnchor] Master direction generated');
+        }
+      }).catch(console.warn);
+    }
+  }, [isOpen]);
+
   // Initialize when opened - show brief modal first
   useEffect(() => {
     if (isOpen) {
