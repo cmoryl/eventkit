@@ -10,6 +10,7 @@ import {
   cachePalette 
 } from './generationOptimizer';
 import { parseAIError, handleAIError, type AIError } from './aiErrorHandler';
+import { normalizeImageForGeneration } from '../utils';
 // Flag to determine if we should use AI or fallback to local generation
 const USE_AI_GENERATION = true;
 const COLOR_NAMES: Record<string, string> = {
@@ -611,6 +612,8 @@ export const generateAssetImage = async (
     console.log('Compiled prompt with brand intelligence for', assetTypeStr,
       brandKnowledge ? '(brand context attached)' : '(no brand context)');
     
+    const normalizedLogoBase64 = await normalizeImageForGeneration(logoBase64);
+
     const { data, error } = await supabase.functions.invoke('generate-image', {
       body: {
         assetType: assetTypeStr,
@@ -621,7 +624,7 @@ export const generateAssetImage = async (
         eventType,
         styleDescription: compiledStyleDescription,
         colorPalette: effectiveColorPalette,
-        logoBase64,
+        logoBase64: normalizedLogoBase64,
         location,
         incorporateLocationStyle,
         vibeImageBase64,

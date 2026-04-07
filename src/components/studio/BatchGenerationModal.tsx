@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
+import { normalizeImageForGeneration } from '@/utils';
 
 interface BatchAssetResult {
   assetType: string;
@@ -96,6 +97,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     });
 
     try {
+      const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
+
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
           prompt,
@@ -114,7 +117,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
             imageryStyle: effectiveBrand.styles?.imagery_style,
           } : null,
           colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
-          logoBase64: effectiveLogoUrl,
+          logoBase64: logoPayload,
         },
       });
 

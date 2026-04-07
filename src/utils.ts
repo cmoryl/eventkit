@@ -173,6 +173,42 @@ export const convertSvgToPng = (svgFile: File): Promise<File> => {
   });
 };
 
+const blobToDataUrl = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
+export const normalizeImageForGeneration = async (source?: string | null): Promise<string | undefined> => {
+  if (!source) return undefined;
+
+  if (source.startsWith('data:') && !source.startsWith('data:image/svg')) {
+    return source;
+  }
+
+  try {
+    const response = await fetch(source);
+    if (!response.ok) return undefined;
+
+    const blob = await response.blob();
+    if (blob.type.includes('text/html')) return undefined;
+
+    if (blob.type.includes('image/svg')) {
+      const pngFile = await convertSvgToPng(new File([blob], 'logo.svg', { type: 'image/svg+xml' }));
+      const base64 = await fileToBase64(pngFile);
+      return `data:${base64.type};base64,${base64.data}`;
+    }
+
+    return await blobToDataUrl(blob);
+  } catch (error) {
+    console.warn('Failed to normalize image for generation:', error);
+    return source.startsWith('data:') ? source : undefined;
+  }
+};
+
 export const getAspectRatioStyle = (type: AssetType): React.CSSProperties => {
   switch (type) {
     case AssetType.Presentation:
