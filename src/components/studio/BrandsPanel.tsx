@@ -444,26 +444,40 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                       </div>
                     )}
 
-                    {/* Color Palette */}
+                    {/* Color Palette with Names */}
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <Droplets className="w-3 h-3 text-muted-foreground" />
                         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Colors</span>
                       </div>
-                      <div className="flex gap-1">
-                        {getBrandColors(selectedBrand).length > 0 ? (
-                          getBrandColors(selectedBrand).map((color, i) => (
-                            <div
-                              key={i}
-                              className="w-8 h-8 rounded-lg shadow-sm border border-border"
-                              style={{ backgroundColor: color }}
-                              title={color}
-                            />
-                          ))
-                        ) : (
-                          <div className="text-xs text-muted-foreground">No colors defined</div>
-                        )}
-                      </div>
+                      {getBrandColors(selectedBrand).length > 0 ? (
+                        <>
+                          <div className="flex gap-1 mb-1.5">
+                            {getBrandColors(selectedBrand).map((color, i) => (
+                              <div
+                                key={i}
+                                className="w-8 h-8 rounded-lg shadow-sm border border-border"
+                                style={{ backgroundColor: color }}
+                                title={color}
+                              />
+                            ))}
+                          </div>
+                          {/* Named palette entries */}
+                          {(selectedBrand.styles?.color_palette?.filter(c => c.name)?.length ?? 0) > 0 && (
+                            <div className="space-y-0.5 mt-1">
+                              {selectedBrand.styles!.color_palette.filter(c => c.name).slice(0, 8).map((c, i) => (
+                                <div key={i} className="flex items-center gap-1.5">
+                                  <div className="w-3 h-3 rounded-sm flex-shrink-0 border border-border/50" style={{ backgroundColor: c.hex }} />
+                                  <span className="text-[10px] text-foreground/70 truncate">{c.name}</span>
+                                  <span className="text-[10px] text-muted-foreground ml-auto font-mono">{c.hex}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">No colors defined</div>
+                      )}
                     </div>
 
                     {/* Typography */}
