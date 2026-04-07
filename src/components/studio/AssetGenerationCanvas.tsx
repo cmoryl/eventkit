@@ -1123,10 +1123,23 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                               onLoad={(e) => {
                                 const img = e.currentTarget;
                                 setImageNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-                                img.style.width = `${img.naturalWidth * scale}px`;
-                                img.style.height = `${img.naturalHeight * scale}px`;
+                                const renderedW = img.naturalWidth * scale;
+                                const renderedH = img.naturalHeight * scale;
+                                img.style.width = `${renderedW}px`;
+                                img.style.height = `${renderedH}px`;
+                                setPreviewImgSize({ w: renderedW, h: renderedH });
                               }}
                             />
+                            {/* Draggable logo overlay */}
+                            {effectiveLogoUrl && previewImgSize && (
+                              <DraggableLogoOverlay
+                                logoUrl={effectiveLogoUrl}
+                                containerWidth={previewImgSize.w}
+                                containerHeight={previewImgSize.h}
+                                initialPlacement={logoPlacement || defaultLogoPlacement}
+                                onPlacementChange={setLogoPlacement}
+                              />
+                            )}
                           </motion.div>
                         );
                       }
