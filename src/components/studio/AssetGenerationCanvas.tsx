@@ -30,6 +30,9 @@ import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
 import { type LogoPlacement } from './DraggableLogoOverlay';
 import { useLogoPlacement } from '@/hooks/useLogoPlacement';
+import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
+import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
+import type { EventDetails, ColorInfo } from '@/types';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -72,6 +75,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const { user } = useAuth();
   const { activeBrand, isThemeApplied } = useActiveBrand();
   const { savedPlacement, savePlacement: persistPlacement, clearPlacement } = useLogoPlacement(assetType);
+  const styleAnchor = useStyleAnchor();
   const [variations, setVariations] = useState<GenerationVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -406,12 +410,12 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       'ai-decide': '',
     }[brief.layoutStyle] || '';
 
-    // Create 4 variations with slight modifications
+    // Create 4 layout-only variations — keep style/color/mood identical for cohesion
     return [
-      `${baseStyle} with ${colorStyle}, ${layoutStyle}`,
-      `${baseStyle} with ${colorStyle}, emphasizing visual hierarchy`,
-      `${baseStyle} with ${colorStyle}, focus on typography and clarity`,
-      `${baseStyle} with ${colorStyle}, creative artistic interpretation`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'centered balanced composition'}`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'asymmetric offset composition with weighted left alignment'}`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'split layout with prominent typography block'}`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'full-bleed hero composition with minimal text overlay'}`,
     ];
   };
 

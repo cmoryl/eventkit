@@ -32,6 +32,7 @@ import { BatchGenerationModal } from './BatchGenerationModal';
 import { assetDisplayInfo } from './StudioAssetGrid';
 import type { GoogleFontSelection } from './AssetBriefModal';
 import { checkAndSyncBrand, forceResyncBrand } from '@/services/brandAutoSync';
+import { StyleAnchorProvider } from '@/contexts/StyleAnchorContext';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -909,4 +910,6 @@ export const CreationStudio: React.FC = () => {
       />
     </div>
   );
+
+  return <StyleAnchorProvider>{content}</StyleAnchorProvider>;
 };
