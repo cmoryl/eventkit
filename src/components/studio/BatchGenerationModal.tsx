@@ -14,6 +14,8 @@ import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
 import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
+import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
+import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
 
 interface BatchAssetResult {
   assetType: string;

@@ -301,6 +301,10 @@ ${outputChecklist}`;
     // NOTE: Logo is NOT included as a reference image — the client-side logoCompositor
     // overlays the actual logo file AFTER generation for pixel-perfect results.
     const referenceImages: LabeledImage[] = [];
+    // Style anchor: previously generated asset from this kit — ensures visual consistency
+    if (styleAnchorImage) {
+      referenceImages.push({ url: styleAnchorImage, label: 'KIT STYLE ANCHOR - Match the EXACT visual treatment, color application, typography style, and composition approach of this reference. This asset must look like it belongs to the same event kit.' });
+    }
     allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
     allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
     if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
