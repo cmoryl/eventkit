@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Palette, Plus, Settings, Clock, Image as ImageIcon, 
   ChevronRight, ChevronDown, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart, Wand2,
-  Quote, Target, Globe, Hash, Camera, Brush, Users, Building2, MessageSquare
+  Quote, Target, Globe, Hash, Camera, Brush, Users, Building2, MessageSquare, 
+  Shield, Layout, Ban, CheckCircle2, XCircle, Ruler, Images
 } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { BrandAdherenceMode } from '@/types/brand.types';
@@ -443,26 +444,40 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                       </div>
                     )}
 
-                    {/* Color Palette */}
+                    {/* Color Palette with Names */}
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <Droplets className="w-3 h-3 text-muted-foreground" />
                         <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Colors</span>
                       </div>
-                      <div className="flex gap-1">
-                        {getBrandColors(selectedBrand).length > 0 ? (
-                          getBrandColors(selectedBrand).map((color, i) => (
-                            <div
-                              key={i}
-                              className="w-8 h-8 rounded-lg shadow-sm border border-border"
-                              style={{ backgroundColor: color }}
-                              title={color}
-                            />
-                          ))
-                        ) : (
-                          <div className="text-xs text-muted-foreground">No colors defined</div>
-                        )}
-                      </div>
+                      {getBrandColors(selectedBrand).length > 0 ? (
+                        <>
+                          <div className="flex gap-1 mb-1.5">
+                            {getBrandColors(selectedBrand).map((color, i) => (
+                              <div
+                                key={i}
+                                className="w-8 h-8 rounded-lg shadow-sm border border-border"
+                                style={{ backgroundColor: color }}
+                                title={color}
+                              />
+                            ))}
+                          </div>
+                          {/* Named palette entries */}
+                          {(selectedBrand.styles?.color_palette?.filter(c => c.name)?.length ?? 0) > 0 && (
+                            <div className="space-y-0.5 mt-1">
+                              {selectedBrand.styles!.color_palette.filter(c => c.name).slice(0, 8).map((c, i) => (
+                                <div key={i} className="flex items-center gap-1.5">
+                                  <div className="w-3 h-3 rounded-sm flex-shrink-0 border border-border/50" style={{ backgroundColor: c.hex }} />
+                                  <span className="text-[10px] text-foreground/70 truncate">{c.name}</span>
+                                  <span className="text-[10px] text-muted-foreground ml-auto font-mono">{c.hex}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">No colors defined</div>
+                      )}
                     </div>
 
                     {/* Typography */}
@@ -627,6 +642,107 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                             </div>
                           )}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Photography Guidelines */}
+                    {((selectedBrand.styles?.photography_dos?.length ?? 0) > 0 || (selectedBrand.styles?.photography_donts?.length ?? 0) > 0) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Photography Guidelines</span>
+                        </div>
+                        {(selectedBrand.styles?.photography_dos?.length ?? 0) > 0 && (
+                          <div className="mb-1.5">
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mb-1 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Do's
+                            </p>
+                            <div className="space-y-1">
+                              {selectedBrand.styles!.photography_dos!.slice(0, 3).map((item, i) => (
+                                <p key={i} className="text-[10px] text-foreground/70 leading-relaxed line-clamp-2 pl-4">{item}</p>
+                              ))}
+                              {(selectedBrand.styles!.photography_dos!.length > 3) && (
+                                <p className="text-[10px] text-muted-foreground pl-4">+{selectedBrand.styles!.photography_dos!.length - 3} more</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {(selectedBrand.styles?.photography_donts?.length ?? 0) > 0 && (
+                          <div>
+                            <p className="text-[10px] text-destructive font-medium mb-1 flex items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Don'ts
+                            </p>
+                            <div className="space-y-1">
+                              {selectedBrand.styles!.photography_donts!.slice(0, 3).map((item, i) => (
+                                <p key={i} className="text-[10px] text-foreground/70 leading-relaxed line-clamp-2 pl-4">{item}</p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Logo Rules */}
+                    {(selectedBrand.styles?.logo_clear_space || selectedBrand.styles?.logo_min_size || (selectedBrand.styles?.logo_placement_rules?.length ?? 0) > 0) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ruler className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Logo Rules</span>
+                        </div>
+                        <div className="space-y-1">
+                          {selectedBrand.styles?.logo_clear_space && (
+                            <p className="text-[10px]"><span className="text-muted-foreground">Clear space:</span> <span className="font-medium">{selectedBrand.styles.logo_clear_space}</span></p>
+                          )}
+                          {selectedBrand.styles?.logo_min_size && (
+                            <p className="text-[10px]"><span className="text-muted-foreground">Min size:</span> <span className="font-medium">{selectedBrand.styles.logo_min_size}</span></p>
+                          )}
+                          {(selectedBrand.styles?.logo_placement_rules?.length ?? 0) > 0 && (
+                            <div className="mt-1">
+                              {selectedBrand.styles!.logo_placement_rules!.slice(0, 3).map((rule, i) => (
+                                <p key={i} className="text-[10px] text-foreground/70 pl-2 border-l border-primary/20 mb-0.5">{rule}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Restrictions */}
+                    {((selectedBrand.styles?.restricted_elements?.length ?? 0) > 0) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ban className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Restrictions</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedBrand.styles!.restricted_elements!.slice(0, 4).map((el, i) => (
+                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">{el}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Brand Imagery Gallery */}
+                    {selectedBrand.styles?.all_imagery?.all && selectedBrand.styles.all_imagery.all.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Images className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            Brand Imagery ({selectedBrand.styles.all_imagery.all.length})
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1">
+                          {selectedBrand.styles.all_imagery.all.slice(0, 8).map((url, i) => (
+                            <div key={i} className="aspect-square rounded border border-border overflow-hidden bg-muted">
+                              <img src={url} alt={`Brand ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                            </div>
+                          ))}
+                        </div>
+                        {selectedBrand.styles.all_imagery.all.length > 8 && (
+                          <p className="text-[10px] text-muted-foreground text-center mt-1">
+                            +{selectedBrand.styles.all_imagery.all.length - 8} more images
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

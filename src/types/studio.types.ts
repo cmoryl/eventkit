@@ -84,11 +84,23 @@ export interface BrandStyle {
   pattern_style?: string;
   icon_style?: string;
   photography_style?: string;
+  photography_dos?: string[];
+  photography_donts?: string[];
   
   // Brand Identity
   tagline?: string;
   mission?: string;
   archetype?: string;
+  
+  // Logo Rules
+  logo_clear_space?: string;
+  logo_min_size?: string;
+  logo_placement_rules?: string[];
+  logo_backgrounds?: string[];
+  
+  // Layout & Restrictions
+  approved_layouts?: string[];
+  restricted_elements?: string[];
   
   // Cultural & Audience
   target_audience?: string;
@@ -98,6 +110,23 @@ export interface BrandStyle {
   // Social
   social_handles?: Record<string, string>;
   hashtags?: string[];
+  
+  // Imagery Library
+  all_imagery?: {
+    all?: string[];
+    byType?: {
+      logos?: string[];
+      brandIcons?: string[];
+      patterns?: string[];
+      photography?: string[];
+      heroImages?: string[];
+      collateral?: string[];
+      social?: string[];
+      banners?: string[];
+      video?: string[];
+      sponsors?: string[];
+    };
+  };
   
   // Advanced Settings
   print_color_mode: 'CMYK' | 'RGB' | 'Pantone';
