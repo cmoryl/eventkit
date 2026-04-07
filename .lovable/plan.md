@@ -1,45 +1,68 @@
 
-## Phase 1: Direct Brand Picker (browse BrandHUB brands without copying URLs)
 
-**Problem**: Users must copy share URLs from BrandHUB and paste them into EventKIT.
+# Achieving Consistent Renderings Across Assets
 
-**Solution**: Add a "Browse BrandHUB" tab to the BrandHubImportModal that:
-1. Create a new edge function `browse-brandhub-brands` that queries BrandHUB's public brands REST API to list available brands with thumbnails
-2. Add a searchable brand gallery grid inside the import modal with brand cards showing logo, name, colors
-3. One-click import from the gallery — no URL copying needed
-4. Support filtering by industry/category
+## The Problem
 
-## Phase 2: More Visual Assets in Generation Pipeline
+Currently, each asset generation is essentially independent — the AI receives brand context and style instructions but generates each design from scratch with no shared visual "DNA." This leads to:
+- Different color treatments, gradients, and compositions across assets
+- Inconsistent typography rendering and layout styles
+- No visual thread connecting a banner to a badge to a social post
+- The Master Style Director exists but its output isn't reliably injected into every generation call
 
-**Problem**: BrandHUB has color combinations, display banner specs, gradients, booth templates, and icon sets that aren't fully injected into generation prompts.
+## Root Causes
 
-**Solution**:
-1. Update `brandContextLoader.ts` to pull additional AI knowledge entries (color combos, gradients CSS, display specs, division data) and inject them into the BrandContext
-2. Enhance `promptCompiler.ts` to include gradient CSS values, approved color combinations, and display banner safe-zone rules in generation prompts
-3. Add brand icon references as visual inputs alongside photography references in `brandImageryResolver.ts`
-4. Include sponsor logos as base64 references when generating sponsor-related assets (step-and-repeat, sponsor walls)
+1. **Master Style Direction is underutilized** — `masterStyleDirector.ts` generates a unified direction but it's not wired into the single-asset `AssetGenerationCanvas` flow, only batch generation
+2. **No style seed image** — each generation starts from zero visual context; there's no "anchor image" to reference
+3. **Variation prompts diverge** — the 4 variations use different style suffixes ("modern minimalist," "bold dynamic," etc.) which push renders apart rather than keeping them cohesive
+4. **No shared visual reference** — the AI has no way to see what other assets in the kit look like
 
-## Phase 3: Auto-Sync on Changes
+## Plan
 
-**Problem**: When BrandHUB data updates, EventKIT brands go stale.
+### 1. Wire Master Style Direction into single-asset generation
+- In `AssetGenerationCanvas.tsx`, call `generateMasterStyleDirection()` once when the studio opens (or reuse a cached result)
+- Inject the `buildMasterDirectionPromptBlock()` output into every generation prompt, both initial and regeneration
+- Cache the direction per event+brand combo so it's instant on subsequent assets
 
-**Solution**:
-1. Add `brandhub_last_checked` timestamp column to `brands` table
-2. Create a `sync-brandhub-brand` edge function that re-fetches and diffs changes
-3. On studio load, if brand has `brandhub_share_token` and last sync > 24h ago, trigger background sync
-4. Show a subtle "Brand updated" indicator in the studio header when new data is available
-5. Add manual "Re-sync" button on the brand selector dropdown
+### 2. Add "Style Anchor" — first generated asset becomes the visual reference
+- After the first successful asset generation in a session, store its image URL as a "style anchor"
+- Pass this anchor image as a `STYLE REFERENCE` to all subsequent generations with the instruction: "Match the exact visual treatment, color application, and composition style of this reference"
+- Store the anchor in a React context (`StyleAnchorContext`) so it persists across studio navigations
+- Allow users to manually pick which generated image becomes the anchor via a "Pin as Style Anchor" button
 
-## Phase 4: Two-Way Sync (Push Assets Back to BrandHUB)
+### 3. Tighten variation prompts for cohesion
+- Change the 4 variation suffixes from divergent styles to minor composition tweaks within the same style: "layout variant A: centered hero," "layout variant B: asymmetric," etc.
+- Keep color treatment, typography, and mood identical across all 4 — only vary spatial arrangement
+- This ensures all variations feel like siblings, not cousins
 
-**Problem**: Generated EventKIT assets can't be pushed back to BrandHUB's asset library.
+### 4. Inject style anchor into batch generation
+- Update `BatchGenerationModal.tsx` to generate the first asset, use it as the style anchor, then pass it as a reference image to all subsequent batch items
+- This creates a "chain of consistency" — each asset references the same visual anchor
 
-**Solution**:
-1. Create a `push-to-brandhub` edge function that uploads generated assets to BrandHUB's storage and registers them in the brand's imagery library
-2. Add "Push to BrandHUB" button on individual assets and batch export
-3. Map EventKIT asset types to BrandHUB imagery categories (social → social, merch → collateral, etc.)
-4. Include generation metadata (prompt, style, fonts used) as asset descriptions in BrandHUB
+### 5. Add a "Consistency Score" indicator (optional UX polish)
+- After generation, show a small badge indicating whether the Master Style Direction was applied
+- Display "Kit-consistent" when the anchor image was used as a reference
 
----
+## Technical Details
 
-**Implementation order**: Phase 1 → 2 → 3 → 4 (each builds on the previous)
+**Files to create:**
+- `src/contexts/StyleAnchorContext.tsx` — React context storing the current style anchor image URL and master direction
+
+**Files to modify:**
+- `src/components/studio/AssetGenerationCanvas.tsx` — integrate master direction + style anchor into generation calls; tighten variation prompts; add "Pin as Style Anchor" button
+- `src/components/studio/BatchGenerationModal.tsx` — chain first result as anchor for remaining batch items
+- `src/components/studio/CreationStudio.tsx` — wrap with `StyleAnchorProvider`
+- `supabase/functions/generate-image/index.ts` — accept and use `masterDirection` field in the request body to prepend to prompts
+- `supabase/functions/_shared/prompt-builder.ts` — add helper to merge master direction block into the full prompt
+
+**Data flow:**
+```text
+Studio opens → generateMasterStyleDirection() → cache result
+    ↓
+User generates Asset A → master direction injected into prompt → result stored as style anchor
+    ↓
+User generates Asset B → master direction + Asset A image as STYLE REFERENCE → visually consistent
+    ↓
+Batch generation → Asset 1 generated → becomes anchor → Assets 2-N reference it
+```
+
