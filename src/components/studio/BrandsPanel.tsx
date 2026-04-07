@@ -380,12 +380,74 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent className="animate-accordion-down">
-                  <div className="px-4 pb-4 space-y-4">
+                  <ScrollArea className="max-h-[50vh]">
+                  <div className="px-4 pb-4 space-y-3">
+                    {/* Tagline */}
+                    {selectedBrand.styles?.tagline && (
+                      <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/10">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Quote className="w-3 h-3 text-primary" />
+                          <span className="text-[10px] font-medium text-primary uppercase tracking-wider">Tagline</span>
+                        </div>
+                        <p className="text-xs font-medium italic text-foreground leading-relaxed">
+                          "{selectedBrand.styles.tagline}"
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Mission */}
+                    {selectedBrand.styles?.mission && (
+                      <div>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Target className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Mission</span>
+                        </div>
+                        <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">
+                          {selectedBrand.styles.mission}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Industry & Audience */}
+                    {(selectedBrand.styles?.industry || selectedBrand.styles?.target_audience) && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {selectedBrand.styles?.industry && (
+                          <div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <Building2 className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-[10px] text-muted-foreground">Industry</span>
+                            </div>
+                            <p className="text-xs font-medium truncate">{selectedBrand.styles.industry}</p>
+                          </div>
+                        )}
+                        {selectedBrand.styles?.target_audience && (
+                          <div>
+                            <div className="flex items-center gap-1 mb-1">
+                              <Users className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-[10px] text-muted-foreground">Audience</span>
+                            </div>
+                            <p className="text-xs font-medium truncate">{selectedBrand.styles.target_audience}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Archetype */}
+                    {selectedBrand.styles?.archetype && (
+                      <div className="flex items-center gap-2 bg-muted/50 rounded-md px-2.5 py-1.5">
+                        <Sparkles className="w-3 h-3 text-primary flex-shrink-0" />
+                        <span className="text-xs">
+                          <span className="text-muted-foreground">Archetype:</span>{' '}
+                          <span className="font-medium">{selectedBrand.styles.archetype}</span>
+                        </span>
+                      </div>
+                    )}
+
                     {/* Color Palette */}
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <Droplets className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Colors</span>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Colors</span>
                       </div>
                       <div className="flex gap-1">
                         {getBrandColors(selectedBrand).length > 0 ? (
@@ -407,36 +469,100 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <Type className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">Typography</span>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Typography</span>
                       </div>
                       <div className="space-y-1">
-                        {selectedBrand.styles?.heading_font ? (
+                        {selectedBrand.styles?.heading_font && (
                           <p className="text-xs">
                             <span className="text-muted-foreground">Heading:</span>{' '}
                             <span className="font-medium">{selectedBrand.styles.heading_font}</span>
                           </p>
-                        ) : null}
-                        {selectedBrand.styles?.body_font ? (
+                        )}
+                        {selectedBrand.styles?.body_font && (
                           <p className="text-xs">
                             <span className="text-muted-foreground">Body:</span>{' '}
                             <span className="font-medium">{selectedBrand.styles.body_font}</span>
                           </p>
-                        ) : null}
+                        )}
+                        {selectedBrand.styles?.accent_font && (
+                          <p className="text-xs">
+                            <span className="text-muted-foreground">Accent:</span>{' '}
+                            <span className="font-medium">{selectedBrand.styles.accent_font}</span>
+                          </p>
+                        )}
                         {!selectedBrand.styles?.heading_font && !selectedBrand.styles?.body_font && (
                           <p className="text-xs text-muted-foreground">No fonts defined</p>
                         )}
                       </div>
                     </div>
 
-                    {/* Mood Keywords */}
-                    {selectedBrand.styles?.mood_keywords && selectedBrand.styles.mood_keywords.length > 0 && (
+                    {/* Brand Voice & Tone */}
+                    {((selectedBrand.styles?.brand_voice?.length ?? 0) > 0 || (selectedBrand.styles?.tone_keywords?.length ?? 0) > 0) && (
                       <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-3 h-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Mood</span>
+                          <MessageSquare className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Voice & Tone</span>
                         </div>
                         <div className="flex flex-wrap gap-1">
-                          {selectedBrand.styles.mood_keywords.slice(0, 4).map((keyword, i) => (
+                          {[...(selectedBrand.styles?.brand_voice || []), ...(selectedBrand.styles?.tone_keywords || [])].slice(0, 6).map((kw, i) => (
+                            <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                              {kw}
+                            </span>
+                          ))}
+                        </div>
+                        {selectedBrand.styles?.writing_style && (
+                          <p className="text-[10px] text-muted-foreground mt-1.5 italic">
+                            Style: {selectedBrand.styles.writing_style}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Visual Style */}
+                    {(selectedBrand.styles?.imagery_style || selectedBrand.styles?.photography_style || selectedBrand.styles?.icon_style) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Camera className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Visual Style</span>
+                        </div>
+                        <div className="space-y-1">
+                          {selectedBrand.styles?.imagery_style && (
+                            <p className="text-xs">
+                              <span className="text-muted-foreground">Imagery:</span>{' '}
+                              <span className="font-medium">{selectedBrand.styles.imagery_style}</span>
+                            </p>
+                          )}
+                          {selectedBrand.styles?.photography_style && (
+                            <p className="text-xs">
+                              <span className="text-muted-foreground">Photography:</span>{' '}
+                              <span className="font-medium">{selectedBrand.styles.photography_style}</span>
+                            </p>
+                          )}
+                          {selectedBrand.styles?.icon_style && (
+                            <p className="text-xs">
+                              <span className="text-muted-foreground">Icons:</span>{' '}
+                              <span className="font-medium">{selectedBrand.styles.icon_style}</span>
+                            </p>
+                          )}
+                          {selectedBrand.styles?.pattern_style && (
+                            <p className="text-xs">
+                              <span className="text-muted-foreground">Patterns:</span>{' '}
+                              <span className="font-medium">{selectedBrand.styles.pattern_style}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mood Keywords */}
+                    {(selectedBrand.styles?.mood_keywords?.length ?? 0) > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Brush className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Mood</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedBrand.styles!.mood_keywords!.slice(0, 6).map((keyword, i) => (
                             <span 
                               key={i}
                               className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
@@ -447,7 +573,64 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                         </div>
                       </div>
                     )}
+
+                    {/* Social & Hashtags */}
+                    {(selectedBrand.styles?.hashtags?.length || selectedBrand.styles?.social_handles) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Globe className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Social</span>
+                        </div>
+                        {selectedBrand.styles?.social_handles && Object.keys(selectedBrand.styles.social_handles).length > 0 && (
+                          <div className="space-y-0.5 mb-1.5">
+                            {Object.entries(selectedBrand.styles.social_handles).slice(0, 3).map(([platform, handle]) => (
+                              <p key={platform} className="text-[10px] text-foreground/70 truncate">
+                                <span className="capitalize text-muted-foreground">{platform}:</span> {handle as string}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {(selectedBrand.styles?.hashtags?.length ?? 0) > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {selectedBrand.styles!.hashtags!.slice(0, 4).map((tag, i) => (
+                              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground flex items-center gap-0.5">
+                                <Hash className="w-2.5 h-2.5" />
+                                {tag.replace(/^#/, '')}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Logo Variants */}
+                    {(selectedBrand.logo_url || selectedBrand.logo_monochrome_url || selectedBrand.logo_reversed_url) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <ImageIcon className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Logo Variants</span>
+                        </div>
+                        <div className="flex gap-2">
+                          {selectedBrand.logo_url && (
+                            <div className="w-10 h-10 rounded-md border border-border bg-background p-1 flex items-center justify-center" title="Primary">
+                              <img src={selectedBrand.logo_url} alt="Primary" className="max-w-full max-h-full object-contain" />
+                            </div>
+                          )}
+                          {selectedBrand.logo_monochrome_url && (
+                            <div className="w-10 h-10 rounded-md border border-border bg-background p-1 flex items-center justify-center" title="Monochrome">
+                              <img src={selectedBrand.logo_monochrome_url} alt="Mono" className="max-w-full max-h-full object-contain grayscale" />
+                            </div>
+                          )}
+                          {selectedBrand.logo_reversed_url && (
+                            <div className="w-10 h-10 rounded-md border border-border bg-foreground p-1 flex items-center justify-center" title="Reversed">
+                              <img src={selectedBrand.logo_reversed_url} alt="Reversed" className="max-w-full max-h-full object-contain" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  </ScrollArea>
                 </CollapsibleContent>
               </div>
             </Collapsible>
