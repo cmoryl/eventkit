@@ -644,6 +644,107 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                         </div>
                       </div>
                     )}
+
+                    {/* Photography Guidelines */}
+                    {((selectedBrand.styles?.photography_dos?.length ?? 0) > 0 || (selectedBrand.styles?.photography_donts?.length ?? 0) > 0) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Shield className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Photography Guidelines</span>
+                        </div>
+                        {(selectedBrand.styles?.photography_dos?.length ?? 0) > 0 && (
+                          <div className="mb-1.5">
+                            <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium mb-1 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Do's
+                            </p>
+                            <div className="space-y-1">
+                              {selectedBrand.styles!.photography_dos!.slice(0, 3).map((item, i) => (
+                                <p key={i} className="text-[10px] text-foreground/70 leading-relaxed line-clamp-2 pl-4">{item}</p>
+                              ))}
+                              {(selectedBrand.styles!.photography_dos!.length > 3) && (
+                                <p className="text-[10px] text-muted-foreground pl-4">+{selectedBrand.styles!.photography_dos!.length - 3} more</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {(selectedBrand.styles?.photography_donts?.length ?? 0) > 0 && (
+                          <div>
+                            <p className="text-[10px] text-destructive font-medium mb-1 flex items-center gap-1">
+                              <XCircle className="w-3 h-3" /> Don'ts
+                            </p>
+                            <div className="space-y-1">
+                              {selectedBrand.styles!.photography_donts!.slice(0, 3).map((item, i) => (
+                                <p key={i} className="text-[10px] text-foreground/70 leading-relaxed line-clamp-2 pl-4">{item}</p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Logo Rules */}
+                    {(selectedBrand.styles?.logo_clear_space || selectedBrand.styles?.logo_min_size || (selectedBrand.styles?.logo_placement_rules?.length ?? 0) > 0) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ruler className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Logo Rules</span>
+                        </div>
+                        <div className="space-y-1">
+                          {selectedBrand.styles?.logo_clear_space && (
+                            <p className="text-[10px]"><span className="text-muted-foreground">Clear space:</span> <span className="font-medium">{selectedBrand.styles.logo_clear_space}</span></p>
+                          )}
+                          {selectedBrand.styles?.logo_min_size && (
+                            <p className="text-[10px]"><span className="text-muted-foreground">Min size:</span> <span className="font-medium">{selectedBrand.styles.logo_min_size}</span></p>
+                          )}
+                          {(selectedBrand.styles?.logo_placement_rules?.length ?? 0) > 0 && (
+                            <div className="mt-1">
+                              {selectedBrand.styles!.logo_placement_rules!.slice(0, 3).map((rule, i) => (
+                                <p key={i} className="text-[10px] text-foreground/70 pl-2 border-l border-primary/20 mb-0.5">{rule}</p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Restrictions */}
+                    {((selectedBrand.styles?.restricted_elements?.length ?? 0) > 0) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Ban className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Restrictions</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {selectedBrand.styles!.restricted_elements!.slice(0, 4).map((el, i) => (
+                            <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">{el}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Brand Imagery Gallery */}
+                    {selectedBrand.styles?.all_imagery?.all && selectedBrand.styles.all_imagery.all.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Images className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            Brand Imagery ({selectedBrand.styles.all_imagery.all.length})
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1">
+                          {selectedBrand.styles.all_imagery.all.slice(0, 8).map((url, i) => (
+                            <div key={i} className="aspect-square rounded border border-border overflow-hidden bg-muted">
+                              <img src={url} alt={`Brand ${i + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                            </div>
+                          ))}
+                        </div>
+                        {selectedBrand.styles.all_imagery.all.length > 8 && (
+                          <p className="text-[10px] text-muted-foreground text-center mt-1">
+                            +{selectedBrand.styles.all_imagery.all.length - 8} more images
+                          </p>
+                        )}
+                      </div>
+                    )}
                   </div>
                   </ScrollArea>
                 </CollapsibleContent>
