@@ -54,7 +54,8 @@ serve(async (req) => {
   }
 
   try {
-    const { type, eventContext, brandContext, currentAssetType, currentDesignDescription } = await req.json() as SuggestionRequest;
+    const reqBody = await req.json();
+    const { type, eventContext, brandContext, currentAssetType, currentDesignDescription } = reqBody as SuggestionRequest;
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -199,6 +200,46 @@ Generate 4 distinctly different design approaches. Each should have a unique vis
         }
       }];
       toolChoice = { type: "function", function: { name: "suggest_variations" } };
+
+    } else if (type === 'master_style_direction') {
+      const prompt = reqBody.prompt || '';
+      
+      systemPrompt = `You are a world-class creative director. You create unified visual direction documents that ensure all assets in an event design kit share a cohesive look and feel. Respond ONLY with the requested JSON format.`;
+      userPrompt = prompt;
+      
+      // Use simple completion (no tools) and return the raw text for parsing client-side
+      const directResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+          ],
+        }),
+      });
+
+      if (!directResponse.ok) {
+        const errText = await directResponse.text();
+        console.error("AI gateway error for master_style_direction:", directResponse.status, errText);
+        throw new Error(`AI gateway error: ${directResponse.status}`);
+      }
+
+      const directData = await directResponse.json();
+      const suggestion = directData.choices?.[0]?.message?.content || '';
+
+      return new Response(JSON.stringify({
+        success: true,
+        type,
+        result: suggestion,
+        suggestion,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
 
     } else {
       throw new Error(`Unknown suggestion type: ${type}`);
