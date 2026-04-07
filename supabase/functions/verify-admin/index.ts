@@ -27,10 +27,11 @@ serve(async (req) => {
       );
     }
 
+    // If only email was sent (pre-approval check) and not pre-approved, return gracefully
     if (!password) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Password required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, preApproved: false }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
