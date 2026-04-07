@@ -163,6 +163,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
     setIsRunning(true);
     abortRef.current = false;
+    let batchAnchorUrl = styleAnchor.anchorImageUrl;
 
     const pending = results
       .filter(r => r.status === 'pending' || r.status === 'error')
@@ -187,7 +188,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
       const batchResults = await Promise.allSettled(
         batch.map(async (assetType) => {
-          const res = await generateOne(assetType);
+          const res = await generateOne(assetType, batchAnchorUrl || undefined);
           return { assetType, ...res };
         })
       );
@@ -213,6 +214,15 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       // Push partial results immediately
       if (Object.keys(newImages).length > 0) {
         onImagesGenerated(newImages);
+        // Use first successful image as anchor for subsequent batches
+        if (!batchAnchorUrl) {
+          const firstUrl = Object.values(newImages)[0];
+          if (firstUrl) {
+            batchAnchorUrl = firstUrl;
+            styleAnchor.setAnchorImage(firstUrl, Object.keys(newImages)[0]);
+            console.log('[BatchGen] First result set as style anchor');
+          }
+        }
       }
 
       // Small delay between batches to avoid rate limits
