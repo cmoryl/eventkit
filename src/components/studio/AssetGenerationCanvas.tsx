@@ -636,6 +636,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       }
     }
 
+    // Persist logo placement for this asset type
+    persistPlacement(placement);
+
     onImageGenerated?.(finalUrl);
     onClose();
     toast.success(`${assetName} saved to your project`);
