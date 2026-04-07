@@ -581,9 +581,24 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Auto-composite logo onto regenerated variation
+      let finalImageUrl = data.imageUrl;
+      if (effectiveLogoUrl) {
+        try {
+          const placement = logoPlacement || savedPlacement || defaultLogoPlacement;
+          finalImageUrl = await compositeLogoOntoImage({
+            generatedImageUrl: data.imageUrl,
+            logoUrl: effectiveLogoUrl,
+            customPlacement: placement,
+          });
+        } catch (compErr) {
+          console.warn('[Generation] Logo compositing failed on regen, using raw image:', compErr);
+        }
+      }
+
       setVariations(prev => prev.map(v => 
         v.id === variationId 
-          ? { ...v, status: 'complete', imageUrl: data.imageUrl, prompt }
+          ? { ...v, status: 'complete', imageUrl: finalImageUrl, prompt }
           : v
       ));
     } catch (err) {
