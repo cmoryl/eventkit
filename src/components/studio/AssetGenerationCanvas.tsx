@@ -773,7 +773,16 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             <LogoSourceBadge
               assetLogoOverride={assetLogoOverride}
               projectLogoOverride={projectLogoOverride}
-              brandLogoUrl={brand?.logo_url || activeBrand?.logo_url}
+              brandLogoUrl={brandLogoForVariant}
+            />
+
+            {/* Logo Variant Selector */}
+            <LogoVariantSelector
+              selectedVariant={logoVariant}
+              onVariantChange={setLogoVariant}
+              primaryUrl={(brand || activeBrand)?.logo_url}
+              monochromeUrl={(brand || activeBrand)?.logo_monochrome_url}
+              reversedUrl={(brand || activeBrand)?.logo_reversed_url}
             />
 
             {/* Font Picker */}
