@@ -128,6 +128,14 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     }
   }, [imageNaturalSize, fitToWindow]);
 
+  // Keep previewImgSize in sync with zoom and natural size
+  useEffect(() => {
+    if (imageNaturalSize) {
+      const s = zoomLevel / 100;
+      setPreviewImgSize({ w: imageNaturalSize.width * s, h: imageNaturalSize.height * s });
+    }
+  }, [zoomLevel, imageNaturalSize]);
+
   const brandPrimary = brand?.styles?.primary_color || activeBrand?.styles?.primary_color;
   const brandSecondary = brand?.styles?.secondary_color || activeBrand?.styles?.secondary_color;
   const brandAccent = brand?.styles?.accent_color || activeBrand?.styles?.accent_color;
