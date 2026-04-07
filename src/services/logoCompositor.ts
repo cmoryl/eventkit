@@ -99,40 +99,38 @@ export async function compositeLogoOntoImage(opts: CompositeOptions): Promise<st
   // Draw background
   ctx.drawImage(bgImg, 0, 0);
 
-  // Calculate logo dimensions maintaining aspect ratio
-  const maxLogoWidth = canvas.width * scale;
+  // Calculate logo dimensions and position
   const logoAspect = logoImg.naturalWidth / logoImg.naturalHeight;
-  let logoW = maxLogoWidth;
-  let logoH = logoW / logoAspect;
+  let x: number, y: number, logoW: number, logoH: number;
 
-  // Cap height at scale * height too
-  const maxLogoHeight = canvas.height * scale;
-  if (logoH > maxLogoHeight) {
-    logoH = maxLogoHeight;
-    logoW = logoH * logoAspect;
+  if (customPlacement) {
+    // User-defined placement from drag UI (fractions of image dimensions)
+    logoW = canvas.width * customPlacement.scale;
+    logoH = logoW / logoAspect;
+    x = customPlacement.x * canvas.width;
+    y = customPlacement.y * canvas.height;
+  } else {
+    // Auto placement from asset type rules
+    const maxLogoWidth = canvas.width * scale;
+    logoW = maxLogoWidth;
+    logoH = logoW / logoAspect;
+    const maxLogoHeight = canvas.height * scale;
+    if (logoH > maxLogoHeight) {
+      logoH = maxLogoHeight;
+      logoW = logoH * logoAspect;
+    }
+    const pad = canvas.width * padding;
+    switch (position) {
+      case 'top-left': x = pad; y = pad; break;
+      case 'top-center': x = (canvas.width - logoW) / 2; y = pad; break;
+      case 'top-right': x = canvas.width - logoW - pad; y = pad; break;
+      case 'center': x = (canvas.width - logoW) / 2; y = (canvas.height - logoH) / 2; break;
+      case 'bottom-left': x = pad; y = canvas.height - logoH - pad; break;
+      case 'bottom-center': x = (canvas.width - logoW) / 2; y = canvas.height - logoH - pad; break;
+      case 'bottom-right': x = canvas.width - logoW - pad; y = canvas.height - logoH - pad; break;
+      default: x = pad; y = pad;
+    }
   }
-
-  const pad = canvas.width * padding;
-
-  // Calculate position
-  let x: number, y: number;
-  switch (position) {
-    case 'top-left':
-      x = pad; y = pad; break;
-    case 'top-center':
-      x = (canvas.width - logoW) / 2; y = pad; break;
-    case 'top-right':
-      x = canvas.width - logoW - pad; y = pad; break;
-    case 'center':
-      x = (canvas.width - logoW) / 2; y = (canvas.height - logoH) / 2; break;
-    case 'bottom-left':
-      x = pad; y = canvas.height - logoH - pad; break;
-    case 'bottom-center':
-      x = (canvas.width - logoW) / 2; y = canvas.height - logoH - pad; break;
-    case 'bottom-right':
-      x = canvas.width - logoW - pad; y = canvas.height - logoH - pad; break;
-    default:
-      x = pad; y = pad;
   }
 
   // Optional backing plate for contrast
