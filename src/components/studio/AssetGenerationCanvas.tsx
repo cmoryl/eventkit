@@ -27,7 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
-import { DraggableLogoOverlay, type LogoPlacement } from './DraggableLogoOverlay';
+import { type LogoPlacement } from './DraggableLogoOverlay';
 import { useLogoPlacement } from '@/hooks/useLogoPlacement';
 
 interface AssetGenerationCanvasProps {
