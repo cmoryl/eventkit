@@ -12,6 +12,7 @@ import { Brand } from '@/types/studio.types';
 import { AIImageEditModal } from '@/components/AIImageEditModal';
 import { AssetBriefModal, type AssetBrief, type GoogleFontSelection } from './AssetBriefModal';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
+import { LogoSourceBadge } from './LogoSourceBadge';
 import { FontPickerDropdown } from './FontPickerDropdown';
 import { FontPreviewPanel } from './FontPreviewPanel';
 import { 
@@ -683,6 +684,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               onLogoChange={setAssetLogoOverride}
               label="Logo"
               compact
+            />
+
+            {/* Logo Source Badge */}
+            <LogoSourceBadge
+              assetLogoOverride={assetLogoOverride}
+              projectLogoOverride={projectLogoOverride}
+              brandLogoUrl={brand?.logo_url || activeBrand?.logo_url}
             />
 
             {/* Font Picker */}
