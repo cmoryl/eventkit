@@ -225,7 +225,7 @@ export async function generateImageWithRetry(
         });
       }
 
-      console.log(`Sending ${validImages.length} reference images for ${assetType} (labels: ${validImages.map(i => i.label || 'unlabeled').join(', ')})`);
+      console.log(`Sending ${validImages.length} reference images for ${assetType} (labels: ${validImages.map(i => i.label || 'unlabeled').join(', ')}) | prompt length: ${prompt.length} chars`);
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
