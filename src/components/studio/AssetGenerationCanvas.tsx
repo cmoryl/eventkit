@@ -130,6 +130,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     }
   }, [imageNaturalSize, fitToWindow]);
 
+  // Apply saved logo placement when it loads from DB
+  useEffect(() => {
+    if (savedPlacement && !logoPlacement) {
+      setLogoPlacement(savedPlacement);
+    }
+  }, [savedPlacement]);
+
   // Keep previewImgSize in sync with zoom and natural size
   useEffect(() => {
     if (imageNaturalSize) {
