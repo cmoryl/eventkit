@@ -502,6 +502,50 @@ export type Database = {
         }
         Relationships: []
       }
+      logo_placements: {
+        Row: {
+          asset_type: string
+          brand_id: string | null
+          created_at: string
+          id: string
+          scale: number
+          updated_at: string
+          user_id: string
+          x: number
+          y: number
+        }
+        Insert: {
+          asset_type: string
+          brand_id?: string | null
+          created_at?: string
+          id?: string
+          scale?: number
+          updated_at?: string
+          user_id: string
+          x?: number
+          y?: number
+        }
+        Update: {
+          asset_type?: string
+          brand_id?: string | null
+          created_at?: string
+          id?: string
+          scale?: number
+          updated_at?: string
+          user_id?: string
+          x?: number
+          y?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logo_placements_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       print_templates: {
         Row: {
           asset_type: string | null
