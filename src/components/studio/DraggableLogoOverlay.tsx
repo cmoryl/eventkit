@@ -1,10 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3 } from 'lucide-react';
+import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlignmentGuides } from './AlignmentGuides';
 import { snapToGuides, type SnapGuide } from './logoSnapping';
 
@@ -116,6 +117,26 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
     onPlacementChange(initialPlacement);
   }, [initialPlacement, onPlacementChange]);
 
+  const handlePresetPosition = useCallback((preset: 'tl' | 'tc' | 'tr' | 'cl' | 'cc' | 'cr' | 'bl' | 'bc' | 'br') => {
+    const hFrac = logoPixelHeight / containerHeight;
+    const margin = 0.05;
+    const posMap: Record<string, { x: number; y: number }> = {
+      tl: { x: margin, y: margin },
+      tc: { x: (1 - placement.scale) / 2, y: margin },
+      tr: { x: 1 - placement.scale - margin, y: margin },
+      cl: { x: margin, y: (1 - hFrac) / 2 },
+      cc: { x: (1 - placement.scale) / 2, y: (1 - hFrac) / 2 },
+      cr: { x: 1 - placement.scale - margin, y: (1 - hFrac) / 2 },
+      bl: { x: margin, y: 1 - hFrac - margin },
+      bc: { x: (1 - placement.scale) / 2, y: 1 - hFrac - margin },
+      br: { x: 1 - placement.scale - margin, y: 1 - hFrac - margin },
+    };
+    const pos = posMap[preset];
+    const next = { ...placement, x: Math.max(0, pos.x), y: Math.max(0, pos.y) };
+    setPlacement(next);
+    onPlacementChange(next);
+  }, [placement, containerHeight, logoPixelHeight, onPlacementChange]);
+
   if (!isVisible) {
     return (
       <div className={cn('absolute top-2 right-2 z-30', className)}>
@@ -221,6 +242,40 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
           </TooltipTrigger>
           <TooltipContent>{snapEnabled ? 'Disable snap guides' : 'Enable snap guides'}</TooltipContent>
         </Tooltip>
+
+        {/* Preset positions */}
+        <Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                  <Crosshair className="h-3.5 w-3.5" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Preset positions</TooltipContent>
+          </Tooltip>
+          <PopoverContent className="w-auto p-2" side="top" align="center">
+            <p className="text-[10px] font-medium text-muted-foreground mb-1.5 text-center">Quick position</p>
+            <div className="grid grid-cols-3 gap-1">
+              {([
+                ['tl', ArrowUpLeft], ['tc', ArrowUp], ['tr', ArrowUpRight],
+                ['cl', ArrowUpLeft, 90], ['cc', Crosshair], ['cr', ArrowUpRight, -90],
+                ['bl', ArrowDownLeft], ['bc', ArrowDown], ['br', ArrowDownRight],
+              ] as const).map(([key, Icon, rotate]) => (
+                <Button
+                  key={key}
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0"
+                  onClick={() => handlePresetPosition(key as any)}
+                >
+                  <Icon className="h-3.5 w-3.5" style={rotate ? { transform: `rotate(${rotate}deg)` } : undefined} />
+                </Button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         {/* Lock toggle */}
         <Tooltip>
