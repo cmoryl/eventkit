@@ -113,6 +113,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           prompt,
           assetType,
           eventName,
+          masterDirection: masterDirectionBlock || undefined,
+          styleAnchorImage: anchorUrl || styleAnchor.anchorImageUrl || undefined,
           brandContext: effectiveBrand ? {
             brandName: effectiveBrand.name,
             primaryColor: effectiveBrand.styles?.primary_color,
