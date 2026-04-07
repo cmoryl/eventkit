@@ -28,6 +28,7 @@ import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
 import { DraggableLogoOverlay, type LogoPlacement } from './DraggableLogoOverlay';
+import { useLogoPlacement } from '@/hooks/useLogoPlacement';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -69,6 +70,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 }) => {
   const { user } = useAuth();
   const { activeBrand, isThemeApplied } = useActiveBrand();
+  const { savedPlacement, savePlacement: persistPlacement } = useLogoPlacement(assetType);
   const [variations, setVariations] = useState<GenerationVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -127,6 +129,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       fitToWindow();
     }
   }, [imageNaturalSize, fitToWindow]);
+
+  // Apply saved logo placement when it loads from DB
+  useEffect(() => {
+    if (savedPlacement && !logoPlacement) {
+      setLogoPlacement(savedPlacement);
+    }
+  }, [savedPlacement]);
 
   // Keep previewImgSize in sync with zoom and natural size
   useEffect(() => {
@@ -626,6 +635,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         console.warn('Failed to persist image to storage, using base64:', e);
       }
     }
+
+    // Persist logo placement for this asset type
+    persistPlacement(placement);
 
     onImageGenerated?.(finalUrl);
     onClose();
