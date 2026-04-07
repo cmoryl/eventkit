@@ -566,23 +566,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      let finalImageUrl = data.imageUrl;
-      if (effectiveLogoUrl && finalImageUrl) {
-        try {
-          finalImageUrl = await compositeLogoOntoImage({
-            generatedImageUrl: finalImageUrl,
-            logoUrl: effectiveLogoUrl,
-            position: positionFromAssetType(assetType),
-            scale: scaleFromAssetType(assetType),
-          });
-        } catch (compErr) {
-          console.warn('[Compositor] Regen compositing failed:', compErr);
-        }
-      }
-
       setVariations(prev => prev.map(v => 
         v.id === variationId 
-          ? { ...v, status: 'complete', imageUrl: finalImageUrl, prompt }
+          ? { ...v, status: 'complete', imageUrl: data.imageUrl, prompt }
           : v
       ));
     } catch (err) {
