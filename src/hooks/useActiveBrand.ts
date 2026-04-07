@@ -13,7 +13,23 @@ interface BrandStyleSimple {
   color_palette?: Array<{ hex: string; name?: string }>;
   heading_font?: string;
   body_font?: string;
+  accent_font?: string;
   mood_keywords?: string[];
+  // Extended brand info from BrandHub
+  tagline?: string;
+  mission?: string;
+  archetype?: string;
+  brand_voice?: string[];
+  tone_keywords?: string[];
+  writing_style?: string;
+  imagery_style?: string;
+  photography_style?: string;
+  icon_style?: string;
+  pattern_style?: string;
+  target_audience?: string;
+  industry?: string;
+  social_handles?: Record<string, string>;
+  hashtags?: string[];
 }
 
 interface ActiveBrand {
