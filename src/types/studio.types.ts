@@ -83,11 +83,21 @@ export interface BrandStyle {
   imagery_style?: string;
   pattern_style?: string;
   icon_style?: string;
+  photography_style?: string;
+  
+  // Brand Identity
+  tagline?: string;
+  mission?: string;
+  archetype?: string;
   
   // Cultural & Audience
   target_audience?: string;
   cultural_context?: string;
   industry?: string;
+  
+  // Social
+  social_handles?: Record<string, string>;
+  hashtags?: string[];
   
   // Advanced Settings
   print_color_mode: 'CMYK' | 'RGB' | 'Pantone';

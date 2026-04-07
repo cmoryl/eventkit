@@ -13,7 +13,23 @@ interface BrandStyleSimple {
   color_palette?: Array<{ hex: string; name?: string }>;
   heading_font?: string;
   body_font?: string;
+  accent_font?: string;
   mood_keywords?: string[];
+  // Extended brand info from BrandHub
+  tagline?: string;
+  mission?: string;
+  archetype?: string;
+  brand_voice?: string[];
+  tone_keywords?: string[];
+  writing_style?: string;
+  imagery_style?: string;
+  photography_style?: string;
+  icon_style?: string;
+  pattern_style?: string;
+  target_audience?: string;
+  industry?: string;
+  social_handles?: Record<string, string>;
+  hashtags?: string[];
 }
 
 interface ActiveBrand {
@@ -108,7 +124,22 @@ export const useActiveBrand = (options?: UseActiveBrandOptions): UseActiveBrandR
               : [],
             heading_font: styleData.heading_font ?? undefined,
             body_font: styleData.body_font ?? undefined,
+            accent_font: styleData.accent_font ?? undefined,
             mood_keywords: styleData.mood_keywords ?? [],
+            tagline: styleData.tagline ?? undefined,
+            mission: styleData.mission ?? undefined,
+            archetype: styleData.archetype ?? undefined,
+            brand_voice: styleData.brand_voice ?? [],
+            tone_keywords: styleData.tone_keywords ?? [],
+            writing_style: styleData.writing_style ?? undefined,
+            imagery_style: styleData.imagery_style ?? undefined,
+            photography_style: styleData.photography_style ?? undefined,
+            icon_style: styleData.icon_style ?? undefined,
+            pattern_style: styleData.pattern_style ?? undefined,
+            target_audience: styleData.target_audience ?? undefined,
+            industry: styleData.industry ?? undefined,
+            social_handles: styleData.social_handles as Record<string, string> | undefined,
+            hashtags: styleData.hashtags ?? [],
           } : undefined
         });
       }
