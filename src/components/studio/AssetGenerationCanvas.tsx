@@ -512,6 +512,25 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         logo_url: activeBrand.logo_url,
       } as Brand : null);
       
+      // Convert logo URL to base64 if needed
+      let logoPayload = effectiveLogoUrl;
+      if (logoPayload && !logoPayload.startsWith('data:')) {
+        try {
+          const logoResp = await fetch(logoPayload);
+          if (logoResp.ok) {
+            const blob = await logoResp.blob();
+            if (!blob.type.includes('text/html')) {
+              logoPayload = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            } else { logoPayload = undefined; }
+          } else { logoPayload = undefined; }
+        } catch { logoPayload = undefined; }
+      }
+
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
           prompt,
@@ -541,7 +560,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             bodyFont: selectedFonts.body,
           } : null,
           colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
-          logoBase64: effectiveLogoUrl,
+          logoBase64: logoPayload,
           dimensions: parseDimensions(dimensions),
           customContent: currentBrief?.customContent
         }
