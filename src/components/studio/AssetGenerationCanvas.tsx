@@ -70,6 +70,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 }) => {
   const { user } = useAuth();
   const { activeBrand, isThemeApplied } = useActiveBrand();
+  const { savedPlacement, savePlacement: persistPlacement } = useLogoPlacement(assetType);
   const [variations, setVariations] = useState<GenerationVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
