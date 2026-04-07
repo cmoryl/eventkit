@@ -608,7 +608,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     const variation = variations.find(v => v.id === selectedVariation);
     if (!variation?.imageUrl) return;
 
+    // Re-composite with user's custom logo placement if they dragged it
     let finalUrl = variation.imageUrl;
+    const placement = logoPlacement || defaultLogoPlacement;
+    if (effectiveLogoUrl) {
+      try {
+        finalUrl = await compositeLogoOntoImage({
+          generatedImageUrl: variation.imageUrl,
+          logoUrl: effectiveLogoUrl,
+          customPlacement: placement,
+        });
+      } catch (e) {
+        console.warn('Final compositing failed, using current image:', e);
+      }
+    }
 
     // Persist base64 images to storage for durability
     if (finalUrl.startsWith('data:')) {
