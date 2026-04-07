@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight, History } from 'lucide-react';
+import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight, History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
