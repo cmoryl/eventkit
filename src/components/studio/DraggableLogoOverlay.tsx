@@ -36,8 +36,8 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
   containerHeight,
   initialPlacement,
   onPlacementChange,
-  zoomScale = 1,
   restoredFromSession = false,
+  onClearSavedPlacement,
   className,
 }) => {
   const [placement, setPlacement] = useState<LogoPlacement>(initialPlacement);
