@@ -243,6 +243,40 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
           <TooltipContent>{snapEnabled ? 'Disable snap guides' : 'Enable snap guides'}</TooltipContent>
         </Tooltip>
 
+        {/* Preset positions */}
+        <Popover>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
+                  <Crosshair className="h-3.5 w-3.5" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent>Preset positions</TooltipContent>
+          </Tooltip>
+          <PopoverContent className="w-auto p-2" side="top" align="center">
+            <p className="text-[10px] font-medium text-muted-foreground mb-1.5 text-center">Quick position</p>
+            <div className="grid grid-cols-3 gap-1">
+              {([
+                ['tl', ArrowUpLeft], ['tc', ArrowUp], ['tr', ArrowUpRight],
+                ['cl', ArrowUpLeft, 90], ['cc', Crosshair], ['cr', ArrowUpRight, -90],
+                ['bl', ArrowDownLeft], ['bc', ArrowDown], ['br', ArrowDownRight],
+              ] as const).map(([key, Icon, rotate]) => (
+                <Button
+                  key={key}
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0"
+                  onClick={() => handlePresetPosition(key as any)}
+                >
+                  <Icon className="h-3.5 w-3.5" style={rotate ? { transform: `rotate(${rotate}deg)` } : undefined} />
+                </Button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
         {/* Lock toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
