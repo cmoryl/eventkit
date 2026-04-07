@@ -131,7 +131,6 @@ export async function compositeLogoOntoImage(opts: CompositeOptions): Promise<st
       default: x = pad; y = pad;
     }
   }
-  }
 
   // Optional backing plate for contrast
   if (backingPlate) {
