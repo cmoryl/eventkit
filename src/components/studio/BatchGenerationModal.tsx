@@ -52,6 +52,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   onImagesGenerated,
 }) => {
   const { activeBrand } = useActiveBrand();
+  const styleAnchor = useStyleAnchor();
   const [results, setResults] = useState<BatchAssetResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -88,7 +89,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   const totalCount = results.length;
   const progressPct = totalCount > 0 ? ((completedCount + errorCount) / totalCount) * 100 : 0;
 
-  const generateOne = useCallback(async (assetType: string): Promise<{ imageUrl?: string; error?: string }> => {
+  const generateOne = useCallback(async (assetType: string, anchorUrl?: string): Promise<{ imageUrl?: string; error?: string }> => {
     const info = assetDisplayInfo[assetType];
     const prompt = compileGenerationPrompt({
       basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: modern and brand-consistent.`,
@@ -98,6 +99,11 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
         colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c) || [],
       },
     });
+
+    // Build master direction block
+    const masterDirectionBlock = styleAnchor.masterDirection
+      ? buildMasterDirectionPromptBlock(styleAnchor.masterDirection)
+      : '';
 
     try {
       const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
