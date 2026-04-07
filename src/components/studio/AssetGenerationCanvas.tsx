@@ -340,11 +340,18 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         // Convert logo URL to base64 if needed (edge functions can't access preview server)
         const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
 
+        // Build master direction block for prompt injection
+        const masterDirectionBlock = styleAnchor.masterDirection
+          ? buildMasterDirectionPromptBlock(styleAnchor.masterDirection)
+          : '';
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: {
             prompt,
             assetType,
             eventName,
+            masterDirection: masterDirectionBlock || undefined,
+            styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
             brandContext: effectiveBrand ? {
               brandName: effectiveBrand.name,
               primaryColor: effectiveBrand.styles?.primary_color,
