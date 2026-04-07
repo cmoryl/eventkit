@@ -790,15 +790,38 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                 <motion.div 
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-primary/5 rounded-xl border border-primary/20 p-4 text-center"
+                  className={cn(
+                    "rounded-xl border p-4 text-center",
+                    completedCount > 0 
+                      ? "bg-primary/5 border-primary/20" 
+                      : "bg-destructive/5 border-destructive/20"
+                  )}
                 >
-                  <div className="flex items-center justify-center gap-2 text-sm font-medium text-primary mb-1">
-                    <Check className="h-4 w-4" />
-                    All variations ready!
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Click a variation to preview & edit
-                  </p>
+                  {completedCount > 0 ? (
+                    <>
+                      <div className="flex items-center justify-center gap-2 text-sm font-medium text-primary mb-1">
+                        <Check className="h-4 w-4" />
+                        All variations ready!
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Click a variation to preview & edit
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-center gap-2 text-sm font-medium text-destructive mb-1">
+                        <X className="h-4 w-4" />
+                        Generation failed
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        All variations encountered errors. Check your connection and try again.
+                      </p>
+                      <Button size="sm" variant="outline" onClick={handleRegenerateAll} className="gap-2">
+                        <RefreshCw className="h-3 w-3" />
+                        Retry All
+                      </Button>
+                    </>
+                  )}
                 </motion.div>
               )}
               
