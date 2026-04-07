@@ -27,7 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
-import { DraggableLogoOverlay, type LogoPlacement } from './DraggableLogoOverlay';
+import { type LogoPlacement } from './DraggableLogoOverlay';
 import { useLogoPlacement } from '@/hooks/useLogoPlacement';
 
 interface AssetGenerationCanvasProps {
@@ -327,8 +327,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
 
-        // Store raw AI output — logo overlay is handled by DraggableLogoOverlay in preview
-        const finalImageUrl = data.imageUrl;
+        // Auto-composite actual logo onto the AI-generated image for pixel-perfect branding
+        let finalImageUrl = data.imageUrl;
+        if (effectiveLogoUrl) {
+          try {
+            const placement = logoPlacement || savedPlacement || defaultLogoPlacement;
+            finalImageUrl = await compositeLogoOntoImage({
+              generatedImageUrl: data.imageUrl,
+              logoUrl: effectiveLogoUrl,
+              customPlacement: placement,
+            });
+          } catch (compErr) {
+            console.warn(`[Generation] Logo compositing failed for variation ${index + 1}, using raw image:`, compErr);
+          }
+        }
 
         setVariations(prev => prev.map(v => 
           v.id === variation.id 
@@ -569,9 +581,24 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      // Auto-composite logo onto regenerated variation
+      let finalImageUrl = data.imageUrl;
+      if (effectiveLogoUrl) {
+        try {
+          const placement = logoPlacement || savedPlacement || defaultLogoPlacement;
+          finalImageUrl = await compositeLogoOntoImage({
+            generatedImageUrl: data.imageUrl,
+            logoUrl: effectiveLogoUrl,
+            customPlacement: placement,
+          });
+        } catch (compErr) {
+          console.warn('[Generation] Logo compositing failed on regen, using raw image:', compErr);
+        }
+      }
+
       setVariations(prev => prev.map(v => 
         v.id === variationId 
-          ? { ...v, status: 'complete', imageUrl: data.imageUrl, prompt }
+          ? { ...v, status: 'complete', imageUrl: finalImageUrl, prompt }
           : v
       ));
     } catch (err) {
@@ -597,20 +624,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     const variation = variations.find(v => v.id === selectedVariation);
     if (!variation?.imageUrl) return;
 
-    // Re-composite with user's custom logo placement if they dragged it
+    // Logo is already composited onto the image during generation
     let finalUrl = variation.imageUrl;
-    const placement = logoPlacement || defaultLogoPlacement;
-    if (effectiveLogoUrl) {
-      try {
-        finalUrl = await compositeLogoOntoImage({
-          generatedImageUrl: variation.imageUrl,
-          logoUrl: effectiveLogoUrl,
-          customPlacement: placement,
-        });
-      } catch (e) {
-        console.warn('Final compositing failed, using current image:', e);
-      }
-    }
 
     // Persist base64 images to storage for durability
     if (finalUrl.startsWith('data:')) {
@@ -637,6 +652,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     }
 
     // Persist logo placement for this asset type
+    const placement = logoPlacement || savedPlacement || defaultLogoPlacement;
     persistPlacement(placement);
 
     onImageGenerated?.(finalUrl);
@@ -1122,18 +1138,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                                 setPreviewImgSize({ w: renderedW, h: renderedH });
                               }}
                             />
-                            {/* Draggable logo overlay */}
-                            {effectiveLogoUrl && previewImgSize && (
-                              <DraggableLogoOverlay
-                                logoUrl={effectiveLogoUrl}
-                                containerWidth={previewImgSize.w}
-                                containerHeight={previewImgSize.h}
-                                initialPlacement={logoPlacement || defaultLogoPlacement}
-                                onPlacementChange={setLogoPlacement}
-                                restoredFromSession={!!savedPlacement && logoPlacement === savedPlacement}
-                                onClearSavedPlacement={clearPlacement}
-                              />
-                            )}
+                            {/* Logo is auto-composited into the generated image */}
                           </motion.div>
                         );
                       }
