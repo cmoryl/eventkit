@@ -24,6 +24,7 @@ import {
 import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
+import { normalizeImageForGeneration } from '@/utils';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -246,33 +247,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         } as Brand : null);
 
         // Convert logo URL to base64 if needed (edge functions can't access preview server)
-        let logoPayload = effectiveLogoUrl;
-        if (logoPayload && !logoPayload.startsWith('data:')) {
-          try {
-            console.log(`[Generation] Converting logo URL to base64...`);
-            const logoResp = await fetch(logoPayload);
-            if (logoResp.ok) {
-              const blob = await logoResp.blob();
-              if (!blob.type.includes('text/html')) {
-                logoPayload = await new Promise<string>((resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onloadend = () => resolve(reader.result as string);
-                  reader.onerror = reject;
-                  reader.readAsDataURL(blob);
-                });
-              } else {
-                console.warn('[Generation] Logo URL returned HTML, skipping logo');
-                logoPayload = undefined;
-              }
-            } else {
-              console.warn('[Generation] Failed to fetch logo:', logoResp.status);
-              logoPayload = undefined;
-            }
-          } catch (e) {
-            console.warn('[Generation] Logo conversion failed:', e);
-            logoPayload = undefined;
-          }
-        }
+        const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
 
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: {
@@ -513,23 +488,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       } as Brand : null);
       
       // Convert logo URL to base64 if needed
-      let logoPayload = effectiveLogoUrl;
-      if (logoPayload && !logoPayload.startsWith('data:')) {
-        try {
-          const logoResp = await fetch(logoPayload);
-          if (logoResp.ok) {
-            const blob = await logoResp.blob();
-            if (!blob.type.includes('text/html')) {
-              logoPayload = await new Promise<string>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result as string);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-              });
-            } else { logoPayload = undefined; }
-          } else { logoPayload = undefined; }
-        } catch { logoPayload = undefined; }
-      }
+      const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
 
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
