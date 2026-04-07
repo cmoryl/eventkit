@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,7 @@ interface DraggableLogoOverlayProps {
   initialPlacement: LogoPlacement;
   onPlacementChange: (placement: LogoPlacement) => void;
   zoomScale?: number;
+  restoredFromSession?: boolean;
   className?: string;
 }
 
@@ -35,9 +36,11 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
   initialPlacement,
   onPlacementChange,
   zoomScale = 1,
+  restoredFromSession = false,
   className,
 }) => {
   const [placement, setPlacement] = useState<LogoPlacement>(initialPlacement);
+  const [showRestoredBadge, setShowRestoredBadge] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
@@ -54,6 +57,15 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
   useEffect(() => {
     if (!isDragging) setActiveGuides([]);
   }, [isDragging]);
+
+  // Show restored badge briefly
+  useEffect(() => {
+    if (restoredFromSession) {
+      setShowRestoredBadge(true);
+      const t = setTimeout(() => setShowRestoredBadge(false), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [restoredFromSession]);
 
   const logoPixelWidth = containerWidth * placement.scale;
   const logoAspect = logoNaturalSize ? logoNaturalSize.w / logoNaturalSize.h : 1;
@@ -207,6 +219,20 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
             Drag to move
           </motion.div>
         )}
+        <AnimatePresence>
+          {showRestoredBadge && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.3 }}
+              className="absolute -bottom-6 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-accent text-accent-foreground rounded-full text-[9px] font-medium flex items-center gap-1 whitespace-nowrap pointer-events-none shadow-sm border border-border"
+            >
+              <History className="h-2.5 w-2.5" />
+              Restored from last session
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Controls toolbar */}

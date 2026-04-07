@@ -1130,6 +1130,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                                 containerHeight={previewImgSize.h}
                                 initialPlacement={logoPlacement || defaultLogoPlacement}
                                 onPlacementChange={setLogoPlacement}
+                                restoredFromSession={!!savedPlacement && logoPlacement === savedPlacement}
                               />
                             )}
                           </motion.div>
