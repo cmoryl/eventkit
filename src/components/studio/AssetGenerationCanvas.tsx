@@ -27,6 +27,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
+import { DraggableLogoOverlay, type LogoPlacement } from './DraggableLogoOverlay';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -81,10 +82,28 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [assetLogoOverride, setAssetLogoOverride] = useState<string | null>(null);
   const [selectedFonts, setSelectedFonts] = useState<GoogleFontSelection | null>(projectFontSelection || null);
+  const [logoPlacement, setLogoPlacement] = useState<LogoPlacement | null>(null);
+  const [previewImgSize, setPreviewImgSize] = useState<{ w: number; h: number } | null>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Logo priority: asset-level > project-level > brand default
   const effectiveLogoUrl = assetLogoOverride || projectLogoOverride || brand?.logo_url || activeBrand?.logo_url;
+
+  // Default logo placement based on asset type
+  const defaultLogoPlacement: LogoPlacement = (() => {
+    const pos = positionFromAssetType(assetType);
+    const s = scaleFromAssetType(assetType);
+    const pad = 0.04;
+    const xMap: Record<string, number> = {
+      'top-left': pad, 'top-center': 0.5 - s / 2, 'top-right': 1 - s - pad,
+      'center': 0.5 - s / 2, 'bottom-left': pad, 'bottom-center': 0.5 - s / 2, 'bottom-right': 1 - s - pad,
+    };
+    const yMap: Record<string, number> = {
+      'top-left': pad, 'top-center': pad, 'top-right': pad,
+      'center': 0.5 - s / 2, 'bottom-left': 1 - s - pad, 'bottom-center': 1 - s - pad, 'bottom-right': 1 - s - pad,
+    };
+    return { x: xMap[pos] ?? pad, y: yMap[pos] ?? pad, scale: s };
+  })();
 
   // Fit-to-window: calculate optimal zoom so the image fits the container with padding
   const fitToWindow = useCallback(() => {
@@ -108,6 +127,14 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       fitToWindow();
     }
   }, [imageNaturalSize, fitToWindow]);
+
+  // Keep previewImgSize in sync with zoom and natural size
+  useEffect(() => {
+    if (imageNaturalSize) {
+      const s = zoomLevel / 100;
+      setPreviewImgSize({ w: imageNaturalSize.width * s, h: imageNaturalSize.height * s });
+    }
+  }, [zoomLevel, imageNaturalSize]);
 
   const brandPrimary = brand?.styles?.primary_color || activeBrand?.styles?.primary_color;
   const brandSecondary = brand?.styles?.secondary_color || activeBrand?.styles?.secondary_color;
@@ -291,22 +318,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
 
-        // Post-generation: composite the actual logo onto the AI output for pixel-perfect placement
-        let finalImageUrl = data.imageUrl;
-        if (effectiveLogoUrl && finalImageUrl) {
-          try {
-            console.log(`[Compositor] Overlaying logo onto variation ${index + 1}...`);
-            finalImageUrl = await compositeLogoOntoImage({
-              generatedImageUrl: finalImageUrl,
-              logoUrl: effectiveLogoUrl,
-              position: positionFromAssetType(assetType),
-              scale: scaleFromAssetType(assetType),
-            });
-            console.log(`[Compositor] Logo composited successfully for variation ${index + 1}`);
-          } catch (compErr) {
-            console.warn(`[Compositor] Logo compositing failed, using AI output as-is:`, compErr);
-          }
-        }
+        // Store raw AI output — logo overlay is handled by DraggableLogoOverlay in preview
+        const finalImageUrl = data.imageUrl;
 
         setVariations(prev => prev.map(v => 
           v.id === variation.id 
@@ -547,23 +560,9 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      let finalImageUrl = data.imageUrl;
-      if (effectiveLogoUrl && finalImageUrl) {
-        try {
-          finalImageUrl = await compositeLogoOntoImage({
-            generatedImageUrl: finalImageUrl,
-            logoUrl: effectiveLogoUrl,
-            position: positionFromAssetType(assetType),
-            scale: scaleFromAssetType(assetType),
-          });
-        } catch (compErr) {
-          console.warn('[Compositor] Regen compositing failed:', compErr);
-        }
-      }
-
       setVariations(prev => prev.map(v => 
         v.id === variationId 
-          ? { ...v, status: 'complete', imageUrl: finalImageUrl, prompt }
+          ? { ...v, status: 'complete', imageUrl: data.imageUrl, prompt }
           : v
       ));
     } catch (err) {
@@ -589,7 +588,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     const variation = variations.find(v => v.id === selectedVariation);
     if (!variation?.imageUrl) return;
 
+    // Re-composite with user's custom logo placement if they dragged it
     let finalUrl = variation.imageUrl;
+    const placement = logoPlacement || defaultLogoPlacement;
+    if (effectiveLogoUrl) {
+      try {
+        finalUrl = await compositeLogoOntoImage({
+          generatedImageUrl: variation.imageUrl,
+          logoUrl: effectiveLogoUrl,
+          customPlacement: placement,
+        });
+      } catch (e) {
+        console.warn('Final compositing failed, using current image:', e);
+      }
+    }
 
     // Persist base64 images to storage for durability
     if (finalUrl.startsWith('data:')) {
@@ -1091,10 +1103,23 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                               onLoad={(e) => {
                                 const img = e.currentTarget;
                                 setImageNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-                                img.style.width = `${img.naturalWidth * scale}px`;
-                                img.style.height = `${img.naturalHeight * scale}px`;
+                                const renderedW = img.naturalWidth * scale;
+                                const renderedH = img.naturalHeight * scale;
+                                img.style.width = `${renderedW}px`;
+                                img.style.height = `${renderedH}px`;
+                                setPreviewImgSize({ w: renderedW, h: renderedH });
                               }}
                             />
+                            {/* Draggable logo overlay */}
+                            {effectiveLogoUrl && previewImgSize && (
+                              <DraggableLogoOverlay
+                                logoUrl={effectiveLogoUrl}
+                                containerWidth={previewImgSize.w}
+                                containerHeight={previewImgSize.h}
+                                initialPlacement={logoPlacement || defaultLogoPlacement}
+                                onPlacementChange={setLogoPlacement}
+                              />
+                            )}
                           </motion.div>
                         );
                       }
