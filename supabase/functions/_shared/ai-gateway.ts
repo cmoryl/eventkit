@@ -211,7 +211,7 @@ export async function generateImageWithRetry(
           const label = img.label || `Reference Image`;
           return `  Image ${i + 1}: ${label}`;
         });
-        imageMapDescription = `\n\nREFERENCE IMAGES PROVIDED (${validImages.length} total):\n${labelLines.join('\n')}\n\nCRITICAL USAGE RULES:\n- BRAND LOGO images: REPRODUCE EXACTLY as provided — pixel-perfect, no redrawing, no reinterpretation, no stylization. The logo must appear IDENTICAL to the uploaded version.\n- STYLE REFERENCE images: match the visual aesthetic and mood.\n- PATTERN images: use as decorative/background elements.\n- VENUE PHOTO: composite the design into the real venue environment.\n`;
+        imageMapDescription = `\n\nREFERENCE IMAGES PROVIDED (${validImages.length} total):\n${labelLines.join('\n')}\n\nCRITICAL USAGE RULES:\n- STYLE REFERENCE images: match the visual aesthetic and mood.\n- PATTERN images: use as decorative/background elements.\n- VENUE PHOTO: composite the design into the real venue environment.\n- NOTE: The brand logo is NOT included as a reference image. It will be composited automatically after generation. Just leave clean space in the logo zone.\n`;
       }
 
       // Add text prompt with image map
