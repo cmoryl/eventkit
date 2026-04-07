@@ -198,15 +198,18 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   // Generate or reuse Master Style Direction when canvas opens
   useEffect(() => {
     if (isOpen && !styleAnchor.hasMasterDirection) {
-      const palette: ColorInfo[] = (brand?.styles?.color_palette || []).map((c: any) => ({
+      const palette = (brand?.styles?.color_palette || []).map((c: any) => ({
         hex: typeof c === 'string' ? c : c.hex || '#667eea',
         name: typeof c === 'string' ? c : c.name || 'Color',
+        rgb: '', cmyk: '', hsv: '', pantone: '',
       }));
-      const eventDetails: EventDetails = {
+      const eventDetails = {
         name: eventName,
-        description: assetDescription,
-        eventType: brand?.styles?.industry || 'conference',
-      };
+        description: assetDescription || '',
+        date: '', location: '', website: '', email: '',
+        incorporateLocationStyle: false,
+        eventType: (brand?.styles?.industry as any) || 'conference',
+      } as any;
       generateMasterStyleDirection({
         eventDetails,
         brandContext: brand?.styles ? {
@@ -216,9 +219,6 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
           imageryStyle: brand.styles.imagery_style,
           patternStyle: brand.styles.pattern_style,
           moodKeywords: brand.styles.mood_keywords,
-          photographyDos: (brand.styles as any).photography_dos,
-          photographyDonts: (brand.styles as any).photography_donts,
-          restrictedElements: (brand.styles as any).restricted_elements,
           headingFont: brand.styles.heading_font,
           bodyFont: brand.styles.body_font,
         } as any : null,
