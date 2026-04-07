@@ -327,8 +327,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
 
-        // Store raw AI output — logo overlay is handled by DraggableLogoOverlay in preview
-        const finalImageUrl = data.imageUrl;
+        // Auto-composite actual logo onto the AI-generated image for pixel-perfect branding
+        let finalImageUrl = data.imageUrl;
+        if (effectiveLogoUrl) {
+          try {
+            const placement = logoPlacement || savedPlacement || defaultLogoPlacement;
+            finalImageUrl = await compositeLogoOntoImage({
+              generatedImageUrl: data.imageUrl,
+              logoUrl: effectiveLogoUrl,
+              customPlacement: placement,
+            });
+          } catch (compErr) {
+            console.warn(`[Generation] Logo compositing failed for variation ${index + 1}, using raw image:`, compErr);
+          }
+        }
 
         setVariations(prev => prev.map(v => 
           v.id === variation.id 
