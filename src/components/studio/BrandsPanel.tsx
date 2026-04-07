@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Palette, Plus, Settings, Clock, Image as ImageIcon, 
-  ChevronRight, ChevronDown, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart, Wand2
+  ChevronRight, ChevronDown, Sparkles, Check, Type, Droplets, Link2, Unlink, FolderHeart, Wand2,
+  Quote, Target, Globe, Hash, Camera, Brush, Users, Building2, MessageSquare
 } from 'lucide-react';
 import { Brand } from '@/types/studio.types';
 import { BrandAdherenceMode } from '@/types/brand.types';
