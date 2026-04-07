@@ -749,6 +749,7 @@ export const CreationStudio: React.FC = () => {
   );
 
   return (
+    <StyleAnchorProvider>
     <div className="min-h-screen bg-background">
       {/* Hero Header */}
       <AppNavHeader 
@@ -909,7 +910,6 @@ export const CreationStudio: React.FC = () => {
         }}
       />
     </div>
+    </StyleAnchorProvider>
   );
-
-  return <StyleAnchorProvider>{content}</StyleAnchorProvider>;
 };
