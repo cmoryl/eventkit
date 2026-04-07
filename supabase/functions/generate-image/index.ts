@@ -116,7 +116,7 @@ serve(async (req) => {
     // BUILD CONTEXT STRINGS USING MODULAR BUILDERS
     // Run logo analysis and vibe analysis in parallel for efficiency
     const [logoAnalysis, brandContextString, locationContext, venueIntelligenceContext] = await Promise.all([
-      logoData ? analyzeLogoDetails(LOVABLE_API_KEY, logoData) : Promise.resolve(null),
+      logoDataForReference ? analyzeLogoDetails(LOVABLE_API_KEY, logoDataForReference) : Promise.resolve(null),
       Promise.resolve(buildBrandContext(brandContext)),
       Promise.resolve(buildLocationContext(location, incorporateLocationStyle)),
       Promise.resolve(buildVenueContext(venueIntelligence)),
@@ -296,7 +296,7 @@ ${outputChecklist}`;
 
     // Collect all reference images with labels so the AI knows what each one is
     const referenceImages: LabeledImage[] = [];
-    if (logoData) referenceImages.push({ url: logoData, label: 'LOGO - incorporate this logo into the design' });
+    if (logoDataForReference) referenceImages.push({ url: logoDataForReference, label: 'LOGO - incorporate this logo into the design' });
     allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
     allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
     if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
