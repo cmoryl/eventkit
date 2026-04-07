@@ -348,6 +348,26 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
           </TooltipTrigger>
           <TooltipContent>Reset to default position</TooltipContent>
         </Tooltip>
+
+        {/* Clear saved placement */}
+        {onClearSavedPlacement && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                onClick={() => {
+                  onClearSavedPlacement();
+                  handleReset();
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Clear saved placement</TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </>
   );
