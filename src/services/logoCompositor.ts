@@ -12,7 +12,7 @@ interface CompositeOptions {
   generatedImageUrl: string;
   /** The actual logo image (data-url or http url) */
   logoUrl: string;
-  /** Where to place the logo */
+  /** Where to place the logo (ignored if customPlacement is set) */
   position?: LogoPosition;
   /** Logo size as fraction of image width (0-1). Default 0.18 */
   scale?: number;
@@ -20,6 +20,8 @@ interface CompositeOptions {
   padding?: number;
   /** Optional semi-transparent backing plate behind logo. Default true */
   backingPlate?: boolean;
+  /** Custom placement overrides position/scale/padding (from drag UI) */
+  customPlacement?: { x: number; y: number; scale: number };
 }
 
 /** Parse a placement description string into a LogoPosition */
@@ -80,6 +82,7 @@ export async function compositeLogoOntoImage(opts: CompositeOptions): Promise<st
     scale = 0.18,
     padding = 0.04,
     backingPlate = true,
+    customPlacement,
   } = opts;
 
   // Load both images in parallel
