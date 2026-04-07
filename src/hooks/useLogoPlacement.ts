@@ -58,5 +58,30 @@ export function useLogoPlacement(assetType: string) {
     [user?.id, assetType]
   );
 
-  return { savedPlacement, savePlacement, isLoading };
+  const clearPlacement = useCallback(
+    async () => {
+      if (!user?.id || !assetType) return;
+      setSavedPlacement(null);
+      await supabase
+        .from('logo_placements' as any)
+        .delete()
+        .eq('user_id', user.id)
+        .eq('asset_type', assetType);
+    },
+    [user?.id, assetType]
+  );
+
+  const clearAllPlacements = useCallback(
+    async () => {
+      if (!user?.id) return;
+      setSavedPlacement(null);
+      await supabase
+        .from('logo_placements' as any)
+        .delete()
+        .eq('user_id', user.id);
+    },
+    [user?.id]
+  );
+
+  return { savedPlacement, savePlacement, clearPlacement, clearAllPlacements, isLoading };
 }

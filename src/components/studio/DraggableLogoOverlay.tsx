@@ -26,6 +26,7 @@ interface DraggableLogoOverlayProps {
   onPlacementChange: (placement: LogoPlacement) => void;
   zoomScale?: number;
   restoredFromSession?: boolean;
+  onClearSavedPlacement?: () => void;
   className?: string;
 }
 
