@@ -81,6 +81,14 @@ serve(async (req) => {
       }
     }
 
+    // CRITICAL: AI gateway does not support SVG images - skip SVG logos as reference images
+    // but keep logo instructions in the text prompt so AI knows about the brand
+    let logoDataForReference = logoData;
+    if (logoData && (logoData.includes('image/svg+xml') || logoData.includes('image/svg'))) {
+      console.warn('Logo is SVG format - unsupported by AI gateway. Skipping as reference image, keeping text instructions.');
+      logoDataForReference = undefined;
+    }
+
     // Normalize brand colorPalette to array of hex strings
     if (brandContext?.colorPalette && Array.isArray(brandContext.colorPalette)) {
       brandContext.colorPalette = brandContext.colorPalette.map((c: any) => 
