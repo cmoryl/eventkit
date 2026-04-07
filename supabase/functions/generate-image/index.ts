@@ -114,17 +114,14 @@ serve(async (req) => {
     }
 
     // BUILD CONTEXT STRINGS USING MODULAR BUILDERS
-    // Run logo analysis and vibe analysis in parallel for efficiency
-    const [logoAnalysis, brandContextString, locationContext, venueIntelligenceContext] = await Promise.all([
-      logoDataForReference ? analyzeLogoDetails(LOVABLE_API_KEY, logoDataForReference) : Promise.resolve(null),
+    // Logo is composited AFTER generation by the client-side logoCompositor.
+    // We do NOT send the logo as a reference image to avoid the AI trying to redraw it (poorly).
+    // We still pass hasLogo=true so the prompt reserves clean space for logo placement.
+    const [brandContextString, locationContext, venueIntelligenceContext] = await Promise.all([
       Promise.resolve(buildBrandContext(brandContext)),
       Promise.resolve(buildLocationContext(location, incorporateLocationStyle)),
       Promise.resolve(buildVenueContext(venueIntelligence)),
     ]);
-    
-    if (logoAnalysis) {
-      console.log(`Logo pre-analysis: "${logoAnalysis.textContent}" | ${logoAnalysis.shape} | ${logoAnalysis.colors.join(', ')}`);
-    }
     
     const logoInstructions = buildLogoInstructions(!!logoData, assetType, logoAnalysis ?? undefined);
     const analysisInstructions = buildAnalysisInstructions(imageAnalysis);
