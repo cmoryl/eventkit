@@ -54,7 +54,8 @@ serve(async (req) => {
   }
 
   try {
-    const { type, eventContext, brandContext, currentAssetType, currentDesignDescription } = await req.json() as SuggestionRequest;
+    const reqBody = await req.json();
+    const { type, eventContext, brandContext, currentAssetType, currentDesignDescription } = reqBody as SuggestionRequest;
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
