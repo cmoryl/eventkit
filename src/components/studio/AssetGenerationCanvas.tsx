@@ -408,6 +408,12 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             : v
         ));
 
+        // Set first successful image as style anchor for consistency
+        if (!styleAnchor.anchorImageUrl && finalImageUrl) {
+          styleAnchor.setAnchorImage(finalImageUrl, assetType);
+          console.log('[StyleAnchor] First generated image set as style anchor');
+        }
+
         return { id: variation.id, success: true, imageUrl: finalImageUrl };
       } catch (err) {
         console.error(`[Generation] Error generating variation ${index + 1}:`, err);
