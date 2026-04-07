@@ -30,7 +30,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const body: GenerateImageRequest = await req.json();
+    const body: GenerateImageRequest & { masterDirection?: string; styleAnchorImage?: string } = await req.json();
     const { 
       assetType, 
       eventName, 
@@ -51,6 +51,8 @@ serve(async (req) => {
       venueIntelligence,
       brandContext,
       imageModel = 'fast',
+      masterDirection,
+      styleAnchorImage,
     } = body;
 
     // Normalize logo: if it's an HTTP URL (not base64), fetch and convert
@@ -253,7 +255,11 @@ PHOTOREALISTIC RENDERING - CRITICAL:
     // Build explicit text content manifest so AI knows exactly what to render
     const textManifest = buildTextManifest(eventName, eventDescription, eventDate, eventLocation, brandContext);
     
+    // Inject master style direction if provided (for cross-asset consistency)
+    const masterDirectionSection = masterDirection || '';
+
     const fullPrompt = `${masterWrapper}
+${masterDirectionSection}
 
 Generate an image: ${basePrompt}
 
