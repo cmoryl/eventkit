@@ -70,7 +70,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 }) => {
   const { user } = useAuth();
   const { activeBrand, isThemeApplied } = useActiveBrand();
-  const { savedPlacement, savePlacement: persistPlacement } = useLogoPlacement(assetType);
+  const { savedPlacement, savePlacement: persistPlacement, clearPlacement } = useLogoPlacement(assetType);
   const [variations, setVariations] = useState<GenerationVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1131,6 +1131,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                                 initialPlacement={logoPlacement || defaultLogoPlacement}
                                 onPlacementChange={setLogoPlacement}
                                 restoredFromSession={!!savedPlacement && logoPlacement === savedPlacement}
+                                onClearSavedPlacement={clearPlacement}
                               />
                             )}
                           </motion.div>

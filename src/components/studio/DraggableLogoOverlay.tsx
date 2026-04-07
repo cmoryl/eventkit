@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight, History } from 'lucide-react';
+import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight, History, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,7 @@ interface DraggableLogoOverlayProps {
   onPlacementChange: (placement: LogoPlacement) => void;
   zoomScale?: number;
   restoredFromSession?: boolean;
+  onClearSavedPlacement?: () => void;
   className?: string;
 }
 
@@ -35,8 +36,8 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
   containerHeight,
   initialPlacement,
   onPlacementChange,
-  zoomScale = 1,
   restoredFromSession = false,
+  onClearSavedPlacement,
   className,
 }) => {
   const [placement, setPlacement] = useState<LogoPlacement>(initialPlacement);
@@ -347,6 +348,26 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
           </TooltipTrigger>
           <TooltipContent>Reset to default position</TooltipContent>
         </Tooltip>
+
+        {/* Clear saved placement */}
+        {onClearSavedPlacement && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                onClick={() => {
+                  onClearSavedPlacement();
+                  handleReset();
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Clear saved placement</TooltipContent>
+          </Tooltip>
+        )}
       </div>
     </>
   );
