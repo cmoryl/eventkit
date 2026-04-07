@@ -213,6 +213,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 
       try {
         const prompt = buildPromptWithBrief(brief, styleVariants[index]);
+        console.log(`[Generation] Variation ${index + 1}: prompt built, calling generate-image...`);
         
         // Use the brand prop or fall back to activeBrand from the hook
         const effectiveBrand = brand || (activeBrand ? {
@@ -244,6 +245,35 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
           logo_url: activeBrand.logo_url,
         } as Brand : null);
 
+        // Convert logo URL to base64 if needed (edge functions can't access preview server)
+        let logoPayload = effectiveLogoUrl;
+        if (logoPayload && !logoPayload.startsWith('data:')) {
+          try {
+            console.log(`[Generation] Converting logo URL to base64...`);
+            const logoResp = await fetch(logoPayload);
+            if (logoResp.ok) {
+              const blob = await logoResp.blob();
+              if (!blob.type.includes('text/html')) {
+                logoPayload = await new Promise<string>((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(blob);
+                });
+              } else {
+                console.warn('[Generation] Logo URL returned HTML, skipping logo');
+                logoPayload = undefined;
+              }
+            } else {
+              console.warn('[Generation] Failed to fetch logo:', logoResp.status);
+              logoPayload = undefined;
+            }
+          } catch (e) {
+            console.warn('[Generation] Logo conversion failed:', e);
+            logoPayload = undefined;
+          }
+        }
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: {
             prompt,
@@ -273,11 +303,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               bodyFont: selectedFonts.body,
             } : null,
             colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c),
-            logoBase64: effectiveLogoUrl,
+            logoBase64: logoPayload,
             dimensions: parseDimensions(dimensions),
             customContent: brief.customContent
           }
         });
+
+        console.log(`[Generation] Variation ${index + 1}: response received`, { success: data?.success, hasImageUrl: !!data?.imageUrl, error: error?.message || data?.error });
 
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
@@ -290,17 +322,21 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 
         return { id: variation.id, success: true, imageUrl: data.imageUrl };
       } catch (err) {
-        console.error(`Error generating variation ${index}:`, err);
+        console.error(`[Generation] Error generating variation ${index + 1}:`, err);
         setVariations(prev => prev.map(v => 
           v.id === variation.id ? { ...v, status: 'error' } : v
         ));
+        toast.error(`Variation ${index + 1} failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
         return { id: variation.id, success: false };
       }
     });
 
-    await Promise.all(generatePromises);
+    const results = await Promise.all(generatePromises);
+    const successCount = results.filter(r => r.success).length;
+    console.log(`[Generation] Complete: ${successCount}/${VARIATION_COUNT} succeeded`);
+    
     setIsGenerating(false);
-    setGenerationPhase('complete');
+    setGenerationPhase(successCount > 0 ? 'complete' : 'complete');
   };
 
   // Get style variants based on brief preferences
