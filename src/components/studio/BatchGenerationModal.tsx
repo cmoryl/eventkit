@@ -13,6 +13,7 @@ import { Brand } from '@/types/studio.types';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
 import { normalizeImageForGeneration } from '@/utils';
+import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
 
 interface BatchAssetResult {
   assetType: string;
@@ -123,7 +124,22 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      return { imageUrl: data.imageUrl };
+
+      let finalUrl = data.imageUrl;
+      // Post-generation: composite actual logo for pixel-perfect placement
+      if (effectiveLogoUrl && finalUrl) {
+        try {
+          finalUrl = await compositeLogoOntoImage({
+            generatedImageUrl: finalUrl,
+            logoUrl: effectiveLogoUrl,
+            position: positionFromAssetType(assetType),
+            scale: scaleFromAssetType(assetType),
+          });
+        } catch (compErr) {
+          console.warn('[BatchCompositor] Logo compositing failed:', compErr);
+        }
+      }
+      return { imageUrl: finalUrl };
     } catch (err: any) {
       return { error: err.message || 'Generation failed' };
     }

@@ -26,6 +26,7 @@ import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { normalizeImageForGeneration } from '@/utils';
+import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -290,13 +291,30 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
 
+        // Post-generation: composite the actual logo onto the AI output for pixel-perfect placement
+        let finalImageUrl = data.imageUrl;
+        if (effectiveLogoUrl && finalImageUrl) {
+          try {
+            console.log(`[Compositor] Overlaying logo onto variation ${index + 1}...`);
+            finalImageUrl = await compositeLogoOntoImage({
+              generatedImageUrl: finalImageUrl,
+              logoUrl: effectiveLogoUrl,
+              position: positionFromAssetType(assetType),
+              scale: scaleFromAssetType(assetType),
+            });
+            console.log(`[Compositor] Logo composited successfully for variation ${index + 1}`);
+          } catch (compErr) {
+            console.warn(`[Compositor] Logo compositing failed, using AI output as-is:`, compErr);
+          }
+        }
+
         setVariations(prev => prev.map(v => 
           v.id === variation.id 
-            ? { ...v, status: 'complete', imageUrl: data.imageUrl, prompt }
+            ? { ...v, status: 'complete', imageUrl: finalImageUrl, prompt }
             : v
         ));
 
-        return { id: variation.id, success: true, imageUrl: data.imageUrl };
+        return { id: variation.id, success: true, imageUrl: finalImageUrl };
       } catch (err) {
         console.error(`[Generation] Error generating variation ${index + 1}:`, err);
         setVariations(prev => prev.map(v => 
@@ -529,9 +547,23 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
+      let finalImageUrl = data.imageUrl;
+      if (effectiveLogoUrl && finalImageUrl) {
+        try {
+          finalImageUrl = await compositeLogoOntoImage({
+            generatedImageUrl: finalImageUrl,
+            logoUrl: effectiveLogoUrl,
+            position: positionFromAssetType(assetType),
+            scale: scaleFromAssetType(assetType),
+          });
+        } catch (compErr) {
+          console.warn('[Compositor] Regen compositing failed:', compErr);
+        }
+      }
+
       setVariations(prev => prev.map(v => 
         v.id === variationId 
-          ? { ...v, status: 'complete', imageUrl: data.imageUrl, prompt }
+          ? { ...v, status: 'complete', imageUrl: finalImageUrl, prompt }
           : v
       ));
     } catch (err) {
