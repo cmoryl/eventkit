@@ -114,19 +114,16 @@ serve(async (req) => {
     }
 
     // BUILD CONTEXT STRINGS USING MODULAR BUILDERS
-    // Run logo analysis and vibe analysis in parallel for efficiency
-    const [logoAnalysis, brandContextString, locationContext, venueIntelligenceContext] = await Promise.all([
-      logoDataForReference ? analyzeLogoDetails(LOVABLE_API_KEY, logoDataForReference) : Promise.resolve(null),
+    // Logo is composited AFTER generation by the client-side logoCompositor.
+    // We do NOT send the logo as a reference image to avoid the AI trying to redraw it (poorly).
+    // We still pass hasLogo=true so the prompt reserves clean space for logo placement.
+    const [brandContextString, locationContext, venueIntelligenceContext] = await Promise.all([
       Promise.resolve(buildBrandContext(brandContext)),
       Promise.resolve(buildLocationContext(location, incorporateLocationStyle)),
       Promise.resolve(buildVenueContext(venueIntelligence)),
     ]);
     
-    if (logoAnalysis) {
-      console.log(`Logo pre-analysis: "${logoAnalysis.textContent}" | ${logoAnalysis.shape} | ${logoAnalysis.colors.join(', ')}`);
-    }
-    
-    const logoInstructions = buildLogoInstructions(!!logoData, assetType, logoAnalysis ?? undefined);
+    const logoInstructions = buildLogoInstructions(!!logoData, assetType);
     const analysisInstructions = buildAnalysisInstructions(imageAnalysis);
 
     // FETCH PROMPT TEMPLATE FROM DATABASE
@@ -220,7 +217,7 @@ ${allPatternImages.length} MASTER PATTERN(S) provided. You MUST:
     const venueInstructions = venueImageBase64
       ? `
 VENUE COMPOSITING - CRITICAL:
-Reference Image #${(logoData ? 1 : 0) + (vibeImageBase64 ? 1 : 0) + (masterPatternBase64 ? 1 : 0) + 1} is the ACTUAL VENUE PHOTO where this asset will be displayed.
+Reference Image #${(vibeImageBase64 ? 1 : 0) + (masterPatternBase64 ? 1 : 0) + 1} is the ACTUAL VENUE PHOTO where this asset will be displayed.
 You MUST:
 1. Composite the branded asset INTO this actual venue environment
 2. Match the lighting, perspective, and shadows of the venue photo
@@ -294,17 +291,13 @@ ${outputChecklist}`;
 
     console.log(`Generating ${isPrint ? 'PRINT-READY' : 'digital'} image for ${assetType}: ${eventName}${location ? ` (Location: ${location})` : ''}${venueIntelligence?.name ? ` [venue: ${venueIntelligence.name}]` : ''}${brandContext?.brandName ? ` [brand: ${brandContext.brandName}]` : ''} [mode: ${renderMode}]${isPrint ? ` [${targetDPI}DPI]` : ''}${vibeImageBase64 ? ' [vibe]' : ''}${masterPatternBase64 ? ' [pattern]' : ''}${venueImageBase64 ? ' [venue-photo]' : ''}${logoData ? ' [logo]' : ''}`);
 
-    // Collect all reference images with labels so the AI knows what each one is
-    // Logo is placed FIRST and LAST (bookend) to maximize reproduction fidelity
+    // Collect all reference images with labels
+    // NOTE: Logo is NOT included as a reference image — the client-side logoCompositor
+    // overlays the actual logo file AFTER generation for pixel-perfect results.
     const referenceImages: LabeledImage[] = [];
-    if (logoDataForReference) referenceImages.push({ url: logoDataForReference, label: 'BRAND LOGO — REPRODUCE THIS EXACTLY pixel-for-pixel. Do NOT redraw, reinterpret, or stylize. Copy it as-is into the design.' });
     allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
     allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
     if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
-    // Bookend: repeat logo as the final image so it's the last thing the model "sees"
-    if (logoDataForReference && referenceImages.length > 1) {
-      referenceImages.push({ url: logoDataForReference, label: 'BRAND LOGO (repeated) — This is the SAME logo from Image #1. Your #1 priority is to reproduce it EXACTLY as shown.' });
-    }
 
     const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages, 2, imageModel);
     
