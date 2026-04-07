@@ -13,6 +13,7 @@ import { AIImageEditModal } from '@/components/AIImageEditModal';
 import { AssetBriefModal, type AssetBrief, type GoogleFontSelection } from './AssetBriefModal';
 import { LogoOverrideSelector } from './LogoOverrideSelector';
 import { LogoSourceBadge } from './LogoSourceBadge';
+import { LogoVariantSelector, type LogoVariant } from './LogoVariantSelector';
 import { FontPickerDropdown } from './FontPickerDropdown';
 import { FontPreviewPanel } from './FontPreviewPanel';
 import { 
