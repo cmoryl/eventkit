@@ -14,6 +14,8 @@ import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
 import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
+import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
+import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
 
 interface BatchAssetResult {
   assetType: string;
@@ -50,6 +52,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   onImagesGenerated,
 }) => {
   const { activeBrand } = useActiveBrand();
+  const styleAnchor = useStyleAnchor();
   const [results, setResults] = useState<BatchAssetResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -86,7 +89,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   const totalCount = results.length;
   const progressPct = totalCount > 0 ? ((completedCount + errorCount) / totalCount) * 100 : 0;
 
-  const generateOne = useCallback(async (assetType: string): Promise<{ imageUrl?: string; error?: string }> => {
+  const generateOne = useCallback(async (assetType: string, anchorUrl?: string): Promise<{ imageUrl?: string; error?: string }> => {
     const info = assetDisplayInfo[assetType];
     const prompt = compileGenerationPrompt({
       basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: modern and brand-consistent.`,
@@ -97,6 +100,11 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       },
     });
 
+    // Build master direction block
+    const masterDirectionBlock = styleAnchor.masterDirection
+      ? buildMasterDirectionPromptBlock(styleAnchor.masterDirection)
+      : '';
+
     try {
       const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
 
@@ -105,6 +113,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           prompt,
           assetType,
           eventName,
+          masterDirection: masterDirectionBlock || undefined,
+          styleAnchorImage: anchorUrl || styleAnchor.anchorImageUrl || undefined,
           brandContext: effectiveBrand ? {
             brandName: effectiveBrand.name,
             primaryColor: effectiveBrand.styles?.primary_color,
@@ -153,6 +163,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
     setIsRunning(true);
     abortRef.current = false;
+    let batchAnchorUrl = styleAnchor.anchorImageUrl;
 
     const pending = results
       .filter(r => r.status === 'pending' || r.status === 'error')
@@ -177,7 +188,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
       const batchResults = await Promise.allSettled(
         batch.map(async (assetType) => {
-          const res = await generateOne(assetType);
+          const res = await generateOne(assetType, batchAnchorUrl || undefined);
           return { assetType, ...res };
         })
       );
@@ -203,6 +214,15 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       // Push partial results immediately
       if (Object.keys(newImages).length > 0) {
         onImagesGenerated(newImages);
+        // Use first successful image as anchor for subsequent batches
+        if (!batchAnchorUrl) {
+          const firstUrl = Object.values(newImages)[0];
+          if (firstUrl) {
+            batchAnchorUrl = firstUrl;
+            styleAnchor.setAnchorImage(firstUrl, Object.keys(newImages)[0]);
+            console.log('[BatchGen] First result set as style anchor');
+          }
+        }
       }
 
       // Small delay between batches to avoid rate limits

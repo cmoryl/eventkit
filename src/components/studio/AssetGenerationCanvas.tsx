@@ -30,6 +30,9 @@ import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
 import { type LogoPlacement } from './DraggableLogoOverlay';
 import { useLogoPlacement } from '@/hooks/useLogoPlacement';
+import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
+import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
+import type { EventDetails, ColorInfo } from '@/types';
 
 interface AssetGenerationCanvasProps {
   isOpen: boolean;
@@ -72,6 +75,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const { user } = useAuth();
   const { activeBrand, isThemeApplied } = useActiveBrand();
   const { savedPlacement, savePlacement: persistPlacement, clearPlacement } = useLogoPlacement(assetType);
+  const styleAnchor = useStyleAnchor();
   const [variations, setVariations] = useState<GenerationVariation[]>([]);
   const [selectedVariation, setSelectedVariation] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -191,6 +195,44 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     });
   };
 
+  // Generate or reuse Master Style Direction when canvas opens
+  useEffect(() => {
+    if (isOpen && !styleAnchor.hasMasterDirection) {
+      const palette = (brand?.styles?.color_palette || []).map((c: any) => ({
+        hex: typeof c === 'string' ? c : c.hex || '#667eea',
+        name: typeof c === 'string' ? c : c.name || 'Color',
+        rgb: '', cmyk: '', hsv: '', pantone: '',
+      }));
+      const eventDetails = {
+        name: eventName,
+        description: assetDescription || '',
+        date: '', location: '', website: '', email: '',
+        incorporateLocationStyle: false,
+        eventType: (brand?.styles?.industry as any) || 'conference',
+      } as any;
+      generateMasterStyleDirection({
+        eventDetails,
+        brandContext: brand?.styles ? {
+          brandName: brand.name,
+          archetype: (brand.styles as any).archetype,
+          brandVoice: brand.styles.brand_voice,
+          imageryStyle: brand.styles.imagery_style,
+          patternStyle: brand.styles.pattern_style,
+          moodKeywords: brand.styles.mood_keywords,
+          headingFont: brand.styles.heading_font,
+          bodyFont: brand.styles.body_font,
+        } as any : null,
+        colorPalette: palette,
+        styleDescription: brand?.styles?.imagery_style,
+      }).then(dir => {
+        if (dir) {
+          styleAnchor.setMasterDirection(dir);
+          console.log('[StyleAnchor] Master direction generated');
+        }
+      }).catch(console.warn);
+    }
+  }, [isOpen]);
+
   // Initialize when opened - show brief modal first
   useEffect(() => {
     if (isOpen) {
@@ -298,11 +340,18 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
         // Convert logo URL to base64 if needed (edge functions can't access preview server)
         const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
 
+        // Build master direction block for prompt injection
+        const masterDirectionBlock = styleAnchor.masterDirection
+          ? buildMasterDirectionPromptBlock(styleAnchor.masterDirection)
+          : '';
+
         const { data, error } = await supabase.functions.invoke('generate-image', {
           body: {
             prompt,
             assetType,
             eventName,
+            masterDirection: masterDirectionBlock || undefined,
+            styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
             brandContext: effectiveBrand ? {
               brandName: effectiveBrand.name,
               primaryColor: effectiveBrand.styles?.primary_color,
@@ -359,6 +408,12 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             : v
         ));
 
+        // Set first successful image as style anchor for consistency
+        if (!styleAnchor.anchorImageUrl && finalImageUrl) {
+          styleAnchor.setAnchorImage(finalImageUrl, assetType);
+          console.log('[StyleAnchor] First generated image set as style anchor');
+        }
+
         return { id: variation.id, success: true, imageUrl: finalImageUrl };
       } catch (err) {
         console.error(`[Generation] Error generating variation ${index + 1}:`, err);
@@ -406,12 +461,12 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       'ai-decide': '',
     }[brief.layoutStyle] || '';
 
-    // Create 4 variations with slight modifications
+    // Create 4 layout-only variations — keep style/color/mood identical for cohesion
     return [
-      `${baseStyle} with ${colorStyle}, ${layoutStyle}`,
-      `${baseStyle} with ${colorStyle}, emphasizing visual hierarchy`,
-      `${baseStyle} with ${colorStyle}, focus on typography and clarity`,
-      `${baseStyle} with ${colorStyle}, creative artistic interpretation`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'centered balanced composition'}`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'asymmetric offset composition with weighted left alignment'}`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'split layout with prominent typography block'}`,
+      `${baseStyle} with ${colorStyle}, ${layoutStyle || 'full-bleed hero composition with minimal text overlay'}`,
     ];
   };
 

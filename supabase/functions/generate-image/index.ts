@@ -30,7 +30,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const body: GenerateImageRequest = await req.json();
+    const body: GenerateImageRequest & { masterDirection?: string; styleAnchorImage?: string } = await req.json();
     const { 
       assetType, 
       eventName, 
@@ -51,6 +51,8 @@ serve(async (req) => {
       venueIntelligence,
       brandContext,
       imageModel = 'fast',
+      masterDirection,
+      styleAnchorImage,
     } = body;
 
     // Normalize logo: if it's an HTTP URL (not base64), fetch and convert
@@ -253,7 +255,11 @@ PHOTOREALISTIC RENDERING - CRITICAL:
     // Build explicit text content manifest so AI knows exactly what to render
     const textManifest = buildTextManifest(eventName, eventDescription, eventDate, eventLocation, brandContext);
     
+    // Inject master style direction if provided (for cross-asset consistency)
+    const masterDirectionSection = masterDirection || '';
+
     const fullPrompt = `${masterWrapper}
+${masterDirectionSection}
 
 Generate an image: ${basePrompt}
 
@@ -295,6 +301,10 @@ ${outputChecklist}`;
     // NOTE: Logo is NOT included as a reference image — the client-side logoCompositor
     // overlays the actual logo file AFTER generation for pixel-perfect results.
     const referenceImages: LabeledImage[] = [];
+    // Style anchor: previously generated asset from this kit — ensures visual consistency
+    if (styleAnchorImage) {
+      referenceImages.push({ url: styleAnchorImage, label: 'KIT STYLE ANCHOR - Match the EXACT visual treatment, color application, typography style, and composition approach of this reference. This asset must look like it belongs to the same event kit.' });
+    }
     allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
     allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
     if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
