@@ -82,6 +82,8 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [imageNaturalSize, setImageNaturalSize] = useState<{ width: number; height: number } | null>(null);
   const [assetLogoOverride, setAssetLogoOverride] = useState<string | null>(null);
   const [selectedFonts, setSelectedFonts] = useState<GoogleFontSelection | null>(projectFontSelection || null);
+  const [logoPlacement, setLogoPlacement] = useState<LogoPlacement | null>(null);
+  const [previewImgSize, setPreviewImgSize] = useState<{ w: number; h: number } | null>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Logo priority: asset-level > project-level > brand default
