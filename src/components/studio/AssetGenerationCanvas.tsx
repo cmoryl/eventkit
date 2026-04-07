@@ -1131,6 +1131,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                                 initialPlacement={logoPlacement || defaultLogoPlacement}
                                 onPlacementChange={setLogoPlacement}
                                 restoredFromSession={!!savedPlacement && logoPlacement === savedPlacement}
+                                onClearSavedPlacement={clearPlacement}
                               />
                             )}
                           </motion.div>
