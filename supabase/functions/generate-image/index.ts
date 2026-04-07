@@ -62,7 +62,14 @@ serve(async (req) => {
         if (logoResp.ok) {
           const logoBlob = await logoResp.arrayBuffer();
           const contentType = logoResp.headers.get('content-type') || 'image/png';
-          const base64Str = btoa(String.fromCharCode(...new Uint8Array(logoBlob)));
+          // Use chunked conversion to avoid call stack overflow on large images
+          const bytes = new Uint8Array(logoBlob);
+          let binaryStr = '';
+          const chunkSize = 8192;
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            binaryStr += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+          }
+          const base64Str = btoa(binaryStr);
           logoData = `data:${contentType};base64,${base64Str}`;
         } else {
           console.warn('Failed to fetch logo URL, skipping logo:', logoResp.status);
