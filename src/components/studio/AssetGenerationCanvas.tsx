@@ -89,6 +89,22 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   // Logo priority: asset-level > project-level > brand default
   const effectiveLogoUrl = assetLogoOverride || projectLogoOverride || brand?.logo_url || activeBrand?.logo_url;
 
+  // Default logo placement based on asset type
+  const defaultLogoPlacement: LogoPlacement = (() => {
+    const pos = positionFromAssetType(assetType);
+    const s = scaleFromAssetType(assetType);
+    const pad = 0.04;
+    const xMap: Record<string, number> = {
+      'top-left': pad, 'top-center': 0.5 - s / 2, 'top-right': 1 - s - pad,
+      'center': 0.5 - s / 2, 'bottom-left': pad, 'bottom-center': 0.5 - s / 2, 'bottom-right': 1 - s - pad,
+    };
+    const yMap: Record<string, number> = {
+      'top-left': pad, 'top-center': pad, 'top-right': pad,
+      'center': 0.5 - s / 2, 'bottom-left': 1 - s - pad, 'bottom-center': 1 - s - pad, 'bottom-right': 1 - s - pad,
+    };
+    return { x: xMap[pos] ?? pad, y: yMap[pos] ?? pad, scale: s };
+  })();
+
   // Fit-to-window: calculate optimal zoom so the image fits the container with padding
   const fitToWindow = useCallback(() => {
     const container = previewContainerRef.current;
