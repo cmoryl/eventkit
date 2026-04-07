@@ -87,10 +87,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [selectedFonts, setSelectedFonts] = useState<GoogleFontSelection | null>(projectFontSelection || null);
   const [logoPlacement, setLogoPlacement] = useState<LogoPlacement | null>(null);
   const [previewImgSize, setPreviewImgSize] = useState<{ w: number; h: number } | null>(null);
+  const [logoVariant, setLogoVariant] = useState<LogoVariant>('primary');
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
-  // Logo priority: asset-level > project-level > brand default
-  const effectiveLogoUrl = assetLogoOverride || projectLogoOverride || brand?.logo_url || activeBrand?.logo_url;
+  // Resolve brand logo URL based on selected variant
+  const brandLogoForVariant = (() => {
+    const b = brand || activeBrand;
+    if (!b) return undefined;
+    if (logoVariant === 'monochrome' && b.logo_monochrome_url) return b.logo_monochrome_url;
+    if (logoVariant === 'reversed' && b.logo_reversed_url) return b.logo_reversed_url;
+    return b.logo_url;
+  })();
+
+  // Logo priority: asset-level > project-level > brand variant
+  const effectiveLogoUrl = assetLogoOverride || projectLogoOverride || brandLogoForVariant;
 
   // Default logo placement based on asset type
   const defaultLogoPlacement: LogoPlacement = (() => {
