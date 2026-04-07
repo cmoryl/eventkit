@@ -24,12 +24,36 @@ interface BrandStyleSimple {
   writing_style?: string;
   imagery_style?: string;
   photography_style?: string;
+  photography_dos?: string[];
+  photography_donts?: string[];
   icon_style?: string;
   pattern_style?: string;
+  logo_clear_space?: string;
+  logo_min_size?: string;
+  logo_placement_rules?: string[];
+  logo_backgrounds?: string[];
+  approved_layouts?: string[];
+  restricted_elements?: string[];
   target_audience?: string;
+  cultural_context?: string;
   industry?: string;
   social_handles?: Record<string, string>;
   hashtags?: string[];
+  all_imagery?: {
+    all?: string[];
+    byType?: {
+      logos?: string[];
+      brandIcons?: string[];
+      patterns?: string[];
+      photography?: string[];
+      heroImages?: string[];
+      collateral?: string[];
+      social?: string[];
+      banners?: string[];
+      video?: string[];
+      sponsors?: string[];
+    };
+  };
 }
 
 interface ActiveBrand {
