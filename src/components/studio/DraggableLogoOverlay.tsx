@@ -1,10 +1,11 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3 } from 'lucide-react';
+import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3, ArrowUpLeft, ArrowUp, ArrowUpRight, Crosshair, ArrowDownLeft, ArrowDown, ArrowDownRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { AlignmentGuides } from './AlignmentGuides';
 import { snapToGuides, type SnapGuide } from './logoSnapping';
 
