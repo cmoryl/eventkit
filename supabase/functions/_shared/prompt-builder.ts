@@ -326,78 +326,32 @@ export function buildLogoInstructions(hasLogo: boolean, assetType?: string, logo
   // Determine placement zone based on asset category
   const placementRules = getLogoPlacementForAsset(assetType);
 
-  // Build logo anatomy description from pre-analysis
-  const anatomyBlock = logoAnalysis ? `
-LOGO ANATOMY — USE THIS AS YOUR REPRODUCTION BLUEPRINT:
-- Shape/Structure: ${logoAnalysis.shape}
-- Text in logo: ${logoAnalysis.textContent || 'none detected'}
-- Dominant colors: ${logoAnalysis.colors.join(', ')}
-- Style classification: ${logoAnalysis.style}
-- Key distinctive features: ${logoAnalysis.distinctiveFeatures.join('; ')}
-- Aspect ratio: ${logoAnalysis.aspectRatio}
-${logoAnalysis.iconDescription ? `- Icon/Symbol: ${logoAnalysis.iconDescription}` : ''}
-${logoAnalysis.fontStyle ? `- Font style: ${logoAnalysis.fontStyle}` : ''}
-Cross-check your output against EVERY detail above. If any detail differs, you have failed.
-` : '';
-
   return `
-[LOGO_MODULE_EXACT] — HIGHEST PRIORITY DIRECTIVE
-Reference Image #1 is the EVENT/BRAND LOGO. You MUST reproduce this logo EXACTLY as provided.
+[LOGO_MODULE] — LOGO SPACE RESERVATION (CRITICAL)
+The actual brand logo will be composited onto this design AFTER generation by our post-processing pipeline.
+DO NOT attempt to draw, render, recreate, or include ANY logo in the design.
 
-═══════════════════════════════════════════════
-  THIS IS NOT A SUGGESTION — IT IS A HARD RULE
-═══════════════════════════════════════════════
-${anatomyBlock}
-STEP 1 — EXACT REPRODUCTION MANDATE (NON-NEGOTIABLE):
-- "Use the uploaded logo as-is. Do not redraw, restyle, reinterpret, or 'inspire' from it."
-- Copy the logo PIXEL-FOR-PIXEL from the reference image into the design
-- Preserve EVERY letter, curve, icon, and color exactly as shown
-- Count the letters in any logo text and verify your output has the SAME number of letters in the SAME order
-- If the logo has an icon/symbol, reproduce its EXACT geometry — do not simplify or abstract it
-- Do NOT change any colors, shapes, text, or elements within the logo
-- Do NOT add effects like glow, 3D, bevel, emboss, or drop shadow to the logo itself
-- Do NOT merge, blend, or artistically reinterpret any part of the logo
-- The logo must look IDENTICAL to what was uploaded — treat it as a sacred, untouchable element
+YOUR JOB FOR THE LOGO AREA:
+1. RESERVE a clean, uncluttered space in the design where the logo will be placed
+2. This reserved area must have a CLEAN, SIMPLE background — solid color, subtle gradient, or very light texture
+3. Do NOT place text, graphics, patterns, or busy imagery in the logo zone
+4. The reserved zone should have HIGH CONTRAST potential (light area for dark logos or dark area for light logos)
 
-STEP 1b — DETAIL VERIFICATION CHECKLIST:
-Before finalizing, verify EACH of these against the reference image:
-  ☐ Every letter/character in logo text matches exactly (spelling, case, spacing)
-  ☐ Icon/symbol shape is geometrically identical (count points, curves, angles)
-  ☐ Color values match the reference (no hue shifts, no saturation changes)
-  ☐ Proportions between text and icon elements are preserved
-  ☐ Line weights and stroke thicknesses are consistent with original
-  ☐ Negative space within the logo is preserved (holes in letters, gaps in icons)
-
-STEP 2 — ASSET-SPECIFIC PLACEMENT & SIZING:
+LOGO PLACEMENT ZONE:
 ${placementRules}
 
-STEP 3 — CLEAR SPACE & CONTRAST PROTECTION:
-- Keep minimum padding around the logo equal to 10% of the logo's bounding box height (or more if layout is busy)
-- If the background is busy or low-contrast, add a simple backing treatment:
-  • Solid panel (preferred) OR subtle blur plate OR translucent pill behind the logo
-  • No heavy effects — backing must be invisible at a glance
-- Ensure HIGH CONTRAST between logo and background — if logo is light, use dark background area and vice versa
-- NEVER place the logo over complex imagery, textures, or patterns that reduce readability
-- NEVER crop, clip, or partially hide the logo
+WHAT YOU MUST NOT DO:
+✗ Do NOT draw or render ANY logo, wordmark, or brand symbol
+✗ Do NOT write the brand name in a logo-like treatment
+✗ Do NOT create placeholder text or shapes where the logo goes
+✗ Do NOT attempt to reproduce any reference image as a logo
+✗ Simply leave a clean, professional space — our system will add the real logo automatically
 
-STEP 4 — BRAND COHESION:
-- Extract the logo's dominant colors and use them throughout the entire design
-- Match the logo's visual style (modern/classic/playful/elegant) in all other design elements
-- Typography choices should complement the logo's typographic character
-- The logo sets the tone — every other element is subordinate to it
-
-FAILURE CONDITIONS — A result is FAILED if ANY occur:
-✗ Logo is missing from the design entirely
-✗ Logo is distorted, warped, rotated arbitrarily, re-colored incorrectly, "AI-styled," or replaced by text
-✗ Logo text is misspelled, has wrong letters, or wrong letter count
-✗ Logo icon/symbol shape differs from original (simplified, abstracted, or redrawn)
-✗ Logo is cropped unintentionally
-✗ Logo is too small to read for the asset's intended viewing distance
-✗ Logo blends into the background (no contrast protection used when needed)
-✗ Logo is hard to see due to poor contrast or busy background
-✗ Logo looks different from the uploaded version (redrawn/reinterpreted)
-✗ Logo colors have been changed or shifted
-✗ Logo proportions have been altered (stretched, squished)`;
+WHAT TO DO INSTEAD:
+✓ Design the rest of the layout beautifully with event info, colors, and imagery
+✓ Keep the logo zone clean and uncluttered
+✓ Ensure the design looks complete and professional even without the logo visible
+✓ Focus creative energy on layout, typography, color usage, and overall composition`;
 }
 
 /**
