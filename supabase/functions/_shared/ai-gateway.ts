@@ -211,7 +211,7 @@ export async function generateImageWithRetry(
           const label = img.label || `Reference Image`;
           return `  Image ${i + 1}: ${label}`;
         });
-        imageMapDescription = `\n\nREFERENCE IMAGES PROVIDED (${validImages.length} total):\n${labelLines.join('\n')}\nUse each image according to its label. The LOGO should be incorporated into the design. STYLE REFERENCE images define the visual aesthetic to match. PATTERN images should be used as decorative/background elements. VENUE PHOTO should be used for realistic compositing.\n`;
+        imageMapDescription = `\n\nREFERENCE IMAGES PROVIDED (${validImages.length} total):\n${labelLines.join('\n')}\n\nCRITICAL USAGE RULES:\n- BRAND LOGO images: REPRODUCE EXACTLY as provided — pixel-perfect, no redrawing, no reinterpretation, no stylization. The logo must appear IDENTICAL to the uploaded version.\n- STYLE REFERENCE images: match the visual aesthetic and mood.\n- PATTERN images: use as decorative/background elements.\n- VENUE PHOTO: composite the design into the real venue environment.\n`;
       }
 
       // Add text prompt with image map
