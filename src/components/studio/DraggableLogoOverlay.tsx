@@ -1,10 +1,12 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock } from 'lucide-react';
+import { Move, RotateCcw, Eye, EyeOff, Lock, Unlock, Grid3X3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { AlignmentGuides } from './AlignmentGuides';
+import { snapToGuides, type SnapGuide } from './logoSnapping';
 
 export interface LogoPlacement {
   /** X position as fraction of image width (0-1) */
@@ -17,14 +19,10 @@ export interface LogoPlacement {
 
 interface DraggableLogoOverlayProps {
   logoUrl: string;
-  /** Container dimensions in CSS pixels */
   containerWidth: number;
   containerHeight: number;
-  /** Initial placement */
   initialPlacement: LogoPlacement;
-  /** Called on every placement change */
   onPlacementChange: (placement: LogoPlacement) => void;
-  /** Zoom level of the preview (for coordinate mapping) */
   zoomScale?: number;
   className?: string;
 }
@@ -42,6 +40,8 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isLocked, setIsLocked] = useState(false);
+  const [snapEnabled, setSnapEnabled] = useState(true);
+  const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([]);
   const [logoNaturalSize, setLogoNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
@@ -49,10 +49,15 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
     setPlacement(initialPlacement);
   }, [initialPlacement.x, initialPlacement.y, initialPlacement.scale]);
 
-  // Compute pixel positions from fractional placement
+  // Clear guides when not dragging
+  useEffect(() => {
+    if (!isDragging) setActiveGuides([]);
+  }, [isDragging]);
+
   const logoPixelWidth = containerWidth * placement.scale;
   const logoAspect = logoNaturalSize ? logoNaturalSize.w / logoNaturalSize.h : 1;
   const logoPixelHeight = logoPixelWidth / logoAspect;
+  const logoHeightFrac = logoPixelHeight / containerHeight;
   const pixelX = placement.x * containerWidth;
   const pixelY = placement.y * containerHeight;
 
@@ -66,12 +71,24 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
     const startMouseY = e.clientY;
     const startX = placement.x;
     const startY = placement.y;
+    const currentScale = placement.scale;
+    const hFrac = logoPixelHeight / containerHeight;
 
     const onMove = (ev: MouseEvent) => {
       const dx = (ev.clientX - startMouseX) / containerWidth;
       const dy = (ev.clientY - startMouseY) / containerHeight;
-      const newX = Math.max(0, Math.min(1 - placement.scale, startX + dx));
-      const newY = Math.max(0, Math.min(1 - (logoPixelHeight / containerHeight), startY + dy));
+      let newX = Math.max(0, Math.min(1 - currentScale, startX + dx));
+      let newY = Math.max(0, Math.min(1 - hFrac, startY + dy));
+
+      let guides: SnapGuide[] = [];
+      if (snapEnabled) {
+        const snap = snapToGuides(newX, newY, currentScale, hFrac);
+        newX = Math.max(0, Math.min(1 - currentScale, snap.x));
+        newY = Math.max(0, Math.min(1 - hFrac, snap.y));
+        guides = snap.activeGuides;
+      }
+      setActiveGuides(guides);
+
       const next = { ...placement, x: newX, y: newY };
       setPlacement(next);
       onPlacementChange(next);
@@ -79,13 +96,14 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
 
     const onUp = () => {
       setIsDragging(false);
+      setActiveGuides([]);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
 
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  }, [isLocked, placement, containerWidth, containerHeight, logoPixelHeight, onPlacementChange]);
+  }, [isLocked, placement, containerWidth, containerHeight, logoPixelHeight, onPlacementChange, snapEnabled]);
 
   const handleScaleChange = useCallback((val: number[]) => {
     const next = { ...placement, scale: val[0] };
@@ -120,6 +138,14 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
 
   return (
     <>
+      {/* Alignment guides */}
+      <AlignmentGuides
+        containerWidth={containerWidth}
+        containerHeight={containerHeight}
+        activeGuides={activeGuides}
+        showAll={isDragging && snapEnabled}
+      />
+
       {/* Draggable Logo */}
       <div
         ref={overlayRef}
@@ -139,7 +165,6 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
         }}
         onMouseDown={handleMouseDown}
       >
-        {/* White backing plate */}
         <div className="absolute inset-[-8%] rounded-md bg-white/70 pointer-events-none" />
         <img
           src={logoUrl}
@@ -151,7 +176,6 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
             setLogoNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
           }}
         />
-        {/* Drag indicator */}
         {!isLocked && !isDragging && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -168,7 +192,6 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-card/90 backdrop-blur-md border border-border rounded-xl px-3 py-2 shadow-lg">
         <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mr-1">Logo</span>
 
-        {/* Scale slider */}
         <div className="flex items-center gap-2 w-28">
           <span className="text-[10px] text-muted-foreground">Size</span>
           <Slider
@@ -183,6 +206,21 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
         </div>
 
         <div className="w-px h-5 bg-border" />
+
+        {/* Snap toggle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant={snapEnabled ? 'secondary' : 'ghost'}
+              className="h-7 w-7 p-0"
+              onClick={() => setSnapEnabled(s => !s)}
+            >
+              <Grid3X3 className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{snapEnabled ? 'Disable snap guides' : 'Enable snap guides'}</TooltipContent>
+        </Tooltip>
 
         {/* Lock toggle */}
         <Tooltip>
