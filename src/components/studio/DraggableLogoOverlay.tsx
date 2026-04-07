@@ -117,6 +117,26 @@ export const DraggableLogoOverlay: React.FC<DraggableLogoOverlayProps> = ({
     onPlacementChange(initialPlacement);
   }, [initialPlacement, onPlacementChange]);
 
+  const handlePresetPosition = useCallback((preset: 'tl' | 'tc' | 'tr' | 'cl' | 'cc' | 'cr' | 'bl' | 'bc' | 'br') => {
+    const hFrac = logoPixelHeight / containerHeight;
+    const margin = 0.05;
+    const posMap: Record<string, { x: number; y: number }> = {
+      tl: { x: margin, y: margin },
+      tc: { x: (1 - placement.scale) / 2, y: margin },
+      tr: { x: 1 - placement.scale - margin, y: margin },
+      cl: { x: margin, y: (1 - hFrac) / 2 },
+      cc: { x: (1 - placement.scale) / 2, y: (1 - hFrac) / 2 },
+      cr: { x: 1 - placement.scale - margin, y: (1 - hFrac) / 2 },
+      bl: { x: margin, y: 1 - hFrac - margin },
+      bc: { x: (1 - placement.scale) / 2, y: 1 - hFrac - margin },
+      br: { x: 1 - placement.scale - margin, y: 1 - hFrac - margin },
+    };
+    const pos = posMap[preset];
+    const next = { ...placement, x: Math.max(0, pos.x), y: Math.max(0, pos.y) };
+    setPlacement(next);
+    onPlacementChange(next);
+  }, [placement, containerHeight, logoPixelHeight, onPlacementChange]);
+
   if (!isVisible) {
     return (
       <div className={cn('absolute top-2 right-2 z-30', className)}>
