@@ -366,9 +366,169 @@ export const YOUTUBE_THUMBNAIL_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= TWITTER/X HEADER TEMPLATES =============
+
+export const TWITTER_HEADER_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'twitter-header-minimal', name: 'Minimal X Header', description: 'Clean minimal Twitter/X header',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1500, 500),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#ffffff', accent: '#3b82f6', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 5, y: 20, width: 15, height: 60 }, { placeholder: 'Logo' }),
+      createTextField('name', 'Name', { x: 25, y: 25, width: 50, height: 20 }, { placeholder: 'Brand Name', required: true, style: { fontSize: 36, fontWeight: 'bold', color: '#1a1a1a' } }),
+      createTextField('tagline', 'Tagline', { x: 25, y: 50, width: 50, height: 15 }, { placeholder: 'Your tagline goes here', style: { fontSize: 16, color: '#6b7280' } })
+    ],
+    tags: ['twitter', 'x', 'header', 'minimal', 'social']
+  },
+  {
+    id: 'twitter-header-event', name: 'Event X Header', description: 'Event-branded Twitter/X header',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1500, 500),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #1e3a5f 0%, #0c2340 100%)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#1e3a5f', accent: '#fbbf24', text: '#ffffff', background: '#1e3a5f' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 3, y: 15, width: 12, height: 70 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 18, y: 15, width: 60, height: 30 }, { placeholder: 'ANNUAL CONFERENCE', required: true, style: { fontSize: 42, fontWeight: '800', color: '#ffffff' } }),
+      createTextField('date', 'Date', { x: 18, y: 50, width: 40, height: 15 }, { placeholder: 'March 15-17, 2024', style: { fontSize: 18, color: '#fbbf24' } }),
+      createTextField('hashtag', 'Hashtag', { x: 18, y: 68, width: 40, height: 12 }, { placeholder: '#Conference2024', style: { fontSize: 16, color: 'rgba(255,255,255,0.7)' } })
+    ],
+    tags: ['twitter', 'x', 'header', 'event', 'social']
+  },
+  {
+    id: 'twitter-header-dark-mode', name: 'Dark Mode X Header', description: 'Dark premium Twitter/X header',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1500, 500),
+    background: { type: 'solid', value: '#0a0a0a' },
+    defaultFonts: { heading: 'Space Grotesk', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#0a0a0a', accent: '#a78bfa', text: '#ffffff', background: '#0a0a0a' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 5, y: 20, width: 12, height: 60 }, { placeholder: 'Logo' }),
+      createTextField('name', 'Name', { x: 22, y: 20, width: 55, height: 25 }, { placeholder: 'BRAND NAME', required: true, style: { fontSize: 44, fontWeight: '800', color: '#ffffff' } }),
+      createTextField('desc', 'Description', { x: 22, y: 50, width: 55, height: 15 }, { placeholder: 'Building the future of events', style: { fontSize: 18, color: '#a78bfa' } }),
+      createTextField('url', 'URL', { x: 22, y: 70, width: 40, height: 10 }, { placeholder: 'brand.com', style: { fontSize: 14, color: 'rgba(255,255,255,0.5)' } })
+    ],
+    tags: ['twitter', 'x', 'header', 'dark', 'premium', 'social']
+  }
+];
+
+// ============= PODCAST COVER TEMPLATES =============
+
+export const PODCAST_COVER_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'podcast-bold-minimal', name: 'Bold Minimal', description: 'Clean bold podcast cover',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(3000, 3000),
+    background: { type: 'solid', value: '#0a0a0a' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#0a0a0a', accent: '#ef4444', text: '#ffffff', background: '#0a0a0a' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createTextField('title', 'Title', { x: 8, y: 15, width: 84, height: 30 }, { placeholder: 'THE\nPODCAST', required: true, style: { fontSize: 72, fontWeight: '800', color: '#ffffff', lineHeight: 1.1 } }),
+      { id: 'bar', type: 'shape' as any, name: 'Accent', position: { x: 8, y: 48, width: 20, height: 1.5 }, style: { backgroundColor: '#ef4444' } },
+      createTextField('subtitle', 'Subtitle', { x: 8, y: 54, width: 84, height: 12 }, { placeholder: 'Conversations that matter', style: { fontSize: 22, color: 'rgba(255,255,255,0.6)' } }),
+      createLogoField('logo', 'Logo', { x: 8, y: 75, width: 20, height: 15 }, { placeholder: 'Logo' })
+    ],
+    tags: ['podcast', 'cover', 'bold', 'minimal', 'social']
+  },
+  {
+    id: 'podcast-editorial', name: 'Editorial Podcast', description: 'Magazine-style podcast cover',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(3000, 3000),
+    background: { type: 'solid', value: '#f5f3ee' },
+    defaultFonts: { heading: 'Playfair Display', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#f5f3ee', accent: '#c9a84c', text: '#1a1a1a', background: '#f5f3ee' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createTextField('label', 'Label', { x: 10, y: 10, width: 80, height: 5 }, { placeholder: 'A PODCAST BY', style: { fontSize: 12, textAlign: 'center', color: '#6b7280', letterSpacing: 4 } }),
+      createLogoField('logo', 'Logo', { x: 30, y: 18, width: 40, height: 15 }, { placeholder: 'Logo' }),
+      { id: 'line', type: 'divider' as any, name: 'Line', position: { x: 30, y: 36, width: 40, height: 0.3 }, style: { backgroundColor: '#c9a84c' } },
+      createTextField('title', 'Title', { x: 8, y: 40, width: 84, height: 25 }, { placeholder: 'Behind the\nScenes', required: true, style: { fontSize: 56, fontWeight: 'bold', textAlign: 'center', color: '#1a1a1a', lineHeight: 1.2 } }),
+      createTextField('subtitle', 'Subtitle', { x: 15, y: 68, width: 70, height: 10 }, { placeholder: 'Stories from the industry', style: { fontSize: 18, textAlign: 'center', color: '#6b7280' } }),
+      createImageField('host', 'Host Photo', { x: 30, y: 80, width: 40, height: 15 }, { placeholder: 'Host photo', style: { borderRadius: 100 } })
+    ],
+    tags: ['podcast', 'cover', 'editorial', 'classy', 'social']
+  },
+  {
+    id: 'podcast-neon-tech', name: 'Neon Tech Podcast', description: 'Tech-forward neon podcast cover',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(3000, 3000),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #0a0a1a 0%, #1e1e5a 100%)' },
+    defaultFonts: { heading: 'Space Grotesk', body: 'Inter' },
+    defaultColors: { primary: '#4ade80', secondary: '#0a0a1a', accent: '#a78bfa', text: '#4ade80', background: '#0a0a1a' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createTextField('title', 'Title', { x: 8, y: 20, width: 84, height: 25 }, { placeholder: 'TECH\nTALK', required: true, style: { fontSize: 68, fontWeight: '800', color: '#4ade80', lineHeight: 1 } }),
+      createTextField('subtitle', 'Subtitle', { x: 8, y: 50, width: 60, height: 10 }, { placeholder: 'The Future of Everything', style: { fontSize: 20, color: '#a78bfa' } }),
+      createTextField('host', 'Host', { x: 8, y: 65, width: 50, height: 6 }, { placeholder: 'with Alex Chen', style: { fontSize: 16, color: 'rgba(255,255,255,0.5)' } }),
+      createLogoField('logo', 'Logo', { x: 8, y: 80, width: 18, height: 12 }, { placeholder: 'Logo' }),
+      createTextField('ep', 'Episode', { x: 65, y: 82, width: 30, height: 8 }, { placeholder: 'NEW EPISODES\nWEEKLY', style: { fontSize: 11, textAlign: 'right', color: 'rgba(255,255,255,0.4)', lineHeight: 1.4 } })
+    ],
+    tags: ['podcast', 'cover', 'neon', 'tech', 'social']
+  }
+];
+
+// ============= ZOOM BACKGROUND TEMPLATES =============
+
+export const ZOOM_BACKGROUND_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'zoom-branded-office', name: 'Branded Office', description: 'Professional branded Zoom background',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1920, 1080),
+    background: { type: 'solid', value: '#f8fafc' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1e3a5f', secondary: '#f8fafc', accent: '#3b82f6', text: '#1e3a5f', background: '#f8fafc' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 70, y: 5, width: 25, height: 12 }, { placeholder: 'Logo', required: true }),
+      createTextField('event', 'Event', { x: 70, y: 80, width: 25, height: 8 }, { placeholder: 'Conference 2024', style: { fontSize: 14, textAlign: 'right', color: '#1e3a5f' } }),
+      createTextField('url', 'URL', { x: 70, y: 90, width: 25, height: 5 }, { placeholder: 'event.com', style: { fontSize: 11, textAlign: 'right', color: '#6b7280' } })
+    ],
+    tags: ['zoom', 'background', 'virtual', 'branded', 'office', 'social']
+  },
+  {
+    id: 'zoom-abstract-minimal', name: 'Abstract Minimal', description: 'Clean abstract Zoom background',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1920, 1080),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#667eea', accent: '#ffffff', text: '#ffffff', background: '#667eea' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 72, y: 5, width: 22, height: 10 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 72, y: 85, width: 22, height: 8 }, { placeholder: '#Conference2024', style: { fontSize: 13, textAlign: 'right', color: 'rgba(255,255,255,0.7)' } })
+    ],
+    tags: ['zoom', 'background', 'abstract', 'gradient', 'social']
+  },
+  {
+    id: 'zoom-dark-premium', name: 'Dark Premium Zoom', description: 'Dark professional Zoom background',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1920, 1080),
+    background: { type: 'solid', value: '#0d0d0d' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#c9a84c', secondary: '#0d0d0d', accent: '#f0d78c', text: '#c9a84c', background: '#0d0d0d' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 72, y: 5, width: 22, height: 10 }, { placeholder: 'Logo' }),
+      createTextField('name', 'Name', { x: 5, y: 80, width: 40, height: 8 }, { placeholder: 'Speaker Name', style: { fontSize: 16, color: '#c9a84c' } }),
+      createTextField('title', 'Title', { x: 5, y: 90, width: 40, height: 6 }, { placeholder: 'CEO, Company Name', style: { fontSize: 12, color: 'rgba(201,168,76,0.6)' } })
+    ],
+    tags: ['zoom', 'background', 'dark', 'premium', 'social']
+  }
+];
+
 export const ALL_SOCIAL_TEMPLATES: EditableTemplate[] = [
   ...SOCIAL_POST_TEMPLATES,
   ...SOCIAL_STORY_TEMPLATES,
   ...LINKEDIN_BANNER_TEMPLATES,
-  ...YOUTUBE_THUMBNAIL_TEMPLATES
+  ...YOUTUBE_THUMBNAIL_TEMPLATES,
+  ...TWITTER_HEADER_TEMPLATES,
+  ...PODCAST_COVER_TEMPLATES,
+  ...ZOOM_BACKGROUND_TEMPLATES
 ];
