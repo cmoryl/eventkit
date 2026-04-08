@@ -482,10 +482,147 @@ export const SPEAKER_INTRO_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= COUNTDOWN TIMER TEMPLATES =============
+
+export const COUNTDOWN_TIMER_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'countdown-flip-clock', name: 'Flip Clock', description: 'Classic flip clock countdown',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1920, 1080),
+    background: { type: 'solid', value: '#0a0a0a' },
+    defaultFonts: { heading: 'Space Grotesk', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#1a1a1a', accent: '#ef4444', text: '#ffffff', background: '#0a0a0a' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 35, y: 5, width: 30, height: 10 }, { placeholder: 'Logo' }),
+      createTextField('label', 'Label', { x: 15, y: 18, width: 70, height: 8 }, { placeholder: 'EVENT STARTS IN', style: { fontSize: 16, textAlign: 'center', color: '#ef4444', letterSpacing: 6 } }),
+      createTextField('days', 'Days', { x: 8, y: 32, width: 18, height: 25 }, { placeholder: '14', required: true, style: { fontSize: 72, fontWeight: '800', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('hours', 'Hours', { x: 30, y: 32, width: 18, height: 25 }, { placeholder: '08', style: { fontSize: 72, fontWeight: '800', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('mins', 'Minutes', { x: 52, y: 32, width: 18, height: 25 }, { placeholder: '32', style: { fontSize: 72, fontWeight: '800', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('secs', 'Seconds', { x: 74, y: 32, width: 18, height: 25 }, { placeholder: '15', style: { fontSize: 72, fontWeight: '800', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('d-label', 'Days Label', { x: 8, y: 58, width: 18, height: 5 }, { placeholder: 'DAYS', style: { fontSize: 10, textAlign: 'center', color: '#6b7280', letterSpacing: 2 } }),
+      createTextField('h-label', 'Hours Label', { x: 30, y: 58, width: 18, height: 5 }, { placeholder: 'HOURS', style: { fontSize: 10, textAlign: 'center', color: '#6b7280', letterSpacing: 2 } }),
+      createTextField('m-label', 'Mins Label', { x: 52, y: 58, width: 18, height: 5 }, { placeholder: 'MINUTES', style: { fontSize: 10, textAlign: 'center', color: '#6b7280', letterSpacing: 2 } }),
+      createTextField('s-label', 'Secs Label', { x: 74, y: 58, width: 18, height: 5 }, { placeholder: 'SECONDS', style: { fontSize: 10, textAlign: 'center', color: '#6b7280', letterSpacing: 2 } }),
+      createTextField('event', 'Event', { x: 15, y: 68, width: 70, height: 10 }, { placeholder: 'Annual Conference 2024', style: { fontSize: 22, textAlign: 'center', color: '#ffffff' } }),
+      createTextField('date', 'Date', { x: 20, y: 80, width: 60, height: 6 }, { placeholder: 'March 15-17 | Convention Center', style: { fontSize: 14, textAlign: 'center', color: 'rgba(255,255,255,0.5)' } })
+    ],
+    tags: ['countdown', 'timer', 'flip-clock', 'digital']
+  },
+  {
+    id: 'countdown-bold', name: 'Bold Countdown', description: 'Big bold number countdown',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1080, 1080),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #e94560 0%, #764ba2 100%)' },
+    defaultFonts: { heading: 'Bebas Neue', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#e94560', accent: '#fbbf24', text: '#ffffff', background: '#e94560' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createTextField('number', 'Number', { x: 10, y: 15, width: 80, height: 40 }, { placeholder: '7', required: true, style: { fontSize: 160, fontWeight: '800', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('unit', 'Unit', { x: 10, y: 55, width: 80, height: 10 }, { placeholder: 'DAYS TO GO', style: { fontSize: 24, textAlign: 'center', color: '#fbbf24', letterSpacing: 6 } }),
+      createLogoField('logo', 'Logo', { x: 30, y: 70, width: 40, height: 12 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 10, y: 85, width: 80, height: 8 }, { placeholder: '#SummerFest2024', style: { fontSize: 16, textAlign: 'center', color: 'rgba(255,255,255,0.7)' } })
+    ],
+    tags: ['countdown', 'timer', 'bold', 'social', 'digital']
+  }
+];
+
+// ============= APP SPLASH SCREEN TEMPLATES =============
+
+export const APP_SPLASH_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'app-splash-minimal', name: 'Minimal Splash', description: 'Clean app splash screen',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1290, 2796),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#ffffff', accent: '#3b82f6', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 38, width: 40, height: 12 }, { placeholder: 'App logo', required: true }),
+      createTextField('name', 'App Name', { x: 15, y: 52, width: 70, height: 6 }, { placeholder: 'Event App', style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#1a1a1a' } }),
+      createTextField('tagline', 'Tagline', { x: 20, y: 58, width: 60, height: 4 }, { placeholder: 'Your event companion', style: { fontSize: 14, textAlign: 'center', color: '#6b7280' } })
+    ],
+    tags: ['app', 'splash', 'screen', 'mobile', 'digital']
+  },
+  {
+    id: 'app-splash-gradient', name: 'Gradient Splash', description: 'Gradient app splash screen',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1290, 2796),
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#667eea', accent: '#ffffff', text: '#ffffff', background: '#667eea' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 38, width: 40, height: 12 }, { placeholder: 'App logo', required: true }),
+      createTextField('name', 'App Name', { x: 15, y: 52, width: 70, height: 6 }, { placeholder: 'Event App', style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createTextField('tagline', 'Tagline', { x: 20, y: 58, width: 60, height: 4 }, { placeholder: 'Your event companion', style: { fontSize: 14, textAlign: 'center', color: 'rgba(255,255,255,0.7)' } })
+    ],
+    tags: ['app', 'splash', 'screen', 'gradient', 'digital']
+  },
+  {
+    id: 'app-splash-dark', name: 'Dark Premium Splash', description: 'Dark premium app splash screen',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createPixelDimensions(1290, 2796),
+    background: { type: 'solid', value: '#0a0a0a' },
+    defaultFonts: { heading: 'Space Grotesk', body: 'Inter' },
+    defaultColors: { primary: '#c9a84c', secondary: '#0a0a0a', accent: '#f0d78c', text: '#c9a84c', background: '#0a0a0a' },
+    colorMode: 'RGB', dpi: 72,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 36, width: 40, height: 12 }, { placeholder: 'App logo', required: true }),
+      createTextField('name', 'App Name', { x: 15, y: 50, width: 70, height: 6 }, { placeholder: 'Event App', style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#c9a84c' } }),
+      createTextField('tagline', 'Tagline', { x: 20, y: 57, width: 60, height: 4 }, { placeholder: 'Your VIP experience', style: { fontSize: 14, textAlign: 'center', color: 'rgba(201,168,76,0.6)' } }),
+      createTextField('event', 'Event', { x: 20, y: 85, width: 60, height: 4 }, { placeholder: 'Annual Gala 2024', style: { fontSize: 12, textAlign: 'center', color: 'rgba(201,168,76,0.4)' } })
+    ],
+    tags: ['app', 'splash', 'screen', 'dark', 'premium', 'digital']
+  }
+];
+
+// ============= QR CODE CARD TEMPLATES =============
+
+export const QR_CODE_CARD_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'qr-card-minimal', name: 'Minimal QR Card', description: 'Clean QR code display card',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createDimensions(4, 6, 0.125, 0.125),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#ffffff', accent: '#3b82f6', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 5, width: 50, height: 12 }, { placeholder: 'Logo' }),
+      createTextField('title', 'Title', { x: 10, y: 20, width: 80, height: 8 }, { placeholder: 'Scan to Connect', style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', color: '#1a1a1a' } }),
+      { id: 'qr', type: 'qrcode' as any, name: 'QR Code', position: { x: 20, y: 32, width: 60, height: 38 }, placeholder: 'Your URL here', required: true, style: { backgroundColor: '#ffffff' } },
+      createTextField('url', 'URL', { x: 10, y: 74, width: 80, height: 5 }, { placeholder: 'event.com/connect', style: { fontSize: 12, textAlign: 'center', color: '#3b82f6' } }),
+      createTextField('desc', 'Description', { x: 10, y: 82, width: 80, height: 10 }, { placeholder: 'Download the event app\nfor schedules & networking', style: { fontSize: 11, textAlign: 'center', color: '#6b7280', lineHeight: 1.4 } })
+    ],
+    tags: ['qr', 'code', 'card', 'connect', 'digital']
+  },
+  {
+    id: 'qr-card-dark-tech', name: 'Dark Tech QR', description: 'Tech-forward dark QR card',
+    assetType: AssetType.SocialPost, category: 'universal',
+    dimensions: createDimensions(4, 6, 0.125, 0.125),
+    background: { type: 'solid', value: '#0a0a1a' },
+    defaultFonts: { heading: 'Space Grotesk', body: 'Inter' },
+    defaultColors: { primary: '#4ade80', secondary: '#0a0a1a', accent: '#a78bfa', text: '#4ade80', background: '#0a0a1a' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('title', 'Title', { x: 10, y: 8, width: 80, height: 8 }, { placeholder: 'SCAN ME', required: true, style: { fontSize: 22, fontWeight: '800', textAlign: 'center', color: '#4ade80', letterSpacing: 4 } }),
+      { id: 'qr', type: 'qrcode' as any, name: 'QR Code', position: { x: 18, y: 22, width: 64, height: 42 }, placeholder: 'Your URL', style: { backgroundColor: '#ffffff', borderRadius: 12 } },
+      createLogoField('logo', 'Logo', { x: 30, y: 68, width: 40, height: 10 }, { placeholder: 'Logo' }),
+      createTextField('desc', 'Description', { x: 10, y: 80, width: 80, height: 12 }, { placeholder: 'Get instant access to\nexclusive content', style: { fontSize: 12, textAlign: 'center', color: 'rgba(74,222,128,0.6)', lineHeight: 1.4 } })
+    ],
+    tags: ['qr', 'code', 'card', 'dark', 'tech', 'digital']
+  }
+];
+
 export const ALL_DIGITAL_MISC_TEMPLATES: EditableTemplate[] = [
   ...EMAIL_HEADER_TEMPLATES,
   ...DIGITAL_WIFI_SIGN_TEMPLATES,
   ...THANK_YOU_NOTE_TEMPLATES,
   ...PHOTO_BOOTH_FRAME_TEMPLATES,
-  ...SPEAKER_INTRO_TEMPLATES
+  ...SPEAKER_INTRO_TEMPLATES,
+  ...COUNTDOWN_TIMER_TEMPLATES,
+  ...APP_SPLASH_TEMPLATES,
+  ...QR_CODE_CARD_TEMPLATES
 ];

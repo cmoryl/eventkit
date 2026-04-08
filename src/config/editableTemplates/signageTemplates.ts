@@ -367,8 +367,200 @@ export const WIFI_SIGN_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= EASEL SIGNAGE TEMPLATES =============
+
+export const EASEL_SIGNAGE_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'easel-welcome-hero', name: 'Welcome Easel', description: 'Grand welcome easel sign',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(24, 36, 0.125, 0.5),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Playfair Display', body: 'Inter' },
+    defaultColors: { primary: '#1e3a5f', secondary: '#ffffff', accent: '#c9a84c', text: '#1e3a5f', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 3, width: 50, height: 12 }, { placeholder: 'Logo' }),
+      createTextField('welcome', 'Welcome', { x: 5, y: 18, width: 90, height: 8 }, { placeholder: 'Welcome to', style: { fontSize: 18, textAlign: 'center', color: '#6b7280' } }),
+      createTextField('event', 'Event Name', { x: 5, y: 26, width: 90, height: 18 }, { placeholder: 'Annual\nConference', required: true, style: { fontSize: 42, fontWeight: 'bold', textAlign: 'center', color: '#1e3a5f', lineHeight: 1.2 } }),
+      { id: 'divider', type: 'divider' as any, name: 'Divider', position: { x: 30, y: 46, width: 40, height: 0.3 }, style: { backgroundColor: '#c9a84c' } },
+      createTextField('date', 'Date', { x: 10, y: 50, width: 80, height: 6 }, { placeholder: 'March 15-17, 2024', style: { fontSize: 16, textAlign: 'center', color: '#1e3a5f' } }),
+      createTextField('venue', 'Venue', { x: 10, y: 58, width: 80, height: 6 }, { placeholder: 'Grand Convention Center', style: { fontSize: 14, textAlign: 'center', color: '#6b7280' } }),
+      createImageField('hero', 'Hero Image', { x: 10, y: 67, width: 80, height: 22 }, { placeholder: 'Event or venue photo', style: { borderRadius: 8 } }),
+      { id: 'qr', type: 'qrcode' as any, name: 'QR', position: { x: 38, y: 91, width: 24, height: 7 }, placeholder: 'Event website', style: { backgroundColor: '#ffffff' } }
+    ],
+    tags: ['easel', 'welcome', 'sign', 'signage', 'entrance']
+  },
+  {
+    id: 'easel-schedule-board', name: 'Schedule Board', description: 'Daily schedule easel display',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(24, 36, 0.125, 0.5),
+    background: { type: 'solid', value: '#f8fafc' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#f8fafc', accent: '#3b82f6', text: '#1a1a1a', background: '#f8fafc' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      { id: 'header', type: 'shape' as any, name: 'Header', position: { x: 0, y: 0, width: 100, height: 14 }, style: { backgroundColor: '#1a1a1a' } },
+      createLogoField('logo', 'Logo', { x: 3, y: 2, width: 15, height: 10 }, { placeholder: 'Logo' }),
+      createTextField('title', 'Title', { x: 22, y: 3, width: 75, height: 8 }, { placeholder: "TODAY'S SCHEDULE", style: { fontSize: 24, fontWeight: 'bold', textAlign: 'right', color: '#ffffff', letterSpacing: 2 } }),
+      createTextField('day', 'Day', { x: 5, y: 17, width: 90, height: 5 }, { placeholder: 'Day 1 — March 15, 2024', style: { fontSize: 14, fontWeight: 'bold', color: '#3b82f6' } }),
+      createTextField('s1', 'Session 1', { x: 5, y: 24, width: 90, height: 7 }, { placeholder: '9:00 AM — Opening Keynote | Main Hall', style: { fontSize: 13, color: '#1a1a1a' } }),
+      createTextField('s2', 'Session 2', { x: 5, y: 32, width: 90, height: 7 }, { placeholder: '10:30 AM — Panel: Future of AI | Room A', style: { fontSize: 13, color: '#1a1a1a' } }),
+      createTextField('s3', 'Session 3', { x: 5, y: 40, width: 90, height: 7 }, { placeholder: '12:00 PM — Networking Lunch | Terrace', style: { fontSize: 13, color: '#1a1a1a' } }),
+      createTextField('s4', 'Session 4', { x: 5, y: 48, width: 90, height: 7 }, { placeholder: '1:30 PM — Workshop: Design Systems | Room B', style: { fontSize: 13, color: '#1a1a1a' } }),
+      createTextField('s5', 'Session 5', { x: 5, y: 56, width: 90, height: 7 }, { placeholder: '3:00 PM — Fireside Chat | Main Hall', style: { fontSize: 13, color: '#1a1a1a' } }),
+      createTextField('s6', 'Session 6', { x: 5, y: 64, width: 90, height: 7 }, { placeholder: '5:00 PM — Closing Reception | Rooftop', style: { fontSize: 13, color: '#1a1a1a' } })
+    ],
+    tags: ['easel', 'schedule', 'agenda', 'sign', 'signage']
+  },
+  {
+    id: 'easel-sponsor-board', name: 'Sponsor Board', description: 'Sponsor recognition easel',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(24, 36, 0.125, 0.5),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#ffffff', accent: '#c9a84c', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('event-logo', 'Event Logo', { x: 30, y: 3, width: 40, height: 10 }, { placeholder: 'Event logo' }),
+      createTextField('title', 'Title', { x: 5, y: 15, width: 90, height: 6 }, { placeholder: 'OUR SPONSORS', style: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#1a1a1a', letterSpacing: 4 } }),
+      createTextField('platinum', 'Platinum', { x: 5, y: 23, width: 90, height: 4 }, { placeholder: 'PLATINUM', style: { fontSize: 10, textAlign: 'center', color: '#c9a84c', letterSpacing: 3 } }),
+      createLogoField('p1', 'Platinum 1', { x: 20, y: 28, width: 25, height: 12 }, { placeholder: 'Sponsor' }),
+      createLogoField('p2', 'Platinum 2', { x: 55, y: 28, width: 25, height: 12 }, { placeholder: 'Sponsor' }),
+      createTextField('gold', 'Gold', { x: 5, y: 43, width: 90, height: 4 }, { placeholder: 'GOLD', style: { fontSize: 10, textAlign: 'center', color: '#d4a017', letterSpacing: 3 } }),
+      createLogoField('g1', 'Gold 1', { x: 8, y: 48, width: 20, height: 10 }, { placeholder: 'Sponsor' }),
+      createLogoField('g2', 'Gold 2', { x: 32, y: 48, width: 20, height: 10 }, { placeholder: 'Sponsor' }),
+      createLogoField('g3', 'Gold 3', { x: 56, y: 48, width: 20, height: 10 }, { placeholder: 'Sponsor' }),
+      createLogoField('g4', 'Gold 4', { x: 78, y: 48, width: 18, height: 10 }, { placeholder: 'Sponsor' }),
+      createTextField('silver', 'Silver', { x: 5, y: 62, width: 90, height: 4 }, { placeholder: 'SILVER', style: { fontSize: 10, textAlign: 'center', color: '#9ca3af', letterSpacing: 3 } }),
+      createLogoField('sv1', 'Silver 1', { x: 5, y: 67, width: 16, height: 8 }, { placeholder: 'Sponsor' }),
+      createLogoField('sv2', 'Silver 2', { x: 24, y: 67, width: 16, height: 8 }, { placeholder: 'Sponsor' }),
+      createLogoField('sv3', 'Silver 3', { x: 42, y: 67, width: 16, height: 8 }, { placeholder: 'Sponsor' }),
+      createLogoField('sv4', 'Silver 4', { x: 60, y: 67, width: 16, height: 8 }, { placeholder: 'Sponsor' }),
+      createLogoField('sv5', 'Silver 5', { x: 78, y: 67, width: 16, height: 8 }, { placeholder: 'Sponsor' })
+    ],
+    tags: ['easel', 'sponsor', 'recognition', 'sign', 'signage']
+  }
+];
+
+// ============= FLOOR DECAL TEMPLATES =============
+
+export const FLOOR_DECAL_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'floor-decal-arrow', name: 'Arrow Wayfinding', description: 'Directional floor arrow decal',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(24, 24, 0.25, 0.5),
+    background: { type: 'solid', value: '#3b82f6' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#3b82f6', accent: '#ffffff', text: '#ffffff', background: '#3b82f6' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createTextField('arrow', 'Arrow', { x: 20, y: 10, width: 60, height: 40 }, { placeholder: '↑', style: { fontSize: 120, textAlign: 'center', color: '#ffffff' } }),
+      createTextField('label', 'Label', { x: 10, y: 55, width: 80, height: 15 }, { placeholder: 'MAIN HALL', required: true, style: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#ffffff' } }),
+      createLogoField('logo', 'Logo', { x: 35, y: 75, width: 30, height: 15 }, { placeholder: 'Logo' })
+    ],
+    tags: ['floor-decal', 'arrow', 'wayfinding', 'directional', 'sign', 'signage']
+  },
+  {
+    id: 'floor-decal-branded-roundel', name: 'Branded Roundel', description: 'Circular branded floor graphic',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(36, 36, 0.25, 0.5),
+    background: { type: 'solid', value: '#1e3a5f' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#1e3a5f', accent: '#c9a84c', text: '#ffffff', background: '#1e3a5f' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 20, width: 50, height: 25 }, { placeholder: 'Logo', required: true }),
+      createTextField('event', 'Event', { x: 10, y: 50, width: 80, height: 10 }, { placeholder: 'CONFERENCE 2024', style: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', color: '#ffffff', letterSpacing: 3 } }),
+      createTextField('tagline', 'Tagline', { x: 15, y: 62, width: 70, height: 8 }, { placeholder: 'Innovate • Connect • Grow', style: { fontSize: 12, textAlign: 'center', color: 'rgba(255,255,255,0.7)' } })
+    ],
+    tags: ['floor-decal', 'branded', 'circular', 'roundel', 'sign', 'signage']
+  },
+  {
+    id: 'floor-decal-qr-engagement', name: 'QR Engagement Spot', description: 'Interactive QR floor decal',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(24, 24, 0.25, 0.5),
+    background: { type: 'solid', value: '#f8fafc' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#f8fafc', accent: '#8b5cf6', text: '#1a1a1a', background: '#f8fafc' },
+    colorMode: 'CMYK', dpi: 150,
+    fields: [
+      createTextField('cta', 'CTA', { x: 10, y: 8, width: 80, height: 12 }, { placeholder: 'SCAN ME!', required: true, style: { fontSize: 28, fontWeight: '800', textAlign: 'center', color: '#8b5cf6' } }),
+      { id: 'qr', type: 'qrcode' as any, name: 'QR Code', position: { x: 25, y: 25, width: 50, height: 40 }, placeholder: 'Your URL here', style: { backgroundColor: '#ffffff', borderRadius: 8 } },
+      createTextField('desc', 'Description', { x: 10, y: 70, width: 80, height: 10 }, { placeholder: 'Get the event app\n& win prizes!', style: { fontSize: 14, textAlign: 'center', color: '#1a1a1a', lineHeight: 1.4 } }),
+      createLogoField('logo', 'Logo', { x: 35, y: 85, width: 30, height: 10 }, { placeholder: 'Logo' })
+    ],
+    tags: ['floor-decal', 'qr', 'engagement', 'interactive', 'sign', 'signage']
+  }
+];
+
+// ============= OUTDOOR SIGNAGE TEMPLATES =============
+
+export const OUTDOOR_SIGNAGE_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'outdoor-event-entrance', name: 'Event Entrance', description: 'Large outdoor entrance sign',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(48, 24, 0.25, 1),
+    background: { type: 'solid', value: '#1e3a5f' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#1e3a5f', accent: '#fbbf24', text: '#ffffff', background: '#1e3a5f' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 3, y: 15, width: 18, height: 30 }, { placeholder: 'Logo', required: true }),
+      createTextField('event', 'Event', { x: 24, y: 12, width: 72, height: 25 }, { placeholder: 'ANNUAL CONFERENCE 2024', style: { fontSize: 48, fontWeight: '800', color: '#ffffff' } }),
+      createTextField('tagline', 'Tagline', { x: 24, y: 40, width: 72, height: 10 }, { placeholder: 'Shaping the Future Together', style: { fontSize: 18, color: '#fbbf24' } }),
+      createTextField('arrow', 'Arrow', { x: 24, y: 58, width: 72, height: 15 }, { placeholder: 'ENTRANCE →', style: { fontSize: 24, fontWeight: 'bold', color: '#ffffff', letterSpacing: 3 } }),
+      createTextField('dates', 'Dates', { x: 24, y: 78, width: 72, height: 8 }, { placeholder: 'March 15-17 | Convention Center', style: { fontSize: 14, color: 'rgba(255,255,255,0.7)' } })
+    ],
+    tags: ['outdoor', 'entrance', 'large', 'sign', 'signage']
+  },
+  {
+    id: 'outdoor-parking-traffic', name: 'Parking & Traffic', description: 'Outdoor parking direction sign',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(36, 24, 0.25, 1),
+    background: { type: 'solid', value: '#1a1a1a' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#1a1a1a', accent: '#22c55e', text: '#ffffff', background: '#1a1a1a' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 3, y: 5, width: 15, height: 18 }, { placeholder: 'Logo' }),
+      createTextField('label', 'Label', { x: 20, y: 5, width: 75, height: 15 }, { placeholder: 'EVENT PARKING', required: true, style: { fontSize: 36, fontWeight: '800', color: '#ffffff', letterSpacing: 3 } }),
+      createTextField('lot-a', 'Lot A', { x: 5, y: 30, width: 42, height: 12 }, { placeholder: '← LOT A — General', style: { fontSize: 22, fontWeight: 'bold', color: '#22c55e' } }),
+      createTextField('lot-b', 'Lot B', { x: 5, y: 48, width: 42, height: 12 }, { placeholder: '← LOT B — VIP', style: { fontSize: 22, fontWeight: 'bold', color: '#fbbf24' } }),
+      createTextField('lot-c', 'Lot C', { x: 52, y: 30, width: 42, height: 12 }, { placeholder: 'LOT C — Overflow →', style: { fontSize: 22, fontWeight: 'bold', color: '#ffffff', textAlign: 'right' } }),
+      createTextField('ada', 'ADA', { x: 52, y: 48, width: 42, height: 12 }, { placeholder: 'ADA Parking →', style: { fontSize: 22, fontWeight: 'bold', color: '#3b82f6', textAlign: 'right' } }),
+      createTextField('note', 'Note', { x: 5, y: 72, width: 90, height: 10 }, { placeholder: 'Free shuttle from Lot C every 10 minutes', style: { fontSize: 14, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } })
+    ],
+    tags: ['outdoor', 'parking', 'traffic', 'directional', 'sign', 'signage']
+  },
+  {
+    id: 'outdoor-sponsor-showcase', name: 'Sponsor Showcase', description: 'Outdoor sponsor display sign',
+    assetType: AssetType.EventSignage, category: 'universal',
+    dimensions: createDimensions(48, 24, 0.25, 1),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1a1a1a', secondary: '#ffffff', accent: '#3b82f6', text: '#1a1a1a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('event', 'Event Logo', { x: 35, y: 3, width: 30, height: 10 }, { placeholder: 'Event logo' }),
+      createTextField('label', 'Label', { x: 5, y: 16, width: 90, height: 6 }, { placeholder: 'PROUDLY SPONSORED BY', style: { fontSize: 12, textAlign: 'center', color: '#6b7280', letterSpacing: 4 } }),
+      createLogoField('s1', 'Sponsor 1', { x: 5, y: 28, width: 20, height: 18 }, { placeholder: 'Sponsor', required: true }),
+      createLogoField('s2', 'Sponsor 2', { x: 28, y: 28, width: 20, height: 18 }, { placeholder: 'Sponsor' }),
+      createLogoField('s3', 'Sponsor 3', { x: 52, y: 28, width: 20, height: 18 }, { placeholder: 'Sponsor' }),
+      createLogoField('s4', 'Sponsor 4', { x: 75, y: 28, width: 20, height: 18 }, { placeholder: 'Sponsor' }),
+      createLogoField('s5', 'Sponsor 5', { x: 15, y: 52, width: 18, height: 15 }, { placeholder: 'Sponsor' }),
+      createLogoField('s6', 'Sponsor 6', { x: 40, y: 52, width: 18, height: 15 }, { placeholder: 'Sponsor' }),
+      createLogoField('s7', 'Sponsor 7', { x: 65, y: 52, width: 18, height: 15 }, { placeholder: 'Sponsor' }),
+      createTextField('url', 'URL', { x: 15, y: 78, width: 70, height: 6 }, { placeholder: 'www.event.com/sponsors', style: { fontSize: 14, textAlign: 'center', color: '#3b82f6' } })
+    ],
+    tags: ['outdoor', 'sponsor', 'showcase', 'large', 'sign', 'signage']
+  }
+];
+
 export const ALL_SIGNAGE_TEMPLATES: EditableTemplate[] = [
   ...DOOR_SIGNAGE_TEMPLATES,
   ...ROOM_SIGNAGE_TEMPLATES,
-  ...WIFI_SIGN_TEMPLATES
+  ...WIFI_SIGN_TEMPLATES,
+  ...EASEL_SIGNAGE_TEMPLATES,
+  ...FLOOR_DECAL_TEMPLATES,
+  ...OUTDOOR_SIGNAGE_TEMPLATES
 ];
