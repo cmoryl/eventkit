@@ -209,12 +209,32 @@ const AssetGrid: React.FC<AssetGridProps> = ({
     return assets.filter(a => getCategoryForAsset(a.type) === category).length;
   };
 
+  // Check if a string is a renderable image (data URI, URL, or SVG)
+  const isRenderableImage = (content: string): boolean => {
+    if (!content || typeof content !== 'string') return false;
+    return (
+      content.startsWith('data:image') ||
+      content.startsWith('data:application') ||
+      content.startsWith('https://') ||
+      content.startsWith('http://') ||
+      content.trim().startsWith('<svg') ||
+      content.trim().startsWith('<?xml')
+    );
+  };
+
+  // Convert SVG string to a renderable data URI
+  const getSvgDataUri = (svg: string): string => {
+    const cleaned = svg.trim();
+    if (cleaned.startsWith('data:')) return cleaned;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(cleaned)}`;
+  };
+
   const getAssetPreview = (asset: GeneratedAsset) => {
     if (asset.isLoading) {
       return (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/50 to-muted/50">
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
           <motion.div
-            className="w-12 h-12 rounded-full border-3 border-primary border-t-transparent"
+            className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent"
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
@@ -222,59 +242,76 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       );
     }
 
-    if (typeof asset.content === 'string' && asset.content.startsWith('data:image')) {
+    // Handle image content — data URIs, URLs, and SVGs
+    if (typeof asset.content === 'string' && isRenderableImage(asset.content)) {
+      const isSvg = asset.content.trim().startsWith('<svg') || asset.content.trim().startsWith('<?xml');
+      const src = isSvg ? getSvgDataUri(asset.content) : asset.content;
       return (
         <img
-          src={asset.content}
+          src={src}
           alt={asset.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-contain bg-white/5 transition-transform duration-500 group-hover:scale-105"
         />
       );
     }
 
+    // Color palette
     if (asset.type === AssetType.Palette && Array.isArray(asset.content)) {
       const colors = asset.content as ColorInfo[];
       return (
-        <div className="w-full h-full flex">
-          {colors.slice(0, 5).map((color, i) => (
-            <motion.div
-              key={i}
-              className="flex-1 h-full"
-              style={{ backgroundColor: color.hex }}
-              whileHover={{ scaleY: 1.1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            />
-          ))}
+        <div className="w-full h-full flex flex-col p-3 gap-1.5 justify-center bg-gradient-to-br from-secondary/30 to-muted/20">
+          <div className="flex flex-1 gap-1 rounded-lg overflow-hidden">
+            {colors.slice(0, 5).map((color, i) => (
+              <div
+                key={i}
+                className="flex-1 rounded-md transition-transform"
+                style={{ backgroundColor: color.hex }}
+              />
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center font-medium mt-1">
+            {colors.length} color{colors.length !== 1 ? 's' : ''}
+          </p>
         </div>
       );
     }
 
+    // Slogans
     if (asset.type === AssetType.Slogans && Array.isArray(asset.content)) {
       return (
-        <div className="w-full h-full p-5 flex flex-col justify-center bg-gradient-to-br from-violet-500/5 to-purple-500/5">
-          <div className="text-primary/30 text-4xl font-serif mb-2">"</div>
-          <p className="text-sm font-medium text-foreground line-clamp-3 leading-relaxed">
+        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-primary/5 to-accent/5">
+          <div className="text-primary/40 text-3xl font-serif leading-none mb-1">"</div>
+          <p className="text-xs font-medium text-foreground/80 line-clamp-3 leading-relaxed italic">
             {(asset.content as string[])[0]}
           </p>
+          {(asset.content as string[]).length > 1 && (
+            <p className="text-[10px] text-muted-foreground mt-2">
+              +{(asset.content as string[]).length - 1} more
+            </p>
+          )}
         </div>
       );
     }
 
-    if (typeof asset.content === 'string') {
+    // Text content fallback — show excerpt with better styling
+    if (typeof asset.content === 'string' && asset.content.length > 0) {
       return (
-        <div className="w-full h-full p-4 flex items-center justify-center bg-gradient-to-br from-secondary/30 to-muted/30">
-          <p className="text-xs text-muted-foreground line-clamp-5 text-center leading-relaxed">
-            {asset.content.substring(0, 180)}...
+        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-secondary/20 to-muted/10">
+          <FileText className="w-5 h-5 text-primary/40 mb-2" />
+          <p className="text-[11px] text-foreground/60 line-clamp-4 leading-relaxed">
+            {asset.content.substring(0, 200)}
           </p>
         </div>
       );
     }
 
+    // Empty / unknown content
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/20 to-muted/20">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
-          <FileText className="w-7 h-7 text-muted-foreground" />
+      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-secondary/10 to-muted/10">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+          <FileText className="w-6 h-6 text-primary/30" />
         </div>
+        <span className="text-[10px] text-muted-foreground">No preview</span>
       </div>
     );
   };
@@ -639,7 +676,7 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       {/* Grid View */}
       {viewMode === 'grid' && (
         <motion.div 
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -648,15 +685,17 @@ const AssetGrid: React.FC<AssetGridProps> = ({
             const isSelected = selectedIds.has(asset.id);
             const category = getCategoryForAsset(asset.type);
             const gradient = getCategoryGradient(category);
+            const hasImage = typeof asset.content === 'string' && isRenderableImage(asset.content);
             
             return (
               <motion.div
                 key={asset.id}
                 className={cn(
-                  "group relative cursor-pointer overflow-hidden rounded-2xl border-2 transition-all bg-card",
+                  "group relative cursor-pointer overflow-hidden rounded-2xl border transition-all",
+                  "bg-card shadow-sm hover:shadow-lg",
                   isSelected 
-                    ? "border-primary ring-2 ring-primary/30" 
-                    : "border-border/50 hover:border-primary/30"
+                    ? "border-primary ring-2 ring-primary/20" 
+                    : "border-border/40 hover:border-primary/40"
                 )}
                 onClick={() => {
                   if (isSelectionMode) {
@@ -668,11 +707,11 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ delay: index * 0.02, type: "spring", stiffness: 300, damping: 25 }}
-                whileHover={{ y: -4, scale: 1.02 }}
+                whileHover={{ y: -3 }}
                 layout
               >
                 {/* Preview */}
-                <div className="aspect-square overflow-hidden relative">
+                <div className="aspect-[4/3] overflow-hidden relative bg-muted/30">
                   {getAssetPreview(asset)}
                   
                   {/* Selection checkbox */}
@@ -680,22 +719,22 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                     <motion.button
                       onClick={(e) => { e.stopPropagation(); toggleSelection(asset.id); }}
                       className={cn(
-                        "absolute top-3 left-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all z-10 shadow-lg",
+                        "absolute top-2.5 left-2.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all z-10 shadow-md",
                         isSelected 
-                          ? "bg-gradient-to-r from-primary to-accent text-white" 
-                          : "bg-white/90 backdrop-blur-sm text-muted-foreground hover:bg-white"
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-background/90 backdrop-blur-sm text-muted-foreground hover:bg-background"
                       )}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                     >
-                      {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                      {isSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                     </motion.button>
                   )}
                   
                   {/* Hover overlay */}
                   {!asset.isLoading && !isSelectionMode && (
                     <motion.div 
-                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4 gap-2"
+                      className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-3 gap-1.5"
                       initial={false}
                     >
                       <ActionButton icon={Eye} onClick={() => onView(asset)} title="View" />
@@ -719,36 +758,36 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                   {/* Favorite badge */}
                   {asset.isFavorite && (
                     <motion.div 
-                      className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+                      className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shadow-md z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 25 }}
                     >
-                      <Star className="w-4 h-4 text-white fill-current" />
+                      <Star className="w-3.5 h-3.5 text-white fill-current" />
                     </motion.div>
                   )}
 
                   {/* Spec badge */}
-                  <div className="absolute bottom-3 left-3">
+                  <div className="absolute bottom-2.5 left-2.5">
                     {getAssetBadge(asset)}
                   </div>
                 </div>
 
-                {/* Title */}
-                <div className="p-3 flex items-center justify-between bg-gradient-to-r from-card to-card/50">
-                  <span className="text-sm font-semibold text-foreground truncate">{asset.title}</span>
+                {/* Title bar */}
+                <div className="px-3 py-2.5 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground truncate">{asset.title}</span>
                   <motion.button
                     onClick={(e) => { e.stopPropagation(); onToggleFavorite(asset); }}
                     className={cn(
-                      "p-1.5 rounded-lg transition-all",
+                      "p-1 rounded-md transition-all flex-shrink-0",
                       asset.isFavorite 
-                        ? "text-amber-500 bg-amber-500/10" 
-                        : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                        ? "text-amber-500" 
+                        : "text-muted-foreground/40 hover:text-amber-500"
                     )}
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                   >
-                    <Star className={cn("w-4 h-4", asset.isFavorite && "fill-current")} />
+                    <Star className={cn("w-3.5 h-3.5", asset.isFavorite && "fill-current")} />
                   </motion.button>
                 </div>
               </motion.div>
