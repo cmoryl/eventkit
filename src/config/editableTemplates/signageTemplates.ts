@@ -39,8 +39,16 @@ const createLogoField = (
   style: { objectFit: 'contain', ...options.style },
   acceptedFormats: ['png', 'svg', 'eps'], ...options
 });
+const createImageField = (
+  id: string, name: string, position: TemplateField['position'],
+  options: Partial<Omit<TemplateField, 'id' | 'name' | 'type' | 'position'>> = {}
+): TemplateField => ({
+  id, name, type: 'image', position,
+  style: { objectFit: 'cover', borderRadius: 0, ...options.style },
+  acceptedFormats: ['jpg', 'png', 'webp'], ...options
+});
 
-// ============= DOOR SIGNAGE TEMPLATES =============
+
 
 export const DOOR_SIGNAGE_TEMPLATES: EditableTemplate[] = [
   {
