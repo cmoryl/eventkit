@@ -676,7 +676,7 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       {/* Grid View */}
       {viewMode === 'grid' && (
         <motion.div 
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
@@ -685,15 +685,17 @@ const AssetGrid: React.FC<AssetGridProps> = ({
             const isSelected = selectedIds.has(asset.id);
             const category = getCategoryForAsset(asset.type);
             const gradient = getCategoryGradient(category);
+            const hasImage = typeof asset.content === 'string' && isRenderableImage(asset.content);
             
             return (
               <motion.div
                 key={asset.id}
                 className={cn(
-                  "group relative cursor-pointer overflow-hidden rounded-2xl border-2 transition-all bg-card",
+                  "group relative cursor-pointer overflow-hidden rounded-2xl border transition-all",
+                  "bg-card shadow-sm hover:shadow-lg",
                   isSelected 
-                    ? "border-primary ring-2 ring-primary/30" 
-                    : "border-border/50 hover:border-primary/30"
+                    ? "border-primary ring-2 ring-primary/20" 
+                    : "border-border/40 hover:border-primary/40"
                 )}
                 onClick={() => {
                   if (isSelectionMode) {
@@ -705,11 +707,11 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ delay: index * 0.02, type: "spring", stiffness: 300, damping: 25 }}
-                whileHover={{ y: -4, scale: 1.02 }}
+                whileHover={{ y: -3 }}
                 layout
               >
                 {/* Preview */}
-                <div className="aspect-square overflow-hidden relative">
+                <div className="aspect-[4/3] overflow-hidden relative bg-muted/30">
                   {getAssetPreview(asset)}
                   
                   {/* Selection checkbox */}
@@ -717,22 +719,22 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                     <motion.button
                       onClick={(e) => { e.stopPropagation(); toggleSelection(asset.id); }}
                       className={cn(
-                        "absolute top-3 left-3 w-7 h-7 rounded-lg flex items-center justify-center transition-all z-10 shadow-lg",
+                        "absolute top-2.5 left-2.5 w-6 h-6 rounded-lg flex items-center justify-center transition-all z-10 shadow-md",
                         isSelected 
-                          ? "bg-gradient-to-r from-primary to-accent text-white" 
-                          : "bg-white/90 backdrop-blur-sm text-muted-foreground hover:bg-white"
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-background/90 backdrop-blur-sm text-muted-foreground hover:bg-background"
                       )}
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                     >
-                      {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                      {isSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                     </motion.button>
                   )}
                   
                   {/* Hover overlay */}
                   {!asset.isLoading && !isSelectionMode && (
                     <motion.div 
-                      className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-4 gap-2"
+                      className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-center pb-3 gap-1.5"
                       initial={false}
                     >
                       <ActionButton icon={Eye} onClick={() => onView(asset)} title="View" />
@@ -756,36 +758,36 @@ const AssetGrid: React.FC<AssetGridProps> = ({
                   {/* Favorite badge */}
                   {asset.isFavorite && (
                     <motion.div 
-                      className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 flex items-center justify-center shadow-lg"
+                      className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center shadow-md z-10"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ type: "spring", stiffness: 500, damping: 25 }}
                     >
-                      <Star className="w-4 h-4 text-white fill-current" />
+                      <Star className="w-3.5 h-3.5 text-white fill-current" />
                     </motion.div>
                   )}
 
                   {/* Spec badge */}
-                  <div className="absolute bottom-3 left-3">
+                  <div className="absolute bottom-2.5 left-2.5">
                     {getAssetBadge(asset)}
                   </div>
                 </div>
 
-                {/* Title */}
-                <div className="p-3 flex items-center justify-between bg-gradient-to-r from-card to-card/50">
-                  <span className="text-sm font-semibold text-foreground truncate">{asset.title}</span>
+                {/* Title bar */}
+                <div className="px-3 py-2.5 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground truncate">{asset.title}</span>
                   <motion.button
                     onClick={(e) => { e.stopPropagation(); onToggleFavorite(asset); }}
                     className={cn(
-                      "p-1.5 rounded-lg transition-all",
+                      "p-1 rounded-md transition-all flex-shrink-0",
                       asset.isFavorite 
-                        ? "text-amber-500 bg-amber-500/10" 
-                        : "text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                        ? "text-amber-500" 
+                        : "text-muted-foreground/40 hover:text-amber-500"
                     )}
-                    whileHover={{ scale: 1.1 }}
+                    whileHover={{ scale: 1.15 }}
                     whileTap={{ scale: 0.9 }}
                   >
-                    <Star className={cn("w-4 h-4", asset.isFavorite && "fill-current")} />
+                    <Star className={cn("w-3.5 h-3.5", asset.isFavorite && "fill-current")} />
                   </motion.button>
                 </div>
               </motion.div>
