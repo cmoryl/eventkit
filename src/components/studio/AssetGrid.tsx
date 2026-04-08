@@ -209,12 +209,32 @@ const AssetGrid: React.FC<AssetGridProps> = ({
     return assets.filter(a => getCategoryForAsset(a.type) === category).length;
   };
 
+  // Check if a string is a renderable image (data URI, URL, or SVG)
+  const isRenderableImage = (content: string): boolean => {
+    if (!content || typeof content !== 'string') return false;
+    return (
+      content.startsWith('data:image') ||
+      content.startsWith('data:application') ||
+      content.startsWith('https://') ||
+      content.startsWith('http://') ||
+      content.trim().startsWith('<svg') ||
+      content.trim().startsWith('<?xml')
+    );
+  };
+
+  // Convert SVG string to a renderable data URI
+  const getSvgDataUri = (svg: string): string => {
+    const cleaned = svg.trim();
+    if (cleaned.startsWith('data:')) return cleaned;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(cleaned)}`;
+  };
+
   const getAssetPreview = (asset: GeneratedAsset) => {
     if (asset.isLoading) {
       return (
-        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/50 to-muted/50">
+        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
           <motion.div
-            className="w-12 h-12 rounded-full border-3 border-primary border-t-transparent"
+            className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent"
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           />
@@ -222,59 +242,76 @@ const AssetGrid: React.FC<AssetGridProps> = ({
       );
     }
 
-    if (typeof asset.content === 'string' && asset.content.startsWith('data:image')) {
+    // Handle image content — data URIs, URLs, and SVGs
+    if (typeof asset.content === 'string' && isRenderableImage(asset.content)) {
+      const isSvg = asset.content.trim().startsWith('<svg') || asset.content.trim().startsWith('<?xml');
+      const src = isSvg ? getSvgDataUri(asset.content) : asset.content;
       return (
         <img
-          src={asset.content}
+          src={src}
           alt={asset.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="w-full h-full object-contain bg-white/5 transition-transform duration-500 group-hover:scale-105"
         />
       );
     }
 
+    // Color palette
     if (asset.type === AssetType.Palette && Array.isArray(asset.content)) {
       const colors = asset.content as ColorInfo[];
       return (
-        <div className="w-full h-full flex">
-          {colors.slice(0, 5).map((color, i) => (
-            <motion.div
-              key={i}
-              className="flex-1 h-full"
-              style={{ backgroundColor: color.hex }}
-              whileHover={{ scaleY: 1.1 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            />
-          ))}
+        <div className="w-full h-full flex flex-col p-3 gap-1.5 justify-center bg-gradient-to-br from-secondary/30 to-muted/20">
+          <div className="flex flex-1 gap-1 rounded-lg overflow-hidden">
+            {colors.slice(0, 5).map((color, i) => (
+              <div
+                key={i}
+                className="flex-1 rounded-md transition-transform"
+                style={{ backgroundColor: color.hex }}
+              />
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center font-medium mt-1">
+            {colors.length} color{colors.length !== 1 ? 's' : ''}
+          </p>
         </div>
       );
     }
 
+    // Slogans
     if (asset.type === AssetType.Slogans && Array.isArray(asset.content)) {
       return (
-        <div className="w-full h-full p-5 flex flex-col justify-center bg-gradient-to-br from-violet-500/5 to-purple-500/5">
-          <div className="text-primary/30 text-4xl font-serif mb-2">"</div>
-          <p className="text-sm font-medium text-foreground line-clamp-3 leading-relaxed">
+        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-primary/5 to-accent/5">
+          <div className="text-primary/40 text-3xl font-serif leading-none mb-1">"</div>
+          <p className="text-xs font-medium text-foreground/80 line-clamp-3 leading-relaxed italic">
             {(asset.content as string[])[0]}
           </p>
+          {(asset.content as string[]).length > 1 && (
+            <p className="text-[10px] text-muted-foreground mt-2">
+              +{(asset.content as string[]).length - 1} more
+            </p>
+          )}
         </div>
       );
     }
 
-    if (typeof asset.content === 'string') {
+    // Text content fallback — show excerpt with better styling
+    if (typeof asset.content === 'string' && asset.content.length > 0) {
       return (
-        <div className="w-full h-full p-4 flex items-center justify-center bg-gradient-to-br from-secondary/30 to-muted/30">
-          <p className="text-xs text-muted-foreground line-clamp-5 text-center leading-relaxed">
-            {asset.content.substring(0, 180)}...
+        <div className="w-full h-full p-4 flex flex-col justify-center bg-gradient-to-br from-secondary/20 to-muted/10">
+          <FileText className="w-5 h-5 text-primary/40 mb-2" />
+          <p className="text-[11px] text-foreground/60 line-clamp-4 leading-relaxed">
+            {asset.content.substring(0, 200)}
           </p>
         </div>
       );
     }
 
+    // Empty / unknown content
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-secondary/20 to-muted/20">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
-          <FileText className="w-7 h-7 text-muted-foreground" />
+      <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-secondary/10 to-muted/10">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+          <FileText className="w-6 h-6 text-primary/30" />
         </div>
+        <span className="text-[10px] text-muted-foreground">No preview</span>
       </div>
     );
   };
