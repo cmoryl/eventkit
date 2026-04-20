@@ -766,7 +766,7 @@ export const RSVP_CARD_TEMPLATES: EditableTemplate[] = [
 
 // ============= THANK YOU NOTE TEMPLATES =============
 
-export const THANK_YOU_NOTE_TEMPLATES: EditableTemplate[] = [
+export const THANK_YOU_NOTE_PRINT_TEMPLATES: EditableTemplate[] = [
   {
     id: 'thanks-handwritten', name: 'Handwritten Thanks', description: 'Personal handwritten-style thank you',
     assetType: AssetType.ThankYouNote, category: 'universal', dimensions: createDimensions(5, 3.5, 0.125, 0.25),
@@ -877,6 +877,6 @@ export const ALL_EVENT_ESSENTIALS_TEMPLATES: EditableTemplate[] = [
   ...TABLE_NUMBER_TEMPLATES,
   ...PROGRAM_BOOKLET_TEMPLATES,
   ...RSVP_CARD_TEMPLATES,
-  ...THANK_YOU_NOTE_TEMPLATES,
+  ...THANK_YOU_NOTE_PRINT_TEMPLATES,
   ...TABLE_TENT_TEMPLATES
 ];
