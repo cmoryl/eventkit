@@ -307,7 +307,9 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                               </p>
                               
                               <div className="grid grid-cols-3 gap-1 mt-1">
-                                {group.studios.map((studio) => (
+                                {group.studios.map((studio) => {
+                                  const StudioIcon = getStudioIcon(studio.icon);
+                                  return (
                                   <button
                                     key={studio.id}
                                     onClick={() => {
@@ -325,11 +327,12 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                                       "w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0 shadow-sm group-hover:shadow-md transition-shadow",
                                       studio.gradient
                                     )}>
-                                      <Sparkles className="w-4 h-4 text-white" />
+                                      <StudioIcon className="w-4 h-4 text-white" />
                                     </div>
                                     <span className="text-[11px] font-medium leading-tight">{studio.shortName}</span>
                                   </button>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           ))}
