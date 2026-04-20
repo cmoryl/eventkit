@@ -113,7 +113,7 @@ const AdminTemplateSync: React.FC = () => {
                 {loading ? (
                   <Badge variant="outline">Checking…</Badge>
                 ) : inSync ? (
-                  <Badge className="bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30">
+                  <Badge variant="secondary" className="border-primary/30">
                     <CheckCircle2 className="w-3 h-3 mr-1" /> In Sync
                   </Badge>
                 ) : (
