@@ -23,6 +23,7 @@ import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { STUDIO_DEFINITIONS, StudioType } from '@/types/studio.types';
+import { getStudioIcon } from '@/lib/studioIcons';
 import { toast } from 'sonner';
 import { ActiveBrandIndicator } from '@/components/brand/ActiveBrandIndicator';
 import { BrandColorBar } from '@/components/brand/BrandColorBar';
