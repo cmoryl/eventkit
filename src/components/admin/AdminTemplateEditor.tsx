@@ -1,0 +1,268 @@
+// Admin Template Editor - inline edit DB templates
+import React, { useEffect, useMemo, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Search, Save, RotateCcw, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { invalidateTemplateCache } from '@/services/templateLoader';
+
+interface DBTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  asset_type: string;
+  category: string;
+  vendor_id: string | null;
+  prompt: string | null;
+  color_mode: string | null;
+  dpi: number | null;
+  tags: string[] | null;
+  is_premium: boolean | null;
+  background: any;
+  dimensions: any;
+  fields: any;
+  default_fonts: any;
+  default_colors: any;
+}
+
+const AdminTemplateEditor: React.FC = () => {
+  const [templates, setTemplates] = useState<DBTemplate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<DBTemplate | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('editable_templates')
+      .select('*')
+      .order('asset_type')
+      .order('name')
+      .limit(2000);
+    if (error) {
+      toast.error('Failed to load templates: ' + error.message);
+    } else {
+      setTemplates((data ?? []) as DBTemplate[]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return templates;
+    return templates.filter(t =>
+      t.id.toLowerCase().includes(q) ||
+      t.name.toLowerCase().includes(q) ||
+      t.asset_type.toLowerCase().includes(q) ||
+      (t.description ?? '').toLowerCase().includes(q)
+    );
+  }, [templates, search]);
+
+  const selected = templates.find(t => t.id === selectedId) ?? null;
+  const dirty = draft && selected && JSON.stringify(draft) !== JSON.stringify(selected);
+
+  useEffect(() => {
+    setDraft(selected ? { ...selected } : null);
+  }, [selectedId]);
+
+  const handleSave = async () => {
+    if (!draft) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from('editable_templates')
+      .update({
+        name: draft.name,
+        description: draft.description,
+        prompt: draft.prompt,
+        color_mode: draft.color_mode,
+        dpi: draft.dpi,
+        tags: draft.tags,
+        is_premium: draft.is_premium,
+        background: draft.background,
+        dimensions: draft.dimensions,
+        fields: draft.fields,
+        default_fonts: draft.default_fonts,
+        default_colors: draft.default_colors,
+      })
+      .eq('id', draft.id);
+    setSaving(false);
+    if (error) {
+      toast.error('Save failed: ' + error.message);
+      return;
+    }
+    toast.success('Template saved');
+    invalidateTemplateCache();
+    await load();
+  };
+
+  const updateJsonField = (key: keyof DBTemplate, value: string) => {
+    if (!draft) return;
+    try {
+      const parsed = JSON.parse(value);
+      setDraft({ ...draft, [key]: parsed } as DBTemplate);
+    } catch {
+      // ignore parse errors while typing
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[320px_1fr] gap-4 h-[calc(100vh-220px)]">
+      {/* List */}
+      <div className="border border-border rounded-lg flex flex-col overflow-hidden bg-card">
+        <div className="p-3 border-b border-border space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search templates..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="pl-8 h-9"
+            />
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {loading ? 'Loading…' : `${filtered.length} of ${templates.length}`}
+          </div>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-1.5 space-y-0.5">
+            {filtered.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedId(t.id)}
+                className={`w-full text-left p-2 rounded-md transition-colors ${
+                  selectedId === t.id ? 'bg-primary/10 border border-primary/40' : 'hover:bg-muted'
+                }`}
+              >
+                <div className="text-sm font-medium text-foreground truncate">{t.name}</div>
+                <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                  <span className="truncate">{t.asset_type}</span>
+                  <Badge variant="outline" className="h-4 text-[9px] px-1">{t.category}</Badge>
+                </div>
+              </button>
+            ))}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Editor */}
+      <div className="border border-border rounded-lg bg-card overflow-hidden flex flex-col">
+        {!draft ? (
+          <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
+            Select a template to edit
+          </div>
+        ) : (
+          <>
+            <div className="p-4 border-b border-border flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-xs text-muted-foreground font-mono truncate">{draft.id}</div>
+                <div className="text-sm font-semibold text-foreground truncate">{draft.name}</div>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDraft(selected ? { ...selected } : null)}
+                  disabled={!dirty || saving}
+                >
+                  <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                  Reset
+                </Button>
+                <Button size="sm" onClick={handleSave} disabled={!dirty || saving}>
+                  {saving ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
+                  Save
+                </Button>
+              </div>
+            </div>
+
+            <ScrollArea className="flex-1">
+              <div className="p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Name</Label>
+                    <Input
+                      value={draft.name}
+                      onChange={e => setDraft({ ...draft, name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Color Mode</Label>
+                    <Input
+                      value={draft.color_mode ?? ''}
+                      onChange={e => setDraft({ ...draft, color_mode: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">DPI</Label>
+                    <Input
+                      type="number"
+                      value={draft.dpi ?? 300}
+                      onChange={e => setDraft({ ...draft, dpi: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Tags (comma-separated)</Label>
+                    <Input
+                      value={(draft.tags ?? []).join(', ')}
+                      onChange={e => setDraft({ ...draft, tags: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs">Description</Label>
+                  <Textarea
+                    rows={2}
+                    value={draft.description ?? ''}
+                    onChange={e => setDraft({ ...draft, description: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">AI Prompt (used by generators for this template)</Label>
+                  <Textarea
+                    rows={5}
+                    placeholder="e.g. A modern minimalist event badge with bold typography…"
+                    value={draft.prompt ?? ''}
+                    onChange={e => setDraft({ ...draft, prompt: e.target.value })}
+                  />
+                </div>
+
+                <details className="group">
+                  <summary className="text-xs font-medium cursor-pointer text-foreground select-none">
+                    Advanced JSON (dimensions, fields, fonts, colors, background)
+                  </summary>
+                  <div className="mt-2 grid gap-3">
+                    {(['dimensions', 'default_fonts', 'default_colors', 'background', 'fields'] as const).map(key => (
+                      <div key={key}>
+                        <Label className="text-xs capitalize">{key.replace('_', ' ')}</Label>
+                        <Textarea
+                          rows={key === 'fields' ? 12 : 4}
+                          className="font-mono text-[11px]"
+                          defaultValue={JSON.stringify(draft[key], null, 2)}
+                          onChange={e => updateJsonField(key, e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            </ScrollArea>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default AdminTemplateEditor;
