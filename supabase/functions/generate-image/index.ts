@@ -130,7 +130,36 @@ serve(async (req) => {
     const logoInstructions = buildLogoInstructions(!!logoData, assetType);
     const analysisInstructions = buildAnalysisInstructions(imageAnalysis);
 
-    // FETCH PROMPT TEMPLATE FROM DATABASE
+    // FETCH TEMPLATE-SPECIFIC PROMPT (admin-curated, per editable template)
+    // This is the highest-priority base prompt — it represents the admin's intent
+    // for this exact template and must drive the generation.
+    let editableTemplatePrompt: string | null = templatePromptInline?.trim() || null;
+    if (!editableTemplatePrompt && templateId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (supabaseUrl && serviceKey) {
+          const tplRes = await fetch(
+            `${supabaseUrl}/rest/v1/editable_templates?id=eq.${encodeURIComponent(templateId)}&select=prompt,name`,
+            { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+          );
+          if (tplRes.ok) {
+            const rows = await tplRes.json();
+            const row = Array.isArray(rows) ? rows[0] : null;
+            if (row?.prompt && typeof row.prompt === 'string' && row.prompt.trim()) {
+              editableTemplatePrompt = row.prompt.trim();
+              console.log(`Loaded editable_template prompt for "${row.name}" (${templateId})`);
+            }
+          } else {
+            console.warn('Failed to fetch editable_template prompt:', tplRes.status);
+          }
+        }
+      } catch (e) {
+        console.warn('Error fetching editable_template prompt:', e);
+      }
+    }
+
+    // FETCH PROMPT TEMPLATE FROM DATABASE (legacy prompt_templates table)
     const promptTemplate = await fetchPromptTemplate(assetType);
     let templateBasedPrompt: string | null = null;
     
@@ -182,7 +211,10 @@ serve(async (req) => {
     }
 
     // Determine base prompt
-    const basePrompt = templateBasedPrompt || getBasePrompt(assetType, renderMode);
+    // Priority: editable_templates.prompt (per-template, admin-curated)
+    //        -> prompt_templates (per asset_type, legacy)
+    //        -> getBasePrompt (hardcoded asset_type defaults)
+    const basePrompt = editableTemplatePrompt || templateBasedPrompt || getBasePrompt(assetType, renderMode);
     
     // Build color context
     const colorContext = colorPalette?.length 
