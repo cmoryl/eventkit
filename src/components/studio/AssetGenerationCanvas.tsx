@@ -46,6 +46,8 @@ interface AssetGenerationCanvasProps {
   studioGradient?: string;
   projectLogoOverride?: string | null;
   projectFontSelection?: GoogleFontSelection | null;
+  /** Optional editable_template id — when provided, its admin-curated prompt becomes the authoritative base prompt for generation. */
+  templateId?: string;
   onImageGenerated?: (imageUrl: string) => void;
 }
 
@@ -70,6 +72,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   studioGradient = 'from-primary to-accent',
   projectLogoOverride,
   projectFontSelection,
+  templateId,
   onImageGenerated
 }) => {
   const { user } = useAuth();
@@ -350,6 +353,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             prompt,
             assetType,
             eventName,
+            templateId: templateId || undefined,
             masterDirection: masterDirectionBlock || undefined,
             styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
             brandContext: effectiveBrand ? {
@@ -614,6 +618,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
           prompt,
           assetType,
           eventName,
+          templateId: templateId || undefined,
           brandContext: effectiveBrand ? {
             brandName: effectiveBrand.name,
             primaryColor: effectiveBrand.styles?.primary_color,

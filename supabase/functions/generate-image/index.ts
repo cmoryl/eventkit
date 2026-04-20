@@ -30,7 +30,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const body: GenerateImageRequest & { masterDirection?: string; styleAnchorImage?: string } = await req.json();
+    const body: GenerateImageRequest & { masterDirection?: string; styleAnchorImage?: string; templateId?: string; templatePrompt?: string } = await req.json();
     const { 
       assetType, 
       eventName, 
@@ -53,6 +53,8 @@ serve(async (req) => {
       imageModel = 'fast',
       masterDirection,
       styleAnchorImage,
+      templateId,
+      templatePrompt: templatePromptInline,
     } = body;
 
     // Normalize logo: if it's an HTTP URL (not base64), fetch and convert
@@ -128,7 +130,36 @@ serve(async (req) => {
     const logoInstructions = buildLogoInstructions(!!logoData, assetType);
     const analysisInstructions = buildAnalysisInstructions(imageAnalysis);
 
-    // FETCH PROMPT TEMPLATE FROM DATABASE
+    // FETCH TEMPLATE-SPECIFIC PROMPT (admin-curated, per editable template)
+    // This is the highest-priority base prompt — it represents the admin's intent
+    // for this exact template and must drive the generation.
+    let editableTemplatePrompt: string | null = templatePromptInline?.trim() || null;
+    if (!editableTemplatePrompt && templateId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL");
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (supabaseUrl && serviceKey) {
+          const tplRes = await fetch(
+            `${supabaseUrl}/rest/v1/editable_templates?id=eq.${encodeURIComponent(templateId)}&select=prompt,name`,
+            { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+          );
+          if (tplRes.ok) {
+            const rows = await tplRes.json();
+            const row = Array.isArray(rows) ? rows[0] : null;
+            if (row?.prompt && typeof row.prompt === 'string' && row.prompt.trim()) {
+              editableTemplatePrompt = row.prompt.trim();
+              console.log(`Loaded editable_template prompt for "${row.name}" (${templateId})`);
+            }
+          } else {
+            console.warn('Failed to fetch editable_template prompt:', tplRes.status);
+          }
+        }
+      } catch (e) {
+        console.warn('Error fetching editable_template prompt:', e);
+      }
+    }
+
+    // FETCH PROMPT TEMPLATE FROM DATABASE (legacy prompt_templates table)
     const promptTemplate = await fetchPromptTemplate(assetType);
     let templateBasedPrompt: string | null = null;
     
@@ -180,7 +211,10 @@ serve(async (req) => {
     }
 
     // Determine base prompt
-    const basePrompt = templateBasedPrompt || getBasePrompt(assetType, renderMode);
+    // Priority: editable_templates.prompt (per-template, admin-curated)
+    //        -> prompt_templates (per asset_type, legacy)
+    //        -> getBasePrompt (hardcoded asset_type defaults)
+    const basePrompt = editableTemplatePrompt || templateBasedPrompt || getBasePrompt(assetType, renderMode);
     
     // Build color context
     const colorContext = colorPalette?.length 
@@ -260,7 +294,7 @@ PHOTOREALISTIC RENDERING - CRITICAL:
 
     const fullPrompt = `${masterWrapper}
 ${masterDirectionSection}
-
+${editableTemplatePrompt ? `\nTEMPLATE BLUEPRINT (authoritative — this is the admin-curated direction for THIS specific template; follow it precisely while honoring brand and event context below):\n${editableTemplatePrompt}\n` : ''}
 Generate an image: ${basePrompt}
 
 Event: "${eventName}"
