@@ -709,6 +709,165 @@ export const PROGRAM_BOOKLET_TEMPLATES: EditableTemplate[] = [
   }
 ];
 
+// ============= RSVP CARD TEMPLATES =============
+
+export const RSVP_CARD_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'rsvp-classic-script', name: 'Classic Script RSVP', description: 'Elegant script RSVP card for formal events',
+    assetType: AssetType.RSVPCard, category: 'universal', dimensions: createDimensions(5, 3.5, 0.125, 0.25),
+    background: { type: 'solid', value: '#fdfaf3' },
+    defaultFonts: { heading: 'Great Vibes', body: 'Cormorant Garamond' },
+    defaultColors: { primary: '#3d2817', secondary: '#fdfaf3', accent: '#a67c52', text: '#3d2817', background: '#fdfaf3' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('heading', 'Heading', { x: 5, y: 8, width: 90, height: 14 }, { placeholder: 'Kindly Respond', style: { fontSize: 28, textAlign: 'center', color: '#3d2817', fontStyle: 'italic' } }),
+      { id: 'line', type: 'divider', name: 'Divider', position: { x: 30, y: 26, width: 40, height: 0.3 }, style: { backgroundColor: '#a67c52' } },
+      createTextField('m-line', 'Name Line', { x: 8, y: 32, width: 84, height: 8 }, { placeholder: 'M ___________________________', style: { fontSize: 14, color: '#3d2817' } }),
+      createTextField('attend', 'Attend Options', { x: 8, y: 46, width: 84, height: 8 }, { placeholder: '___ Joyfully Accepts    ___ Regretfully Declines', style: { fontSize: 12, color: '#3d2817' } }),
+      createTextField('guests', 'Guest Count', { x: 8, y: 60, width: 84, height: 8 }, { placeholder: 'Number of Guests: ___', style: { fontSize: 12, color: '#3d2817' } }),
+      createTextField('deadline', 'Deadline', { x: 8, y: 80, width: 84, height: 8 }, { placeholder: 'Please respond by March 1', style: { fontSize: 11, textAlign: 'center', color: '#a67c52', fontStyle: 'italic' } })
+    ],
+    tags: ['rsvp', 'formal', 'wedding', 'classic']
+  },
+  {
+    id: 'rsvp-modern-minimal', name: 'Modern Minimal RSVP', description: 'Clean modern RSVP card',
+    assetType: AssetType.RSVPCard, category: 'universal', dimensions: createDimensions(5, 3.5, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#000000', secondary: '#ffffff', accent: '#666666', text: '#000000', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('heading', 'Heading', { x: 5, y: 12, width: 90, height: 10 }, { placeholder: 'RSVP', style: { fontSize: 32, fontWeight: '300', textAlign: 'center', color: '#000', letterSpacing: 8 } }),
+      createTextField('name', 'Name Field', { x: 8, y: 32, width: 84, height: 6 }, { placeholder: 'Name ____________________', style: { fontSize: 11, color: '#000' } }),
+      createTextField('attending', 'Attending', { x: 8, y: 44, width: 84, height: 6 }, { placeholder: '☐ Attending      ☐ Not Attending', style: { fontSize: 11, color: '#000' } }),
+      createTextField('meal', 'Meal Choice', { x: 8, y: 56, width: 84, height: 6 }, { placeholder: '☐ Meat   ☐ Fish   ☐ Vegetarian', style: { fontSize: 11, color: '#000' } }),
+      createTextField('deadline', 'Deadline', { x: 8, y: 84, width: 84, height: 6 }, { placeholder: 'Reply by 03.01.2024', style: { fontSize: 9, textAlign: 'center', color: '#666', letterSpacing: 2 } })
+    ],
+    tags: ['rsvp', 'modern', 'minimal', 'clean']
+  },
+  {
+    id: 'rsvp-bold-corporate', name: 'Bold Corporate RSVP', description: 'Branded corporate RSVP card',
+    assetType: AssetType.RSVPCard, category: 'universal', dimensions: createDimensions(5, 3.5, 0.125, 0.25),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)' },
+    defaultFonts: { heading: 'Poppins', body: 'Inter' },
+    defaultColors: { primary: '#ffffff', secondary: '#1e3a8a', accent: '#fbbf24', text: '#ffffff', background: '#1e3a8a' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 35, y: 6, width: 30, height: 12 }, { placeholder: 'Logo' }),
+      createTextField('heading', 'Heading', { x: 5, y: 22, width: 90, height: 10 }, { placeholder: 'CONFIRM ATTENDANCE', style: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24', letterSpacing: 3 } }),
+      createTextField('name', 'Name', { x: 8, y: 38, width: 84, height: 6 }, { placeholder: 'Full Name: ____________________', style: { fontSize: 11, color: '#fff' } }),
+      createTextField('company', 'Company', { x: 8, y: 50, width: 84, height: 6 }, { placeholder: 'Company: ____________________', style: { fontSize: 11, color: '#fff' } }),
+      createTextField('email', 'Email', { x: 8, y: 62, width: 84, height: 6 }, { placeholder: 'Email: ____________________', style: { fontSize: 11, color: '#fff' } }),
+      createTextField('cta', 'CTA', { x: 8, y: 84, width: 84, height: 6 }, { placeholder: 'Reply at events@company.com', style: { fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } })
+    ],
+    tags: ['rsvp', 'corporate', 'bold', 'branded']
+  }
+];
+
+// ============= THANK YOU NOTE TEMPLATES =============
+
+export const THANK_YOU_NOTE_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'thanks-handwritten', name: 'Handwritten Thanks', description: 'Personal handwritten-style thank you',
+    assetType: AssetType.ThankYouNote, category: 'universal', dimensions: createDimensions(5, 3.5, 0.125, 0.25),
+    background: { type: 'solid', value: '#fef9f0' },
+    defaultFonts: { heading: 'Caveat', body: 'Inter' },
+    defaultColors: { primary: '#2d3748', secondary: '#fef9f0', accent: '#d97706', text: '#2d3748', background: '#fef9f0' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('thanks', 'Thanks', { x: 5, y: 22, width: 90, height: 28 }, { placeholder: 'Thank You', style: { fontSize: 56, textAlign: 'center', color: '#2d3748' } }),
+      createTextField('message', 'Message', { x: 10, y: 56, width: 80, height: 18 }, { placeholder: 'For making our event unforgettable', style: { fontSize: 14, textAlign: 'center', color: '#2d3748', fontStyle: 'italic' } }),
+      createTextField('signature', 'Signature', { x: 30, y: 82, width: 40, height: 8 }, { placeholder: '— The Team', style: { fontSize: 16, textAlign: 'center', color: '#d97706' } })
+    ],
+    tags: ['thanks', 'handwritten', 'personal']
+  },
+  {
+    id: 'thanks-floral', name: 'Floral Thank You', description: 'Botanical thank you card',
+    assetType: AssetType.ThankYouNote, category: 'universal', dimensions: createDimensions(5, 3.5, 0.125, 0.25),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)' },
+    defaultFonts: { heading: 'Playfair Display', body: 'Lato' },
+    defaultColors: { primary: '#831843', secondary: '#fdf2f8', accent: '#ec4899', text: '#831843', background: '#fdf2f8' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      { id: 'border', type: 'shape', name: 'Border', position: { x: 4, y: 6, width: 92, height: 88 }, style: { borderColor: '#ec4899', borderWidth: 1, borderStyle: 'solid' } },
+      createTextField('thanks', 'Thanks', { x: 5, y: 28, width: 90, height: 16 }, { placeholder: 'Thank You', style: { fontSize: 36, textAlign: 'center', color: '#831843', fontStyle: 'italic' } }),
+      { id: 'line', type: 'divider', name: 'Line', position: { x: 35, y: 50, width: 30, height: 0.3 }, style: { backgroundColor: '#ec4899' } },
+      createTextField('message', 'Message', { x: 12, y: 56, width: 76, height: 18 }, { placeholder: 'Your kindness means the world to us', style: { fontSize: 12, textAlign: 'center', color: '#831843' } }),
+      createTextField('from', 'From', { x: 25, y: 82, width: 50, height: 6 }, { placeholder: 'With Gratitude', style: { fontSize: 10, textAlign: 'center', color: '#ec4899', letterSpacing: 3 } })
+    ],
+    tags: ['thanks', 'floral', 'wedding', 'romantic']
+  },
+  {
+    id: 'thanks-corporate', name: 'Corporate Thank You', description: 'Branded corporate appreciation card',
+    assetType: AssetType.ThankYouNote, category: 'universal', dimensions: createDimensions(5, 3.5, 0.125, 0.25),
+    background: { type: 'solid', value: '#0f172a' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fbbf24', secondary: '#0f172a', accent: '#ffffff', text: '#ffffff', background: '#0f172a' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 35, y: 12, width: 30, height: 14 }, { placeholder: 'Logo' }),
+      createTextField('thanks', 'Thanks', { x: 5, y: 36, width: 90, height: 14 }, { placeholder: 'THANK YOU', style: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24', letterSpacing: 6 } }),
+      createTextField('message', 'Message', { x: 10, y: 56, width: 80, height: 14 }, { placeholder: 'For your continued partnership and trust', style: { fontSize: 12, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } }),
+      createTextField('signature', 'Signature', { x: 25, y: 80, width: 50, height: 6 }, { placeholder: 'Acme Events Team', style: { fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.5)', letterSpacing: 2 } })
+    ],
+    tags: ['thanks', 'corporate', 'professional']
+  }
+];
+
+// ============= TABLE TENT TEMPLATES =============
+
+export const TABLE_TENT_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'tent-promo', name: 'Promotional Table Tent', description: 'Restaurant/event promo tent card',
+    assetType: AssetType.TableTent, category: 'universal', dimensions: createDimensions(4, 6, 0.125, 0.25),
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%)' },
+    defaultFonts: { heading: 'Poppins', body: 'Inter' },
+    defaultColors: { primary: '#1f2937', secondary: '#fbbf24', accent: '#dc2626', text: '#1f2937', background: '#fbbf24' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('badge', 'Badge', { x: 15, y: 8, width: 70, height: 6 }, { placeholder: 'TONIGHT ONLY', style: { fontSize: 12, fontWeight: 'bold', textAlign: 'center', color: '#dc2626', letterSpacing: 4 } }),
+      createTextField('headline', 'Headline', { x: 5, y: 22, width: 90, height: 18 }, { placeholder: 'Happy Hour Special', required: true, style: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', color: '#1f2937' } }),
+      createTextField('details', 'Details', { x: 10, y: 48, width: 80, height: 20 }, { placeholder: '$5 Cocktails\n$3 Beer\n50% Off Apps', style: { fontSize: 18, textAlign: 'center', color: '#1f2937', lineHeight: 1.6 } }),
+      createTextField('time', 'Time', { x: 10, y: 76, width: 80, height: 6 }, { placeholder: '5–7 PM Daily', style: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', color: '#dc2626' } }),
+      createLogoField('logo', 'Logo', { x: 35, y: 86, width: 30, height: 10 }, { placeholder: 'Logo' })
+    ],
+    tags: ['tent', 'promo', 'restaurant', 'happy-hour']
+  },
+  {
+    id: 'tent-conference-info', name: 'Conference Info Tent', description: 'Table info tent for conferences',
+    assetType: AssetType.TableTent, category: 'universal', dimensions: createDimensions(4, 6, 0.125, 0.25),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1e40af', secondary: '#ffffff', accent: '#06b6d4', text: '#1e40af', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 6, width: 40, height: 10 }, { placeholder: 'Event logo' }),
+      createTextField('table-num', 'Table', { x: 5, y: 22, width: 90, height: 16 }, { placeholder: 'TABLE 12', style: { fontSize: 36, fontWeight: 'bold', textAlign: 'center', color: '#1e40af' } }),
+      createTextField('topic', 'Discussion Topic', { x: 8, y: 44, width: 84, height: 10 }, { placeholder: 'AI in Marketing', style: { fontSize: 18, textAlign: 'center', color: '#06b6d4', fontStyle: 'italic' } }),
+      createTextField('host', 'Host', { x: 8, y: 60, width: 84, height: 8 }, { placeholder: 'Host: Sarah Chen', style: { fontSize: 12, textAlign: 'center', color: '#1e40af' } }),
+      { id: 'qr', type: 'qrcode', name: 'QR', position: { x: 35, y: 72, width: 30, height: 22 }, placeholder: 'Resources URL', style: {} }
+    ],
+    tags: ['tent', 'conference', 'discussion']
+  },
+  {
+    id: 'tent-wedding-menu', name: 'Wedding Menu Tent', description: 'Elegant menu/info table tent',
+    assetType: AssetType.TableTent, category: 'universal', dimensions: createDimensions(4, 6, 0.125, 0.25),
+    background: { type: 'solid', value: '#fef9f0' },
+    defaultFonts: { heading: 'Cormorant Garamond', body: 'Lato' },
+    defaultColors: { primary: '#3d2817', secondary: '#fef9f0', accent: '#a67c52', text: '#3d2817', background: '#fef9f0' },
+    colorMode: 'CMYK', dpi: 300,
+    fields: [
+      createTextField('heading', 'Heading', { x: 5, y: 8, width: 90, height: 12 }, { placeholder: 'Tonight\'s Menu', style: { fontSize: 26, textAlign: 'center', color: '#3d2817', fontStyle: 'italic' } }),
+      { id: 'line', type: 'divider', name: 'Line', position: { x: 35, y: 22, width: 30, height: 0.3 }, style: { backgroundColor: '#a67c52' } },
+      createTextField('course1', 'First Course', { x: 8, y: 28, width: 84, height: 14 }, { placeholder: 'FIRST\nHeirloom Tomato Salad', style: { fontSize: 12, textAlign: 'center', color: '#3d2817', lineHeight: 1.6 } }),
+      createTextField('course2', 'Main Course', { x: 8, y: 46, width: 84, height: 14 }, { placeholder: 'MAIN\nPan-Seared Salmon', style: { fontSize: 12, textAlign: 'center', color: '#3d2817', lineHeight: 1.6 } }),
+      createTextField('course3', 'Dessert', { x: 8, y: 64, width: 84, height: 14 }, { placeholder: 'DESSERT\nVanilla Bean Crème Brûlée', style: { fontSize: 12, textAlign: 'center', color: '#3d2817', lineHeight: 1.6 } }),
+      createTextField('pairing', 'Pairing', { x: 8, y: 86, width: 84, height: 6 }, { placeholder: 'Wine pairings available upon request', style: { fontSize: 9, textAlign: 'center', color: '#a67c52', fontStyle: 'italic' } })
+    ],
+    tags: ['tent', 'menu', 'wedding', 'elegant']
+  }
+];
+
 export const ALL_EVENT_ESSENTIALS_TEMPLATES: EditableTemplate[] = [
   ...INVITATION_TEMPLATES,
   ...TICKET_TEMPLATES,
@@ -716,5 +875,8 @@ export const ALL_EVENT_ESSENTIALS_TEMPLATES: EditableTemplate[] = [
   ...MENU_TEMPLATES,
   ...PLACE_CARD_TEMPLATES,
   ...TABLE_NUMBER_TEMPLATES,
-  ...PROGRAM_BOOKLET_TEMPLATES
+  ...PROGRAM_BOOKLET_TEMPLATES,
+  ...RSVP_CARD_TEMPLATES,
+  ...THANK_YOU_NOTE_TEMPLATES,
+  ...TABLE_TENT_TEMPLATES
 ];

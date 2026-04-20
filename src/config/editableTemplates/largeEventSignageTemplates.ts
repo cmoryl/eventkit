@@ -1785,6 +1785,161 @@ const AFRAME_EXTRA: EditableTemplate[] = [
   }
 ];
 
+// ============= MAIN STAGE BACKDROP EXTRAS =============
+
+export const MAIN_STAGE_BACKDROP_EXTRA: EditableTemplate[] = [
+  {
+    id: 'main-stage-keynote', name: 'Keynote Main Stage', description: 'Massive keynote stage backdrop with branding',
+    assetType: AssetType.MainStageBackdrop, category: 'universal',
+    dimensions: createDimensions(40, 20, 0.5, 1, 100),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #0a0a1a 0%, #1e1e5a 50%, #4f46e5 100%)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fbbf24', secondary: '#0a0a1a', accent: '#fff', text: '#ffffff', background: '#0a0a1a' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo-l', 'Logo Left', { x: 5, y: 8, width: 14, height: 18 }, { placeholder: 'Logo' }),
+      createLogoField('logo-r', 'Logo Right', { x: 81, y: 8, width: 14, height: 18 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event Name', { x: 10, y: 35, width: 80, height: 22 }, { placeholder: 'INNOVATION 2026', required: true, style: { fontSize: 200, fontWeight: 'bold', textAlign: 'center', color: '#fff', letterSpacing: 8 } }),
+      createTextField('tagline', 'Tagline', { x: 15, y: 62, width: 70, height: 8 }, { placeholder: 'Building the future, together', style: { fontSize: 56, textAlign: 'center', color: '#fbbf24', fontStyle: 'italic' } }),
+      createTextField('hashtag', 'Hashtag', { x: 30, y: 78, width: 40, height: 8 }, { placeholder: '#INNOVATE2026', style: { fontSize: 42, textAlign: 'center', color: 'rgba(255,255,255,0.6)', letterSpacing: 4 } }),
+    ],
+    tags: ['main-stage', 'keynote', 'massive', 'branded'], isSystemTemplate: true
+  },
+  {
+    id: 'main-stage-concert', name: 'Concert Main Stage', description: 'Bold concert/festival main stage',
+    assetType: AssetType.MainStageBackdrop, category: 'universal',
+    dimensions: createDimensions(40, 20, 0.5, 1, 100),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%)' },
+    defaultFonts: { heading: 'Bebas Neue', body: 'Inter' },
+    defaultColors: { primary: '#fff', secondary: '#ec4899', accent: '#fbbf24', text: '#ffffff', background: '#ec4899' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createTextField('festival', 'Festival', { x: 5, y: 25, width: 90, height: 30 }, { placeholder: 'BLOOM\nFEST', required: true, style: { fontSize: 320, fontWeight: '900', textAlign: 'center', color: '#fff', lineHeight: 0.9 } }),
+      createTextField('year', 'Year', { x: 35, y: 64, width: 30, height: 10 }, { placeholder: '2026', style: { fontSize: 110, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24' } }),
+      createTextField('location', 'Location', { x: 20, y: 82, width: 60, height: 6 }, { placeholder: 'AUSTIN  •  TEXAS  •  JUNE 14-16', style: { fontSize: 36, textAlign: 'center', color: '#fff', letterSpacing: 6 } }),
+    ],
+    tags: ['main-stage', 'concert', 'festival', 'bold'], isSystemTemplate: true
+  },
+  {
+    id: 'main-stage-corporate', name: 'Corporate Summit Stage', description: 'Clean corporate summit stage backdrop',
+    assetType: AssetType.MainStageBackdrop, category: 'universal',
+    dimensions: createDimensions(40, 20, 0.5, 1, 100),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1e40af', secondary: '#ffffff', accent: '#06b6d4', text: '#1e40af', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      { id: 'accent-bar', type: 'shape', name: 'Accent Bar', position: { x: 0, y: 88, width: 100, height: 12 }, style: { backgroundColor: '#1e40af' } },
+      createLogoField('logo', 'Logo', { x: 42, y: 8, width: 16, height: 14 }, { placeholder: 'Logo' }),
+      createTextField('event', 'Event', { x: 10, y: 30, width: 80, height: 18 }, { placeholder: 'GLOBAL LEADERSHIP SUMMIT', required: true, style: { fontSize: 130, fontWeight: 'bold', textAlign: 'center', color: '#1e40af', letterSpacing: 4 } }),
+      { id: 'line', type: 'divider', name: 'Line', position: { x: 40, y: 54, width: 20, height: 0.5 }, style: { backgroundColor: '#06b6d4' } },
+      createTextField('subtitle', 'Subtitle', { x: 15, y: 60, width: 70, height: 8 }, { placeholder: 'Driving Tomorrow\'s Innovation', style: { fontSize: 46, textAlign: 'center', color: '#06b6d4', fontStyle: 'italic' } }),
+      createTextField('dates', 'Dates', { x: 25, y: 75, width: 50, height: 8 }, { placeholder: 'October 12-14, 2026', style: { fontSize: 36, textAlign: 'center', color: '#1e40af' } }),
+      createTextField('footer', 'Footer', { x: 5, y: 91, width: 90, height: 6 }, { placeholder: 'PRESENTED BY ACME CORPORATION', style: { fontSize: 28, textAlign: 'center', color: '#fff', letterSpacing: 8 } }),
+    ],
+    tags: ['main-stage', 'corporate', 'summit', 'clean'], isSystemTemplate: true
+  },
+];
+
+// ============= REGISTRATION COUNTER EXTRAS =============
+
+export const REGISTRATION_COUNTER_EXTRA: EditableTemplate[] = [
+  {
+    id: 'reg-counter-modern', name: 'Modern Registration Counter', description: 'Clean front-facing registration desk wrap',
+    assetType: AssetType.RegistrationCounter, category: 'universal',
+    dimensions: createDimensions(72, 36, 0.5, 1, 100),
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fbbf24', secondary: '#0f172a', accent: '#fff', text: '#ffffff', background: '#0f172a' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createTextField('headline', 'Headline', { x: 5, y: 22, width: 90, height: 30 }, { placeholder: 'CHECK IN HERE', required: true, style: { fontSize: 180, fontWeight: 'bold', textAlign: 'center', color: '#fff', letterSpacing: 6 } }),
+      createTextField('subline', 'Subline', { x: 15, y: 56, width: 70, height: 12 }, { placeholder: 'Welcome to Innovation Summit 2026', style: { fontSize: 64, textAlign: 'center', color: '#fbbf24', fontStyle: 'italic' } }),
+      createLogoField('logo-l', 'Logo Left', { x: 8, y: 8, width: 14, height: 12 }, { placeholder: 'Logo' }),
+      createLogoField('logo-r', 'Logo Right', { x: 78, y: 8, width: 14, height: 12 }, { placeholder: 'Logo' }),
+    ],
+    tags: ['registration', 'counter', 'check-in', 'modern'], isSystemTemplate: true
+  },
+  {
+    id: 'reg-counter-vibrant', name: 'Vibrant Festival Counter', description: 'Bright registration counter for festivals',
+    assetType: AssetType.RegistrationCounter, category: 'universal',
+    dimensions: createDimensions(72, 36, 0.5, 1, 100),
+    background: { type: 'gradient', value: 'linear-gradient(90deg, #f97316 0%, #ec4899 100%)' },
+    defaultFonts: { heading: 'Bebas Neue', body: 'Inter' },
+    defaultColors: { primary: '#fff', secondary: '#f97316', accent: '#fbbf24', text: '#ffffff', background: '#f97316' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createTextField('label', 'Label', { x: 10, y: 18, width: 80, height: 12 }, { placeholder: 'GET YOUR WRISTBAND', style: { fontSize: 90, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24', letterSpacing: 4 } }),
+      createTextField('event', 'Event', { x: 5, y: 36, width: 90, height: 25 }, { placeholder: 'BLOOM FEST', required: true, style: { fontSize: 240, fontWeight: '900', textAlign: 'center', color: '#fff' } }),
+      createTextField('lines', 'Line Labels', { x: 5, y: 70, width: 90, height: 10 }, { placeholder: 'GA  •  VIP  •  ARTIST', style: { fontSize: 70, textAlign: 'center', color: '#fff', letterSpacing: 8 } }),
+    ],
+    tags: ['registration', 'festival', 'vibrant'], isSystemTemplate: true
+  },
+];
+
+// ============= TECHNOLOGY/KIOSK EXTRAS =============
+
+export const KIOSK_EXTRA: EditableTemplate[] = [
+  {
+    id: 'kiosk-self-service', name: 'Self-Service Kiosk', description: 'Self check-in kiosk wrap design',
+    assetType: AssetType.Kiosk, category: 'universal',
+    dimensions: createDimensions(24, 60, 0.25, 0.5, 100),
+    background: { type: 'gradient', value: 'linear-gradient(180deg, #0f172a 0%, #1e3a8a 100%)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#06b6d4', secondary: '#0f172a', accent: '#fff', text: '#ffffff', background: '#0f172a' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 25, y: 5, width: 50, height: 8 }, { placeholder: 'Logo' }),
+      createTextField('title', 'Title', { x: 5, y: 18, width: 90, height: 10 }, { placeholder: 'SELF CHECK-IN', required: true, style: { fontSize: 80, fontWeight: 'bold', textAlign: 'center', color: '#06b6d4', letterSpacing: 4 } }),
+      createTextField('step1', 'Step 1', { x: 10, y: 36, width: 80, height: 8 }, { placeholder: '1. Tap to begin', style: { fontSize: 40, textAlign: 'center', color: '#fff' } }),
+      createTextField('step2', 'Step 2', { x: 10, y: 46, width: 80, height: 8 }, { placeholder: '2. Enter your email', style: { fontSize: 40, textAlign: 'center', color: '#fff' } }),
+      createTextField('step3', 'Step 3', { x: 10, y: 56, width: 80, height: 8 }, { placeholder: '3. Print your badge', style: { fontSize: 40, textAlign: 'center', color: '#fff' } }),
+      { id: 'qr', type: 'qrcode', name: 'QR', position: { x: 30, y: 72, width: 40, height: 18 }, placeholder: 'Help URL', style: {} },
+      createTextField('help', 'Help', { x: 10, y: 92, width: 80, height: 5 }, { placeholder: 'Need help? Scan to chat with staff', style: { fontSize: 22, textAlign: 'center', color: 'rgba(255,255,255,0.7)' } }),
+    ],
+    tags: ['kiosk', 'self-service', 'check-in'], isSystemTemplate: true
+  },
+];
+
+// ============= GLASS DOOR DECAL EXTRAS =============
+
+export const GLASS_DOOR_EXTRA: EditableTemplate[] = [
+  {
+    id: 'glass-door-welcome', name: 'Glass Door Welcome', description: 'Frosted glass door welcome decal',
+    assetType: AssetType.GlassDoor, category: 'universal',
+    dimensions: createDimensions(36, 84, 0.25, 1, 100),
+    background: { type: 'solid', value: 'rgba(255,255,255,0.85)' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#0f172a', secondary: '#fff', accent: '#3b82f6', text: '#0f172a', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createLogoField('logo', 'Logo', { x: 30, y: 18, width: 40, height: 14 }, { placeholder: 'Logo' }),
+      createTextField('welcome', 'Welcome', { x: 5, y: 38, width: 90, height: 14 }, { placeholder: 'WELCOME', required: true, style: { fontSize: 110, fontWeight: 'bold', textAlign: 'center', color: '#0f172a', letterSpacing: 8 } }),
+      { id: 'line', type: 'divider', name: 'Line', position: { x: 35, y: 56, width: 30, height: 0.5 }, style: { backgroundColor: '#3b82f6' } },
+      createTextField('event', 'Event', { x: 10, y: 60, width: 80, height: 8 }, { placeholder: 'Innovation Summit 2026', style: { fontSize: 48, textAlign: 'center', color: '#3b82f6', fontStyle: 'italic' } }),
+      createTextField('hours', 'Hours', { x: 10, y: 78, width: 80, height: 6 }, { placeholder: 'Doors open 8:00 AM', style: { fontSize: 32, textAlign: 'center', color: '#0f172a' } }),
+    ],
+    tags: ['glass-door', 'welcome', 'frosted'], isSystemTemplate: true
+  },
+  {
+    id: 'glass-door-sponsor', name: 'Glass Door Sponsor', description: 'Sponsor recognition on glass door',
+    assetType: AssetType.GlassDoor, category: 'universal',
+    dimensions: createDimensions(36, 84, 0.25, 1, 100),
+    background: { type: 'solid', value: '#ffffff' },
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#1e40af', secondary: '#fff', accent: '#fbbf24', text: '#1e40af', background: '#ffffff' },
+    colorMode: 'CMYK', dpi: 100,
+    fields: [
+      createTextField('label', 'Label', { x: 10, y: 12, width: 80, height: 6 }, { placeholder: 'PROUDLY SPONSORED BY', style: { fontSize: 32, textAlign: 'center', color: '#1e40af', letterSpacing: 6 } }),
+      createLogoField('sponsor1', 'Sponsor 1', { x: 20, y: 22, width: 60, height: 14 }, { placeholder: 'Sponsor logo' }),
+      createLogoField('sponsor2', 'Sponsor 2', { x: 20, y: 40, width: 60, height: 14 }, { placeholder: 'Sponsor logo' }),
+      createLogoField('sponsor3', 'Sponsor 3', { x: 20, y: 58, width: 60, height: 14 }, { placeholder: 'Sponsor logo' }),
+      createTextField('thanks', 'Thanks', { x: 10, y: 78, width: 80, height: 8 }, { placeholder: 'Thank you for your support', style: { fontSize: 28, textAlign: 'center', color: '#fbbf24', fontStyle: 'italic' } }),
+    ],
+    tags: ['glass-door', 'sponsor', 'recognition'], isSystemTemplate: true
+  },
+];
+
 // Export all large event signage templates
 export const ALL_LARGE_EVENT_SIGNAGE_TEMPLATES: EditableTemplate[] = [
   ...STEP_REPEAT_TEMPLATES,
@@ -1800,5 +1955,9 @@ export const ALL_LARGE_EVENT_SIGNAGE_TEMPLATES: EditableTemplate[] = [
   ...WINDOW_GRAPHICS_TEMPLATES,
   ...WINDOW_GRAPHICS_EXTRA,
   ...AFRAME_TEMPLATES,
-  ...AFRAME_EXTRA
+  ...AFRAME_EXTRA,
+  ...MAIN_STAGE_BACKDROP_EXTRA,
+  ...REGISTRATION_COUNTER_EXTRA,
+  ...KIOSK_EXTRA,
+  ...GLASS_DOOR_EXTRA
 ];

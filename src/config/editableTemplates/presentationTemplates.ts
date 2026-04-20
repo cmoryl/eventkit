@@ -389,10 +389,151 @@ export const STREAM_OVERLAY_TEMPLATES: EditableTemplate[] = [
   },
 ];
 
+// ============= ADDITIONAL CONTENT SLIDES =============
+
+export const CONTENT_SLIDE_TEMPLATES: EditableTemplate[] = [
+  {
+    id: 'pres-section-divider', name: 'Section Divider Slide', description: 'Bold divider between presentation sections',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createTextField('chapter', 'Chapter', { x: 8, y: 35, width: 84, height: 8 }, { placeholder: 'Chapter 02', style: { fontSize: 22, textAlign: 'left', color: 'rgba(255,255,255,0.6)', letterSpacing: 6 } }),
+      createTextField('title', 'Title', { x: 8, y: 45, width: 84, height: 18 }, { placeholder: 'The Strategy', required: true, style: { fontSize: 84, fontWeight: 'bold', textAlign: 'left', color: '#fff' } }),
+      { id: 'line', type: 'divider', name: 'Line', position: { x: 8, y: 68, width: 12, height: 0.5 }, style: { backgroundColor: '#fbbf24' } },
+      createTextField('desc', 'Description', { x: 8, y: 72, width: 60, height: 8 }, { placeholder: 'How we will get there', style: { fontSize: 20, textAlign: 'left', color: 'rgba(255,255,255,0.7)' } }),
+    ],
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fbbf24', secondary: '#6366f1', accent: '#ec4899', text: '#ffffff', background: '#6366f1' },
+    tags: ['presentation', 'divider', 'section', 'chapter'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  },
+  {
+    id: 'pres-content-bullet', name: 'Bullet Content Slide', description: 'Standard bullet content slide',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'solid', value: '#ffffff' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createTextField('title', 'Title', { x: 6, y: 8, width: 88, height: 10 }, { placeholder: 'Key Takeaways', required: true, style: { fontSize: 44, fontWeight: 'bold', textAlign: 'left', color: '#0f172a' } }),
+      { id: 'line', type: 'divider', name: 'Line', position: { x: 6, y: 20, width: 8, height: 0.4 }, style: { backgroundColor: '#3b82f6' } },
+      createTextField('bullet1', 'Bullet 1', { x: 6, y: 28, width: 88, height: 10 }, { placeholder: '•  First key insight from the data', style: { fontSize: 26, textAlign: 'left', color: '#334155' } }),
+      createTextField('bullet2', 'Bullet 2', { x: 6, y: 42, width: 88, height: 10 }, { placeholder: '•  Second supporting argument', style: { fontSize: 26, textAlign: 'left', color: '#334155' } }),
+      createTextField('bullet3', 'Bullet 3', { x: 6, y: 56, width: 88, height: 10 }, { placeholder: '•  Third actionable recommendation', style: { fontSize: 26, textAlign: 'left', color: '#334155' } }),
+      createTextField('bullet4', 'Bullet 4', { x: 6, y: 70, width: 88, height: 10 }, { placeholder: '•  Final closing thought', style: { fontSize: 26, textAlign: 'left', color: '#334155' } }),
+      createTextField('footer', 'Footer', { x: 6, y: 92, width: 88, height: 4 }, { placeholder: 'Company  |  Confidential', style: { fontSize: 12, textAlign: 'left', color: '#94a3b8' } }),
+    ],
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#3b82f6', secondary: '#ffffff', accent: '#0f172a', text: '#0f172a', background: '#ffffff' },
+    tags: ['presentation', 'bullets', 'content', 'corporate'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  },
+  {
+    id: 'pres-stat-highlight', name: 'Stat Highlight Slide', description: 'Big number/stat focal slide',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createTextField('label', 'Label', { x: 10, y: 22, width: 80, height: 8 }, { placeholder: 'Customer growth in 2025', style: { fontSize: 24, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } }),
+      createTextField('stat', 'Stat', { x: 5, y: 36, width: 90, height: 30 }, { placeholder: '247%', required: true, style: { fontSize: 220, fontWeight: 'bold', textAlign: 'center', color: '#fbbf24' } }),
+      createTextField('caption', 'Caption', { x: 15, y: 72, width: 70, height: 10 }, { placeholder: 'YoY increase across all enterprise segments', style: { fontSize: 22, textAlign: 'center', color: 'rgba(255,255,255,0.7)' } }),
+    ],
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fbbf24', secondary: '#0f172a', accent: '#fff', text: '#ffffff', background: '#0f172a' },
+    tags: ['presentation', 'stat', 'metric', 'highlight'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  },
+  {
+    id: 'pres-quote-slide', name: 'Quote Slide', description: 'Pull-quote testimonial slide',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'solid', value: '#fef9f0' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createTextField('mark', 'Quote Mark', { x: 8, y: 12, width: 20, height: 20 }, { placeholder: '"', style: { fontSize: 220, textAlign: 'left', color: '#d97706', lineHeight: 1, fontFamily: 'Playfair Display' } }),
+      createTextField('quote', 'Quote', { x: 12, y: 32, width: 76, height: 32 }, { placeholder: 'The best way to predict the future is to create it.', required: true, style: { fontSize: 48, textAlign: 'left', color: '#1f2937', fontStyle: 'italic', fontFamily: 'Playfair Display', lineHeight: 1.3 } }),
+      { id: 'line', type: 'divider', name: 'Line', position: { x: 12, y: 72, width: 6, height: 0.4 }, style: { backgroundColor: '#d97706' } },
+      createTextField('author', 'Author', { x: 12, y: 76, width: 76, height: 6 }, { placeholder: 'Peter Drucker', style: { fontSize: 22, fontWeight: 'bold', textAlign: 'left', color: '#1f2937' } }),
+      createTextField('title', 'Title', { x: 12, y: 84, width: 76, height: 5 }, { placeholder: 'Management Consultant & Author', style: { fontSize: 16, textAlign: 'left', color: '#6b7280' } }),
+    ],
+    defaultFonts: { heading: 'Playfair Display', body: 'Inter' },
+    defaultColors: { primary: '#d97706', secondary: '#fef9f0', accent: '#1f2937', text: '#1f2937', background: '#fef9f0' },
+    tags: ['presentation', 'quote', 'testimonial', 'editorial'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  },
+  {
+    id: 'pres-team-grid', name: 'Team Grid Slide', description: 'Meet the team / speakers grid',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'solid', value: '#0f172a' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createTextField('title', 'Title', { x: 6, y: 6, width: 88, height: 10 }, { placeholder: 'Meet the Team', style: { fontSize: 40, fontWeight: 'bold', textAlign: 'center', color: '#fff' } }),
+      createImageField('p1', 'Photo 1', { x: 8, y: 24, width: 18, height: 32 }, { style: { borderRadius: 12 } }),
+      createImageField('p2', 'Photo 2', { x: 30, y: 24, width: 18, height: 32 }, { style: { borderRadius: 12 } }),
+      createImageField('p3', 'Photo 3', { x: 52, y: 24, width: 18, height: 32 }, { style: { borderRadius: 12 } }),
+      createImageField('p4', 'Photo 4', { x: 74, y: 24, width: 18, height: 32 }, { style: { borderRadius: 12 } }),
+      createTextField('n1', 'Name 1', { x: 8, y: 60, width: 18, height: 5 }, { placeholder: 'Alex Kim', style: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#fff' } }),
+      createTextField('r1', 'Role 1', { x: 8, y: 66, width: 18, height: 4 }, { placeholder: 'CEO', style: { fontSize: 13, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } }),
+      createTextField('n2', 'Name 2', { x: 30, y: 60, width: 18, height: 5 }, { placeholder: 'Maya Patel', style: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#fff' } }),
+      createTextField('r2', 'Role 2', { x: 30, y: 66, width: 18, height: 4 }, { placeholder: 'CTO', style: { fontSize: 13, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } }),
+      createTextField('n3', 'Name 3', { x: 52, y: 60, width: 18, height: 5 }, { placeholder: 'Jordan Lee', style: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#fff' } }),
+      createTextField('r3', 'Role 3', { x: 52, y: 66, width: 18, height: 4 }, { placeholder: 'Head of Design', style: { fontSize: 13, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } }),
+      createTextField('n4', 'Name 4', { x: 74, y: 60, width: 18, height: 5 }, { placeholder: 'Sam Rivera', style: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: '#fff' } }),
+      createTextField('r4', 'Role 4', { x: 74, y: 66, width: 18, height: 4 }, { placeholder: 'Marketing Lead', style: { fontSize: 13, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } }),
+    ],
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fff', secondary: '#0f172a', accent: '#3b82f6', text: '#ffffff', background: '#0f172a' },
+    tags: ['presentation', 'team', 'speakers', 'people'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  },
+  {
+    id: 'pres-comparison-2col', name: 'Two-Column Comparison', description: 'Compare two options side-by-side',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'solid', value: '#ffffff' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createTextField('title', 'Title', { x: 6, y: 6, width: 88, height: 8 }, { placeholder: 'Before vs. After', style: { fontSize: 38, fontWeight: 'bold', textAlign: 'center', color: '#0f172a' } }),
+      { id: 'left-bg', type: 'shape', name: 'Left Card', position: { x: 6, y: 22, width: 42, height: 70 }, style: { backgroundColor: '#fef2f2', borderRadius: 16 } },
+      { id: 'right-bg', type: 'shape', name: 'Right Card', position: { x: 52, y: 22, width: 42, height: 70 }, style: { backgroundColor: '#f0fdf4', borderRadius: 16 } },
+      createTextField('left-h', 'Left Heading', { x: 8, y: 28, width: 38, height: 8 }, { placeholder: 'BEFORE', style: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', color: '#dc2626', letterSpacing: 6 } }),
+      createTextField('left-body', 'Left Body', { x: 10, y: 40, width: 34, height: 48 }, { placeholder: '• Manual processes\n• Slow turnaround\n• Inconsistent results\n• High error rate', style: { fontSize: 22, textAlign: 'left', color: '#1f2937', lineHeight: 1.6 } }),
+      createTextField('right-h', 'Right Heading', { x: 54, y: 28, width: 38, height: 8 }, { placeholder: 'AFTER', style: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', color: '#16a34a', letterSpacing: 6 } }),
+      createTextField('right-body', 'Right Body', { x: 56, y: 40, width: 34, height: 48 }, { placeholder: '• Fully automated\n• Instant delivery\n• Consistent quality\n• Near-zero errors', style: { fontSize: 22, textAlign: 'left', color: '#1f2937', lineHeight: 1.6 } }),
+    ],
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#16a34a', secondary: '#dc2626', accent: '#0f172a', text: '#0f172a', background: '#ffffff' },
+    tags: ['presentation', 'comparison', 'before-after'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  },
+  {
+    id: 'pres-image-fullbleed', name: 'Full Bleed Image Slide', description: 'Full-bleed photo with caption overlay',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'solid', value: '#000000' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createImageField('photo', 'Photo', { x: 0, y: 0, width: 100, height: 100 }, { style: { objectFit: 'cover' } }),
+      { id: 'overlay', type: 'shape', name: 'Overlay', position: { x: 0, y: 60, width: 100, height: 40 }, style: { backgroundColor: 'rgba(0,0,0,0.7)' } },
+      createTextField('caption', 'Caption', { x: 8, y: 72, width: 60, height: 18 }, { placeholder: 'A moment from our 2025 summit', style: { fontSize: 36, fontWeight: 'bold', textAlign: 'left', color: '#fff' } }),
+      createTextField('credit', 'Credit', { x: 8, y: 92, width: 60, height: 4 }, { placeholder: 'Photo: Studio Lumière', style: { fontSize: 12, textAlign: 'left', color: 'rgba(255,255,255,0.6)' } }),
+    ],
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fff', secondary: '#000', accent: '#fbbf24', text: '#ffffff', background: '#000000' },
+    tags: ['presentation', 'photo', 'fullbleed', 'editorial'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  },
+  {
+    id: 'pres-thank-you', name: 'Thank You Closing Slide', description: 'Standard closing thank-you slide',
+    assetType: AssetType.PresentationSlide, category: 'universal',
+    background: { type: 'gradient', value: 'linear-gradient(135deg, #1e3a8a 0%, #6366f1 100%)' },
+    dimensions: createPixelDimensions(1920, 1080),
+    fields: [
+      createTextField('thanks', 'Thanks', { x: 5, y: 32, width: 90, height: 22 }, { placeholder: 'Thank You', style: { fontSize: 120, fontWeight: 'bold', textAlign: 'center', color: '#fff' } }),
+      createTextField('email', 'Contact', { x: 15, y: 60, width: 70, height: 8 }, { placeholder: 'hello@yourcompany.com', style: { fontSize: 26, textAlign: 'center', color: 'rgba(255,255,255,0.8)' } }),
+      createTextField('handle', 'Social', { x: 15, y: 70, width: 70, height: 6 }, { placeholder: '@yourcompany  •  yourcompany.com', style: { fontSize: 18, textAlign: 'center', color: 'rgba(255,255,255,0.6)' } }),
+      createLogoField('logo', 'Logo', { x: 42, y: 82, width: 16, height: 12 }, { placeholder: 'Logo' }),
+    ],
+    defaultFonts: { heading: 'Inter', body: 'Inter' },
+    defaultColors: { primary: '#fff', secondary: '#1e3a8a', accent: '#fbbf24', text: '#ffffff', background: '#1e3a8a' },
+    tags: ['presentation', 'thank-you', 'closing'], colorMode: 'RGB', dpi: 72, isSystemTemplate: true
+  }
+];
+
 // ============= COMBINED EXPORT =============
 
 export const ALL_PRESENTATION_TEMPLATES: EditableTemplate[] = [
   ...PRESENTATION_SLIDE_TEMPLATES,
+  ...CONTENT_SLIDE_TEMPLATES,
   ...WEBINAR_SLIDE_TEMPLATES,
   ...STREAM_OVERLAY_TEMPLATES,
 ];
