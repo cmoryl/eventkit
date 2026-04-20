@@ -1,0 +1,1 @@
+ALTER TABLE public.editable_templates ADD COLUMN IF NOT EXISTS prompt text;
