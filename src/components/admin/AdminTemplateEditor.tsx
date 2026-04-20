@@ -142,7 +142,7 @@ const AdminTemplateEditor: React.FC = () => {
   useEffect(() => {
     setDraft(selected ? { ...selected } : null);
     setAiBrief('');
-    setAiRefImage(null);
+    setAiRefImages([]);
   }, [selectedId]);
 
   const handleSave = async () => {
@@ -322,43 +322,46 @@ const AdminTemplateEditor: React.FC = () => {
                     onChange={e => setAiBrief(e.target.value)}
                     className="text-xs"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-2 flex-wrap">
                     <label className="cursor-pointer">
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
                         onChange={e => {
-                          const f = e.target.files?.[0];
-                          if (f) handleRefUpload(f);
+                          const fs = e.target.files;
+                          if (fs && fs.length) handleRefUpload(fs);
                           e.target.value = '';
                         }}
                       />
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-muted transition-colors">
                         <Upload className="h-3 w-3" />
-                        {aiRefImage ? 'Replace reference' : 'Upload reference image'}
+                        {aiRefImages.length > 0
+                          ? `Add more (${aiRefImages.length}/${MAX_REFS})`
+                          : `Upload reference images (up to ${MAX_REFS})`}
                       </span>
                     </label>
-                    {aiRefImage && (
-                      <div className="relative">
+                    {aiRefImages.map((src, i) => (
+                      <div key={i} className="relative">
                         <img
-                          src={aiRefImage}
-                          alt="reference"
+                          src={src}
+                          alt={`reference ${i + 1}`}
                           className="h-10 w-10 rounded object-cover border border-border"
                         />
                         <button
-                          onClick={() => setAiRefImage(null)}
+                          onClick={() => removeRefAt(i)}
                           className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
-                          aria-label="Remove reference"
+                          aria-label={`Remove reference ${i + 1}`}
                         >
                           <X className="h-2.5 w-2.5" />
                         </button>
                       </div>
-                    )}
+                    ))}
                     <Button
                       size="sm"
                       onClick={handleCraftPrompt}
-                      disabled={crafting || (!aiBrief.trim() && !aiRefImage)}
+                      disabled={crafting || (!aiBrief.trim() && aiRefImages.length === 0)}
                       className="ml-auto"
                     >
                       {crafting ? (
