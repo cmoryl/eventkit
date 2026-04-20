@@ -1,6 +1,6 @@
 // Template Selector Component - Choose from available templates
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Star, Building2, Palette, Tag, Type, Image, QrCode, Shapes } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -12,13 +12,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { EditableTemplate } from '@/types/editableTemplate.types';
 import { AssetType } from '@/types';
-import { 
-  getTemplatesForAsset, 
-  getUniversalTemplates, 
-  getVendorTemplates,
-  TEMPLATE_STATS 
-} from '@/config/editableTemplates';
+import { TEMPLATE_STATS } from '@/config/editableTemplates';
 import { ALL_EDITABLE_TEMPLATES } from '@/config/editableTemplates/allTemplates';
+import { loadAllTemplates } from '@/services/templateLoader';
 import { TemplatePreviewRenderer } from './TemplatePreviewRenderer';
 
 // Category chip definitions with tag-based matching
@@ -48,19 +44,24 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'universal' | 'vendor'>('all');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [allTemplates, setAllTemplates] = useState<EditableTemplate[]>(ALL_EDITABLE_TEMPLATES);
+
+  useEffect(() => {
+    loadAllTemplates().then(setAllTemplates).catch(() => {});
+  }, []);
 
   // Get filtered templates
   const templates = useMemo(() => {
     let result: EditableTemplate[] = [];
-    
+
     if (activeTab === 'universal') {
-      result = getUniversalTemplates(assetType);
+      result = allTemplates.filter(t => t.category === 'universal' && (!assetType || t.assetType === assetType));
     } else if (activeTab === 'vendor' && vendorId) {
-      result = getVendorTemplates(vendorId, assetType);
+      result = allTemplates.filter(t => t.category === 'vendor-specific' && t.vendorId === vendorId && (!assetType || t.assetType === assetType));
     } else if (assetType) {
-      result = getTemplatesForAsset(assetType);
+      result = allTemplates.filter(t => t.assetType === assetType);
     } else {
-      result = [...ALL_EDITABLE_TEMPLATES];
+      result = [...allTemplates];
     }
 
     // Apply category chip filter
@@ -86,7 +87,7 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     }
 
     return result;
-  }, [assetType, vendorId, activeTab, activeCategory, searchQuery]);
+  }, [allTemplates, assetType, vendorId, activeTab, activeCategory, searchQuery]);
 
   // Field type icon helper
   const fieldIcon = (type: string) => {
