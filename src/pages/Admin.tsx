@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, FileText, Brain, 
-  Settings, BarChart3, Palette, Type, Cog
+  Settings, BarChart3, Palette, Type, Cog, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import AdminRenderEngines from '@/components/admin/AdminRenderEngines';
 import { AdminBrandManager } from '@/components/admin/AdminBrandManager';
 import { AdminHeroManager } from '@/components/admin/AdminHeroManager';
 import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
+import AdminTemplateSync from '@/components/admin/AdminTemplateSync';
 import { useAuth } from '@/hooks/useAuth';
 
 const Admin: React.FC = () => {
@@ -62,7 +63,7 @@ const Admin: React.FC = () => {
   // Handle tab from URL params
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['prompts', 'brands', 'hero', 'analytics', 'knowledge', 'engines', 'settings'].includes(tab)) {
+    if (tab && ['prompts', 'templates', 'brands', 'hero', 'analytics', 'knowledge', 'engines', 'settings'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -207,10 +208,14 @@ const Admin: React.FC = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-7 w-full max-w-5xl mx-auto">
+          <TabsList className="grid grid-cols-8 w-full max-w-6xl mx-auto">
             <TabsTrigger value="prompts" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Prompts</span>
+            </TabsTrigger>
+            <TabsTrigger value="templates" className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              <span className="hidden sm:inline">Templates</span>
             </TabsTrigger>
             <TabsTrigger value="brands" className="flex items-center gap-2">
               <Palette className="w-4 h-4" />
@@ -248,6 +253,10 @@ const Admin: React.FC = () => {
             >
               <TabsContent value="prompts" className="mt-0">
                 <AdminPromptManager />
+              </TabsContent>
+
+              <TabsContent value="templates" className="mt-0">
+                <AdminTemplateSync />
               </TabsContent>
 
               <TabsContent value="brands" className="mt-0">

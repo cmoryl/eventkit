@@ -409,6 +409,81 @@ export type Database = {
         }
         Relationships: []
       }
+      editable_templates: {
+        Row: {
+          asset_type: string
+          background: Json
+          category: string
+          color_mode: string | null
+          created_at: string
+          created_by: string | null
+          default_colors: Json
+          default_fonts: Json
+          description: string | null
+          dimensions: Json
+          dpi: number | null
+          fields: Json
+          id: string
+          is_premium: boolean | null
+          is_system_template: boolean | null
+          name: string
+          preview_url: string | null
+          source: string | null
+          tags: string[] | null
+          thumbnail: string | null
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          asset_type: string
+          background?: Json
+          category?: string
+          color_mode?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_colors?: Json
+          default_fonts?: Json
+          description?: string | null
+          dimensions?: Json
+          dpi?: number | null
+          fields?: Json
+          id: string
+          is_premium?: boolean | null
+          is_system_template?: boolean | null
+          name: string
+          preview_url?: string | null
+          source?: string | null
+          tags?: string[] | null
+          thumbnail?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          asset_type?: string
+          background?: Json
+          category?: string
+          color_mode?: string | null
+          created_at?: string
+          created_by?: string | null
+          default_colors?: Json
+          default_fonts?: Json
+          description?: string | null
+          dimensions?: Json
+          dpi?: number | null
+          fields?: Json
+          id?: string
+          is_premium?: boolean | null
+          is_system_template?: boolean | null
+          name?: string
+          preview_url?: string | null
+          source?: string | null
+          tags?: string[] | null
+          thumbnail?: string | null
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: []
+      }
       generation_progress: {
         Row: {
           completed_ai_calls: number
