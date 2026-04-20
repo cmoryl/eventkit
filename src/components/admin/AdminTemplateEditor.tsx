@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Save, RotateCcw, Loader2 } from 'lucide-react';
+import { Search, Save, RotateCcw, Loader2, Sparkles, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { invalidateTemplateCache } from '@/services/templateLoader';
 
@@ -37,6 +37,49 @@ const AdminTemplateEditor: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<DBTemplate | null>(null);
   const [saving, setSaving] = useState(false);
+  const [aiBrief, setAiBrief] = useState('');
+  const [aiRefImage, setAiRefImage] = useState<string | null>(null);
+  const [crafting, setCrafting] = useState(false);
+
+  const handleRefUpload = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setAiRefImage(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleCraftPrompt = async () => {
+    if (!draft) return;
+    if (!aiBrief.trim() && !aiRefImage) {
+      toast.error('Add a direction or upload a reference image first');
+      return;
+    }
+    setCrafting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('craft-template-prompt', {
+        body: {
+          templateName: draft.name,
+          assetType: draft.asset_type,
+          category: draft.category,
+          description: draft.description,
+          currentPrompt: draft.prompt,
+          userBrief: aiBrief.trim() || undefined,
+          referenceImage: aiRefImage || undefined,
+        },
+      });
+      if (error) throw error;
+      if (!data?.prompt) throw new Error('No prompt returned');
+      setDraft({ ...draft, prompt: data.prompt });
+      toast.success('AI crafted a new prompt — review and Save');
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to craft prompt');
+    } finally {
+      setCrafting(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
@@ -74,6 +117,8 @@ const AdminTemplateEditor: React.FC = () => {
 
   useEffect(() => {
     setDraft(selected ? { ...selected } : null);
+    setAiBrief('');
+    setAiRefImage(null);
   }, [selectedId]);
 
   const handleSave = async () => {
@@ -236,6 +281,73 @@ const AdminTemplateEditor: React.FC = () => {
                     value={draft.prompt ?? ''}
                     onChange={e => setDraft({ ...draft, prompt: e.target.value })}
                   />
+                </div>
+
+                {/* AI Prompt Crafter */}
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span className="text-xs font-semibold text-foreground">
+                      Craft a masterful prompt with AI
+                    </span>
+                  </div>
+                  <Textarea
+                    rows={2}
+                    placeholder="Describe the look you want, e.g. 'luxury minimal, dark navy + gold, art-deco hierarchy'…"
+                    value={aiBrief}
+                    onChange={e => setAiBrief(e.target.value)}
+                    className="text-xs"
+                  />
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) handleRefUpload(f);
+                          e.target.value = '';
+                        }}
+                      />
+                      <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-muted transition-colors">
+                        <Upload className="h-3 w-3" />
+                        {aiRefImage ? 'Replace reference' : 'Upload reference image'}
+                      </span>
+                    </label>
+                    {aiRefImage && (
+                      <div className="relative">
+                        <img
+                          src={aiRefImage}
+                          alt="reference"
+                          className="h-10 w-10 rounded object-cover border border-border"
+                        />
+                        <button
+                          onClick={() => setAiRefImage(null)}
+                          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                          aria-label="Remove reference"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </div>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleCraftPrompt}
+                      disabled={crafting || (!aiBrief.trim() && !aiRefImage)}
+                      className="ml-auto"
+                    >
+                      {crafting ? (
+                        <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+                      )}
+                      Generate Prompt
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    AI will replace the prompt above. Review, then click Save to persist.
+                  </p>
                 </div>
 
                 <details className="group">
