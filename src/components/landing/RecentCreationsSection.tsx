@@ -48,19 +48,31 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
 
       if (projectsError) throw projectsError;
       
-      // Extract thumbnail from generated_assets JSON or fall back to project_assets table
+      // Extract thumbnail from generated_assets JSON (multiple possible shapes)
+      // or fall back to project_assets table
+      const isUsableImage = (s: unknown): s is string =>
+        typeof s === 'string' &&
+        (s.startsWith('http') || s.startsWith('https') || s.startsWith('data:image'));
+
+      const findThumbnailInAssets = (assets: unknown): string | null => {
+        if (!Array.isArray(assets)) return null;
+        for (const a of assets as any[]) {
+          if (!a || typeof a !== 'object') continue;
+          // CreationStudio shape: { assetType, imageUrl, hasContent }
+          if (isUsableImage(a.imageUrl)) return a.imageUrl;
+          // Index.tsx shape: { id, type, title, content, ... }
+          if (isUsableImage(a.content)) return a.content;
+          // Other possible shapes
+          if (isUsableImage(a.thumbnail)) return a.thumbnail;
+          if (isUsableImage(a.url)) return a.url;
+          if (isUsableImage(a.image)) return a.image;
+        }
+        return null;
+      };
+
       const projectsWithThumbnails = await Promise.all(
         (projects || []).map(async (project) => {
-          // First try: get image URL from generated_assets JSON array
-          let thumbnail: string | null = null;
-          if (Array.isArray(project.generated_assets)) {
-            const assetWithImage = project.generated_assets.find(
-              (a: any) => a?.imageUrl && typeof a.imageUrl === 'string' && a.imageUrl.startsWith('http')
-            );
-            if (assetWithImage) {
-              thumbnail = (assetWithImage as any).imageUrl;
-            }
-          }
+          let thumbnail: string | null = findThumbnailInAssets(project.generated_assets);
 
           // Fallback: check project_assets table
           if (!thumbnail) {
@@ -68,11 +80,13 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
               .from('project_assets')
               .select('content')
               .eq('project_id', project.id)
-              .limit(1);
-            
-            const content = assets?.[0]?.content;
-            if (typeof content === 'string' && content.startsWith('http')) {
-              thumbnail = content;
+              .limit(8);
+
+            for (const row of assets || []) {
+              if (isUsableImage(row.content)) {
+                thumbnail = row.content;
+                break;
+              }
             }
           }
 
@@ -188,11 +202,29 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
                           src={project.thumbnail_url} 
                           alt={project.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Hide broken image and show fallback
+                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          }}
                         />
                       ) : (
                         <>
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
-                          <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5" />
+                          {Array.isArray(project.generated_assets) && project.generated_assets.length > 0 ? (
+                            <div className="relative z-10 grid grid-cols-2 gap-1.5 p-3 max-w-full">
+                              {(project.generated_assets as any[]).slice(0, 4).map((a, idx) => (
+                                <div
+                                  key={idx}
+                                  className="px-2 py-1 rounded-md bg-background/70 backdrop-blur-sm border border-border/50 text-[10px] font-medium truncate"
+                                  title={a?.title || a?.type || a?.assetType}
+                                >
+                                  {(a?.title || a?.type || a?.assetType || 'Asset').toString().replace(/_/g, ' ')}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <ImageIcon className="w-10 h-10 text-muted-foreground/40 relative z-10" />
+                          )}
                         </>
                       )}
                       
