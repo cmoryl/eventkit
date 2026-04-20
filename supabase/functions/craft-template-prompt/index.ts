@@ -23,8 +23,19 @@ serve(async (req) => {
       description,
       currentPrompt,
       userBrief,
-      referenceImage, // data URI or https URL
+      referenceImage, // legacy: single data URI or https URL
+      referenceImages, // new: array of data URIs / URLs
     } = await req.json();
+
+    // Normalize to a single array of image URLs (data URI or https)
+    const images: string[] = Array.isArray(referenceImages)
+      ? referenceImages.filter((u) => typeof u === "string" && u.length > 0)
+      : [];
+    if (typeof referenceImage === "string" && referenceImage.length > 0) {
+      images.unshift(referenceImage);
+    }
+    // Cap to a reasonable number to protect tokens / latency
+    const cappedImages = images.slice(0, 6);
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
