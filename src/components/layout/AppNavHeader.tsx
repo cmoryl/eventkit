@@ -184,7 +184,9 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                   {studioGroups.map((group) => (
                     <div key={group.label} className="space-y-0.5">
                       <p className="px-3 pt-2 text-[10px] text-muted-foreground">{group.label}</p>
-                      {group.studios.map((studio) => (
+                      {group.studios.map((studio) => {
+                        const StudioIcon = getStudioIcon(studio.icon);
+                        return (
                         <button
                           key={studio.id}
                           onClick={() => navigate(studio.route)}
@@ -196,11 +198,12 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                           )}
                         >
                           <div className={cn("w-7 h-7 rounded-lg bg-gradient-to-br flex items-center justify-center flex-shrink-0", studio.gradient)}>
-                            <Sparkles className="w-3.5 h-3.5 text-white" />
+                            <StudioIcon className="w-3.5 h-3.5 text-white" />
                           </div>
                           <span className="truncate">{studio.shortName}</span>
                         </button>
-                      ))}
+                        );
+                      })}
                     </div>
                   ))}
 
