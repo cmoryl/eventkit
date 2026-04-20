@@ -1,6 +1,5 @@
-// Seed all editable templates from the codebase config into the database
+// Seed editable templates: receives template payload from authenticated admin client
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { ALL_EDITABLE_TEMPLATES } from '../_shared/editable-templates-data.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,12 +21,15 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error('Unauthorized');
 
-    const { data: roles } = await supabase
-      .from('user_roles').select('role').eq('user_id', user.id).eq('role', 'admin').maybeSingle();
-    if (!roles) throw new Error('Admin access required');
+    const { data: adminRole } = await supabase
+      .from('user_roles').select('role')
+      .eq('user_id', user.id).eq('role', 'admin').maybeSingle();
+    if (!adminRole) throw new Error('Admin access required');
 
-    // Map TypeScript templates to DB rows
-    const rows = ALL_EDITABLE_TEMPLATES.map((t: any) => ({
+    const { templates } = await req.json();
+    if (!Array.isArray(templates)) throw new Error('templates must be an array');
+
+    const rows = templates.map((t: any) => ({
       id: t.id,
       name: t.name,
       description: t.description ?? null,
@@ -49,7 +51,7 @@ Deno.serve(async (req) => {
       source: 'config',
     }));
 
-    // Upsert in chunks
+    // Upsert in chunks of 50
     let synced = 0;
     const chunkSize = 50;
     for (let i = 0; i < rows.length; i += chunkSize) {
@@ -62,7 +64,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, synced, total: ALL_EDITABLE_TEMPLATES.length }),
+      JSON.stringify({ success: true, synced, total: templates.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err: any) {
