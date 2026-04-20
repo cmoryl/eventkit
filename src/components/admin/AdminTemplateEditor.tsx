@@ -38,23 +38,43 @@ const AdminTemplateEditor: React.FC = () => {
   const [draft, setDraft] = useState<DBTemplate | null>(null);
   const [saving, setSaving] = useState(false);
   const [aiBrief, setAiBrief] = useState('');
-  const [aiRefImage, setAiRefImage] = useState<string | null>(null);
+  const [aiRefImages, setAiRefImages] = useState<string[]>([]);
   const [crafting, setCrafting] = useState(false);
 
-  const handleRefUpload = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
+  const MAX_REFS = 6;
+
+  const handleRefUpload = (files: FileList | File[]) => {
+    const list = Array.from(files);
+    const remaining = MAX_REFS - aiRefImages.length;
+    if (remaining <= 0) {
+      toast.error(`Up to ${MAX_REFS} reference images`);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setAiRefImage(reader.result as string);
-    reader.readAsDataURL(file);
+    const accepted = list.slice(0, remaining);
+    accepted.forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is over 5MB — skipped`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () =>
+        setAiRefImages((prev) =>
+          prev.length >= MAX_REFS ? prev : [...prev, reader.result as string]
+        );
+      reader.readAsDataURL(file);
+    });
+    if (list.length > accepted.length) {
+      toast.message(`Only added ${accepted.length} — limit is ${MAX_REFS}`);
+    }
   };
+
+  const removeRefAt = (idx: number) =>
+    setAiRefImages((prev) => prev.filter((_, i) => i !== idx));
 
   const handleCraftPrompt = async () => {
     if (!draft) return;
-    if (!aiBrief.trim() && !aiRefImage) {
-      toast.error('Add a direction or upload a reference image first');
+    if (!aiBrief.trim() && aiRefImages.length === 0) {
+      toast.error('Add a direction or upload reference image(s) first');
       return;
     }
     setCrafting(true);
@@ -67,13 +87,17 @@ const AdminTemplateEditor: React.FC = () => {
           description: draft.description,
           currentPrompt: draft.prompt,
           userBrief: aiBrief.trim() || undefined,
-          referenceImage: aiRefImage || undefined,
+          referenceImages: aiRefImages.length > 0 ? aiRefImages : undefined,
         },
       });
       if (error) throw error;
       if (!data?.prompt) throw new Error('No prompt returned');
       setDraft({ ...draft, prompt: data.prompt });
-      toast.success('AI crafted a new prompt — review and Save');
+      toast.success(
+        aiRefImages.length > 1
+          ? `AI synthesized ${aiRefImages.length} references into a new prompt — review and Save`
+          : 'AI crafted a new prompt — review and Save'
+      );
     } catch (e: any) {
       toast.error(e?.message || 'Failed to craft prompt');
     } finally {
