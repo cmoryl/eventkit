@@ -29,7 +29,14 @@ Deno.serve(async (req) => {
     const { templates } = await req.json();
     if (!Array.isArray(templates)) throw new Error('templates must be an array');
 
-    const rows = templates.map((t: any) => ({
+    // Dedupe by id - last occurrence wins
+    const seen = new Map<string, any>();
+    for (const t of templates) {
+      if (t?.id) seen.set(t.id, t);
+    }
+    const uniqueTemplates = Array.from(seen.values());
+
+    const rows = uniqueTemplates.map((t: any) => ({
       id: t.id,
       name: t.name,
       description: t.description ?? null,
@@ -64,7 +71,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, synced, total: templates.length }),
+      JSON.stringify({ success: true, synced, total: templates.length, duplicatesRemoved: templates.length - uniqueTemplates.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err: any) {
