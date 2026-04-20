@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, synced, total: templates.length }),
+      JSON.stringify({ success: true, synced, total: templates.length, duplicatesRemoved: templates.length - uniqueTemplates.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (err: any) {
