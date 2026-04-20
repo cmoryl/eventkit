@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, FileText, Brain, 
-  Settings, BarChart3, Palette, Type, Cog, Database
+  Settings, BarChart3, Palette, Type, Cog, Database,
+  LayoutDashboard, Users, ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,9 @@ import { AdminHeroManager } from '@/components/admin/AdminHeroManager';
 import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
 import AdminTemplateSync from '@/components/admin/AdminTemplateSync';
 import AdminTemplateEditor from '@/components/admin/AdminTemplateEditor';
+import AdminOverview from '@/components/admin/AdminOverview';
+import AdminUsersManager from '@/components/admin/AdminUsersManager';
+import AdminModeration from '@/components/admin/AdminModeration';
 import { useAuth } from '@/hooks/useAuth';
 
 const Admin: React.FC = () => {
@@ -28,7 +32,7 @@ const Admin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'prompts');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const navigate = useNavigate();
 
   // Check if already authenticated in session or pre-approved
@@ -64,7 +68,7 @@ const Admin: React.FC = () => {
   // Handle tab from URL params
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['prompts', 'templates', 'brands', 'hero', 'analytics', 'knowledge', 'engines', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'users', 'moderation', 'prompts', 'templates', 'brands', 'hero', 'analytics', 'knowledge', 'engines', 'settings'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -83,6 +87,8 @@ const Admin: React.FC = () => {
       if (data?.success) {
         setIsAdminAuthenticated(true);
         sessionStorage.setItem('admin_authenticated', 'true');
+        // Cache token for service-role admin function calls (users/moderation)
+        sessionStorage.setItem('admin_token', password);
         toast.success('Welcome to Admin Panel');
       } else {
         toast.error('Invalid password');
@@ -98,6 +104,7 @@ const Admin: React.FC = () => {
   const handleLogout = () => {
     setIsAdminAuthenticated(false);
     sessionStorage.removeItem('admin_authenticated');
+    sessionStorage.removeItem('admin_token');
     setPassword('');
     toast.info('Logged out of admin panel');
   };
@@ -209,40 +216,59 @@ const Admin: React.FC = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-8 w-full max-w-6xl mx-auto">
-            <TabsTrigger value="prompts" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Prompts</span>
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="flex items-center gap-2">
-              <Database className="w-4 h-4" />
-              <span className="hidden sm:inline">Templates</span>
-            </TabsTrigger>
-            <TabsTrigger value="brands" className="flex items-center gap-2">
-              <Palette className="w-4 h-4" />
-              <span className="hidden sm:inline">Brands</span>
-            </TabsTrigger>
-            <TabsTrigger value="hero" className="flex items-center gap-2">
-              <Type className="w-4 h-4" />
-              <span className="hidden sm:inline">Hero</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Analytics</span>
-            </TabsTrigger>
-            <TabsTrigger value="knowledge" className="flex items-center gap-2">
-              <Brain className="w-4 h-4" />
-              <span className="hidden sm:inline">Knowledge</span>
-            </TabsTrigger>
-            <TabsTrigger value="engines" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Engines</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Cog className="w-4 h-4" />
-              <span className="hidden sm:inline">Site</span>
-            </TabsTrigger>
-          </TabsList>
+          {/* Sticky tab nav with two visual groups */}
+          <div className="sticky top-0 z-30 -mx-4 px-4 py-3 bg-background/80 backdrop-blur-md border-b border-border">
+            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
+              <TabsList className="flex flex-wrap h-auto gap-1 bg-muted/40 p-1">
+                <TabsTrigger value="overview" className="gap-1.5">
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Overview</span>
+                </TabsTrigger>
+                <TabsTrigger value="users" className="gap-1.5">
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Users</span>
+                </TabsTrigger>
+                <TabsTrigger value="moderation" className="gap-1.5">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span className="hidden sm:inline">Moderation</span>
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-1.5">
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                </TabsTrigger>
+                <span className="hidden lg:inline-block w-px h-6 bg-border mx-1" aria-hidden />
+                <TabsTrigger value="prompts" className="gap-1.5">
+                  <FileText className="w-4 h-4" />
+                  <span className="hidden sm:inline">Prompts</span>
+                </TabsTrigger>
+                <TabsTrigger value="templates" className="gap-1.5">
+                  <Database className="w-4 h-4" />
+                  <span className="hidden sm:inline">Templates</span>
+                </TabsTrigger>
+                <TabsTrigger value="brands" className="gap-1.5">
+                  <Palette className="w-4 h-4" />
+                  <span className="hidden sm:inline">Brands</span>
+                </TabsTrigger>
+                <TabsTrigger value="knowledge" className="gap-1.5">
+                  <Brain className="w-4 h-4" />
+                  <span className="hidden sm:inline">Knowledge</span>
+                </TabsTrigger>
+                <span className="hidden lg:inline-block w-px h-6 bg-border mx-1" aria-hidden />
+                <TabsTrigger value="hero" className="gap-1.5">
+                  <Type className="w-4 h-4" />
+                  <span className="hidden sm:inline">Hero</span>
+                </TabsTrigger>
+                <TabsTrigger value="engines" className="gap-1.5">
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Engines</span>
+                </TabsTrigger>
+                <TabsTrigger value="settings" className="gap-1.5">
+                  <Cog className="w-4 h-4" />
+                  <span className="hidden sm:inline">Site</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+          </div>
 
           <AnimatePresence mode="wait">
             <motion.div
@@ -252,6 +278,18 @@ const Admin: React.FC = () => {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
+              <TabsContent value="overview" className="mt-0">
+                <AdminOverview onNavigate={setActiveTab} />
+              </TabsContent>
+
+              <TabsContent value="users" className="mt-0">
+                <AdminUsersManager />
+              </TabsContent>
+
+              <TabsContent value="moderation" className="mt-0">
+                <AdminModeration />
+              </TabsContent>
+
               <TabsContent value="prompts" className="mt-0">
                 <AdminPromptManager />
               </TabsContent>
