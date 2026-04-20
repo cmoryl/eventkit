@@ -23,8 +23,19 @@ serve(async (req) => {
       description,
       currentPrompt,
       userBrief,
-      referenceImage, // data URI or https URL
+      referenceImage, // legacy: single data URI or https URL
+      referenceImages, // new: array of data URIs / URLs
     } = await req.json();
+
+    // Normalize to a single array of image URLs (data URI or https)
+    const images: string[] = Array.isArray(referenceImages)
+      ? referenceImages.filter((u) => typeof u === "string" && u.length > 0)
+      : [];
+    if (typeof referenceImage === "string" && referenceImage.length > 0) {
+      images.unshift(referenceImage);
+    }
+    // Cap to a reasonable number to protect tokens / latency
+    const cappedImages = images.slice(0, 6);
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
@@ -68,9 +79,9 @@ Rules for the output prompt:
     if (userBrief) {
       userTextParts.push(`\nUSER DIRECTION:\n${userBrief}`);
     }
-    if (referenceImage) {
+    if (cappedImages.length > 0) {
       userTextParts.push(
-        `\nA REFERENCE IMAGE is attached. Extract its visual DNA — color mood, composition, typography character, texture, finish — and bake those qualities into the prompt. Do NOT ask the AI to copy the image; instead translate its aesthetic into reusable directives.`
+        `\n${cappedImages.length} REFERENCE IMAGE${cappedImages.length > 1 ? "S are" : " is"} attached. Synthesize their COMBINED visual DNA — the shared color mood, recurring composition cues, typography character, texture, and finish across all of them. Where references diverge, distill the common thread and the strongest unifying aesthetic. Translate that combined DNA into reusable directives. Do NOT copy any single image.`
       );
     }
     userTextParts.push(
@@ -80,8 +91,8 @@ Rules for the output prompt:
     const userContent: Array<{ type: string; text?: string; image_url?: { url: string } }> = [
       { type: "text", text: userTextParts.join("\n") },
     ];
-    if (referenceImage && typeof referenceImage === "string") {
-      userContent.push({ type: "image_url", image_url: { url: referenceImage } });
+    for (const url of cappedImages) {
+      userContent.push({ type: "image_url", image_url: { url } });
     }
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

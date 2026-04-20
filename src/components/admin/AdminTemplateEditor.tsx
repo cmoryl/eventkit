@@ -38,23 +38,43 @@ const AdminTemplateEditor: React.FC = () => {
   const [draft, setDraft] = useState<DBTemplate | null>(null);
   const [saving, setSaving] = useState(false);
   const [aiBrief, setAiBrief] = useState('');
-  const [aiRefImage, setAiRefImage] = useState<string | null>(null);
+  const [aiRefImages, setAiRefImages] = useState<string[]>([]);
   const [crafting, setCrafting] = useState(false);
 
-  const handleRefUpload = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be under 5MB');
+  const MAX_REFS = 6;
+
+  const handleRefUpload = (files: FileList | File[]) => {
+    const list = Array.from(files);
+    const remaining = MAX_REFS - aiRefImages.length;
+    if (remaining <= 0) {
+      toast.error(`Up to ${MAX_REFS} reference images`);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setAiRefImage(reader.result as string);
-    reader.readAsDataURL(file);
+    const accepted = list.slice(0, remaining);
+    accepted.forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is over 5MB — skipped`);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () =>
+        setAiRefImages((prev) =>
+          prev.length >= MAX_REFS ? prev : [...prev, reader.result as string]
+        );
+      reader.readAsDataURL(file);
+    });
+    if (list.length > accepted.length) {
+      toast.message(`Only added ${accepted.length} — limit is ${MAX_REFS}`);
+    }
   };
+
+  const removeRefAt = (idx: number) =>
+    setAiRefImages((prev) => prev.filter((_, i) => i !== idx));
 
   const handleCraftPrompt = async () => {
     if (!draft) return;
-    if (!aiBrief.trim() && !aiRefImage) {
-      toast.error('Add a direction or upload a reference image first');
+    if (!aiBrief.trim() && aiRefImages.length === 0) {
+      toast.error('Add a direction or upload reference image(s) first');
       return;
     }
     setCrafting(true);
@@ -67,13 +87,17 @@ const AdminTemplateEditor: React.FC = () => {
           description: draft.description,
           currentPrompt: draft.prompt,
           userBrief: aiBrief.trim() || undefined,
-          referenceImage: aiRefImage || undefined,
+          referenceImages: aiRefImages.length > 0 ? aiRefImages : undefined,
         },
       });
       if (error) throw error;
       if (!data?.prompt) throw new Error('No prompt returned');
       setDraft({ ...draft, prompt: data.prompt });
-      toast.success('AI crafted a new prompt — review and Save');
+      toast.success(
+        aiRefImages.length > 1
+          ? `AI synthesized ${aiRefImages.length} references into a new prompt — review and Save`
+          : 'AI crafted a new prompt — review and Save'
+      );
     } catch (e: any) {
       toast.error(e?.message || 'Failed to craft prompt');
     } finally {
@@ -118,7 +142,7 @@ const AdminTemplateEditor: React.FC = () => {
   useEffect(() => {
     setDraft(selected ? { ...selected } : null);
     setAiBrief('');
-    setAiRefImage(null);
+    setAiRefImages([]);
   }, [selectedId]);
 
   const handleSave = async () => {
@@ -298,43 +322,46 @@ const AdminTemplateEditor: React.FC = () => {
                     onChange={e => setAiBrief(e.target.value)}
                     className="text-xs"
                   />
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-2 flex-wrap">
                     <label className="cursor-pointer">
                       <input
                         type="file"
                         accept="image/*"
+                        multiple
                         className="hidden"
                         onChange={e => {
-                          const f = e.target.files?.[0];
-                          if (f) handleRefUpload(f);
+                          const fs = e.target.files;
+                          if (fs && fs.length) handleRefUpload(fs);
                           e.target.value = '';
                         }}
                       />
                       <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-muted transition-colors">
                         <Upload className="h-3 w-3" />
-                        {aiRefImage ? 'Replace reference' : 'Upload reference image'}
+                        {aiRefImages.length > 0
+                          ? `Add more (${aiRefImages.length}/${MAX_REFS})`
+                          : `Upload reference images (up to ${MAX_REFS})`}
                       </span>
                     </label>
-                    {aiRefImage && (
-                      <div className="relative">
+                    {aiRefImages.map((src, i) => (
+                      <div key={i} className="relative">
                         <img
-                          src={aiRefImage}
-                          alt="reference"
+                          src={src}
+                          alt={`reference ${i + 1}`}
                           className="h-10 w-10 rounded object-cover border border-border"
                         />
                         <button
-                          onClick={() => setAiRefImage(null)}
+                          onClick={() => removeRefAt(i)}
                           className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5"
-                          aria-label="Remove reference"
+                          aria-label={`Remove reference ${i + 1}`}
                         >
                           <X className="h-2.5 w-2.5" />
                         </button>
                       </div>
-                    )}
+                    ))}
                     <Button
                       size="sm"
                       onClick={handleCraftPrompt}
-                      disabled={crafting || (!aiBrief.trim() && !aiRefImage)}
+                      disabled={crafting || (!aiBrief.trim() && aiRefImages.length === 0)}
                       className="ml-auto"
                     >
                       {crafting ? (
