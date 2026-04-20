@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, FileText, Brain, 
-  Settings, BarChart3, Palette, Type, Cog, Database
+  Settings, BarChart3, Palette, Type, Cog, Database,
+  LayoutDashboard, Users, ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,9 @@ import { AdminHeroManager } from '@/components/admin/AdminHeroManager';
 import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
 import AdminTemplateSync from '@/components/admin/AdminTemplateSync';
 import AdminTemplateEditor from '@/components/admin/AdminTemplateEditor';
+import AdminOverview from '@/components/admin/AdminOverview';
+import AdminUsersManager from '@/components/admin/AdminUsersManager';
+import AdminModeration from '@/components/admin/AdminModeration';
 import { useAuth } from '@/hooks/useAuth';
 
 const Admin: React.FC = () => {
