@@ -294,7 +294,7 @@ PHOTOREALISTIC RENDERING - CRITICAL:
 
     const fullPrompt = `${masterWrapper}
 ${masterDirectionSection}
-
+${editableTemplatePrompt ? `\nTEMPLATE BLUEPRINT (authoritative — this is the admin-curated direction for THIS specific template; follow it precisely while honoring brand and event context below):\n${editableTemplatePrompt}\n` : ''}
 Generate an image: ${basePrompt}
 
 Event: "${eventName}"
