@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, FileText, Brain, 
-  Settings, BarChart3, Palette, Type, Cog
+  Settings, BarChart3, Palette, Type, Cog, Database
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
