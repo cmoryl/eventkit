@@ -428,6 +428,7 @@ export type Database = {
           is_system_template: boolean | null
           name: string
           preview_url: string | null
+          prompt: string | null
           source: string | null
           tags: string[] | null
           thumbnail: string | null
@@ -452,6 +453,7 @@ export type Database = {
           is_system_template?: boolean | null
           name: string
           preview_url?: string | null
+          prompt?: string | null
           source?: string | null
           tags?: string[] | null
           thumbnail?: string | null
@@ -476,6 +478,7 @@ export type Database = {
           is_system_template?: boolean | null
           name?: string
           preview_url?: string | null
+          prompt?: string | null
           source?: string | null
           tags?: string[] | null
           thumbnail?: string | null

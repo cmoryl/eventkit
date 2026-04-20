@@ -142,6 +142,9 @@ export interface EditableTemplate {
   // Print specs
   colorMode: 'CMYK' | 'RGB';
   dpi: number;
+
+  // Optional AI generation prompt for this template
+  prompt?: string;
 }
 
 // ============= USER TEMPLATE INSTANCE =============

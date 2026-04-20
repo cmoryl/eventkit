@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
       is_system_template: true,
       color_mode: t.colorMode ?? 'CMYK',
       dpi: t.dpi ?? 300,
+      prompt: t.prompt ?? null,
       source: 'config',
     }));
 

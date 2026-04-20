@@ -19,6 +19,7 @@ import { AdminBrandManager } from '@/components/admin/AdminBrandManager';
 import { AdminHeroManager } from '@/components/admin/AdminHeroManager';
 import AdminSiteSettings from '@/components/admin/AdminSiteSettings';
 import AdminTemplateSync from '@/components/admin/AdminTemplateSync';
+import AdminTemplateEditor from '@/components/admin/AdminTemplateEditor';
 import { useAuth } from '@/hooks/useAuth';
 
 const Admin: React.FC = () => {
@@ -255,8 +256,15 @@ const Admin: React.FC = () => {
                 <AdminPromptManager />
               </TabsContent>
 
-              <TabsContent value="templates" className="mt-0">
-                <AdminTemplateSync />
+              <TabsContent value="templates" className="mt-0 space-y-6">
+                <Tabs defaultValue="sync" className="space-y-4">
+                  <TabsList>
+                    <TabsTrigger value="sync">Sync</TabsTrigger>
+                    <TabsTrigger value="editor">Editor</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="sync"><AdminTemplateSync /></TabsContent>
+                  <TabsContent value="editor"><AdminTemplateEditor /></TabsContent>
+                </Tabs>
               </TabsContent>
 
               <TabsContent value="brands" className="mt-0">
