@@ -1,12 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Clock, ArrowRight, FolderOpen, Image as ImageIcon, Plus } from 'lucide-react';
+import {
+  Sparkles, Clock, ArrowRight, FolderOpen, Image as ImageIcon, Plus,
+  Palette, Printer, Shirt, Share2, Presentation, Building, Ticket,
+  UtensilsCrossed, Video, FileText, Camera, Shield,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StudioType, STUDIO_DEFINITIONS } from '@/types/studio.types';
 import { cn } from '@/lib/utils';
+
+// Map studio icon name strings to actual Lucide components
+const STUDIO_ICON_MAP: Record<string, LucideIcon> = {
+  Palette,
+  Printer,
+  Shirt,
+  Share2,
+  Presentation,
+  Building,
+  Ticket,
+  UtensilsCrossed,
+  Video,
+  FileText,
+  Camera,
+  Shield,
+};
 
 interface RecentProject {
   id: string;
