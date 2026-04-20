@@ -30,7 +30,7 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const body: GenerateImageRequest & { masterDirection?: string; styleAnchorImage?: string } = await req.json();
+    const body: GenerateImageRequest & { masterDirection?: string; styleAnchorImage?: string; templateId?: string; templatePrompt?: string } = await req.json();
     const { 
       assetType, 
       eventName, 
@@ -53,6 +53,8 @@ serve(async (req) => {
       imageModel = 'fast',
       masterDirection,
       styleAnchorImage,
+      templateId,
+      templatePrompt: templatePromptInline,
     } = body;
 
     // Normalize logo: if it's an HTTP URL (not base64), fetch and convert
