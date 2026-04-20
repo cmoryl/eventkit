@@ -202,11 +202,29 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
                           src={project.thumbnail_url} 
                           alt={project.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Hide broken image and show fallback
+                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          }}
                         />
                       ) : (
                         <>
-                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
-                          <ImageIcon className="w-10 h-10 text-muted-foreground/40" />
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5" />
+                          {Array.isArray(project.generated_assets) && project.generated_assets.length > 0 ? (
+                            <div className="relative z-10 grid grid-cols-2 gap-1.5 p-3 max-w-full">
+                              {(project.generated_assets as any[]).slice(0, 4).map((a, idx) => (
+                                <div
+                                  key={idx}
+                                  className="px-2 py-1 rounded-md bg-background/70 backdrop-blur-sm border border-border/50 text-[10px] font-medium truncate"
+                                  title={a?.title || a?.type || a?.assetType}
+                                >
+                                  {(a?.title || a?.type || a?.assetType || 'Asset').toString().replace(/_/g, ' ')}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <ImageIcon className="w-10 h-10 text-muted-foreground/40 relative z-10" />
+                          )}
                         </>
                       )}
                       
