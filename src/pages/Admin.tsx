@@ -32,7 +32,7 @@ const Admin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'prompts');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const navigate = useNavigate();
 
   // Check if already authenticated in session or pre-approved
@@ -68,7 +68,7 @@ const Admin: React.FC = () => {
   // Handle tab from URL params
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['prompts', 'templates', 'brands', 'hero', 'analytics', 'knowledge', 'engines', 'settings'].includes(tab)) {
+    if (tab && ['overview', 'users', 'moderation', 'prompts', 'templates', 'brands', 'hero', 'analytics', 'knowledge', 'engines', 'settings'].includes(tab)) {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -87,6 +87,8 @@ const Admin: React.FC = () => {
       if (data?.success) {
         setIsAdminAuthenticated(true);
         sessionStorage.setItem('admin_authenticated', 'true');
+        // Cache token for service-role admin function calls (users/moderation)
+        sessionStorage.setItem('admin_token', password);
         toast.success('Welcome to Admin Panel');
       } else {
         toast.error('Invalid password');
@@ -102,6 +104,7 @@ const Admin: React.FC = () => {
   const handleLogout = () => {
     setIsAdminAuthenticated(false);
     sessionStorage.removeItem('admin_authenticated');
+    sessionStorage.removeItem('admin_token');
     setPassword('');
     toast.info('Logged out of admin panel');
   };
