@@ -295,25 +295,29 @@ export const RecentCreationsSection: React.FC<RecentCreationsSectionProps> = ({
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            {quickAccessStudios.map((studio, i) => (
-              <motion.button
-                key={studio.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                onClick={() => navigate(studio.route)}
-                className="group flex flex-col items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all"
-              >
-                <div className={cn(
-                  "w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center transition-transform group-hover:scale-110",
-                  studio.gradient
-                )}>
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-sm font-medium text-center">{studio.shortName}</span>
-              </motion.button>
-            ))}
+            {quickAccessStudios.map((studio, i) => {
+              const StudioIcon = STUDIO_ICON_MAP[studio.icon] ?? Sparkles;
+              return (
+                <motion.button
+                  key={studio.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => navigate(studio.route)}
+                  className="group flex flex-col items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all"
+                  aria-label={`Open ${studio.name}`}
+                >
+                  <div className={cn(
+                    "w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center transition-transform group-hover:scale-110 shadow-md",
+                    studio.gradient
+                  )}>
+                    <StudioIcon className="w-6 h-6 text-white" strokeWidth={2.25} />
+                  </div>
+                  <span className="text-sm font-medium text-center">{studio.shortName}</span>
+                </motion.button>
+              );
+            })}
           </div>
         </motion.div>
       </div>
