@@ -1,6 +1,10 @@
 import React from 'react';
 import { SlideData } from './slideTypes';
 import { SlideLayout } from './SlideLayout';
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 
 interface SlideRendererProps {
   slide: SlideData;
@@ -268,6 +272,178 @@ export function SlideRenderer({ slide, brandColors, brandFonts }: SlideRendererP
                     ))}
                   </div>
                 </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {slide.layout === 'timeline' && (
+        <div className="flex flex-col h-full px-[120px] py-[100px]">
+          <h2
+            className="font-bold mb-[80px]"
+            style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
+          >
+            {slide.title}
+          </h2>
+          <div className="flex-1 relative">
+            {/* Horizontal timeline rail */}
+            <div className="absolute top-[60px] left-0 right-0 h-[6px] rounded-full" style={{ backgroundColor: accentColor || '#6366f1', opacity: 0.25 }} />
+            <div className="grid h-full" style={{ gridTemplateColumns: `repeat(${Math.max(1, (slide.timeline?.length || 1))}, minmax(0, 1fr))`, gap: 32 }}>
+              {(slide.timeline || []).slice(0, 6).map((step, i) => (
+                <div key={i} className="flex flex-col items-center text-center px-[16px]">
+                  <div
+                    className="rounded-full flex items-center justify-center font-bold text-white shrink-0"
+                    style={{ width: 120, height: 120, backgroundColor: accentColor || '#6366f1', fontFamily: headingFont, fontSize: 48 }}
+                  >
+                    {i + 1}
+                  </div>
+                  {step.date && (
+                    <div className="mt-[24px] uppercase tracking-widest opacity-60" style={{ fontFamily: bodyFont, fontSize: 24 }}>
+                      {step.date}
+                    </div>
+                  )}
+                  <div className="mt-[12px] font-semibold" style={{ fontFamily: headingFont, color: headingColor, fontSize: 36 }}>
+                    {step.title}
+                  </div>
+                  {step.description && (
+                    <div className="mt-[16px] opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 26 }}>
+                      {step.description}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {slide.layout === 'process' && (
+        <div className="flex flex-col h-full px-[120px] py-[100px]">
+          <h2
+            className="font-bold mb-[80px]"
+            style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
+          >
+            {slide.title}
+          </h2>
+          <div className="flex-1 flex items-center justify-center gap-[24px] flex-wrap">
+            {(slide.process || []).slice(0, 5).map((step, i, arr) => (
+              <React.Fragment key={i}>
+                <div
+                  className="flex flex-col items-center justify-center text-center rounded-[24px] p-[32px]"
+                  style={{
+                    width: 280, height: 280,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    border: `3px solid ${accentColor || '#6366f1'}`,
+                  }}
+                >
+                  <div className="font-bold mb-[12px]" style={{ fontSize: 56, color: accentColor || '#6366f1', fontFamily: headingFont }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </div>
+                  <div className="font-semibold mb-[8px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: 30 }}>
+                    {step.title}
+                  </div>
+                  {step.description && (
+                    <div className="opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 22 }}>
+                      {step.description}
+                    </div>
+                  )}
+                </div>
+                {i < arr.length - 1 && (
+                  <div className="font-bold opacity-50" style={{ fontSize: 64, color: accentColor || '#6366f1' }}>→</div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {slide.layout === 'chart' && (
+        <div className="flex flex-col h-full px-[120px] py-[100px]">
+          <h2
+            className="font-bold mb-[40px]"
+            style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
+          >
+            {slide.title}
+          </h2>
+          {slide.chart?.title && (
+            <p className="mb-[40px] opacity-70" style={{ fontFamily: bodyFont, fontSize: 32, textAlign: align }}>
+              {slide.chart.title}
+            </p>
+          )}
+          <div className="flex-1 min-h-0">
+            {(() => {
+              const c = slide.chart;
+              if (!c || !c.data?.length) {
+                return <div className="h-full flex items-center justify-center opacity-30 text-[32px]">No chart data</div>;
+              }
+              const palette = [
+                accentColor || '#6366f1',
+                brandColors?.secondary || '#a855f7',
+                brandColors?.accent || '#ec4899',
+                '#f59e0b', '#10b981', '#3b82f6', '#ef4444',
+              ];
+              const tickColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+              const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+
+              if (c.type === 'pie' || c.type === 'doughnut') {
+                return (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={c.data}
+                        dataKey="value"
+                        nameKey="label"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius="80%"
+                        innerRadius={c.type === 'doughnut' ? '45%' : 0}
+                        label={{ fontSize: 24, fill: tickColor }}
+                      >
+                        {c.data.map((_, i) => <Cell key={i} fill={palette[i % palette.length]} />)}
+                      </Pie>
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 24 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                );
+              }
+
+              const merged = c.data.map((d, i) => ({
+                label: d.label,
+                [c.series1Name || 'Value']: d.value,
+                ...(c.series2 && c.series2[i] ? { [c.series2Name || 'Series 2']: c.series2[i].value } : {}),
+              }));
+
+              if (c.type === 'line') {
+                return (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={merged}>
+                      <CartesianGrid stroke={gridColor} />
+                      <XAxis dataKey="label" tick={{ fontSize: 22, fill: tickColor }} />
+                      <YAxis tick={{ fontSize: 22, fill: tickColor }} />
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 24 }} />
+                      <Line type="monotone" dataKey={c.series1Name || 'Value'} stroke={palette[0]} strokeWidth={4} dot={{ r: 6 }} />
+                      {c.series2 && <Line type="monotone" dataKey={c.series2Name || 'Series 2'} stroke={palette[1]} strokeWidth={4} dot={{ r: 6 }} />}
+                    </LineChart>
+                  </ResponsiveContainer>
+                );
+              }
+
+              // bar (default)
+              return (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={merged}>
+                    <CartesianGrid stroke={gridColor} />
+                    <XAxis dataKey="label" tick={{ fontSize: 22, fill: tickColor }} />
+                    <YAxis tick={{ fontSize: 22, fill: tickColor }} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: 24 }} />
+                    <Bar dataKey={c.series1Name || 'Value'} fill={palette[0]} radius={[8, 8, 0, 0]} />
+                    {c.series2 && <Bar dataKey={c.series2Name || 'Series 2'} fill={palette[1]} radius={[8, 8, 0, 0]} />}
+                  </BarChart>
+                </ResponsiveContainer>
               );
             })()}
           </div>
