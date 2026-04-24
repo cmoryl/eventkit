@@ -1,7 +1,33 @@
 // Slide data types for the editor
+export type SlideLayout =
+  | 'title' | 'content' | 'image-left' | 'image-right' | 'blank'
+  | 'section' | 'two-column' | 'quote' | 'stats' | 'full-image'
+  | 'comparison' | 'timeline' | 'process' | 'chart';
+
+export interface ChartData {
+  type: 'bar' | 'line' | 'pie' | 'doughnut';
+  title?: string;
+  data: Array<{ label: string; value: number }>;
+  /** Optional second series for grouped bar/line */
+  series2?: Array<{ label: string; value: number }>;
+  series2Name?: string;
+  series1Name?: string;
+}
+
+export interface TimelineStep {
+  date?: string;
+  title: string;
+  description?: string;
+}
+
+export interface ProcessStep {
+  title: string;
+  description?: string;
+}
+
 export interface SlideData {
   id: string;
-  layout: 'title' | 'content' | 'image-left' | 'image-right' | 'blank' | 'section' | 'two-column' | 'quote' | 'stats' | 'full-image' | 'comparison';
+  layout: SlideLayout;
   title: string;
   subtitle?: string;
   body?: string;
@@ -22,6 +48,18 @@ export interface SlideData {
   quoteAuthor?: string;
   /** Stats entries for stats layout */
   stats?: { value: string; label: string }[];
+  /** Chart configuration for chart layout */
+  chart?: ChartData;
+  /** Timeline steps for timeline layout */
+  timeline?: TimelineStep[];
+  /** Process steps for process layout */
+  process?: ProcessStep[];
+  /** AI-suggested image search query (used for smart matching) */
+  imageQuery?: string;
+  /** AI-suggested BrandHub category for the image */
+  assetCategory?: string;
+  /** True if AI flagged this slide to need manual image pick */
+  needsImage?: boolean;
 }
 
 export const DEFAULT_SLIDES: SlideData[] = [
