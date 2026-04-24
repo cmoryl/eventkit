@@ -487,6 +487,114 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
           </div>
         );
 
+      // ═══════════════════════════════════════════════════════════════════════
+      // PRESENTATIONS & SLIDES
+      // ═══════════════════════════════════════════════════════════════════════
+      case AssetType.Presentation:
+      case AssetType.PresentationSlide:
+      case AssetType.WebinarSlide:
+        return (
+          <div className="space-y-3">
+            <div>
+              <h4 className="text-sm font-medium text-foreground mb-1">Deck Basics</h4>
+              <p className="text-xs text-muted-foreground mb-2">
+                Tell the AI what this deck is about. The more you provide, the smarter the layouts.
+              </p>
+            </div>
+            <input
+              type="text"
+              name="deckTitle"
+              value={customContent.deckTitle || ''}
+              onChange={onChange}
+              placeholder="Deck title (e.g. Q2 Product Roadmap)"
+              className={inputClassName}
+            />
+            <input
+              type="text"
+              name="deckSubtitle"
+              value={customContent.deckSubtitle || ''}
+              onChange={onChange}
+              placeholder="Subtitle / tagline"
+              className={inputClassName}
+            />
+            <input
+              type="text"
+              name="audience"
+              value={customContent.audience || ''}
+              onChange={onChange}
+              placeholder="Audience (e.g. Executive team, Investors, Sales kickoff)"
+              className={inputClassName}
+            />
+            <input
+              type="text"
+              name="goal"
+              value={customContent.goal || ''}
+              onChange={onChange}
+              placeholder="Goal of the deck (e.g. Get budget approval)"
+              className={inputClassName}
+            />
+            <select
+              name="slideCount"
+              value={customContent.slideCount || ''}
+              onChange={onChange}
+              className={inputClassName}
+            >
+              <option value="">Number of slides</option>
+              <option value="5">~5 slides (lightning)</option>
+              <option value="10">~10 slides (standard)</option>
+              <option value="15">~15 slides (detailed)</option>
+              <option value="20">~20 slides (deep dive)</option>
+            </select>
+
+            <div className="pt-3">
+              <label className="text-sm font-medium text-foreground block mb-1">
+                Content brief
+              </label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Paste your full content — outline, bullets, talking points, or a rough draft.
+                Use <code className="px-1 py-0.5 rounded bg-muted">## Slide Title</code> on its own line
+                to lock in slide breaks, or just dump notes and let the AI structure it.
+              </p>
+              <textarea
+                name="contentBrief"
+                value={customContent.contentBrief || ''}
+                onChange={onChange}
+                rows={10}
+                placeholder={`Example:\n\n## Why now\nMarket grew 40% YoY. Competitors raising prices. Window closes Q3.\n\n## Our advantage\n- 3x faster onboarding\n- 92% retention\n- Proprietary dataset\n\n## The ask\n$2M to scale GTM team across EMEA.`}
+                className={inputClassName + ' resize-y font-mono text-sm leading-relaxed min-h-[220px]'}
+              />
+            </div>
+
+            <div className="pt-2">
+              <label className="text-sm font-medium text-foreground block mb-1">
+                Key stats / numbers (optional)
+              </label>
+              <textarea
+                name="keyStats"
+                value={customContent.keyStats || ''}
+                onChange={onChange}
+                rows={3}
+                placeholder="One per line — e.g.\n92% customer retention\n$4.2M ARR\n3x faster than competitors"
+                className={inputClassName + ' resize-y'}
+              />
+            </div>
+
+            <div className="pt-2">
+              <label className="text-sm font-medium text-foreground block mb-1">
+                Speaker notes (optional)
+              </label>
+              <textarea
+                name="speakerNotes"
+                value={customContent.speakerNotes || ''}
+                onChange={onChange}
+                rows={3}
+                placeholder="Anything you want the AI to know but not display on slides — tone, things to emphasize, what to avoid…"
+                className={inputClassName + ' resize-y'}
+              />
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
