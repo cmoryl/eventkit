@@ -100,6 +100,19 @@ serve(async (req) => {
       keyStats,                       // string — one stat per line
       useStatsForCharts = true,       // toggle: turn keyStats into chart slides
       preferredChartTypes,            // string[] | string — e.g. ["bar","line"]
+      // Advanced infographic interpretation
+      dataLens,                       // string|string[] — trend, comparison, composition...
+      preferredInfographicLayouts,    // string|string[] — timeline, funnel, quadrant...
+      narrativeStyle,                 // 'data-led' | 'story-led' | 'exec-summary' | 'analyst'
+      infoDensity,                    // 'minimal' | 'balanced' | 'dense'
+      colorEmphasis,                  // 'brand' | 'sequential' | 'diverging' | 'mono'
+      annotateInsights,               // boolean-ish
+      showSourceAttribution,          // boolean-ish
+      normalizeUnits,                 // boolean-ish
+      inferBenchmarks,                // boolean-ish
+      preferIconography,              // boolean-ish
+      autoTitleInsights,              // boolean-ish
+      infographicNotes,               // free-form string
     } = await req.json();
 
     const briefSource = (content && content.trim()) || (topic && topic.trim());
@@ -174,6 +187,72 @@ The user provided these stats but disabled chart generation. Weave them into bul
 ${cleanStats.map((s) => `- ${s}`).join("\n")}`
         : "";
 
+    // ── Advanced infographic interpretation ───────────────────────────────
+    const toArr = (v: unknown): string[] =>
+      Array.isArray(v)
+        ? v.map(String).map((s) => s.trim()).filter(Boolean)
+        : typeof v === "string"
+          ? v.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+    const toBool = (v: unknown): boolean =>
+      v === true || v === "true" || v === 1 || v === "1";
+
+    const lensList = toArr(dataLens);
+    const layoutsList = toArr(preferredInfographicLayouts);
+
+    const advancedFlags: string[] = [];
+    if (toBool(annotateInsights)) advancedFlags.push("Add concise callout annotations on chart slides where values spike, drop, or cross thresholds (use the slide's `notes` field if no annotation slot exists).");
+    if (toBool(showSourceAttribution)) advancedFlags.push('Include a brief source line on every data slide (e.g. append "Source: …" to the body or notes).');
+    if (toBool(normalizeUnits)) advancedFlags.push("Normalize units across charts: consistent currency symbol, k/M/B suffix, and % vs ratios — never mix.");
+    if (toBool(inferBenchmarks)) advancedFlags.push("Where reasonable, infer a sensible industry benchmark or prior-period reference and add it as a second data series on comparison/line charts.");
+    if (toBool(preferIconography)) advancedFlags.push("In timeline/process/comparison slides, prefer iconographic step descriptions (short label + emoji-style icon hint in the description) over long sentences.");
+    if (toBool(autoTitleInsights)) advancedFlags.push('Write insight-style slide titles, not category labels. e.g. "Retention up 18% YoY" instead of "Retention".');
+
+    const densityHint =
+      infoDensity === "minimal"
+        ? "Information density: MINIMAL. Max 3 bullets per slide, max 4 chart data points, lots of whitespace."
+        : infoDensity === "dense"
+          ? "Information density: DENSE. Up to 6 bullets, up to 8-10 chart data points, multi-series charts welcome."
+          : infoDensity
+            ? "Information density: BALANCED."
+            : "";
+
+    const colorHint = colorEmphasis
+      ? `Color emphasis for charts: "${colorEmphasis}" — ${
+          colorEmphasis === "sequential"
+            ? "use a single-hue gradient (light → dark) for ordered data."
+            : colorEmphasis === "diverging"
+              ? "use a two-hue diverging palette around a midpoint (e.g. red ↔ green)."
+              : colorEmphasis === "mono"
+                ? "use a single brand hue with opacity steps; avoid rainbow palettes."
+                : "use the brand's primary palette as the dominant chart colors."
+        }`
+      : "";
+
+    const narrativeHint = narrativeStyle
+      ? `Narrative style: "${narrativeStyle}" — ${
+          narrativeStyle === "data-led"
+            ? "lead with numbers; titles state the number, body explains it."
+            : narrativeStyle === "story-led"
+              ? "lead with the insight/story; data appears as supporting evidence."
+              : narrativeStyle === "exec-summary"
+                ? "every slide stands alone with one headline + one chart/stat — no deep dives."
+                : "analyst deep-dive — multiple cuts of the same data, drill-downs encouraged."
+        }`
+      : "";
+
+    const advancedInfographicsInfo =
+      lensList.length || layoutsList.length || advancedFlags.length || densityHint || colorHint || narrativeHint || (typeof infographicNotes === "string" && infographicNotes.trim())
+        ? `\n\nADVANCED INFOGRAPHIC INTERPRETATION:
+${lensList.length ? `- Data lens (emphasize these angles when interpreting numbers): ${lensList.join(", ")}` : ""}
+${layoutsList.length ? `- Preferred infographic layouts (use these where the content fits): ${layoutsList.join(", ")}. Map them to the closest available slide layout — e.g. "funnel"/"pyramid" → "process" with ordered steps, "quadrant"/"venn"/"comparison-table" → "comparison" or "two-column", "icon-array" → "stats", "gauge" → "stats" with single KPI, "map" → "full-image" with imageQuery hint.` : ""}
+${narrativeHint ? `- ${narrativeHint}` : ""}
+${densityHint ? `- ${densityHint}` : ""}
+${colorHint ? `- ${colorHint} (Express via the chart's data ordering and the slide's variant choice — e.g. "brand" variant for brand emphasis, "minimal" for mono.)` : ""}
+${advancedFlags.length ? advancedFlags.map((f) => `- ${f}`).join("\n") : ""}
+${typeof infographicNotes === "string" && infographicNotes.trim() ? `- User interpretation notes (highest priority): ${infographicNotes.trim()}` : ""}`.replace(/\n{2,}/g, "\n")
+        : "";
+
     const formatHint = contentFormat === "structured"
       ? "The content uses headings (## or ###) and bullets — respect that structure when grouping into slides."
       : contentFormat === "freeform"
@@ -217,7 +296,7 @@ Guidelines:
 - Close with section (Thank You / Questions)
 - Keep titles under 8 words
 - Use bullets (•) in body for content layouts
-- Generate exactly ${slideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}`;
+- Generate exactly ${slideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}`;
 
     const tools = [
       {
