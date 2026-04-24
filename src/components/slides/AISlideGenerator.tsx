@@ -595,7 +595,7 @@ export function AISlideGenerator({
           <Button variant="outline" onClick={onClose} disabled={isGenerating}>
             Cancel
           </Button>
-          <Button onClick={handleGenerate} disabled={isGenerating || !topic.trim() || (provider === 'google' && !googleApiKey.trim())}>
+          <Button onClick={handleGenerate} disabled={isGenerating || (briefMode === 'topic' ? !topic.trim() : !content.trim()) || (provider === 'google' && !googleApiKey.trim())}>
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
