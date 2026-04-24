@@ -1922,15 +1922,17 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                               blurb: 'Specific things to call out on individual chart and stats slides — spikes, dips, thresholds, source caveats.',
                               scaffold:
                                 '• Chart: \n  – Callout: \n  – Why: \n• Chart: \n  – Callout: \n  – Why: ',
-                              examples: [
-                                { label: 'Annotate spike', text: 'On the revenue line, annotate the Mar spike with "EMEA launch".' },
-                                { label: 'Add target line', text: 'Add a dashed target line at 80% to the retention chart.' },
-                                { label: 'Highlight bar', text: 'In the channel-mix bar chart, highlight "Organic" in brand color.' },
-                                { label: 'Source caveat', text: 'Stats slide: footnote that NPS is from internal survey, n=412.' },
-                                { label: 'Drop the legend', text: 'Pie chart: drop the legend, label slices directly with %.' },
-                                { label: 'Compare YoY', text: 'On every bar chart, add a faint YoY-prior series for context.' },
-                                { label: 'Cap the axis', text: 'Cap the y-axis at 100 so the COVID outlier does not flatten the trend.' },
-                              ],
+                              examples: dynamicChartChips.length
+                                ? dynamicChartChips
+                                : [
+                                    { label: 'Annotate spike', text: 'On the revenue line, annotate the Mar spike with "EMEA launch".' },
+                                    { label: 'Add target line', text: 'Add a dashed target line at 80% to the retention chart.' },
+                                    { label: 'Highlight bar', text: 'In the channel-mix bar chart, highlight "Organic" in brand color.' },
+                                    { label: 'Source caveat', text: 'Stats slide: footnote that NPS is from internal survey, n=412.' },
+                                    { label: 'Drop the legend', text: 'Pie chart: drop the legend, label slices directly with %.' },
+                                    { label: 'Compare YoY', text: 'On every bar chart, add a faint YoY-prior series for context.' },
+                                    { label: 'Cap the axis', text: 'Cap the y-axis at 100 so the COVID outlier does not flatten the trend.' },
+                                  ],
                               placeholder:
                                 'List per-chart instructions. For example:\n\n• Chart: ARR over time\n  – Callout: annotate the Q2 inflection with "Pricing change".\n  – Why: explains the slope shift.\n• Chart: Channel mix\n  – Callout: highlight Organic at 38%.\n  – Why: it is the headline efficiency story.',
                             },
