@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Sparkles, Loader2, Key, Lock, Images, Image as ImageIcon, Layers, Camera, Palette, Award, FileImage, Share2, Layout } from 'lucide-react';
+import { Sparkles, Loader2, Key, Lock, Images, Image as ImageIcon, Layers, Camera, Palette, Award, FileImage, Share2, Layout, FileText, Wand2, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SlideData } from './slideTypes';
 import { v4 as uuidv4 } from 'uuid';
