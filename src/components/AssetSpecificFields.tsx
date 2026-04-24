@@ -1963,6 +1963,12 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                                   setField(section.field, next.slice(0, MAX));
                                 };
 
+                                const isDynamic =
+                                  hasDataset &&
+                                  ((section.field === 'infographicNotes' && dynamicInsightChips.length > 0) ||
+                                    (section.field === 'executiveSummaryNotes' && dynamicExecChips.length > 0) ||
+                                    (section.field === 'chartCalloutNotes' && dynamicChartChips.length > 0));
+
                                 return (
                                   <div key={section.field}>
                                     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -1978,6 +1984,14 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                                         >
                                           {section.badge}
                                         </span>
+                                        {isDynamic && (
+                                          <span
+                                            className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                            title="Example chips below are generated from your Key Stats and selected infographic layouts."
+                                          >
+                                            ✨ From your data
+                                          </span>
+                                        )}
                                       </div>
                                       <span
                                         className={
@@ -2007,7 +2021,12 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                                           key={ex.label}
                                           type="button"
                                           onClick={() => insertExample(ex.text)}
-                                          className="px-2 py-0.5 rounded-md text-[10px] border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                          className={
+                                            'px-2 py-0.5 rounded-md text-[10px] border transition-colors ' +
+                                            (isDynamic
+                                              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
+                                              : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground')
+                                          }
                                           title={ex.text}
                                         >
                                           {ex.label}
