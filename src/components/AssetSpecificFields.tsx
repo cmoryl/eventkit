@@ -1103,6 +1103,53 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Mini preview: predicted chart types from key stats */}
+              {(customContent.useStatsForCharts ?? 'true') === 'true' && (customContent.keyStats || '').trim() && (() => {
+                const preferred = (customContent.preferredChartTypes || '')
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                const predicted = predictChartTypes(customContent.keyStats || '', preferred);
+                if (!predicted.length) return null;
+
+                const counts = predicted.reduce<Record<string, number>>((acc, p) => {
+                  acc[p] = (acc[p] || 0) + 1;
+                  return acc;
+                }, {});
+
+                return (
+                  <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Likely chart slides ({predicted.length})
+                      </div>
+                      <div className="text-[10px] text-muted-foreground italic">
+                        Heuristic preview — final output may vary
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {predicted.map((kind, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background border border-border"
+                          title={`Slide ${i + 1}: ${CHART_LABELS[kind]}`}
+                        >
+                          <ChartThumb kind={kind} />
+                          <span className="text-[11px] font-medium text-foreground">
+                            {CHART_LABELS[kind]}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      {Object.entries(counts)
+                        .map(([k, n]) => `${n}× ${CHART_LABELS[k as PredictedChart]}`)
+                        .join(' · ')}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="pt-2">
