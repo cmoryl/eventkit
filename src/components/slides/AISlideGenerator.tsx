@@ -226,7 +226,7 @@ export function AISlideGenerator({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => !isGenerating && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
