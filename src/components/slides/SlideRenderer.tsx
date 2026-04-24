@@ -1,6 +1,10 @@
 import React from 'react';
 import { SlideData } from './slideTypes';
 import { SlideLayout } from './SlideLayout';
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 
 interface SlideRendererProps {
   slide: SlideData;
