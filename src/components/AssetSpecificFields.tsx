@@ -239,7 +239,146 @@ Drop questions in the channel — we'll cover as many as we can live.`,
   },
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Predict which chart types the AI will likely produce from a key-stats block.
+// Mirrors the heuristics in supabase/functions/generate-slides/index.ts so the
+// preview thumbnails reflect what will actually be generated.
+// ─────────────────────────────────────────────────────────────────────────────
+type PredictedChart = 'bar' | 'line' | 'pie' | 'doughnut' | 'stats';
 
+function classifyStatLine(line: string): PredictedChart {
+  const t = line.trim();
+  if (!t) return 'stats';
+  // Time series: leading year (2021:, 2022 -, Q1 2023:, Jan: …)
+  if (/^(\d{4}|q[1-4]|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i.test(t)) {
+    return 'line';
+  }
+  // Breakdown / share-of-whole: contains a % AND a comma-separated list
+  if (/%/.test(t) && /,| and /i.test(t)) return 'pie';
+  // Comparison: 3+ named categories separated by commas / vs
+  const segments = t.split(/,| vs\.? | versus /i).map((s) => s.trim()).filter(Boolean);
+  if (segments.length >= 3) return 'bar';
+  // Default: standalone KPI -> stat card
+  return 'stats';
+}
+
+function predictChartTypes(keyStats: string, preferred: string[]): PredictedChart[] {
+  const lines = (keyStats || '').split('\n').map((s) => s.trim()).filter(Boolean);
+  if (!lines.length) return [];
+
+  // Group consecutive time-series lines into a single "line" chart prediction
+  const result: PredictedChart[] = [];
+  let runningStats = 0;
+  let lastWasLine = false;
+
+  for (const line of lines) {
+    const kind = classifyStatLine(line);
+    if (kind === 'line') {
+      if (!lastWasLine) result.push('line');
+      lastWasLine = true;
+      continue;
+    }
+    lastWasLine = false;
+    if (kind === 'stats') {
+      // Group every 3 standalone KPIs into one stat-card slide
+      if (runningStats % 3 === 0) result.push('stats');
+      runningStats++;
+      continue;
+    }
+    result.push(kind);
+  }
+
+  // If user has preferences, swap predictions to honour them where possible
+  if (preferred.length) {
+    return result.map((p) => {
+      if (p === 'stats' && preferred.includes('stats')) return 'stats';
+      if (preferred.includes(p)) return p;
+      // Map equivalences
+      if (p === 'pie' && preferred.includes('doughnut')) return 'doughnut';
+      if (p === 'doughnut' && preferred.includes('pie')) return 'pie';
+      if (p === 'bar' && preferred.includes('line')) return 'line';
+      if (p === 'line' && preferred.includes('bar')) return 'bar';
+      // Fall back to first preferred non-stats if available
+      const firstChart = preferred.find((c) => c !== 'stats') as PredictedChart | undefined;
+      return (firstChart ?? p) as PredictedChart;
+    });
+  }
+  return result;
+}
+
+const ChartThumb: React.FC<{ kind: PredictedChart }> = ({ kind }) => {
+  const stroke = 'hsl(var(--primary))';
+  const fill = 'hsl(var(--primary) / 0.25)';
+  const muted = 'hsl(var(--muted-foreground) / 0.4)';
+  const common = { width: 36, height: 24, viewBox: '0 0 36 24' } as const;
+
+  switch (kind) {
+    case 'bar':
+      return (
+        <svg {...common} aria-hidden>
+          <rect x="3" y="12" width="5" height="10" fill={fill} stroke={stroke} strokeWidth="1" />
+          <rect x="11" y="6" width="5" height="16" fill={fill} stroke={stroke} strokeWidth="1" />
+          <rect x="19" y="9" width="5" height="13" fill={fill} stroke={stroke} strokeWidth="1" />
+          <rect x="27" y="3" width="5" height="19" fill={fill} stroke={stroke} strokeWidth="1" />
+        </svg>
+      );
+    case 'line':
+      return (
+        <svg {...common} aria-hidden>
+          <polyline
+            points="3,18 11,12 19,15 27,6 33,9"
+            fill="none"
+            stroke={stroke}
+            strokeWidth="1.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          <line x1="2" y1="22" x2="34" y2="22" stroke={muted} strokeWidth="0.5" />
+        </svg>
+      );
+    case 'pie':
+      return (
+        <svg {...common} aria-hidden>
+          <circle cx="18" cy="12" r="9" fill={fill} stroke={stroke} strokeWidth="1" />
+          <path d="M18 12 L18 3 A9 9 0 0 1 26.5 15 Z" fill={stroke} opacity="0.7" />
+          <path d="M18 12 L26.5 15 A9 9 0 0 1 14 20 Z" fill={stroke} opacity="0.4" />
+        </svg>
+      );
+    case 'doughnut':
+      return (
+        <svg {...common} aria-hidden>
+          <circle cx="18" cy="12" r="9" fill="none" stroke={fill} strokeWidth="4" />
+          <path
+            d="M18 3 A9 9 0 0 1 26.5 15"
+            fill="none"
+            stroke={stroke}
+            strokeWidth="4"
+            strokeLinecap="butt"
+          />
+        </svg>
+      );
+    case 'stats':
+    default:
+      return (
+        <svg {...common} aria-hidden>
+          <rect x="2" y="4" width="10" height="16" rx="1.5" fill={fill} stroke={stroke} strokeWidth="0.8" />
+          <rect x="13" y="4" width="10" height="16" rx="1.5" fill={fill} stroke={stroke} strokeWidth="0.8" />
+          <rect x="24" y="4" width="10" height="16" rx="1.5" fill={fill} stroke={stroke} strokeWidth="0.8" />
+          <line x1="4" y1="10" x2="10" y2="10" stroke={stroke} strokeWidth="1.2" />
+          <line x1="15" y1="10" x2="21" y2="10" stroke={stroke} strokeWidth="1.2" />
+          <line x1="26" y1="10" x2="32" y2="10" stroke={stroke} strokeWidth="1.2" />
+        </svg>
+      );
+  }
+}
+
+const CHART_LABELS: Record<PredictedChart, string> = {
+  bar: 'Bar',
+  line: 'Line',
+  pie: 'Pie',
+  doughnut: 'Doughnut',
+  stats: 'Stat cards',
+};
 
 interface AssetSpecificFieldsProps {
   assetType: AssetType;
@@ -964,6 +1103,53 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Mini preview: predicted chart types from key stats */}
+              {(customContent.useStatsForCharts ?? 'true') === 'true' && (customContent.keyStats || '').trim() && (() => {
+                const preferred = (customContent.preferredChartTypes || '')
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                const predicted = predictChartTypes(customContent.keyStats || '', preferred);
+                if (!predicted.length) return null;
+
+                const counts = predicted.reduce<Record<string, number>>((acc, p) => {
+                  acc[p] = (acc[p] || 0) + 1;
+                  return acc;
+                }, {});
+
+                return (
+                  <div className="mt-3 p-3 rounded-lg border border-border bg-muted/30">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                        Likely chart slides ({predicted.length})
+                      </div>
+                      <div className="text-[10px] text-muted-foreground italic">
+                        Heuristic preview — final output may vary
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {predicted.map((kind, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-background border border-border"
+                          title={`Slide ${i + 1}: ${CHART_LABELS[kind]}`}
+                        >
+                          <ChartThumb kind={kind} />
+                          <span className="text-[11px] font-medium text-foreground">
+                            {CHART_LABELS[kind]}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2 text-[11px] text-muted-foreground">
+                      {Object.entries(counts)
+                        .map(([k, n]) => `${n}× ${CHART_LABELS[k as PredictedChart]}`)
+                        .join(' · ')}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="pt-2">
