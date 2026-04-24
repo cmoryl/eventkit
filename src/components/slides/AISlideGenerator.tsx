@@ -80,6 +80,13 @@ export function AISlideGenerator({
   const [brandHubOnly, setBrandHubOnly] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<Set<ImageryCategory>>(new Set());
 
+  // Content brief mode
+  const [briefMode, setBriefMode] = useState<'topic' | 'content'>('topic');
+  const [content, setContent] = useState('');
+  const [contentFormat, setContentFormat] = useState<'freeform' | 'structured'>('freeform');
+  const [enableInfographics, setEnableInfographics] = useState(true);
+  const [imageMatchMode, setImageMatchMode] = useState<'smart' | 'category' | 'manual'>('smart');
+
   // Count of BrandHub assets available — used to decide if toggle is meaningful
   const imageryStats = useMemo(() => {
     if (!brandImagery) return { total: 0, byType: {} as Record<string, number> };
