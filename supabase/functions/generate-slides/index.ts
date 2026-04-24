@@ -243,8 +243,12 @@ ${cleanStats.map((s) => `- ${s}`).join("\n")}`
         }`
       : "";
 
+    const execNotesText = typeof executiveSummaryNotes === "string" ? executiveSummaryNotes.trim() : "";
+    const chartNotesText = typeof chartCalloutNotes === "string" ? chartCalloutNotes.trim() : "";
+    const insightNotesText = typeof infographicNotes === "string" ? infographicNotes.trim() : "";
+
     const advancedInfographicsInfo =
-      lensList.length || layoutsList.length || advancedFlags.length || densityHint || colorHint || narrativeHint || (typeof infographicNotes === "string" && infographicNotes.trim())
+      lensList.length || layoutsList.length || advancedFlags.length || densityHint || colorHint || narrativeHint || insightNotesText || execNotesText || chartNotesText
         ? `\n\nADVANCED INFOGRAPHIC INTERPRETATION:
 ${lensList.length ? `- Data lens (emphasize these angles when interpreting numbers): ${lensList.join(", ")}` : ""}
 ${layoutsList.length ? `- Preferred infographic layouts (use these where the content fits): ${layoutsList.join(", ")}. Map them to the closest available slide layout — e.g. "funnel"/"pyramid" → "process" with ordered steps, "quadrant"/"venn"/"comparison-table" → "comparison" or "two-column", "icon-array" → "stats", "gauge" → "stats" with single KPI, "map" → "full-image" with imageQuery hint.` : ""}
@@ -252,7 +256,20 @@ ${narrativeHint ? `- ${narrativeHint}` : ""}
 ${densityHint ? `- ${densityHint}` : ""}
 ${colorHint ? `- ${colorHint} (Express via the chart's data ordering and the slide's variant choice — e.g. "brand" variant for brand emphasis, "minimal" for mono.)` : ""}
 ${advancedFlags.length ? advancedFlags.map((f) => `- ${f}`).join("\n") : ""}
-${typeof infographicNotes === "string" && infographicNotes.trim() ? `- User interpretation notes (highest priority): ${infographicNotes.trim()}` : ""}`.replace(/\n{2,}/g, "\n")
+${insightNotesText ? `- User interpretation notes (highest priority — overrides other settings): ${insightNotesText}` : ""}
+${execNotesText ? `\nEXECUTIVE SUMMARY NOTES — drive the opening summary slide AND the closing takeaways slide:
+${execNotesText}
+Rules:
+- Insert a dedicated "content" or "stats" slide right after the title slide that materializes this summary (variant: "brand" or "gradient"). Title it as the bottom-line insight, not "Executive Summary".
+- Insert a closing "section" or "content" slide before any Thank-You that mirrors the same takeaways as 3 short bullets.
+- Keep both slides scannable in <10 seconds. No deep dives.` : ""}
+${chartNotesText ? `\nCHART CALLOUT NOTES — apply per chart/stats slide:
+${chartNotesText}
+Rules:
+- For every "chart" or "stats" slide, scan these notes and apply the matching annotations.
+- Encode callouts in the slide's "notes" field (one line per callout) so the renderer can surface them as annotations.
+- If a note specifies a target line, reference series, or color treatment, reflect it in the chart's data ordering, series2/series2Name, or variant choice.
+- If a note names a chart that does not yet exist, create that chart slide.` : ""}`.replace(/\n{3,}/g, "\n\n")
         : "";
 
     const formatHint = contentFormat === "structured"
