@@ -1901,14 +1901,16 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                               blurb: 'Drives the opening summary slide and the closing takeaways. Write the one-page story you want a busy exec to remember.',
                               scaffold:
                                 '• Bottom line: \n• Why it matters: \n• Top 3 numbers: \n• The ask / next step: ',
-                              examples: [
-                                { label: 'Bottom line', text: 'Bottom line: we hit 118% of plan with 22% lower CAC.' },
-                                { label: '3 takeaways', text: 'Surface exactly 3 takeaways: growth, efficiency, risk — in that order.' },
-                                { label: 'Why it matters', text: 'Frame why it matters for FY26 planning, not just this quarter.' },
-                                { label: 'Make the ask', text: 'End with a clear ask: $2M reallocation from paid to product.' },
-                                { label: 'No deep dives', text: 'Keep the summary slide to 4 lines max — no charts, no jargon.' },
-                                { label: 'Audience: Board', text: 'Tone: board-ready. Confident, numerical, no hedging.' },
-                              ],
+                              examples: dynamicExecChips.length
+                                ? dynamicExecChips
+                                : [
+                                    { label: 'Bottom line', text: 'Bottom line: we hit 118% of plan with 22% lower CAC.' },
+                                    { label: '3 takeaways', text: 'Surface exactly 3 takeaways: growth, efficiency, risk — in that order.' },
+                                    { label: 'Why it matters', text: 'Frame why it matters for FY26 planning, not just this quarter.' },
+                                    { label: 'Make the ask', text: 'End with a clear ask: $2M reallocation from paid to product.' },
+                                    { label: 'No deep dives', text: 'Keep the summary slide to 4 lines max — no charts, no jargon.' },
+                                    { label: 'Audience: Board', text: 'Tone: board-ready. Confident, numerical, no hedging.' },
+                                  ],
                               placeholder:
                                 'Frame the headline story for the executive summary slide. For example:\n\n• Bottom line: Q4 closed at 118% of plan, ARR up 34% YoY.\n• Why it matters: validates the enterprise pivot from Q2.\n• Top 3 numbers: $42M ARR, 92% NRR, 18-month payback.\n• The ask: approve hiring 6 enterprise AEs in Q1.',
                             },
