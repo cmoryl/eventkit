@@ -100,6 +100,19 @@ serve(async (req) => {
       keyStats,                       // string — one stat per line
       useStatsForCharts = true,       // toggle: turn keyStats into chart slides
       preferredChartTypes,            // string[] | string — e.g. ["bar","line"]
+      // Advanced infographic interpretation
+      dataLens,                       // string|string[] — trend, comparison, composition...
+      preferredInfographicLayouts,    // string|string[] — timeline, funnel, quadrant...
+      narrativeStyle,                 // 'data-led' | 'story-led' | 'exec-summary' | 'analyst'
+      infoDensity,                    // 'minimal' | 'balanced' | 'dense'
+      colorEmphasis,                  // 'brand' | 'sequential' | 'diverging' | 'mono'
+      annotateInsights,               // boolean-ish
+      showSourceAttribution,          // boolean-ish
+      normalizeUnits,                 // boolean-ish
+      inferBenchmarks,                // boolean-ish
+      preferIconography,              // boolean-ish
+      autoTitleInsights,              // boolean-ish
+      infographicNotes,               // free-form string
     } = await req.json();
 
     const briefSource = (content && content.trim()) || (topic && topic.trim());
