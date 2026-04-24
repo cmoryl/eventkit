@@ -1,6 +1,246 @@
 import React from 'react';
 import { AssetType } from '../types';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Reusable example templates for the slide deck Content brief textarea.
+// Each one is a ready-to-edit structure showing ## Slide Title, bullets, and
+// stat lines. Clicking a chip appends the template to whatever the user has
+// already typed.
+// ─────────────────────────────────────────────────────────────────────────────
+const SLIDE_BRIEF_TEMPLATES: Array<{
+  id: string;
+  label: string;
+  icon: string;
+  description: string;
+  content: string;
+}> = [
+  {
+    id: 'pitch',
+    label: 'Investor Pitch',
+    icon: '🚀',
+    description: 'Classic 8-slide investor narrative',
+    content: `## The Problem
+- Customers waste 12 hours/week on manual reporting
+- Existing tools are clunky and expensive
+- No one is solving this for mid-market
+
+## The Solution
+One-line description of what we do and why it's different.
+- Auto-generated reports in seconds
+- Integrates with the tools they already use
+- Priced 5x lower than enterprise alternatives
+
+## Market Opportunity
+- $42B global market
+- 28% YoY growth
+- 1.2M target companies
+
+## Traction
+- 14,000 active users
+- $4.2M ARR
+- 92% retention
+
+## Business Model
+- $99/seat/month subscription
+- Average contract: $24k/year
+- Gross margin: 84%
+
+## Team
+- Founders ex-Stripe, ex-Notion
+- 18 employees
+- 3 industry advisors
+
+## The Ask
+Raising $5M Series A to scale go-to-market across EMEA.`,
+  },
+  {
+    id: 'quarterly',
+    label: 'Quarterly Update',
+    icon: '📊',
+    description: 'Internal Q1/Q2/Q3/Q4 review',
+    content: `## Quarter at a Glance
+- 132% of revenue target
+- 4 major launches shipped
+- 2 strategic hires closed
+
+## Key Metrics
+- Revenue: $3.4M (+28% QoQ)
+- New customers: 412
+- NPS: 64
+
+## What Shipped
+- Mobile app v2.0
+- Enterprise SSO
+- New analytics dashboard
+- Public API beta
+
+## Wins
+- Closed largest deal in company history ($480k)
+- Featured in TechCrunch
+- Passed SOC 2 Type II audit
+
+## Challenges
+- Churn ticked up in SMB segment
+- Hiring slower than planned in EU
+- Infra costs growing faster than revenue
+
+## Next Quarter Priorities
+1. Fix SMB onboarding funnel
+2. Launch in 2 new EU markets
+3. Ship AI assistant`,
+  },
+  {
+    id: 'product-launch',
+    label: 'Product Launch',
+    icon: '🎉',
+    description: 'Announce a new product or feature',
+    content: `## Introducing [Product Name]
+The fastest way to [main benefit] for [target audience].
+
+## Why We Built It
+- Customers asked for it 1,200+ times
+- Existing solutions are 10x slower
+- We had the data to make it 10x better
+
+## What It Does
+- Feature 1 — one-line benefit
+- Feature 2 — one-line benefit
+- Feature 3 — one-line benefit
+
+## How It Works
+1. Connect your data source
+2. Pick a template
+3. Share with your team
+
+## Built for Real Numbers
+- 3x faster than the competition
+- 50% lower cost
+- 99.9% uptime SLA
+
+## Available Today
+- Free tier: up to 5 users
+- Pro: $29/user/month
+- Enterprise: custom pricing
+
+## Get Started
+Visit example.com/launch — first month free for early access users.`,
+  },
+  {
+    id: 'sales-deck',
+    label: 'Sales Deck',
+    icon: '💼',
+    description: 'B2B sales conversation flow',
+    content: `## Why You're Here
+You're losing X hours per week to [pain point], and it's costing you [$ or %].
+
+## The Problem We Solve
+- Pain point 1 — concrete example
+- Pain point 2 — concrete example
+- Pain point 3 — concrete example
+
+## How We're Different
+| Capability | Us | Competitor A | Competitor B |
+| Speed | Real-time | Daily | Hourly |
+| Setup | 10 min | 6 weeks | 2 weeks |
+| Price | $$ | $$$$ | $$$ |
+
+## Customer Results
+- Acme Co: 47% reduction in reporting time
+- Globex: $1.2M saved in year one
+- Initech: ROI in 90 days
+
+## How It Works (3 steps)
+1. Connect — plug in your existing systems
+2. Configure — pick the workflows that matter
+3. Capture — the value, automatically
+
+## Pricing
+- Starter: $99/mo — for teams of up to 10
+- Growth: $499/mo — for teams of up to 50
+- Enterprise: custom — unlimited seats + SSO
+
+## Next Steps
+- 30-min discovery call
+- 14-day proof of value
+- Roll out to your full team`,
+  },
+  {
+    id: 'workshop',
+    label: 'Workshop / Training',
+    icon: '🎓',
+    description: 'Educational session structure',
+    content: `## Welcome
+- Today's goal: [what attendees will leave knowing]
+- Duration: 60 minutes
+- Format: presentation + Q&A
+
+## Agenda
+1. Why this matters (10 min)
+2. Core concepts (20 min)
+3. Live demo (15 min)
+4. Hands-on exercise (10 min)
+5. Q&A (5 min)
+
+## Why This Matters
+- Stat: 73% of teams struggle with this
+- Stat: it costs the average org $X per year
+- Stat: best-in-class teams do it 4x better
+
+## Core Concept #1
+Definition + simple example everyone can relate to.
+
+## Core Concept #2
+Definition + simple example everyone can relate to.
+
+## Live Demo
+Walkthrough of the tool / process step-by-step.
+
+## Your Turn
+- Exercise: try X with your own data
+- Share back in chat what you found
+
+## Resources
+- Slide deck: link
+- Template: link
+- Recording will be sent within 24h`,
+  },
+  {
+    id: 'all-hands',
+    label: 'All-Hands',
+    icon: '📣',
+    description: 'Company-wide update',
+    content: `## Where We Are
+- Headcount: 142 (up from 98 last year)
+- Customers: 8,400+ across 32 countries
+- Revenue: on track to hit annual plan
+
+## Recent Wins
+- Shipped 4 major releases this quarter
+- Closed the [Big Customer] deal
+- Welcomed 12 new team members
+
+## What's Changing
+- New org structure (see next slide)
+- Updated benefits package
+- New office in [City]
+
+## Upcoming Priorities
+1. Launch [Product] in Q3
+2. Expand into [Market]
+3. Hire 25 more across eng + GTM
+
+## How to Get Involved
+- Volunteer for the launch task force
+- Refer candidates → bonus per hire
+- Join Friday office hours with leadership
+
+## Q&A
+Drop questions in the channel — we'll cover as many as we can live.`,
+  },
+];
+
+
+
 interface AssetSpecificFieldsProps {
   assetType: AssetType;
   customContent: Record<string, string>;
@@ -555,13 +795,61 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                 Use <code className="px-1 py-0.5 rounded bg-muted">## Slide Title</code> on its own line
                 to lock in slide breaks, or just dump notes and let the AI structure it.
               </p>
+
+              {/* Example templates — click to insert/append a structure */}
+              <div className="mb-2">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                  Insert example template
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {SLIDE_BRIEF_TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => {
+                        const current = (customContent.contentBrief || '').trim();
+                        const next = current
+                          ? current + '\n\n' + tpl.content
+                          : tpl.content;
+                        // Synthesize a change event so onChange handler treats it like typing
+                        const synthetic = {
+                          target: { name: 'contentBrief', value: next },
+                          currentTarget: { name: 'contentBrief', value: next },
+                        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                        onChange(synthetic);
+                      }}
+                      title={tpl.description}
+                      className="px-2.5 py-1 rounded-md text-xs border border-border bg-muted/40 hover:bg-muted hover:border-primary/50 text-foreground transition-colors flex items-center gap-1.5"
+                    >
+                      <span>{tpl.icon}</span>
+                      <span>{tpl.label}</span>
+                    </button>
+                  ))}
+                  {customContent.contentBrief && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const synthetic = {
+                          target: { name: 'contentBrief', value: '' },
+                          currentTarget: { name: 'contentBrief', value: '' },
+                        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                        onChange(synthetic);
+                      }}
+                      className="px-2.5 py-1 rounded-md text-xs border border-border/60 bg-transparent hover:bg-destructive/10 hover:border-destructive/50 text-muted-foreground hover:text-destructive transition-colors ml-auto"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <textarea
                 name="contentBrief"
                 value={customContent.contentBrief || ''}
                 onChange={onChange}
                 rows={10}
-                placeholder={`Example:\n\n## Why now\nMarket grew 40% YoY. Competitors raising prices. Window closes Q3.\n\n## Our advantage\n- 3x faster onboarding\n- 92% retention\n- Proprietary dataset\n\n## The ask\n$2M to scale GTM team across EMEA.`}
-                className={inputClassName + ' resize-y font-mono text-sm leading-relaxed min-h-[220px]'}
+                placeholder={`Click a template above, or type your own:\n\n## Why now\nMarket grew 40% YoY. Competitors raising prices. Window closes Q3.\n\n## Our advantage\n- 3x faster onboarding\n- 92% retention\n- Proprietary dataset\n\n## The ask\n$2M to scale GTM team across EMEA.`}
+                className={inputClassName + ' resize-y font-mono text-sm leading-relaxed min-h-[260px]'}
               />
             </div>
 
