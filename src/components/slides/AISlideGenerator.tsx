@@ -156,8 +156,15 @@ export function AISlideGenerator({
   };
 
   const handleGenerate = async () => {
-    if (!topic.trim()) {
+    const hasTopic = topic.trim().length > 0;
+    const hasContent = content.trim().length > 0;
+
+    if (briefMode === 'topic' && !hasTopic) {
       toast.error('Please describe your presentation topic');
+      return;
+    }
+    if (briefMode === 'content' && !hasContent) {
+      toast.error('Please paste in your content brief');
       return;
     }
 
@@ -175,7 +182,9 @@ export function AISlideGenerator({
     try {
       const { data, error } = await supabase.functions.invoke('generate-slides', {
         body: {
-          topic: topic.trim(),
+          topic: hasTopic ? topic.trim() : undefined,
+          content: briefMode === 'content' && hasContent ? content.trim() : undefined,
+          contentFormat: briefMode === 'content' ? contentFormat : undefined,
           slideCount: parseInt(slideCount),
           brandContext: brandName ? { name: brandName, brandId } : undefined,
           model,
@@ -185,6 +194,9 @@ export function AISlideGenerator({
           brandHubOnly: brandHubOnly && hasBrandHubAssets,
           approvedImagery: brandHubOnly && hasBrandHubAssets ? filteredImagery : undefined,
           approvedCategories: brandHubOnly && hasBrandHubAssets ? Array.from(selectedCategories) : undefined,
+          // Content-aware features
+          enableInfographics,
+          imageMatchMode,
         },
       });
 
@@ -205,6 +217,14 @@ export function AISlideGenerator({
         notes: s.notes || undefined,
         variant: s.variant || 'default',
         imageUrl: s.imageUrl || undefined,
+        quoteAuthor: s.quoteAuthor || undefined,
+        stats: Array.isArray(s.stats) ? s.stats : undefined,
+        chart: s.chart || undefined,
+        timeline: Array.isArray(s.timeline) ? s.timeline : undefined,
+        process: Array.isArray(s.process) ? s.process : undefined,
+        imageQuery: s.imageQuery || undefined,
+        assetCategory: s.assetCategory || undefined,
+        needsImage: s.needsImage || undefined,
       }));
 
       onSlidesGenerated(slides);
@@ -214,6 +234,7 @@ export function AISlideGenerator({
           : `Generated ${slides.length} slides!`
       );
       setTopic('');
+      setContent('');
       onClose();
     } catch (err: any) {
       console.error('Slide generation error:', err);
