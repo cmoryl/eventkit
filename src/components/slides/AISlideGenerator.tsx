@@ -5,7 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Sparkles, Loader2, Key, Lock, Images } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Sparkles, Loader2, Key, Lock, Images, Image as ImageIcon, Layers, Camera, Palette, Award, FileImage, Share2, Layout } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SlideData } from './slideTypes';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,6 +38,22 @@ interface BrandHubImagery {
   sponsors?: string[];
 }
 
+type ImageryCategory = keyof BrandHubImagery;
+
+const CATEGORY_META: Record<ImageryCategory, { label: string; icon: React.ComponentType<{ className?: string }>; description: string }> = {
+  logos: { label: 'Logos', icon: Award, description: 'Primary brand marks' },
+  brandIcons: { label: 'Brand icons', icon: Layers, description: 'Iconography & symbols' },
+  patterns: { label: 'Patterns', icon: Palette, description: 'Backgrounds & textures' },
+  photography: { label: 'Photography', icon: Camera, description: 'Photo library' },
+  heroImages: { label: 'Hero images', icon: ImageIcon, description: 'Cover & feature shots' },
+  collateral: { label: 'Collateral', icon: FileImage, description: 'Marketing artwork' },
+  social: { label: 'Social', icon: Share2, description: 'Social-ready graphics' },
+  banners: { label: 'Banners', icon: Layout, description: 'Wide formats' },
+  sponsors: { label: 'Sponsors', icon: Award, description: 'Sponsor logos' },
+};
+
+const CATEGORY_ORDER: ImageryCategory[] = ['heroImages', 'photography', 'patterns', 'logos', 'brandIcons', 'collateral', 'social', 'banners', 'sponsors'];
+
 interface AISlideGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
@@ -61,6 +78,7 @@ export function AISlideGenerator({
   const [model, setModel] = useState('google/gemini-3-flash-preview');
   const [googleApiKey, setGoogleApiKey] = useState('');
   const [brandHubOnly, setBrandHubOnly] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<Set<ImageryCategory>>(new Set());
 
   // Count of BrandHub assets available — used to decide if toggle is meaningful
   const imageryStats = useMemo(() => {
@@ -79,12 +97,48 @@ export function AISlideGenerator({
 
   const hasBrandHubAssets = imageryStats.total > 0;
 
-  // Default the toggle ON whenever the modal opens for a BrandHub-connected brand
+  // Categories that actually have assets, in display order
+  const availableCategories = useMemo(
+    () => CATEGORY_ORDER.filter(c => (imageryStats.byType[c] ?? 0) > 0),
+    [imageryStats]
+  );
+
+  // Filtered imagery payload sent to the edge function — only selected categories
+  const filteredImagery = useMemo(() => {
+    if (!brandImagery) return undefined;
+    const out: BrandHubImagery = {};
+    selectedCategories.forEach(cat => {
+      const arr = brandImagery[cat];
+      if (arr?.length) out[cat] = arr;
+    });
+    return out;
+  }, [brandImagery, selectedCategories]);
+
+  const selectedAssetCount = useMemo(
+    () => Array.from(selectedCategories).reduce((sum, c) => sum + (imageryStats.byType[c] ?? 0), 0),
+    [selectedCategories, imageryStats]
+  );
+
+  // Default the toggle ON whenever the modal opens for a BrandHub-connected brand,
+  // and pre-select all available categories.
   useEffect(() => {
     if (isOpen) {
       setBrandHubOnly(hasBrandHubAssets);
+      setSelectedCategories(new Set(availableCategories));
     }
-  }, [isOpen, hasBrandHubAssets]);
+  }, [isOpen, hasBrandHubAssets, availableCategories]);
+
+  const toggleCategory = (cat: ImageryCategory) => {
+    setSelectedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  const selectAllCategories = () => setSelectedCategories(new Set(availableCategories));
+  const clearAllCategories = () => setSelectedCategories(new Set());
 
   const models = provider === 'lovable' ? LOVABLE_MODELS : GOOGLE_MODELS;
 
@@ -105,6 +159,11 @@ export function AISlideGenerator({
       return;
     }
 
+    if (brandHubOnly && hasBrandHubAssets && selectedAssetCount === 0) {
+      toast.error('Select at least one asset category, or turn off BrandHub-only mode.');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-slides', {
@@ -115,9 +174,10 @@ export function AISlideGenerator({
           model,
           provider,
           googleApiKey: provider === 'google' ? googleApiKey.trim() : undefined,
-          // BrandHub-only constraints
+          // BrandHub-only constraints (filtered to selected categories)
           brandHubOnly: brandHubOnly && hasBrandHubAssets,
-          approvedImagery: brandHubOnly && hasBrandHubAssets ? brandImagery : undefined,
+          approvedImagery: brandHubOnly && hasBrandHubAssets ? filteredImagery : undefined,
+          approvedCategories: brandHubOnly && hasBrandHubAssets ? Array.from(selectedCategories) : undefined,
         },
       });
 
@@ -166,7 +226,7 @@ export function AISlideGenerator({
 
   return (
     <Dialog open={isOpen} onOpenChange={() => !isGenerating && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[560px] max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -259,9 +319,9 @@ export function AISlideGenerator({
             </Select>
           </div>
 
-          {/* BrandHub-only toggle */}
+          {/* BrandHub-only toggle + category picker */}
           {hasBrandHubAssets && (
-            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-0.5 flex-1">
                   <label
@@ -282,17 +342,79 @@ export function AISlideGenerator({
                   disabled={isGenerating}
                 />
               </div>
+
               {brandHubOnly && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/60">
-                  <Images className="h-3 w-3" />
-                  <span>
-                    {imageryStats.total} approved asset{imageryStats.total !== 1 ? 's' : ''} available
-                    {Object.keys(imageryStats.byType).length > 0 && (
-                      <span className="text-muted-foreground/80">
-                        {' '}({Object.entries(imageryStats.byType).map(([k, n]) => `${n} ${k}`).join(', ')})
-                      </span>
-                    )}
-                  </span>
+                <div className="space-y-2 pt-2 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                      <Images className="h-3 w-3" />
+                      Allowed categories
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={selectAllCategories}
+                        disabled={isGenerating}
+                        className="text-xs text-primary hover:underline disabled:opacity-50"
+                      >
+                        All
+                      </button>
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <button
+                        type="button"
+                        onClick={clearAllCategories}
+                        disabled={isGenerating}
+                        className="text-xs text-muted-foreground hover:underline disabled:opacity-50"
+                      >
+                        None
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableCategories.map(cat => {
+                      const meta = CATEGORY_META[cat];
+                      const Icon = meta.icon;
+                      const count = imageryStats.byType[cat] ?? 0;
+                      const checked = selectedCategories.has(cat);
+                      return (
+                        <label
+                          key={cat}
+                          className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer transition-colors ${
+                            checked
+                              ? 'border-primary/60 bg-primary/5'
+                              : 'border-border bg-background/40 hover:bg-muted/40'
+                          } ${isGenerating ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleCategory(cat)}
+                            disabled={isGenerating}
+                            className="mt-0.5"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span className="text-xs font-medium truncate">{meta.label}</span>
+                              <span className="text-xs text-muted-foreground ml-auto shrink-0">{count}</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
+                              {meta.description}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="text-muted-foreground">
+                      {selectedCategories.size} of {availableCategories.length} categories
+                    </span>
+                    <span className={`font-medium ${selectedAssetCount === 0 ? 'text-destructive' : 'text-foreground'}`}>
+                      {selectedAssetCount} asset{selectedAssetCount !== 1 ? 's' : ''} available
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
