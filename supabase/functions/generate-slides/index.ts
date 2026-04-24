@@ -296,7 +296,7 @@ Guidelines:
 - Close with section (Thank You / Questions)
 - Keep titles under 8 words
 - Use bullets (•) in body for content layouts
-- Generate exactly ${slideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}`;
+- Generate exactly ${slideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}`;
 
     const tools = [
       {
