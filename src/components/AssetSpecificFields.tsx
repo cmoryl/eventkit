@@ -1878,22 +1878,18 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                               blurb: 'Anything you write here overrides every other setting. Use it for must-have framing, callouts, or audience cues.',
                               scaffold:
                                 '• Headline insight: \n• Must-show chart: \n• Watch out for: \n• Audience-specific framing: ',
-                              label: 'Insight notes',
-                              badge: 'Highest priority',
-                              badgeTone: 'primary',
-                              blurb: 'Anything you write here overrides every other setting. Use it for must-have framing, callouts, or audience cues.',
-                              scaffold:
-                                '• Headline insight: \n• Must-show chart: \n• Watch out for: \n• Audience-specific framing: ',
-                              examples: [
-                                { label: 'Group by region', text: 'Group revenue by region (EMEA / NA / APAC), not by product line.' },
-                                { label: 'Callout Q3 dip', text: 'Highlight the Q3 dip with a red callout and one-line cause.' },
-                                { label: 'Benchmark vs avg', text: 'Compare our metric to the industry average of 12% (add as reference line).' },
-                                { label: 'Lead with growth', text: 'Lead the deck with the YoY growth chart — that is the headline insight.' },
-                                { label: 'Hide outliers', text: 'Exclude the 2020 COVID outlier from the trend line; mention it in notes only.' },
-                                { label: 'Use brand red', text: 'Use brand red only for negative deltas; positive deltas in brand green.' },
-                                { label: 'Round to 1 decimal', text: 'Round all percentages to 1 decimal place; never show raw decimals like 0.1834.' },
-                                { label: 'Plain language', text: 'Avoid jargon — write titles a non-finance audience can understand.' },
-                              ],
+                              examples: dynamicInsightChips.length
+                                ? dynamicInsightChips
+                                : [
+                                    { label: 'Group by region', text: 'Group revenue by region (EMEA / NA / APAC), not by product line.' },
+                                    { label: 'Callout Q3 dip', text: 'Highlight the Q3 dip with a red callout and one-line cause.' },
+                                    { label: 'Benchmark vs avg', text: 'Compare our metric to the industry average of 12% (add as reference line).' },
+                                    { label: 'Lead with growth', text: 'Lead the deck with the YoY growth chart — that is the headline insight.' },
+                                    { label: 'Hide outliers', text: 'Exclude the 2020 COVID outlier from the trend line; mention it in notes only.' },
+                                    { label: 'Use brand red', text: 'Use brand red only for negative deltas; positive deltas in brand green.' },
+                                    { label: 'Round to 1 decimal', text: 'Round all percentages to 1 decimal place; never show raw decimals like 0.1834.' },
+                                    { label: 'Plain language', text: 'Avoid jargon — write titles a non-finance audience can understand.' },
+                                  ],
                               placeholder:
                                 'Click an example chip above, or write your own. For example:\n\n• Headline insight: Retention drives 70% of new revenue — show this first.\n• Must-show chart: Cohort retention curve, last 8 quarters.\n• Watch out for: Q3 dip is a known data-quality issue, add asterisk.\n• Audience-specific framing: Board prefers absolute $ over %.',
                             },
