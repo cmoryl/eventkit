@@ -862,9 +862,108 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                 value={customContent.keyStats || ''}
                 onChange={onChange}
                 rows={3}
-                placeholder="One per line — e.g.\n92% customer retention\n$4.2M ARR\n3x faster than competitors"
+                placeholder={`One per line — e.g.\n92% customer retention\n$4.2M ARR\n3x faster than competitors\n2021: 1.2M users\n2022: 3.4M users\n2023: 8.1M users`}
                 className={inputClassName + ' resize-y'}
               />
+
+              {/* Use stats for charts toggle */}
+              <label
+                className={
+                  'mt-2 flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ' +
+                  ((customContent.useStatsForCharts ?? 'true') === 'true'
+                    ? 'border-primary/60 bg-primary/5'
+                    : 'border-border bg-muted/30 hover:bg-muted/50')
+                }
+              >
+                <input
+                  type="checkbox"
+                  name="useStatsForCharts"
+                  checked={(customContent.useStatsForCharts ?? 'true') === 'true'}
+                  onChange={(e) => {
+                    const synthetic = {
+                      target: {
+                        name: 'useStatsForCharts',
+                        value: e.target.checked ? 'true' : 'false',
+                      },
+                      currentTarget: {
+                        name: 'useStatsForCharts',
+                        value: e.target.checked ? 'true' : 'false',
+                      },
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
+                    onChange(synthetic);
+                  }}
+                  className="mt-0.5 w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium text-foreground">
+                      Use these stats for charts
+                    </span>
+                    <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/15 text-primary font-semibold">
+                      Recommended
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    AI will turn your stats into real chart slides — bar for comparisons,
+                    line for time series (e.g. <code className="px-1 rounded bg-muted/60">2021: 1.2M</code>),
+                    pie/doughnut for breakdowns, and big-number stat cards for single KPIs.
+                  </p>
+                </div>
+              </label>
+
+              {(customContent.useStatsForCharts ?? 'true') === 'true' && (customContent.keyStats || '').trim() && (
+                <div className="mt-2">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                    Preferred chart types (optional — AI auto-picks if none selected)
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: 'bar', label: 'Bar', icon: '📊' },
+                      { id: 'line', label: 'Line', icon: '📈' },
+                      { id: 'pie', label: 'Pie', icon: '🥧' },
+                      { id: 'doughnut', label: 'Doughnut', icon: '🍩' },
+                      { id: 'stats', label: 'Stat cards', icon: '🔢' },
+                    ].map((chart) => {
+                      const selected = (customContent.preferredChartTypes || '')
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      const isOn = selected.includes(chart.id);
+                      return (
+                        <button
+                          key={chart.id}
+                          type="button"
+                          onClick={() => {
+                            const next = isOn
+                              ? selected.filter((c) => c !== chart.id)
+                              : [...selected, chart.id];
+                            const synthetic = {
+                              target: {
+                                name: 'preferredChartTypes',
+                                value: next.join(','),
+                              },
+                              currentTarget: {
+                                name: 'preferredChartTypes',
+                                value: next.join(','),
+                              },
+                            } as unknown as React.ChangeEvent<HTMLInputElement>;
+                            onChange(synthetic);
+                          }}
+                          className={
+                            'px-2.5 py-1 rounded-md text-xs border transition-colors flex items-center gap-1.5 ' +
+                            (isOn
+                              ? 'border-primary bg-primary/10 text-foreground'
+                              : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground')
+                          }
+                        >
+                          <span>{chart.icon}</span>
+                          <span>{chart.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-2">

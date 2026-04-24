@@ -96,6 +96,10 @@ serve(async (req) => {
       approvedCategories,
       enableInfographics = true,
       imageMatchMode = "smart",
+      // New: stats-driven chart generation
+      keyStats,                       // string — one stat per line
+      useStatsForCharts = true,       // toggle: turn keyStats into chart slides
+      preferredChartTypes,            // string[] | string — e.g. ["bar","line"]
     } = await req.json();
 
     const briefSource = (content && content.trim()) || (topic && topic.trim());
@@ -133,6 +137,42 @@ serve(async (req) => {
 - "quote" layout for testimonials or notable statements
 Extract numeric values and convert them into structured chart/stat/timeline data. Do not just put numbers in body text — use the right layout.`
       : "";
+
+    // Normalize chart-type preferences to a clean array
+    const normalizedChartTypes: string[] = Array.isArray(preferredChartTypes)
+      ? preferredChartTypes
+      : typeof preferredChartTypes === "string"
+        ? preferredChartTypes.split(",").map((s) => s.trim()).filter(Boolean)
+        : [];
+
+    const cleanStats = (typeof keyStats === "string" ? keyStats : "")
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const statsInfo = useStatsForCharts && cleanStats.length
+      ? `\n\nKEY STATS — TURN INTO CHARTS (mandatory):
+The user provided these stats. You MUST materialize them as one or more dedicated visualization slides — never just bullet them in body text.
+
+Stats:
+${cleanStats.map((s) => `- ${s}`).join("\n")}
+
+Rules for choosing the chart layout:
+- Time series (entries shaped like "2021: 1.2M", "Q1: $4.2M") → "chart" with type "line"
+- Category breakdowns / shares of a whole (e.g. "60% mobile, 30% desktop, 10% tablet") → "chart" with type "pie" or "doughnut"
+- Comparisons across 3+ named categories → "chart" with type "bar"
+- Standalone single-number KPIs (e.g. "92% retention", "$4.2M ARR") → group 2-4 of these into ONE "stats" layout slide
+- Parse percentages, currencies (k/M/B), multipliers (3x), and date prefixes correctly into numeric "value" fields
+- Set the chart's "data" array to { label, value } objects with clean numeric values
+${normalizedChartTypes.length
+  ? `\nUSER PREFERENCE: When possible, prefer these chart types: ${normalizedChartTypes.join(", ")}. Only deviate if a stat genuinely doesn't fit any of these.`
+  : `\nNo chart-type preference set — pick the best fit per stat group.`}
+Generate at least one chart/stats slide for these numbers. Place them where they best support the deck narrative.`
+      : cleanStats.length && !useStatsForCharts
+        ? `\n\nKEY STATS (reference only — DO NOT auto-chart):
+The user provided these stats but disabled chart generation. Weave them into bullet points naturally; do not create dedicated chart or stats slides for them.
+${cleanStats.map((s) => `- ${s}`).join("\n")}`
+        : "";
 
     const formatHint = contentFormat === "structured"
       ? "The content uses headings (## or ###) and bullets — respect that structure when grouping into slides."
@@ -177,7 +217,7 @@ Guidelines:
 - Close with section (Thank You / Questions)
 - Keep titles under 8 words
 - Use bullets (•) in body for content layouts
-- Generate exactly ${slideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}`;
+- Generate exactly ${slideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}`;
 
     const tools = [
       {
