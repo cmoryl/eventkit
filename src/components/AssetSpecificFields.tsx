@@ -1104,6 +1104,284 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                 </div>
               )}
 
+              {/* ─────────────── Advanced infographic interpretation ─────────────── */}
+              {(() => {
+                const setField = (name: string, value: string) => {
+                  const synthetic = {
+                    target: { name, value },
+                    currentTarget: { name, value },
+                  } as unknown as React.ChangeEvent<HTMLInputElement>;
+                  onChange(synthetic);
+                };
+                const toggleInList = (name: string, id: string) => {
+                  const current = (customContent[name] || '')
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter(Boolean);
+                  const next = current.includes(id)
+                    ? current.filter((c: string) => c !== id)
+                    : [...current, id];
+                  setField(name, next.join(','));
+                };
+                const isOn = (name: string, id: string) =>
+                  (customContent[name] || '')
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .includes(id);
+
+                const advancedOpen = (customContent.advancedInfographicsOpen ?? 'false') === 'true';
+
+                const DATA_LENS = [
+                  { id: 'trend', label: 'Trend', hint: 'Time-series, growth' },
+                  { id: 'comparison', label: 'Comparison', hint: 'A vs B, side-by-side' },
+                  { id: 'composition', label: 'Composition', hint: 'Parts of a whole' },
+                  { id: 'distribution', label: 'Distribution', hint: 'Spread, ranges' },
+                  { id: 'relationship', label: 'Relationship', hint: 'Correlation, cause-effect' },
+                  { id: 'ranking', label: 'Ranking', hint: 'Top-N, leaderboards' },
+                ];
+
+                const INFO_LAYOUTS = [
+                  { id: 'timeline', label: 'Timeline', icon: '🕒' },
+                  { id: 'process', label: 'Process flow', icon: '➡️' },
+                  { id: 'comparison-table', label: 'Comparison table', icon: '🆚' },
+                  { id: 'funnel', label: 'Funnel', icon: '🔻' },
+                  { id: 'pyramid', label: 'Pyramid', icon: '🔺' },
+                  { id: 'quadrant', label: 'Quadrant / 2×2', icon: '🧭' },
+                  { id: 'venn', label: 'Venn / overlap', icon: '🟣' },
+                  { id: 'map', label: 'Map / geo', icon: '🗺️' },
+                  { id: 'icon-array', label: 'Icon array', icon: '👥' },
+                  { id: 'gauge', label: 'Gauge / progress', icon: '⏱️' },
+                ];
+
+                const NARRATIVE = [
+                  { id: 'data-led', label: 'Data-led', hint: 'Numbers do the talking' },
+                  { id: 'story-led', label: 'Story-led', hint: 'Insight-first, then data' },
+                  { id: 'exec-summary', label: 'Exec summary', hint: 'Headline + 1 chart' },
+                  { id: 'analyst', label: 'Analyst deep-dive', hint: 'Multiple cuts of data' },
+                ];
+
+                return (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setField('advancedInfographicsOpen', advancedOpen ? 'false' : 'true')}
+                      className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-border bg-muted/20 hover:bg-muted/40 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
+                          Advanced infographic interpretation
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-accent/20 text-accent-foreground font-semibold">
+                          Pro
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {advancedOpen ? '▾ Hide' : '▸ Show'}
+                      </span>
+                    </button>
+
+                    {advancedOpen && (
+                      <div className="mt-2 p-3 rounded-lg border border-border bg-background/40 space-y-4">
+                        {/* Data lens */}
+                        <div>
+                          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                            Data lens — what should the AI emphasize?
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {DATA_LENS.map((d) => {
+                              const on = isOn('dataLens', d.id);
+                              return (
+                                <button
+                                  key={d.id}
+                                  type="button"
+                                  onClick={() => toggleInList('dataLens', d.id)}
+                                  title={d.hint}
+                                  className={
+                                    'px-2.5 py-1 rounded-md text-xs border transition-colors ' +
+                                    (on
+                                      ? 'border-primary bg-primary/10 text-foreground'
+                                      : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground')
+                                  }
+                                >
+                                  {d.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Infographic layouts */}
+                        <div>
+                          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                            Preferred infographic layouts
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {INFO_LAYOUTS.map((l) => {
+                              const on = isOn('preferredInfographicLayouts', l.id);
+                              return (
+                                <button
+                                  key={l.id}
+                                  type="button"
+                                  onClick={() => toggleInList('preferredInfographicLayouts', l.id)}
+                                  className={
+                                    'px-2.5 py-1 rounded-md text-xs border transition-colors flex items-center gap-1.5 ' +
+                                    (on
+                                      ? 'border-primary bg-primary/10 text-foreground'
+                                      : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground')
+                                  }
+                                >
+                                  <span>{l.icon}</span>
+                                  <span>{l.label}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Narrative style */}
+                        <div>
+                          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                            Narrative style
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {NARRATIVE.map((n) => {
+                              const on = (customContent.narrativeStyle || '') === n.id;
+                              return (
+                                <button
+                                  key={n.id}
+                                  type="button"
+                                  onClick={() => setField('narrativeStyle', on ? '' : n.id)}
+                                  title={n.hint}
+                                  className={
+                                    'px-2.5 py-1 rounded-md text-xs border transition-colors ' +
+                                    (on
+                                      ? 'border-primary bg-primary/10 text-foreground'
+                                      : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground')
+                                  }
+                                >
+                                  {n.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Density + color emphasis (sliders/selects in one row) */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] uppercase tracking-wide text-muted-foreground block mb-1.5">
+                              Information density
+                            </label>
+                            <div className="flex gap-1">
+                              {['minimal', 'balanced', 'dense'].map((d) => {
+                                const on = (customContent.infoDensity || 'balanced') === d;
+                                return (
+                                  <button
+                                    key={d}
+                                    type="button"
+                                    onClick={() => setField('infoDensity', d)}
+                                    className={
+                                      'flex-1 px-2 py-1.5 rounded-md text-xs border capitalize transition-colors ' +
+                                      (on
+                                        ? 'border-primary bg-primary/10 text-foreground'
+                                        : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground')
+                                    }
+                                  >
+                                    {d}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] uppercase tracking-wide text-muted-foreground block mb-1.5">
+                              Color emphasis
+                            </label>
+                            <div className="flex gap-1">
+                              {[
+                                { id: 'brand', label: 'Brand' },
+                                { id: 'sequential', label: 'Sequential' },
+                                { id: 'diverging', label: 'Diverging' },
+                                { id: 'mono', label: 'Mono' },
+                              ].map((c) => {
+                                const on = (customContent.colorEmphasis || 'brand') === c.id;
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() => setField('colorEmphasis', c.id)}
+                                    className={
+                                      'flex-1 px-2 py-1.5 rounded-md text-xs border transition-colors ' +
+                                      (on
+                                        ? 'border-primary bg-primary/10 text-foreground'
+                                        : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground')
+                                    }
+                                  >
+                                    {c.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Boolean toggles */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {[
+                            { name: 'annotateInsights', label: 'Annotate key insights', hint: 'Add callouts on charts where it spikes/drops' },
+                            { name: 'showSourceAttribution', label: 'Show source attribution', hint: 'Footer line: "Source: …" on data slides' },
+                            { name: 'normalizeUnits', label: 'Normalize units', hint: 'Standardize $/€, M/B, % vs ratios' },
+                            { name: 'inferBenchmarks', label: 'Infer industry benchmarks', hint: 'Add a reference line where it makes sense' },
+                            { name: 'preferIconography', label: 'Prefer iconography over text', hint: 'Use icons in process/timeline steps' },
+                            { name: 'autoTitleInsights', label: 'Auto-write insight titles', hint: 'e.g. "Retention up 18% YoY" instead of "Retention"' },
+                          ].map((opt) => {
+                            const checked = (customContent[opt.name] ?? 'false') === 'true';
+                            return (
+                              <label
+                                key={opt.name}
+                                className={
+                                  'flex items-start gap-2 p-2 rounded-md border cursor-pointer transition-colors ' +
+                                  (checked
+                                    ? 'border-primary/60 bg-primary/5'
+                                    : 'border-border bg-muted/20 hover:bg-muted/40')
+                                }
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(e) => setField(opt.name, e.target.checked ? 'true' : 'false')}
+                                  className="mt-0.5 w-3.5 h-3.5 rounded border-border accent-primary cursor-pointer"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium text-foreground">{opt.label}</div>
+                                  <div className="text-[10px] text-muted-foreground leading-snug">{opt.hint}</div>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+
+                        {/* Free-form interpretation notes */}
+                        <div>
+                          <label className="text-[11px] uppercase tracking-wide text-muted-foreground block mb-1.5">
+                            Interpretation notes (optional)
+                          </label>
+                          <textarea
+                            name="infographicNotes"
+                            value={customContent.infographicNotes || ''}
+                            onChange={onChange}
+                            rows={2}
+                            placeholder={`E.g. "Group revenue by region, not by product." · "Highlight Q3 dip with a callout." · "Compare us to industry avg of 12%."`}
+                            className={inputClassName + ' resize-y text-sm'}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {/* Mini preview: predicted chart types from key stats */}
               {(customContent.useStatsForCharts ?? 'true') === 'true' && (customContent.keyStats || '').trim() && (() => {
                 const preferred = (customContent.preferredChartTypes || '')
