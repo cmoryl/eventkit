@@ -38,6 +38,22 @@ interface BrandHubImagery {
   sponsors?: string[];
 }
 
+type ImageryCategory = keyof BrandHubImagery;
+
+const CATEGORY_META: Record<ImageryCategory, { label: string; icon: React.ComponentType<{ className?: string }>; description: string }> = {
+  logos: { label: 'Logos', icon: Award, description: 'Primary brand marks' },
+  brandIcons: { label: 'Brand icons', icon: Layers, description: 'Iconography & symbols' },
+  patterns: { label: 'Patterns', icon: Palette, description: 'Backgrounds & textures' },
+  photography: { label: 'Photography', icon: Camera, description: 'Photo library' },
+  heroImages: { label: 'Hero images', icon: ImageIcon, description: 'Cover & feature shots' },
+  collateral: { label: 'Collateral', icon: FileImage, description: 'Marketing artwork' },
+  social: { label: 'Social', icon: Share2, description: 'Social-ready graphics' },
+  banners: { label: 'Banners', icon: Layout, description: 'Wide formats' },
+  sponsors: { label: 'Sponsors', icon: Award, description: 'Sponsor logos' },
+};
+
+const CATEGORY_ORDER: ImageryCategory[] = ['heroImages', 'photography', 'patterns', 'logos', 'brandIcons', 'collateral', 'social', 'banners', 'sponsors'];
+
 interface AISlideGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
