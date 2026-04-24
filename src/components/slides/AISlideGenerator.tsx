@@ -319,9 +319,9 @@ export function AISlideGenerator({
             </Select>
           </div>
 
-          {/* BrandHub-only toggle */}
+          {/* BrandHub-only toggle + category picker */}
           {hasBrandHubAssets && (
-            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-0.5 flex-1">
                   <label
@@ -342,17 +342,79 @@ export function AISlideGenerator({
                   disabled={isGenerating}
                 />
               </div>
+
               {brandHubOnly && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/60">
-                  <Images className="h-3 w-3" />
-                  <span>
-                    {imageryStats.total} approved asset{imageryStats.total !== 1 ? 's' : ''} available
-                    {Object.keys(imageryStats.byType).length > 0 && (
-                      <span className="text-muted-foreground/80">
-                        {' '}({Object.entries(imageryStats.byType).map(([k, n]) => `${n} ${k}`).join(', ')})
-                      </span>
-                    )}
-                  </span>
+                <div className="space-y-2 pt-2 border-t border-border/60">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                      <Images className="h-3 w-3" />
+                      Allowed categories
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={selectAllCategories}
+                        disabled={isGenerating}
+                        className="text-xs text-primary hover:underline disabled:opacity-50"
+                      >
+                        All
+                      </button>
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <button
+                        type="button"
+                        onClick={clearAllCategories}
+                        disabled={isGenerating}
+                        className="text-xs text-muted-foreground hover:underline disabled:opacity-50"
+                      >
+                        None
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableCategories.map(cat => {
+                      const meta = CATEGORY_META[cat];
+                      const Icon = meta.icon;
+                      const count = imageryStats.byType[cat] ?? 0;
+                      const checked = selectedCategories.has(cat);
+                      return (
+                        <label
+                          key={cat}
+                          className={`flex items-start gap-2 rounded-md border p-2 cursor-pointer transition-colors ${
+                            checked
+                              ? 'border-primary/60 bg-primary/5'
+                              : 'border-border bg-background/40 hover:bg-muted/40'
+                          } ${isGenerating ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleCategory(cat)}
+                            disabled={isGenerating}
+                            className="mt-0.5"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
+                              <span className="text-xs font-medium truncate">{meta.label}</span>
+                              <span className="text-xs text-muted-foreground ml-auto shrink-0">{count}</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground/80 mt-0.5 truncate">
+                              {meta.description}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs pt-1">
+                    <span className="text-muted-foreground">
+                      {selectedCategories.size} of {availableCategories.length} categories
+                    </span>
+                    <span className={`font-medium ${selectedAssetCount === 0 ? 'text-destructive' : 'text-foreground'}`}>
+                      {selectedAssetCount} asset{selectedAssetCount !== 1 ? 's' : ''} available
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
