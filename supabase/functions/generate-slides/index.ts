@@ -112,7 +112,9 @@ serve(async (req) => {
       inferBenchmarks,                // boolean-ish
       preferIconography,              // boolean-ish
       autoTitleInsights,              // boolean-ish
-      infographicNotes,               // free-form string
+      infographicNotes,               // free-form string — highest-priority interpretation guidance
+      executiveSummaryNotes,          // free-form string — drives opening summary + closing takeaways
+      chartCalloutNotes,              // free-form string — per-chart annotations and callouts
     } = await req.json();
 
     const briefSource = (content && content.trim()) || (topic && topic.trim());
