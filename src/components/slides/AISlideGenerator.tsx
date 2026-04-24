@@ -159,6 +159,11 @@ export function AISlideGenerator({
       return;
     }
 
+    if (brandHubOnly && hasBrandHubAssets && selectedAssetCount === 0) {
+      toast.error('Select at least one asset category, or turn off BrandHub-only mode.');
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-slides', {
