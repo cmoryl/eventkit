@@ -318,17 +318,123 @@ export function AISlideGenerator({
             </Select>
           </div>
 
-          {/* Topic */}
+          {/* Brief mode toggle */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Topic</label>
+            <label className="text-sm font-medium">Brief mode</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setBriefMode('topic')}
+                disabled={isGenerating}
+                className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                  briefMode === 'topic'
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border bg-background hover:bg-muted/50 text-muted-foreground'
+                }`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Topic only
+              </button>
+              <button
+                type="button"
+                onClick={() => setBriefMode('content')}
+                disabled={isGenerating}
+                className={`flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium transition-colors ${
+                  briefMode === 'content'
+                    ? 'border-primary bg-primary/10 text-foreground'
+                    : 'border-border bg-background hover:bg-muted/50 text-muted-foreground'
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Content brief
+              </button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {briefMode === 'topic'
+                ? 'Describe what the deck is about — AI invents the content.'
+                : 'Paste your actual notes/outline/copy — AI structures and lays it out.'}
+            </p>
+          </div>
+
+          {/* Topic input — always shown (used as title hint in content mode) */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              {briefMode === 'topic' ? 'Topic' : 'Title hint (optional)'}
+            </label>
             <Textarea
-              placeholder="e.g., Q4 2025 Sales Results — cover revenue growth, regional breakdown, top clients, challenges, and next quarter goals"
+              placeholder={briefMode === 'topic'
+                ? 'e.g., Q4 2025 Sales Results — cover revenue growth, regional breakdown, top clients, challenges, and next quarter goals'
+                : 'e.g., Q4 2025 Investor Update'}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="min-h-[100px]"
+              className={briefMode === 'topic' ? 'min-h-[100px]' : 'min-h-[60px]'}
               disabled={isGenerating}
             />
           </div>
+
+          {/* Content brief textarea */}
+          {briefMode === 'content' && (
+            <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-sm font-medium flex items-center gap-1.5">
+                  <FileText className="h-3.5 w-3.5 text-primary" />
+                  Content
+                </label>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setContentFormat('freeform')}
+                    disabled={isGenerating}
+                    className={`text-[11px] px-2 py-0.5 rounded ${contentFormat === 'freeform' ? 'bg-primary/20 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Free-form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContentFormat('structured')}
+                    disabled={isGenerating}
+                    className={`text-[11px] px-2 py-0.5 rounded ${contentFormat === 'structured' ? 'bg-primary/20 text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Structured
+                  </button>
+                </div>
+              </div>
+              <Textarea
+                placeholder={contentFormat === 'structured'
+                  ? '## Slide 1\n- Revenue grew 24% YoY to $4.2M\n- 1,200 new customers\n\n## Slide 2\nTimeline: Q1 launch, Q2 expansion, Q3 partnerships, Q4 IPO prep\n\n## Quote\n"Best year on record" — Jane Doe, CEO'
+                  : 'Paste your notes, outline, full copy, talking points… AI will analyze and structure it.\n\nRevenue grew 24% YoY to $4.2M. We added 1,200 new customers. Top regions: NA 45%, EMEA 30%, APAC 25%. Three big milestones this year: Q1 launch, Q2 partnership with Acme, Q3 series B. Next year goals: hit $10M ARR, expand to LATAM…'}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[180px] text-xs font-mono"
+                disabled={isGenerating}
+              />
+              <p className="text-[11px] text-muted-foreground">
+                {contentFormat === 'structured'
+                  ? 'Use ## headings to mark slide breaks. AI picks the best layout per slide.'
+                  : 'AI reads everything, decides slide breaks, and chooses layouts.'}
+              </p>
+            </div>
+          )}
+
+          {/* Infographics toggle */}
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted/30 p-3">
+            <div className="space-y-0.5 flex-1">
+              <label htmlFor="infographics" className="text-sm font-medium flex items-center gap-1.5 cursor-pointer">
+                <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                Auto-generate infographics
+              </label>
+              <p className="text-[11px] text-muted-foreground">
+                Convert numbers to charts, dates to timelines, steps to process flows, KPIs to stat slides.
+              </p>
+            </div>
+            <Switch
+              id="infographics"
+              checked={enableInfographics}
+              onCheckedChange={setEnableInfographics}
+              disabled={isGenerating}
+            />
+          </div>
+
 
           {/* Slide count */}
           <div className="space-y-2">
