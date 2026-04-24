@@ -78,6 +78,7 @@ export function AISlideGenerator({
   const [model, setModel] = useState('google/gemini-3-flash-preview');
   const [googleApiKey, setGoogleApiKey] = useState('');
   const [brandHubOnly, setBrandHubOnly] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<Set<ImageryCategory>>(new Set());
 
   // Count of BrandHub assets available — used to decide if toggle is meaningful
   const imageryStats = useMemo(() => {
@@ -96,12 +97,48 @@ export function AISlideGenerator({
 
   const hasBrandHubAssets = imageryStats.total > 0;
 
-  // Default the toggle ON whenever the modal opens for a BrandHub-connected brand
+  // Categories that actually have assets, in display order
+  const availableCategories = useMemo(
+    () => CATEGORY_ORDER.filter(c => (imageryStats.byType[c] ?? 0) > 0),
+    [imageryStats]
+  );
+
+  // Filtered imagery payload sent to the edge function — only selected categories
+  const filteredImagery = useMemo(() => {
+    if (!brandImagery) return undefined;
+    const out: BrandHubImagery = {};
+    selectedCategories.forEach(cat => {
+      const arr = brandImagery[cat];
+      if (arr?.length) out[cat] = arr;
+    });
+    return out;
+  }, [brandImagery, selectedCategories]);
+
+  const selectedAssetCount = useMemo(
+    () => Array.from(selectedCategories).reduce((sum, c) => sum + (imageryStats.byType[c] ?? 0), 0),
+    [selectedCategories, imageryStats]
+  );
+
+  // Default the toggle ON whenever the modal opens for a BrandHub-connected brand,
+  // and pre-select all available categories.
   useEffect(() => {
     if (isOpen) {
       setBrandHubOnly(hasBrandHubAssets);
+      setSelectedCategories(new Set(availableCategories));
     }
-  }, [isOpen, hasBrandHubAssets]);
+  }, [isOpen, hasBrandHubAssets, availableCategories]);
+
+  const toggleCategory = (cat: ImageryCategory) => {
+    setSelectedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  };
+
+  const selectAllCategories = () => setSelectedCategories(new Set(availableCategories));
+  const clearAllCategories = () => setSelectedCategories(new Set());
 
   const models = provider === 'lovable' ? LOVABLE_MODELS : GOOGLE_MODELS;
 
