@@ -174,9 +174,10 @@ export function AISlideGenerator({
           model,
           provider,
           googleApiKey: provider === 'google' ? googleApiKey.trim() : undefined,
-          // BrandHub-only constraints
+          // BrandHub-only constraints (filtered to selected categories)
           brandHubOnly: brandHubOnly && hasBrandHubAssets,
-          approvedImagery: brandHubOnly && hasBrandHubAssets ? brandImagery : undefined,
+          approvedImagery: brandHubOnly && hasBrandHubAssets ? filteredImagery : undefined,
+          approvedCategories: brandHubOnly && hasBrandHubAssets ? Array.from(selectedCategories) : undefined,
         },
       });
 
