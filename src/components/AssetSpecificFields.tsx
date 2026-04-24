@@ -1437,6 +1437,90 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                               );
                             })}
                           </div>
+
+                          {/* Auto-mapping preview: infographic layout → slide template */}
+                          {(() => {
+                            const selected = (customContent.preferredInfographicLayouts || '')
+                              .split(',')
+                              .map((s) => s.trim())
+                              .filter(Boolean);
+                            if (!selected.length) return null;
+
+                            // Mirrors the mapping rules in supabase/functions/generate-slides/index.ts
+                            const LAYOUT_MAP: Record<
+                              string,
+                              { slide: string; note: string; icon: string }
+                            > = {
+                              timeline: { slide: 'timeline', note: 'Native — chronological steps with dates', icon: '🕒' },
+                              process: { slide: 'process', note: 'Native — 3–5 numbered workflow steps', icon: '➡️' },
+                              'comparison-table': { slide: 'comparison', note: 'Two-side compare (split by ---)', icon: '🆚' },
+                              funnel: { slide: 'process', note: 'Ordered steps, narrowing top → bottom', icon: '🔻' },
+                              pyramid: { slide: 'process', note: 'Ordered steps, layered base → apex', icon: '🔺' },
+                              quadrant: { slide: 'two-column', note: '2×2 framing via two-column halves', icon: '🧭' },
+                              venn: { slide: 'comparison', note: 'Two-set overlap as compare slide', icon: '🟣' },
+                              map: { slide: 'full-image', note: 'Hero image + region callouts', icon: '🗺️' },
+                              'icon-array': { slide: 'stats', note: 'Grouped KPIs with iconographic labels', icon: '👥' },
+                              gauge: { slide: 'stats', note: 'Single KPI as big-number stat card', icon: '⏱️' },
+                            };
+
+                            const grouped = selected.reduce<
+                              Record<string, { sources: { id: string; icon: string; note: string }[] }>
+                            >((acc, id) => {
+                              const m = LAYOUT_MAP[id];
+                              if (!m) return acc;
+                              if (!acc[m.slide]) acc[m.slide] = { sources: [] };
+                              acc[m.slide].sources.push({ id, icon: m.icon, note: m.note });
+                              return acc;
+                            }, {});
+
+                            const SLIDE_LABELS: Record<string, string> = {
+                              timeline: 'Timeline',
+                              process: 'Process',
+                              comparison: 'Comparison',
+                              'two-column': 'Two-column',
+                              stats: 'Stats',
+                              'full-image': 'Full image',
+                              chart: 'Chart',
+                            };
+
+                            return (
+                              <div className="mt-2 p-2.5 rounded-md border border-dashed border-border bg-muted/20">
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    Mapped slide layouts ({Object.keys(grouped).length})
+                                  </div>
+                                  <div className="text-[10px] text-muted-foreground italic">
+                                    Auto-mapped to closest available templates
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  {Object.entries(grouped).map(([slideId, g]) => (
+                                    <div
+                                      key={slideId}
+                                      className="flex items-start gap-2 px-2 py-1.5 rounded bg-background/60 border border-border"
+                                    >
+                                      <div className="flex flex-wrap items-center gap-1 min-w-0">
+                                        {g.sources.map((s) => (
+                                          <span
+                                            key={s.id}
+                                            title={s.note}
+                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted/60 text-[10px] text-foreground"
+                                          >
+                                            <span>{s.icon}</span>
+                                            <span className="capitalize">{s.id.replace('-', ' ')}</span>
+                                          </span>
+                                        ))}
+                                      </div>
+                                      <span className="text-muted-foreground text-xs leading-5 px-0.5">→</span>
+                                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-semibold uppercase tracking-wide">
+                                        {SLIDE_LABELS[slideId] || slideId} slide
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Narrative style */}
