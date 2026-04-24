@@ -549,6 +549,36 @@ export function AISlideGenerator({
                       {selectedAssetCount} asset{selectedAssetCount !== 1 ? 's' : ''} available
                     </span>
                   </div>
+
+                  {/* Image matching mode */}
+                  <div className="space-y-2 pt-3 border-t border-border/60">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                      <Wand2 className="h-3 w-3" />
+                      How to pick images
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {([
+                        { value: 'smart', label: 'Smart', desc: 'AI matches by description' },
+                        { value: 'category', label: 'Random', desc: 'Random from category' },
+                        { value: 'manual', label: 'Manual', desc: 'I\'ll pick after' },
+                      ] as const).map(opt => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setImageMatchMode(opt.value)}
+                          disabled={isGenerating}
+                          className={`flex flex-col items-center text-center rounded-md border p-2 transition-colors ${
+                            imageMatchMode === opt.value
+                              ? 'border-primary bg-primary/10'
+                              : 'border-border bg-background hover:bg-muted/40'
+                          }`}
+                        >
+                          <span className="text-[11px] font-semibold">{opt.label}</span>
+                          <span className="text-[10px] text-muted-foreground leading-tight mt-0.5">{opt.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
