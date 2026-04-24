@@ -1182,6 +1182,207 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
 
                     {advancedOpen && (
                       <div className="mt-2 p-3 rounded-lg border border-border bg-background/40 space-y-4">
+                        {/* One-click presets */}
+                        {(() => {
+                          type Preset = {
+                            id: string;
+                            label: string;
+                            icon: string;
+                            blurb: string;
+                            bundle: Record<string, string>;
+                          };
+                          const PRESETS: Preset[] = [
+                            {
+                              id: 'executive',
+                              label: 'Executive',
+                              icon: '👔',
+                              blurb: 'Headline + 1 chart per slide. Brand colors, minimal density.',
+                              bundle: {
+                                dataLens: 'trend,comparison',
+                                preferredInfographicLayouts: 'comparison-table,gauge',
+                                narrativeStyle: 'exec-summary',
+                                infoDensity: 'minimal',
+                                colorEmphasis: 'brand',
+                                annotateInsights: 'true',
+                                showSourceAttribution: 'true',
+                                normalizeUnits: 'true',
+                                inferBenchmarks: 'false',
+                                preferIconography: 'false',
+                                autoTitleInsights: 'true',
+                                preferredChartTypes: 'bar,stats',
+                              },
+                            },
+                            {
+                              id: 'analyst',
+                              label: 'Analyst',
+                              icon: '🧪',
+                              blurb: 'Dense, multi-series, benchmarks, sequential color.',
+                              bundle: {
+                                dataLens: 'trend,distribution,relationship,ranking',
+                                preferredInfographicLayouts: 'comparison-table,quadrant,funnel',
+                                narrativeStyle: 'analyst',
+                                infoDensity: 'dense',
+                                colorEmphasis: 'sequential',
+                                annotateInsights: 'true',
+                                showSourceAttribution: 'true',
+                                normalizeUnits: 'true',
+                                inferBenchmarks: 'true',
+                                preferIconography: 'false',
+                                autoTitleInsights: 'false',
+                                preferredChartTypes: 'line,bar',
+                              },
+                            },
+                            {
+                              id: 'marketing',
+                              label: 'Marketing',
+                              icon: '📣',
+                              blurb: 'Story-led, iconography, bold visuals, balanced density.',
+                              bundle: {
+                                dataLens: 'composition,comparison',
+                                preferredInfographicLayouts: 'icon-array,funnel,timeline,pyramid',
+                                narrativeStyle: 'story-led',
+                                infoDensity: 'balanced',
+                                colorEmphasis: 'brand',
+                                annotateInsights: 'true',
+                                showSourceAttribution: 'false',
+                                normalizeUnits: 'true',
+                                inferBenchmarks: 'false',
+                                preferIconography: 'true',
+                                autoTitleInsights: 'true',
+                                preferredChartTypes: 'pie,doughnut,stats',
+                              },
+                            },
+                            {
+                              id: 'investor',
+                              label: 'Investor',
+                              icon: '💼',
+                              blurb: 'Trend + ranking, benchmarks on, insight titles.',
+                              bundle: {
+                                dataLens: 'trend,ranking,comparison',
+                                preferredInfographicLayouts: 'comparison-table,funnel,quadrant',
+                                narrativeStyle: 'data-led',
+                                infoDensity: 'balanced',
+                                colorEmphasis: 'brand',
+                                annotateInsights: 'true',
+                                showSourceAttribution: 'true',
+                                normalizeUnits: 'true',
+                                inferBenchmarks: 'true',
+                                preferIconography: 'false',
+                                autoTitleInsights: 'true',
+                                preferredChartTypes: 'line,bar,stats',
+                              },
+                            },
+                            {
+                              id: 'editorial',
+                              label: 'Editorial',
+                              icon: '📰',
+                              blurb: 'Story-led, mono color, source attribution, low density.',
+                              bundle: {
+                                dataLens: 'trend,composition',
+                                preferredInfographicLayouts: 'timeline,map,icon-array',
+                                narrativeStyle: 'story-led',
+                                infoDensity: 'minimal',
+                                colorEmphasis: 'mono',
+                                annotateInsights: 'false',
+                                showSourceAttribution: 'true',
+                                normalizeUnits: 'true',
+                                inferBenchmarks: 'false',
+                                preferIconography: 'true',
+                                autoTitleInsights: 'true',
+                                preferredChartTypes: 'line,stats',
+                              },
+                            },
+                          ];
+
+                          const ADVANCED_KEYS = [
+                            'dataLens',
+                            'preferredInfographicLayouts',
+                            'narrativeStyle',
+                            'infoDensity',
+                            'colorEmphasis',
+                            'annotateInsights',
+                            'showSourceAttribution',
+                            'normalizeUnits',
+                            'inferBenchmarks',
+                            'preferIconography',
+                            'autoTitleInsights',
+                            'preferredChartTypes',
+                            'infographicNotes',
+                            'infographicPreset',
+                          ];
+
+                          const activePreset = customContent.infographicPreset || '';
+
+                          const applyPreset = (p: Preset) => {
+                            Object.entries(p.bundle).forEach(([k, v]) => setField(k, v));
+                            setField('infographicPreset', p.id);
+                          };
+
+                          const clearAdvanced = () => {
+                            ADVANCED_KEYS.forEach((k) => setField(k, ''));
+                          };
+
+                          const hasAnyAdvanced = ADVANCED_KEYS.some((k) => (customContent[k] || '').trim());
+
+                          return (
+                            <div className="-mx-1">
+                              <div className="px-1 mb-1.5 flex items-center justify-between gap-2">
+                                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                  Quick presets — apply a full bundle in one click
+                                </div>
+                                {hasAnyAdvanced && (
+                                  <button
+                                    type="button"
+                                    onClick={clearAdvanced}
+                                    className="text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+                                  >
+                                    Clear all
+                                  </button>
+                                )}
+                              </div>
+                              <div className="px-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5">
+                                {PRESETS.map((p) => {
+                                  const on = activePreset === p.id;
+                                  return (
+                                    <button
+                                      key={p.id}
+                                      type="button"
+                                      onClick={() => applyPreset(p)}
+                                      title={p.blurb}
+                                      className={
+                                        'group text-left p-2 rounded-md border transition-colors ' +
+                                        (on
+                                          ? 'border-primary bg-primary/10'
+                                          : 'border-border bg-muted/30 hover:bg-muted/60')
+                                      }
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-base leading-none">{p.icon}</span>
+                                        <span className="text-xs font-semibold text-foreground">
+                                          {p.label}
+                                        </span>
+                                        {on && (
+                                          <span className="ml-auto text-[9px] uppercase tracking-wide px-1 py-0.5 rounded bg-primary/20 text-primary font-semibold">
+                                            On
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="mt-1 text-[10px] text-muted-foreground leading-snug line-clamp-2">
+                                        {p.blurb}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {activePreset && (
+                                <div className="px-1 mt-1.5 text-[10px] text-muted-foreground italic">
+                                  Preset applied — tweak any control below to fine-tune.
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
+
                         {/* Data lens */}
                         <div>
                           <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
