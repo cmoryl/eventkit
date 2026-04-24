@@ -1647,20 +1647,112 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                           })}
                         </div>
 
-                        {/* Free-form interpretation notes */}
-                        <div>
-                          <label className="text-[11px] uppercase tracking-wide text-muted-foreground block mb-1.5">
-                            Interpretation notes (optional)
-                          </label>
-                          <textarea
-                            name="infographicNotes"
-                            value={customContent.infographicNotes || ''}
-                            onChange={onChange}
-                            rows={2}
-                            placeholder={`E.g. "Group revenue by region, not by product." · "Highlight Q3 dip with a callout." · "Compare us to industry avg of 12%."`}
-                            className={inputClassName + ' resize-y text-sm'}
-                          />
-                        </div>
+                        {/* Insight notes — highest-priority interpretation guidance */}
+                        {(() => {
+                          const value = customContent.infographicNotes || '';
+                          const charCount = value.length;
+                          const MAX = 600;
+
+                          const EXAMPLES = [
+                            { label: 'Group by region', text: 'Group revenue by region (EMEA / NA / APAC), not by product line.' },
+                            { label: 'Callout Q3 dip', text: 'Highlight the Q3 dip with a red callout and one-line cause.' },
+                            { label: 'Benchmark vs avg', text: 'Compare our metric to the industry average of 12% (add as reference line).' },
+                            { label: 'Lead with growth', text: 'Lead the deck with the YoY growth chart — that is the headline insight.' },
+                            { label: 'Hide outliers', text: 'Exclude the 2020 COVID outlier from the trend line; mention it in notes only.' },
+                            { label: 'Use brand red', text: 'Use brand red only for negative deltas; positive deltas in brand green.' },
+                            { label: 'Round to 1 decimal', text: 'Round all percentages to 1 decimal place; never show raw decimals like 0.1834.' },
+                            { label: 'Plain language', text: 'Avoid jargon — write titles a non-finance audience can understand.' },
+                          ];
+
+                          const SCAFFOLD =
+                            '• Headline insight: \n• Must-show chart: \n• Watch out for: \n• Audience-specific framing: ';
+
+                          const insertExample = (text: string) => {
+                            const current = value.trim();
+                            const next = current ? current + '\n• ' + text : '• ' + text;
+                            setField('infographicNotes', next.slice(0, MAX));
+                          };
+
+                          const insertScaffold = () => {
+                            const current = value.trim();
+                            const next = current ? current + '\n\n' + SCAFFOLD : SCAFFOLD;
+                            setField('infographicNotes', next.slice(0, MAX));
+                          };
+
+                          const overLimit = charCount > MAX;
+
+                          return (
+                            <div>
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                                    Insight notes
+                                  </label>
+                                  <span className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-primary/15 text-primary font-semibold">
+                                    Highest priority
+                                  </span>
+                                </div>
+                                <span
+                                  className={
+                                    'text-[10px] tabular-nums ' +
+                                    (overLimit ? 'text-destructive' : 'text-muted-foreground')
+                                  }
+                                >
+                                  {charCount}/{MAX}
+                                </span>
+                              </div>
+
+                              <p className="text-[11px] text-muted-foreground leading-snug mb-2">
+                                Anything you write here overrides every other setting. Use it for must-have framing, callouts, or audience cues.
+                              </p>
+
+                              <div className="flex flex-wrap gap-1 mb-1.5">
+                                <button
+                                  type="button"
+                                  onClick={insertScaffold}
+                                  className="px-2 py-0.5 rounded-md text-[10px] border border-dashed border-primary/50 text-primary hover:bg-primary/10 transition-colors"
+                                  title="Insert a 4-line bullet scaffold"
+                                >
+                                  + Scaffold
+                                </button>
+                                {EXAMPLES.map((ex) => (
+                                  <button
+                                    key={ex.label}
+                                    type="button"
+                                    onClick={() => insertExample(ex.text)}
+                                    className="px-2 py-0.5 rounded-md text-[10px] border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    title={ex.text}
+                                  >
+                                    {ex.label}
+                                  </button>
+                                ))}
+                                {value.trim() && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setField('infographicNotes', '')}
+                                    className="ml-auto px-2 py-0.5 rounded-md text-[10px] text-muted-foreground hover:text-destructive underline underline-offset-2"
+                                  >
+                                    Clear
+                                  </button>
+                                )}
+                              </div>
+
+                              <textarea
+                                name="infographicNotes"
+                                value={value}
+                                onChange={onChange}
+                                rows={5}
+                                maxLength={MAX + 50}
+                                placeholder={`Click an example chip above, or write your own. For example:\n\n• Headline insight: Retention drives 70% of new revenue — show this first.\n• Must-show chart: Cohort retention curve, last 8 quarters.\n• Watch out for: Q3 dip is a known data-quality issue, add asterisk.\n• Audience-specific framing: Board prefers absolute $ over %.`}
+                                className={
+                                  inputClassName +
+                                  ' resize-y text-sm leading-relaxed font-mono min-h-[140px] ' +
+                                  (overLimit ? 'border-destructive focus:border-destructive' : '')
+                                }
+                              />
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
