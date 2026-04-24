@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Loader2, Key } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Sparkles, Loader2, Key, Lock, Images } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SlideData } from './slideTypes';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,20 +25,66 @@ const GOOGLE_MODELS = [
   { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
 ];
 
+interface BrandHubImagery {
+  logos?: string[];
+  brandIcons?: string[];
+  patterns?: string[];
+  photography?: string[];
+  heroImages?: string[];
+  collateral?: string[];
+  social?: string[];
+  banners?: string[];
+  sponsors?: string[];
+}
+
 interface AISlideGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
   onSlidesGenerated: (slides: SlideData[]) => void;
   brandName?: string;
+  brandId?: string;
+  brandImagery?: BrandHubImagery;
 }
 
-export function AISlideGenerator({ isOpen, onClose, onSlidesGenerated, brandName }: AISlideGeneratorProps) {
+export function AISlideGenerator({
+  isOpen,
+  onClose,
+  onSlidesGenerated,
+  brandName,
+  brandId,
+  brandImagery,
+}: AISlideGeneratorProps) {
   const [topic, setTopic] = useState('');
   const [slideCount, setSlideCount] = useState('6');
   const [isGenerating, setIsGenerating] = useState(false);
   const [provider, setProvider] = useState<'lovable' | 'google'>('lovable');
   const [model, setModel] = useState('google/gemini-3-flash-preview');
   const [googleApiKey, setGoogleApiKey] = useState('');
+  const [brandHubOnly, setBrandHubOnly] = useState(false);
+
+  // Count of BrandHub assets available — used to decide if toggle is meaningful
+  const imageryStats = useMemo(() => {
+    if (!brandImagery) return { total: 0, byType: {} as Record<string, number> };
+    const byType: Record<string, number> = {};
+    let total = 0;
+    (Object.entries(brandImagery) as Array<[string, string[] | undefined]>).forEach(([k, arr]) => {
+      const n = arr?.length ?? 0;
+      if (n > 0) {
+        byType[k] = n;
+        total += n;
+      }
+    });
+    return { total, byType };
+  }, [brandImagery]);
+
+  const hasBrandHubAssets = imageryStats.total > 0;
+
+  // Default the toggle ON whenever the modal opens for a BrandHub-connected brand
+  useEffect(() => {
+    if (isOpen) {
+      setBrandHubOnly(hasBrandHubAssets);
+    }
+  }, [isOpen, hasBrandHubAssets]);
 
   const models = provider === 'lovable' ? LOVABLE_MODELS : GOOGLE_MODELS;
 
@@ -64,10 +111,13 @@ export function AISlideGenerator({ isOpen, onClose, onSlidesGenerated, brandName
         body: {
           topic: topic.trim(),
           slideCount: parseInt(slideCount),
-          brandContext: brandName ? { name: brandName } : undefined,
+          brandContext: brandName ? { name: brandName, brandId } : undefined,
           model,
           provider,
           googleApiKey: provider === 'google' ? googleApiKey.trim() : undefined,
+          // BrandHub-only constraints
+          brandHubOnly: brandHubOnly && hasBrandHubAssets,
+          approvedImagery: brandHubOnly && hasBrandHubAssets ? brandImagery : undefined,
         },
       });
 
@@ -87,10 +137,15 @@ export function AISlideGenerator({ isOpen, onClose, onSlidesGenerated, brandName
         body: s.body || undefined,
         notes: s.notes || undefined,
         variant: s.variant || 'default',
+        imageUrl: s.imageUrl || undefined,
       }));
 
       onSlidesGenerated(slides);
-      toast.success(`Generated ${slides.length} slides!`);
+      toast.success(
+        brandHubOnly && hasBrandHubAssets
+          ? `Generated ${slides.length} slides using BrandHub assets`
+          : `Generated ${slides.length} slides!`
+      );
       setTopic('');
       onClose();
     } catch (err: any) {
@@ -204,7 +259,46 @@ export function AISlideGenerator({ isOpen, onClose, onSlidesGenerated, brandName
             </Select>
           </div>
 
-          {brandName && (
+          {/* BrandHub-only toggle */}
+          {hasBrandHubAssets && (
+            <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-0.5 flex-1">
+                  <label
+                    htmlFor="brandhub-only"
+                    className="text-sm font-medium flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Lock className="h-3.5 w-3.5 text-primary" />
+                    Use only BrandHub assets
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    AI will draw imagery exclusively from your imported BrandHub library — no stock or generated images.
+                  </p>
+                </div>
+                <Switch
+                  id="brandhub-only"
+                  checked={brandHubOnly}
+                  onCheckedChange={setBrandHubOnly}
+                  disabled={isGenerating}
+                />
+              </div>
+              {brandHubOnly && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1 border-t border-border/60">
+                  <Images className="h-3 w-3" />
+                  <span>
+                    {imageryStats.total} approved asset{imageryStats.total !== 1 ? 's' : ''} available
+                    {Object.keys(imageryStats.byType).length > 0 && (
+                      <span className="text-muted-foreground/80">
+                        {' '}({Object.entries(imageryStats.byType).map(([k, n]) => `${n} ${k}`).join(', ')})
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {brandName && !hasBrandHubAssets && (
             <p className="text-xs text-muted-foreground">
               Brand: <span className="font-medium text-foreground">{brandName}</span> — AI will match your brand tone.
             </p>

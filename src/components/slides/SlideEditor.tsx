@@ -863,6 +863,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
       onClose={() => setIsAIGeneratorOpen(false)}
       onSlidesGenerated={handleAISlidesGenerated}
       brandName={brand?.name}
+      brandId={brand?.id}
+      brandImagery={brand?.styles?.all_imagery?.byType}
     />
     </>
   );
