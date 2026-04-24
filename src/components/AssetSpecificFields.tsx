@@ -555,13 +555,61 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                 Use <code className="px-1 py-0.5 rounded bg-muted">## Slide Title</code> on its own line
                 to lock in slide breaks, or just dump notes and let the AI structure it.
               </p>
+
+              {/* Example templates — click to insert/append a structure */}
+              <div className="mb-2">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                  Insert example template
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {SLIDE_BRIEF_TEMPLATES.map((tpl) => (
+                    <button
+                      key={tpl.id}
+                      type="button"
+                      onClick={() => {
+                        const current = (customContent.contentBrief || '').trim();
+                        const next = current
+                          ? current + '\n\n' + tpl.content
+                          : tpl.content;
+                        // Synthesize a change event so onChange handler treats it like typing
+                        const synthetic = {
+                          target: { name: 'contentBrief', value: next },
+                          currentTarget: { name: 'contentBrief', value: next },
+                        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                        onChange(synthetic);
+                      }}
+                      title={tpl.description}
+                      className="px-2.5 py-1 rounded-md text-xs border border-border bg-muted/40 hover:bg-muted hover:border-primary/50 text-foreground transition-colors flex items-center gap-1.5"
+                    >
+                      <span>{tpl.icon}</span>
+                      <span>{tpl.label}</span>
+                    </button>
+                  ))}
+                  {customContent.contentBrief && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const synthetic = {
+                          target: { name: 'contentBrief', value: '' },
+                          currentTarget: { name: 'contentBrief', value: '' },
+                        } as unknown as React.ChangeEvent<HTMLTextAreaElement>;
+                        onChange(synthetic);
+                      }}
+                      className="px-2.5 py-1 rounded-md text-xs border border-border/60 bg-transparent hover:bg-destructive/10 hover:border-destructive/50 text-muted-foreground hover:text-destructive transition-colors ml-auto"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <textarea
                 name="contentBrief"
                 value={customContent.contentBrief || ''}
                 onChange={onChange}
                 rows={10}
-                placeholder={`Example:\n\n## Why now\nMarket grew 40% YoY. Competitors raising prices. Window closes Q3.\n\n## Our advantage\n- 3x faster onboarding\n- 92% retention\n- Proprietary dataset\n\n## The ask\n$2M to scale GTM team across EMEA.`}
-                className={inputClassName + ' resize-y font-mono text-sm leading-relaxed min-h-[220px]'}
+                placeholder={`Click a template above, or type your own:\n\n## Why now\nMarket grew 40% YoY. Competitors raising prices. Window closes Q3.\n\n## Our advantage\n- 3x faster onboarding\n- 92% retention\n- Proprietary dataset\n\n## The ask\n$2M to scale GTM team across EMEA.`}
+                className={inputClassName + ' resize-y font-mono text-sm leading-relaxed min-h-[260px]'}
               />
             </div>
 
