@@ -1662,6 +1662,213 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                             placeholder: string;
                           };
 
+                          // ── Derive dynamic chips from the user's actual keyStats + selected layouts ──
+                          type ParsedStat = {
+                            raw: string;
+                            label: string;       // e.g. "Retention", "ARR", "Q3 Revenue"
+                            valueText: string;   // e.g. "92%", "$4.2M", "3x"
+                            unit: 'percent' | 'currency' | 'multiplier' | 'count' | null;
+                            isTimeSeries: boolean;
+                            timeKey?: string;    // "2023", "Q3", "Mar"
+                          };
+
+                          const parseStat = (line: string): ParsedStat | null => {
+                            const t = line.trim();
+                            if (!t) return null;
+                            const timeMatch = t.match(/^(\d{4}|q[1-4]|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b/i);
+                            const valueMatch = t.match(/(\$?\s?\d[\d,.]*\s?(?:[kmb])?%?|\d+(?:\.\d+)?x)/i);
+                            const valueText = valueMatch ? valueMatch[0].replace(/\s+/g, '') : '';
+                            let unit: ParsedStat['unit'] = null;
+                            if (/%/.test(valueText)) unit = 'percent';
+                            else if (/^\$/.test(valueText) || /[kmb]$/i.test(valueText)) unit = 'currency';
+                            else if (/x$/i.test(valueText)) unit = 'multiplier';
+                            else if (valueText) unit = 'count';
+                            // Label = strip leading time + the value to find the metric noun
+                            let label = t
+                              .replace(/^(\d{4}|q[1-4]|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\b\s*[:\-–]?\s*/i, '')
+                              .replace(valueText, '')
+                              .replace(/[:\-–=]/g, ' ')
+                              .replace(/\s+/g, ' ')
+                              .trim();
+                            // Trim trailing words like "growth", "rate" only if label is too long
+                            if (label.length > 32) label = label.split(/\s+/).slice(0, 4).join(' ');
+                            if (!label) label = t.split(/\s+/).slice(0, 3).join(' ');
+                            return {
+                              raw: t,
+                              label: label || 'metric',
+                              valueText,
+                              unit,
+                              isTimeSeries: !!timeMatch,
+                              timeKey: timeMatch?.[0],
+                            };
+                          };
+
+                          const rawStats: string = (customContent as any).keyStats || '';
+                          const parsedStats: ParsedStat[] = rawStats
+                            .split('\n')
+                            .map(parseStat)
+                            .filter((s): s is ParsedStat => !!s);
+
+                          const selectedLayouts: string[] = ((customContent as any).preferredInfographicLayouts || '')
+                            .split(',')
+                            .map((s: string) => s.trim().toLowerCase())
+                            .filter(Boolean);
+
+                          const hasDataset = parsedStats.length > 0;
+                          const timeSeries = parsedStats.filter((s) => s.isTimeSeries);
+                          const percentages = parsedStats.filter((s) => s.unit === 'percent');
+                          const currencies = parsedStats.filter((s) => s.unit === 'currency');
+                          const topStat = parsedStats[0];
+                          const biggestStat =
+                            currencies[0] || percentages[0] || topStat;
+                          const labelList = parsedStats.slice(0, 3).map((s) => s.label).filter(Boolean);
+
+                          // Cap a label so chip text stays short
+                          const cap = (s: string, n = 22) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+
+                          const dynamicInsightChips: { label: string; text: string }[] = [];
+                          if (hasDataset) {
+                            if (biggestStat?.valueText) {
+                              dynamicInsightChips.push({
+                                label: `Lead with ${cap(biggestStat.label, 14)}`,
+                                text: `Lead the deck with ${biggestStat.label} (${biggestStat.valueText}) — that is the headline insight.`,
+                              });
+                            }
+                            if (timeSeries.length >= 2) {
+                              dynamicInsightChips.push({
+                                label: 'Show full trend',
+                                text: `Show the full ${timeSeries[0].label || 'metric'} trend across ${timeSeries.length} periods, not just the latest value.`,
+                              });
+                            }
+                            if (percentages.length) {
+                              dynamicInsightChips.push({
+                                label: 'Round %s to 1dp',
+                                text: `Round all percentages (${percentages.slice(0, 2).map((p) => p.valueText).join(', ')}) to 1 decimal place.`,
+                              });
+                            }
+                            if (currencies.length) {
+                              dynamicInsightChips.push({
+                                label: 'Consistent $ units',
+                                text: `Keep currency units consistent across charts — use ${currencies[0].valueText.replace(/[\d.]/g, '').trim() || '$M'} suffix everywhere.`,
+                              });
+                            }
+                            if (labelList.length >= 2) {
+                              dynamicInsightChips.push({
+                                label: 'Group by metric',
+                                text: `Group slides by metric family: ${labelList.join(', ')} — one slide per group.`,
+                              });
+                            }
+                            if (selectedLayouts.includes('funnel') || selectedLayouts.includes('pyramid')) {
+                              dynamicInsightChips.push({
+                                label: 'Funnel order',
+                                text: `Order the funnel top → bottom by descending value (largest stage first).`,
+                              });
+                            }
+                            if (selectedLayouts.includes('quadrant')) {
+                              dynamicInsightChips.push({
+                                label: 'Quadrant axes',
+                                text: `Label the quadrant axes explicitly (impact × effort, or value × volume) and place ${biggestStat?.label || 'top metric'} in the upper-right.`,
+                              });
+                            }
+                            if (selectedLayouts.includes('comparison-table') || selectedLayouts.includes('venn')) {
+                              dynamicInsightChips.push({
+                                label: 'Highlight overlap',
+                                text: `In the comparison, highlight the shared driver between ${labelList.slice(0, 2).join(' and ') || 'segments'} in brand color.`,
+                              });
+                            }
+                          }
+
+                          const dynamicExecChips: { label: string; text: string }[] = [];
+                          if (hasDataset) {
+                            const top3 = parsedStats.slice(0, 3).map((s) => `${s.label} ${s.valueText}`.trim()).join(', ');
+                            if (top3) {
+                              dynamicExecChips.push({
+                                label: 'Top 3 numbers',
+                                text: `Top 3 numbers to surface on the summary slide: ${top3}.`,
+                              });
+                            }
+                            if (biggestStat) {
+                              dynamicExecChips.push({
+                                label: 'Bottom line',
+                                text: `Bottom line: ${biggestStat.label} reached ${biggestStat.valueText} — make this the opening sentence.`,
+                              });
+                            }
+                            if (timeSeries.length >= 2) {
+                              const first = timeSeries[0];
+                              const last = timeSeries[timeSeries.length - 1];
+                              dynamicExecChips.push({
+                                label: 'Trend framing',
+                                text: `Frame the story as a trajectory: ${first.timeKey} → ${last.timeKey} on ${first.label || 'the key metric'}.`,
+                              });
+                            }
+                            if (currencies.length) {
+                              dynamicExecChips.push({
+                                label: 'Lead with $ impact',
+                                text: `Open with the financial impact (${currencies[0].label} ${currencies[0].valueText}) before any operational metrics.`,
+                              });
+                            }
+                            if (percentages.length >= 2) {
+                              dynamicExecChips.push({
+                                label: 'Efficiency frame',
+                                text: `Frame as an efficiency story using ${percentages.slice(0, 2).map((p) => `${p.label} ${p.valueText}`).join(' and ')}.`,
+                              });
+                            }
+                            dynamicExecChips.push({
+                              label: 'Closing ask',
+                              text: `End with a clear next step tied to ${biggestStat?.label || 'the headline metric'} — make the ask explicit.`,
+                            });
+                          }
+
+                          const dynamicChartChips: { label: string; text: string }[] = [];
+                          if (hasDataset) {
+                            if (timeSeries.length >= 2) {
+                              const first = timeSeries[0];
+                              const last = timeSeries[timeSeries.length - 1];
+                              dynamicChartChips.push({
+                                label: `Annotate ${cap(last.timeKey || 'latest', 10)}`,
+                                text: `On the ${first.label || 'trend'} line chart, annotate the ${last.timeKey} value (${last.valueText}) with a one-line cause.`,
+                              });
+                              dynamicChartChips.push({
+                                label: 'Add prior period',
+                                text: `Add a faint prior-period series to the ${first.label || 'trend'} chart so ${first.timeKey} → ${last.timeKey} growth is visible.`,
+                              });
+                            }
+                            if (percentages.length) {
+                              dynamicChartChips.push({
+                                label: `Target line at ${percentages[0].valueText}`,
+                                text: `Add a dashed target line at ${percentages[0].valueText} to the ${percentages[0].label || 'percentage'} chart.`,
+                              });
+                            }
+                            if (currencies.length >= 2) {
+                              dynamicChartChips.push({
+                                label: 'Highlight top bar',
+                                text: `In the bar chart, highlight ${currencies[0].label} (${currencies[0].valueText}) in brand color; mute the rest.`,
+                              });
+                            }
+                            if (biggestStat) {
+                              dynamicChartChips.push({
+                                label: `Callout ${cap(biggestStat.label, 12)}`,
+                                text: `On the stats slide, give ${biggestStat.label} (${biggestStat.valueText}) the largest visual weight.`,
+                              });
+                            }
+                            if (parsedStats.length >= 4) {
+                              dynamicChartChips.push({
+                                label: 'Cap to top 4',
+                                text: `Cap each chart to the top 4 categories from the dataset; group the rest as "Other".`,
+                              });
+                            }
+                            if (selectedLayouts.includes('icon-array') || selectedLayouts.includes('gauge')) {
+                              dynamicChartChips.push({
+                                label: 'Single big number',
+                                text: `Render ${biggestStat?.label || 'the headline KPI'} (${biggestStat?.valueText || ''}) as a single oversized number with one supporting line.`.trim(),
+                              });
+                            }
+                            dynamicChartChips.push({
+                              label: 'Source footnote',
+                              text: `Add a source footnote on every chart slide derived from this dataset (date range and source system).`,
+                            });
+                          }
+
                           const SECTIONS: NoteSection[] = [
                             {
                               field: 'infographicNotes',
@@ -1671,16 +1878,18 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                               blurb: 'Anything you write here overrides every other setting. Use it for must-have framing, callouts, or audience cues.',
                               scaffold:
                                 '• Headline insight: \n• Must-show chart: \n• Watch out for: \n• Audience-specific framing: ',
-                              examples: [
-                                { label: 'Group by region', text: 'Group revenue by region (EMEA / NA / APAC), not by product line.' },
-                                { label: 'Callout Q3 dip', text: 'Highlight the Q3 dip with a red callout and one-line cause.' },
-                                { label: 'Benchmark vs avg', text: 'Compare our metric to the industry average of 12% (add as reference line).' },
-                                { label: 'Lead with growth', text: 'Lead the deck with the YoY growth chart — that is the headline insight.' },
-                                { label: 'Hide outliers', text: 'Exclude the 2020 COVID outlier from the trend line; mention it in notes only.' },
-                                { label: 'Use brand red', text: 'Use brand red only for negative deltas; positive deltas in brand green.' },
-                                { label: 'Round to 1 decimal', text: 'Round all percentages to 1 decimal place; never show raw decimals like 0.1834.' },
-                                { label: 'Plain language', text: 'Avoid jargon — write titles a non-finance audience can understand.' },
-                              ],
+                              examples: dynamicInsightChips.length
+                                ? dynamicInsightChips
+                                : [
+                                    { label: 'Group by region', text: 'Group revenue by region (EMEA / NA / APAC), not by product line.' },
+                                    { label: 'Callout Q3 dip', text: 'Highlight the Q3 dip with a red callout and one-line cause.' },
+                                    { label: 'Benchmark vs avg', text: 'Compare our metric to the industry average of 12% (add as reference line).' },
+                                    { label: 'Lead with growth', text: 'Lead the deck with the YoY growth chart — that is the headline insight.' },
+                                    { label: 'Hide outliers', text: 'Exclude the 2020 COVID outlier from the trend line; mention it in notes only.' },
+                                    { label: 'Use brand red', text: 'Use brand red only for negative deltas; positive deltas in brand green.' },
+                                    { label: 'Round to 1 decimal', text: 'Round all percentages to 1 decimal place; never show raw decimals like 0.1834.' },
+                                    { label: 'Plain language', text: 'Avoid jargon — write titles a non-finance audience can understand.' },
+                                  ],
                               placeholder:
                                 'Click an example chip above, or write your own. For example:\n\n• Headline insight: Retention drives 70% of new revenue — show this first.\n• Must-show chart: Cohort retention curve, last 8 quarters.\n• Watch out for: Q3 dip is a known data-quality issue, add asterisk.\n• Audience-specific framing: Board prefers absolute $ over %.',
                             },
@@ -1692,14 +1901,16 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                               blurb: 'Drives the opening summary slide and the closing takeaways. Write the one-page story you want a busy exec to remember.',
                               scaffold:
                                 '• Bottom line: \n• Why it matters: \n• Top 3 numbers: \n• The ask / next step: ',
-                              examples: [
-                                { label: 'Bottom line', text: 'Bottom line: we hit 118% of plan with 22% lower CAC.' },
-                                { label: '3 takeaways', text: 'Surface exactly 3 takeaways: growth, efficiency, risk — in that order.' },
-                                { label: 'Why it matters', text: 'Frame why it matters for FY26 planning, not just this quarter.' },
-                                { label: 'Make the ask', text: 'End with a clear ask: $2M reallocation from paid to product.' },
-                                { label: 'No deep dives', text: 'Keep the summary slide to 4 lines max — no charts, no jargon.' },
-                                { label: 'Audience: Board', text: 'Tone: board-ready. Confident, numerical, no hedging.' },
-                              ],
+                              examples: dynamicExecChips.length
+                                ? dynamicExecChips
+                                : [
+                                    { label: 'Bottom line', text: 'Bottom line: we hit 118% of plan with 22% lower CAC.' },
+                                    { label: '3 takeaways', text: 'Surface exactly 3 takeaways: growth, efficiency, risk — in that order.' },
+                                    { label: 'Why it matters', text: 'Frame why it matters for FY26 planning, not just this quarter.' },
+                                    { label: 'Make the ask', text: 'End with a clear ask: $2M reallocation from paid to product.' },
+                                    { label: 'No deep dives', text: 'Keep the summary slide to 4 lines max — no charts, no jargon.' },
+                                    { label: 'Audience: Board', text: 'Tone: board-ready. Confident, numerical, no hedging.' },
+                                  ],
                               placeholder:
                                 'Frame the headline story for the executive summary slide. For example:\n\n• Bottom line: Q4 closed at 118% of plan, ARR up 34% YoY.\n• Why it matters: validates the enterprise pivot from Q2.\n• Top 3 numbers: $42M ARR, 92% NRR, 18-month payback.\n• The ask: approve hiring 6 enterprise AEs in Q1.',
                             },
@@ -1711,15 +1922,17 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                               blurb: 'Specific things to call out on individual chart and stats slides — spikes, dips, thresholds, source caveats.',
                               scaffold:
                                 '• Chart: \n  – Callout: \n  – Why: \n• Chart: \n  – Callout: \n  – Why: ',
-                              examples: [
-                                { label: 'Annotate spike', text: 'On the revenue line, annotate the Mar spike with "EMEA launch".' },
-                                { label: 'Add target line', text: 'Add a dashed target line at 80% to the retention chart.' },
-                                { label: 'Highlight bar', text: 'In the channel-mix bar chart, highlight "Organic" in brand color.' },
-                                { label: 'Source caveat', text: 'Stats slide: footnote that NPS is from internal survey, n=412.' },
-                                { label: 'Drop the legend', text: 'Pie chart: drop the legend, label slices directly with %.' },
-                                { label: 'Compare YoY', text: 'On every bar chart, add a faint YoY-prior series for context.' },
-                                { label: 'Cap the axis', text: 'Cap the y-axis at 100 so the COVID outlier does not flatten the trend.' },
-                              ],
+                              examples: dynamicChartChips.length
+                                ? dynamicChartChips
+                                : [
+                                    { label: 'Annotate spike', text: 'On the revenue line, annotate the Mar spike with "EMEA launch".' },
+                                    { label: 'Add target line', text: 'Add a dashed target line at 80% to the retention chart.' },
+                                    { label: 'Highlight bar', text: 'In the channel-mix bar chart, highlight "Organic" in brand color.' },
+                                    { label: 'Source caveat', text: 'Stats slide: footnote that NPS is from internal survey, n=412.' },
+                                    { label: 'Drop the legend', text: 'Pie chart: drop the legend, label slices directly with %.' },
+                                    { label: 'Compare YoY', text: 'On every bar chart, add a faint YoY-prior series for context.' },
+                                    { label: 'Cap the axis', text: 'Cap the y-axis at 100 so the COVID outlier does not flatten the trend.' },
+                                  ],
                               placeholder:
                                 'List per-chart instructions. For example:\n\n• Chart: ARR over time\n  – Callout: annotate the Q2 inflection with "Pricing change".\n  – Why: explains the slope shift.\n• Chart: Channel mix\n  – Callout: highlight Organic at 38%.\n  – Why: it is the headline efficiency story.',
                             },
@@ -1750,6 +1963,12 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                                   setField(section.field, next.slice(0, MAX));
                                 };
 
+                                const isDynamic =
+                                  hasDataset &&
+                                  ((section.field === 'infographicNotes' && dynamicInsightChips.length > 0) ||
+                                    (section.field === 'executiveSummaryNotes' && dynamicExecChips.length > 0) ||
+                                    (section.field === 'chartCalloutNotes' && dynamicChartChips.length > 0));
+
                                 return (
                                   <div key={section.field}>
                                     <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -1765,6 +1984,14 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                                         >
                                           {section.badge}
                                         </span>
+                                        {isDynamic && (
+                                          <span
+                                            className="text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                            title="Example chips below are generated from your Key Stats and selected infographic layouts."
+                                          >
+                                            ✨ From your data
+                                          </span>
+                                        )}
                                       </div>
                                       <span
                                         className={
@@ -1794,7 +2021,12 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
                                           key={ex.label}
                                           type="button"
                                           onClick={() => insertExample(ex.text)}
-                                          className="px-2 py-0.5 rounded-md text-[10px] border border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                          className={
+                                            'px-2 py-0.5 rounded-md text-[10px] border transition-colors ' +
+                                            (isDynamic
+                                              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
+                                              : 'border-border bg-muted/40 hover:bg-muted text-muted-foreground hover:text-foreground')
+                                          }
                                           title={ex.text}
                                         >
                                           {ex.label}
