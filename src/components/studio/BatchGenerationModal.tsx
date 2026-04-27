@@ -163,6 +163,40 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
     setIsRunning(true);
     abortRef.current = false;
+
+    // Generate master style direction before batch starts if not already done
+    if (!styleAnchor.hasMasterDirection) {
+      const palette = ((effectiveBrand?.styles as any)?.color_palette || []).map((c: any) => ({
+        hex: typeof c === 'string' ? c : c.hex || '#667eea',
+        name: typeof c === 'string' ? c : c.name || 'Color',
+        rgb: '', cmyk: '', hsv: '', pantone: '',
+      }));
+      const dir = await generateMasterStyleDirection({
+        eventDetails: {
+          name: eventName,
+          description: '',
+          date: '', location: '', website: '', email: '',
+          incorporateLocationStyle: false,
+          eventType: (effectiveBrand?.styles as any)?.industry || 'conference',
+        } as any,
+        brandContext: effectiveBrand?.styles ? {
+          brandName: effectiveBrand.name,
+          brandVoice: (effectiveBrand.styles as any)?.brand_voice,
+          imageryStyle: (effectiveBrand.styles as any)?.imagery_style,
+          patternStyle: (effectiveBrand.styles as any)?.pattern_style,
+          moodKeywords: (effectiveBrand.styles as any)?.mood_keywords,
+          headingFont: (effectiveBrand.styles as any)?.heading_font,
+          bodyFont: (effectiveBrand.styles as any)?.body_font,
+        } as any : null,
+        colorPalette: palette,
+        styleDescription: (effectiveBrand?.styles as any)?.imagery_style,
+      }).catch(() => null);
+      if (dir) {
+        styleAnchor.setMasterDirection(dir);
+        console.log('[BatchGen] Master style direction generated');
+      }
+    }
+
     let batchAnchorUrl = styleAnchor.anchorImageUrl;
 
     const pending = results

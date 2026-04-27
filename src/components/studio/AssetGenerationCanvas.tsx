@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, Sparkles, RefreshCw, Check, ArrowLeft, Loader2, 
-  Wand2, Download, ChevronRight, Palette, ZoomIn, ZoomOut, Maximize2, Minus, Plus
+import {
+  X, Sparkles, RefreshCw, Check, ArrowLeft, Loader2,
+  Wand2, Download, ChevronRight, Palette, ZoomIn, ZoomOut, Maximize2, Minus, Plus,
+  Pin, Link2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -613,12 +614,19 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       // Convert logo URL to base64 if needed
       const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
 
+      // Build master direction block for prompt injection (consistency with initial generation)
+      const regenMasterDirectionBlock = styleAnchor.masterDirection
+        ? buildMasterDirectionPromptBlock(styleAnchor.masterDirection)
+        : '';
+
       const { data, error } = await supabase.functions.invoke('generate-image', {
         body: {
           prompt,
           assetType,
           eventName,
           templateId: templateId || undefined,
+          masterDirection: regenMasterDirectionBlock || undefined,
+          styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
           brandContext: effectiveBrand ? {
             brandName: effectiveBrand.name,
             primaryColor: effectiveBrand.styles?.primary_color,
@@ -852,13 +860,21 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               compact
             />
             
-            <Button 
-              variant="outline" 
+            {/* Kit-consistent badge — shown when master direction or style anchor is active */}
+            {(styleAnchor.hasMasterDirection || !!styleAnchor.anchorImageUrl) && (
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs font-medium text-amber-600 dark:text-amber-400">
+                <Link2 className="h-3.5 w-3.5" />
+                Kit-consistent
+              </div>
+            )}
+
+            <Button
+              variant="outline"
               size="sm"
               onClick={handleRegenerateAll}
               disabled={isGenerating}
               className="gap-2"
-              style={hasBrandColors ? { 
+              style={hasBrandColors ? {
                 borderColor: `${brandPrimary}40`,
                 color: brandPrimary
               } : undefined}
@@ -995,6 +1011,14 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                       V{index + 1}
                     </div>
 
+                    {/* Anchor Badge — always visible when this variation is the style anchor */}
+                    {variation.status === 'complete' && styleAnchor.anchorImageUrl === variation.imageUrl && (
+                      <div className="absolute bottom-2 left-2 z-10 flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-500/80 backdrop-blur-sm rounded text-white text-[9px] font-medium">
+                        <Pin className="h-2.5 w-2.5" />
+                        anchor
+                      </div>
+                    )}
+
                     {/* Selection Indicator */}
                     {selectedVariation === variation.id && (
                       <div className="absolute top-2 right-2 z-10 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
@@ -1002,17 +1026,38 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                       </div>
                     )}
 
-                    {/* Regenerate Button */}
+                    {/* Action Buttons: Regenerate + Pin as Style Anchor */}
                     {variation.status === 'complete' && selectedVariation !== variation.id && (
-                      <button
-                        className="absolute top-2 right-2 z-10 p-1 bg-black/50 backdrop-blur-sm rounded text-white opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRegenerateVariation(variation.id);
-                        }}
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                      </button>
+                      <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button
+                          className="p-1 bg-black/50 backdrop-blur-sm rounded text-white hover:bg-black/70 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRegenerateVariation(variation.id);
+                          }}
+                          title="Regenerate this variation"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </button>
+                        <button
+                          className={cn(
+                            "p-1 backdrop-blur-sm rounded text-white transition-all",
+                            styleAnchor.anchorImageUrl === variation.imageUrl
+                              ? "bg-amber-500/80"
+                              : "bg-black/50 hover:bg-amber-500/70"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (variation.imageUrl) {
+                              styleAnchor.setAnchorImage(variation.imageUrl, assetType);
+                              toast.success('Set as style anchor for kit consistency');
+                            }
+                          }}
+                          title={styleAnchor.anchorImageUrl === variation.imageUrl ? 'Kit style anchor (pinned)' : 'Pin as style anchor'}
+                        >
+                          <Pin className="h-3 w-3" />
+                        </button>
+                      </div>
                     )}
 
                     {/* Content */}
