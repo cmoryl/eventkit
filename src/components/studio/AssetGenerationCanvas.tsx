@@ -149,12 +149,12 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
     }
   }, [imageNaturalSize, fitToWindow]);
 
-  // Apply saved logo placement when it loads from DB
+  // Apply saved logo placement when it loads from DB (only if user hasn't set a placement yet)
   useEffect(() => {
     if (savedPlacement && !logoPlacement) {
       setLogoPlacement(savedPlacement);
     }
-  }, [savedPlacement]);
+  }, [savedPlacement, logoPlacement]);
 
   // Keep previewImgSize in sync with zoom and natural size
   useEffect(() => {
@@ -201,41 +201,45 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
 
   // Generate or reuse Master Style Direction when canvas opens
   useEffect(() => {
-    if (isOpen && !styleAnchor.hasMasterDirection) {
-      const palette = (brand?.styles?.color_palette || []).map((c: any) => ({
-        hex: typeof c === 'string' ? c : c.hex || '#667eea',
-        name: typeof c === 'string' ? c : c.name || 'Color',
-        rgb: '', cmyk: '', hsv: '', pantone: '',
-      }));
-      const eventDetails = {
-        name: eventName,
-        description: assetDescription || '',
-        date: '', location: '', website: '', email: '',
-        incorporateLocationStyle: false,
-        eventType: (brand?.styles?.industry as any) || 'conference',
-      } as any;
-      generateMasterStyleDirection({
-        eventDetails,
-        brandContext: brand?.styles ? {
-          brandName: brand.name,
-          archetype: (brand.styles as any).archetype,
-          brandVoice: brand.styles.brand_voice,
-          imageryStyle: brand.styles.imagery_style,
-          patternStyle: brand.styles.pattern_style,
-          moodKeywords: brand.styles.mood_keywords,
-          headingFont: brand.styles.heading_font,
-          bodyFont: brand.styles.body_font,
-        } as any : null,
-        colorPalette: palette,
-        styleDescription: brand?.styles?.imagery_style,
-      }).then(dir => {
-        if (dir) {
-          styleAnchor.setMasterDirection(dir);
-          console.log('[StyleAnchor] Master direction generated');
-        }
-      }).catch(console.warn);
-    }
-  }, [isOpen]);
+    if (!isOpen || styleAnchor.hasMasterDirection) return;
+
+    let isMounted = true;
+    const palette = (brand?.styles?.color_palette || []).map((c: any) => ({
+      hex: typeof c === 'string' ? c : c.hex || '#667eea',
+      name: typeof c === 'string' ? c : c.name || 'Color',
+      rgb: '', cmyk: '', hsv: '', pantone: '',
+    }));
+    const eventDetails = {
+      name: eventName,
+      description: assetDescription || '',
+      date: '', location: '', website: '', email: '',
+      incorporateLocationStyle: false,
+      eventType: (brand?.styles?.industry as any) || 'conference',
+    } as any;
+    generateMasterStyleDirection({
+      eventDetails,
+      brandContext: brand?.styles ? {
+        brandName: brand.name,
+        archetype: (brand.styles as any).archetype,
+        brandVoice: brand.styles.brand_voice,
+        imageryStyle: brand.styles.imagery_style,
+        patternStyle: brand.styles.pattern_style,
+        moodKeywords: brand.styles.mood_keywords,
+        headingFont: brand.styles.heading_font,
+        bodyFont: brand.styles.body_font,
+      } as any : null,
+      colorPalette: palette,
+      styleDescription: brand?.styles?.imagery_style,
+    }).then(dir => {
+      if (isMounted && dir) {
+        styleAnchor.setMasterDirection(dir);
+        console.log('[StyleAnchor] Master direction generated');
+      }
+    }).catch(console.warn);
+
+    return () => { isMounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, brand?.id]);
 
   // Initialize when opened - show brief modal first
   useEffect(() => {
@@ -543,12 +547,13 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const handleSelectVariation = (variationId: string) => {
     const variation = variations.find(v => v.id === variationId);
     if (variation?.status !== 'complete' || !variation.imageUrl) return;
-    
+
+    const imageUrl = variation.imageUrl;
     setSelectedVariation(variationId);
-    
-    // Auto-open editor after selection
+
+    // Capture imageUrl before the timeout so it doesn't go stale if variations update
     setTimeout(() => {
-      setEditingImageUrl(variation.imageUrl);
+      setEditingImageUrl(imageUrl);
       setShowEditor(true);
     }, 300);
   };

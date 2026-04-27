@@ -89,7 +89,10 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   const totalCount = results.length;
   const progressPct = totalCount > 0 ? ((completedCount + errorCount) / totalCount) * 100 : 0;
 
-  const generateOne = useCallback(async (assetType: string, anchorUrl?: string): Promise<{ imageUrl?: string; error?: string }> => {
+  // masterDirectionBlock is passed explicitly from startBatch to avoid reading a stale
+  // styleAnchor closure — React context updates are async and won't be visible to
+  // callbacks already captured in useCallback closures.
+  const generateOne = useCallback(async (assetType: string, anchorUrl?: string, masterDirectionBlock?: string): Promise<{ imageUrl?: string; error?: string }> => {
     const info = assetDisplayInfo[assetType];
     const prompt = compileGenerationPrompt({
       basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: modern and brand-consistent.`,
@@ -100,11 +103,6 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       },
     });
 
-    // Build master direction block
-    const masterDirectionBlock = styleAnchor.masterDirection
-      ? buildMasterDirectionPromptBlock(styleAnchor.masterDirection)
-      : '';
-
     try {
       const logoPayload = await normalizeImageForGeneration(effectiveLogoUrl);
 
@@ -114,7 +112,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           assetType,
           eventName,
           masterDirection: masterDirectionBlock || undefined,
-          styleAnchorImage: anchorUrl || styleAnchor.anchorImageUrl || undefined,
+          styleAnchorImage: anchorUrl || undefined,
           brandContext: effectiveBrand ? {
             brandName: effectiveBrand.name,
             primaryColor: effectiveBrand.styles?.primary_color,
@@ -164,8 +162,14 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     setIsRunning(true);
     abortRef.current = false;
 
-    // Generate master style direction before batch starts if not already done
-    if (!styleAnchor.hasMasterDirection) {
+    // Generate (or reuse) master style direction and build the prompt block locally.
+    // We do NOT read it back from styleAnchor because setMasterDirection triggers an
+    // async React re-render — by the time generateOne runs, styleAnchor in its closure
+    // would still be stale. Passing the block as a direct parameter avoids this entirely.
+    let batchMasterDirectionBlock = '';
+    if (styleAnchor.hasMasterDirection && styleAnchor.masterDirection) {
+      batchMasterDirectionBlock = buildMasterDirectionPromptBlock(styleAnchor.masterDirection);
+    } else {
       const palette = ((effectiveBrand?.styles as any)?.color_palette || []).map((c: any) => ({
         hex: typeof c === 'string' ? c : c.hex || '#667eea',
         name: typeof c === 'string' ? c : c.name || 'Color',
@@ -193,6 +197,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       }).catch(() => null);
       if (dir) {
         styleAnchor.setMasterDirection(dir);
+        batchMasterDirectionBlock = buildMasterDirectionPromptBlock(dir);
         console.log('[BatchGen] Master style direction generated');
       }
     }
@@ -222,7 +227,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
       const batchResults = await Promise.allSettled(
         batch.map(async (assetType) => {
-          const res = await generateOne(assetType, batchAnchorUrl || undefined);
+          const res = await generateOne(assetType, batchAnchorUrl || undefined, batchMasterDirectionBlock || undefined);
           return { assetType, ...res };
         })
       );
