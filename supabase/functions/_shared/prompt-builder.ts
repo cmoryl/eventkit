@@ -16,109 +16,140 @@ export interface LogoAnalysis {
 }
 
 /**
- * Build brand context string from brand data
+ * Build brand context string from brand data.
+ *
+ * Output structure (priority order for the AI):
+ *   1. NON-NEGOTIABLE BRAND REQUIREMENTS — colors, restricted elements
+ *   2. BRAND DESIGN GUIDANCE (preferred) — voice, mood, style
+ *   3. BRAND INTELLIGENCE — photography rules, logo rules, approved layouts
  */
 export function buildBrandContext(brandContext: BrandContext | undefined): string {
   if (!brandContext) return '';
-  
-  const brandParts: string[] = [];
-  
-  // Brand identity
-  if (brandContext.brandName) {
-    brandParts.push(`This design is for the brand "${brandContext.brandName}".`);
+
+  // ── 1. NON-NEGOTIABLE REQUIREMENTS ──────────────────────────────────────────
+  const nonNegotiableLines: string[] = [];
+
+  // Primary / secondary / accent hex values
+  const colorAssignments: string[] = [];
+  if (brandContext.primaryColor) colorAssignments.push(`Primary: ${brandContext.primaryColor}`);
+  if (brandContext.secondaryColor) colorAssignments.push(`Secondary: ${brandContext.secondaryColor}`);
+  if (brandContext.accentColor) colorAssignments.push(`Accent: ${brandContext.accentColor}`);
+  if (colorAssignments.length > 0) {
+    nonNegotiableLines.push(`BRAND COLORS (use these exact hex values — no substitutions):\n${colorAssignments.map(c => `  ${c}`).join('\n')}`);
   }
-  if (brandContext.archetype) {
-    brandParts.push(`Brand archetype: ${brandContext.archetype}.`);
+
+  // Full color palette with usage context
+  const palette = brandContext.colorPalette as Array<{ hex: string; name?: string; cmyk?: string; pantone?: string; usage?: string }> | undefined;
+  if (palette && palette.length > 0) {
+    const paletteLines = palette.slice(0, 8).map(c => {
+      const parts = [`  ${c.hex}`];
+      if (c.name) parts.push(c.name);
+      if (c.usage) parts.push(`(${c.usage})`);
+      if (c.pantone) parts.push(`[Pantone ${c.pantone}]`);
+      return parts.join(' — ');
+    });
+    nonNegotiableLines.push(`FULL BRAND PALETTE:\n${paletteLines.join('\n')}`);
   }
-  if (brandContext.tagline) {
-    brandParts.push(`Brand tagline for design inspiration: "${brandContext.tagline}".`);
-  }
-  if (brandContext.mission) {
-    brandParts.push(`Brand mission: ${brandContext.mission}.`);
-  }
-  
-  // Visual mood and style
-  if (brandContext.moodKeywords && brandContext.moodKeywords.length > 0) {
-    brandParts.push(`Visual mood: ${brandContext.moodKeywords.join(', ')}.`);
-  }
-  if (brandContext.imageryStyle) {
-    brandParts.push(`Imagery style: ${brandContext.imageryStyle}.`);
-  }
-  if (brandContext.patternStyle) {
-    brandParts.push(`Pattern style to incorporate: ${brandContext.patternStyle}.`);
-  }
-  if (brandContext.iconStyle) {
-    brandParts.push(`Icon style: ${brandContext.iconStyle}.`);
-  }
-  
-  // Typography
-  if (brandContext.headingFont || brandContext.bodyFont) {
-    const fonts = [brandContext.headingFont, brandContext.bodyFont].filter(Boolean);
-    brandParts.push(`Typography: Use ${fonts.join(' for headings and ')} font styles. Ensure typography feels consistent with the brand.`);
-  }
-  
-  // Industry and audience
-  if (brandContext.industry) {
-    brandParts.push(`Industry context: ${brandContext.industry}.`);
-  }
-  if (brandContext.targetAudience) {
-    brandParts.push(`Target audience: ${brandContext.targetAudience}. Design should resonate with this demographic.`);
-  }
-  
-  // Brand voice and tone
-  if (brandContext.brandVoice && brandContext.brandVoice.length > 0) {
-    brandParts.push(`Brand voice: ${brandContext.brandVoice.join(', ')}. Visual design should embody these qualities.`);
-  }
-  if (brandContext.toneKeywords && brandContext.toneKeywords.length > 0) {
-    brandParts.push(`Tone: ${brandContext.toneKeywords.join(', ')}.`);
-  }
-  if (brandContext.writingStyle) {
-    brandParts.push(`Writing style: ${brandContext.writingStyle}.`);
-  }
-  
-  // Cultural context from brand
-  if (brandContext.culturalContext) {
-    brandParts.push(`Brand cultural context: ${brandContext.culturalContext}.`);
-  }
-  
-  // Print color mode
-  if (brandContext.printColorMode) {
-    brandParts.push(`Preferred color mode: ${brandContext.printColorMode}. Ensure colors are appropriate for this output.`);
-  }
-  
+
   // Approved color combinations
-  if (brandContext.approvedColorCombinations && brandContext.approvedColorCombinations.length > 0) {
-    const approved = brandContext.approvedColorCombinations
-      .filter((c: { status: string }) => c.status === 'approved')
-      .map((c: { colors: string[] }) => c.colors.join(' + '))
-      .slice(0, 3);
-    if (approved.length > 0) {
-      brandParts.push(`Approved color combinations: ${approved.join('; ')}.`);
-    }
+  const approvedCombos = brandContext.approvedColorCombinations
+    ?.filter((c: { status: string }) => c.status === 'approved')
+    .map((c: { name: string; colors: string[] }) => `  ${c.name ? c.name + ': ' : ''}${c.colors.join(' + ')}`)
+    .slice(0, 4);
+  if (approvedCombos && approvedCombos.length > 0) {
+    nonNegotiableLines.push(`APPROVED COLOR PAIRINGS (use only these combinations):\n${approvedCombos.join('\n')}`);
   }
-  
+
   // Gradients
   if (brandContext.gradients && brandContext.gradients.length > 0) {
-    const gradientDesc = brandContext.gradients
-      .slice(0, 2)
-      .map((g: { name: string; colors: string[] }) => `${g.name}: ${g.colors.join(' to ')}`)
-      .join('; ');
-    brandParts.push(`Brand gradients available: ${gradientDesc}.`);
+    const gradLines = brandContext.gradients.slice(0, 3).map(
+      (g: { name: string; colors: string[]; direction?: string }) =>
+        `  ${g.name}: ${g.colors.join(' → ')}${g.direction ? ` (${g.direction})` : ''}`
+    );
+    nonNegotiableLines.push(`BRAND GRADIENTS:\n${gradLines.join('\n')}`);
   }
-  
-  if (brandParts.length === 0) return '';
 
-  // Build the main brand context
-  let result = `
-BRAND INTELLIGENCE - CRITICAL DESIGN CONTEXT:
-${brandParts.join('\n')}
-Ensure the design is unmistakably on-brand while remaining fresh and contextually appropriate.`;
+  // Print color mode
+  if (brandContext.printColorMode) {
+    nonNegotiableLines.push(`COLOR MODE: ${brandContext.printColorMode} — all colors must be ${brandContext.printColorMode}-safe.`);
+  }
 
-  // === BRAND INTELLIGENCE BLOCK (photography, logo, voice, constraints) ===
-  // This mirrors the compileGenerationPrompt brand intelligence from the frontend
+  // Restricted elements — must appear in non-negotiable to prevent violations
+  const restricted = brandContext.restrictedElements as string[] | undefined;
+  if (restricted && restricted.length > 0) {
+    nonNegotiableLines.push(`ABSOLUTELY FORBIDDEN — never include:\n${restricted.slice(0, 6).map(r => `  ✗ ${r}`).join('\n')}`);
+  }
+
+  // ── 2. PREFERRED BRAND GUIDANCE ─────────────────────────────────────────────
+  const guidanceLines: string[] = [];
+
+  if (brandContext.brandName) {
+    guidanceLines.push(`Brand: "${brandContext.brandName}"`);
+  }
+  if (brandContext.archetype) {
+    guidanceLines.push(`Archetype: ${brandContext.archetype}`);
+  }
+  if (brandContext.tagline) {
+    guidanceLines.push(`Tagline (inspiration only): "${brandContext.tagline}"`);
+  }
+  if (brandContext.mission) {
+    guidanceLines.push(`Mission: ${brandContext.mission}`);
+  }
+  if (brandContext.moodKeywords && brandContext.moodKeywords.length > 0) {
+    guidanceLines.push(`Visual mood: ${brandContext.moodKeywords.join(', ')}`);
+  }
+  if (brandContext.imageryStyle) {
+    guidanceLines.push(`Imagery style: ${brandContext.imageryStyle}`);
+  }
+  if (brandContext.patternStyle) {
+    guidanceLines.push(`Pattern style: ${brandContext.patternStyle}`);
+  }
+  if (brandContext.iconStyle) {
+    guidanceLines.push(`Icon style: ${brandContext.iconStyle}`);
+  }
+  if (brandContext.headingFont || brandContext.bodyFont) {
+    const fonts: string[] = [];
+    if (brandContext.headingFont) fonts.push(`${brandContext.headingFont} (headings)`);
+    if (brandContext.bodyFont) fonts.push(`${brandContext.bodyFont} (body)`);
+    if (brandContext.accentFont) fonts.push(`${brandContext.accentFont} (accent)`);
+    guidanceLines.push(`Typography: ${fonts.join(', ')}`);
+  }
+  if (brandContext.industry) {
+    guidanceLines.push(`Industry: ${brandContext.industry}`);
+  }
+  if (brandContext.targetAudience) {
+    guidanceLines.push(`Target audience: ${brandContext.targetAudience}`);
+  }
+  if (brandContext.brandVoice && brandContext.brandVoice.length > 0) {
+    guidanceLines.push(`Brand voice: ${brandContext.brandVoice.join(', ')}`);
+  }
+  if (brandContext.toneKeywords && brandContext.toneKeywords.length > 0) {
+    guidanceLines.push(`Tone: ${brandContext.toneKeywords.join(', ')}`);
+  }
+  if (brandContext.culturalContext) {
+    guidanceLines.push(`Cultural context: ${brandContext.culturalContext}`);
+  }
+
+  // Build the result
+  if (nonNegotiableLines.length === 0 && guidanceLines.length === 0) return '';
+
+  let result = '';
+
+  if (nonNegotiableLines.length > 0) {
+    result += `\n╔══ NON-NEGOTIABLE BRAND REQUIREMENTS ══════════════════════════════════╗\n`;
+    result += `These rules override all other style instructions. Violating them makes the output unusable.\n\n`;
+    result += nonNegotiableLines.join('\n\n');
+    result += `\n╚═══════════════════════════════════════════════════════════════════════╝`;
+  }
+
+  if (guidanceLines.length > 0) {
+    result += `\n\nBRAND DESIGN GUIDANCE (apply where not in conflict with requirements above):\n`;
+    result += guidanceLines.map(l => `  • ${l}`).join('\n');
+  }
+
+  // ── 3. BRAND INTELLIGENCE BLOCK ─────────────────────────────────────────────
   const intelligenceBlocks: string[] = [];
 
-  // Photography rules
   const photoDos = brandContext.photographyDos as string[] | undefined;
   const photoDonts = brandContext.photographyDonts as string[] | undefined;
   const photoStyle = brandContext.photographyStyle as string | undefined;
@@ -136,7 +167,6 @@ Ensure the design is unmistakably on-brand while remaining fresh and contextuall
     intelligenceBlocks.push(lines.join("\n"));
   }
 
-  // Logo usage rules
   const logoRules = brandContext.logoPlacementRules as string[] | undefined;
   const logoClearSpace = brandContext.logoClearSpace as string | undefined;
   const logoMinSize = brandContext.logoMinSize as string | undefined;
@@ -152,26 +182,17 @@ Ensure the design is unmistakably on-brand while remaining fresh and contextuall
     intelligenceBlocks.push(lines.join("\n"));
   }
 
-  // Constraints / restrictions
-  const restricted = brandContext.restrictedElements as string[] | undefined;
   const approvedLayouts = brandContext.approvedLayouts as string[] | undefined;
-  if (restricted?.length || approvedLayouts?.length) {
-    const lines = ["BRAND CONSTRAINTS:"];
-    if (restricted?.length) {
-      lines.push("  NEVER:");
-      restricted.slice(0, 5).forEach((r: string) => lines.push(`    ✗ ${r}`));
-    }
-    if (approvedLayouts?.length) {
-      lines.push("  APPROVED LAYOUTS:");
-      approvedLayouts.slice(0, 4).forEach((l: string) => lines.push(`    ✓ ${l}`));
-    }
+  if (approvedLayouts?.length) {
+    const lines = ["APPROVED LAYOUTS:"];
+    approvedLayouts.slice(0, 4).forEach((l: string) => lines.push(`  ✓ ${l}`));
     intelligenceBlocks.push(lines.join("\n"));
   }
 
   if (intelligenceBlocks.length > 0) {
     result += `\n\n=== BRAND INTELLIGENCE ===\n${intelligenceBlocks.join("\n\n")}\n=== END BRAND INTELLIGENCE ===`;
   }
-  
+
   return result;
 }
 

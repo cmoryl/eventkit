@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import type { GenerateImageRequest, ImageAnalysis } from "../_shared/types.ts";
 import { getBasePrompt, isPrintAsset } from "../_shared/asset-prompts.ts";
-import type { LabeledImage } from "../_shared/ai-gateway.ts";
+import type { LabeledImage, ImageModelTier } from "../_shared/ai-gateway.ts";
 import { 
   buildMasterWrapper,
   buildBrandContext, 
@@ -50,7 +50,7 @@ serve(async (req) => {
       imageAnalysis: providedAnalysis,
       venueIntelligence,
       brandContext,
-      imageModel = 'fast',
+      imageModel = 'quality',
       masterDirection,
       styleAnchorImage,
       templateId,
@@ -277,6 +277,8 @@ PHOTOREALISTIC RENDERING - CRITICAL:
     // Determine print requirements
     const isPrint = body.isPrintAsset ?? isPrintAsset(assetType);
     const targetDPI = body.printDPI || (isPrint ? 300 : 150);
+    // Print assets demand crisp text and fine detail — always use quality model regardless of caller preference
+    const effectiveImageModel: ImageModelTier = isPrint ? 'quality' : (imageModel as ImageModelTier);
     const printRequirements = buildPrintRequirements(isPrint, targetDPI);
 
     // BUILD FULL PROMPT — prefixed with Master Wrapper
@@ -335,15 +337,15 @@ ${outputChecklist}`;
     // NOTE: Logo is NOT included as a reference image — the client-side logoCompositor
     // overlays the actual logo file AFTER generation for pixel-perfect results.
     const referenceImages: LabeledImage[] = [];
-    // Style anchor: previously generated asset from this kit — ensures visual consistency
+    // Style anchor: previously generated asset from this kit — highest-priority visual reference
     if (styleAnchorImage) {
-      referenceImages.push({ url: styleAnchorImage, label: 'KIT STYLE ANCHOR - Match the EXACT visual treatment, color application, typography style, and composition approach of this reference. This asset must look like it belongs to the same event kit.' });
+      referenceImages.push({ url: styleAnchorImage, label: 'KIT STYLE ANCHOR (mandatory consistency reference) — An existing asset from this same event kit. MUST: (1) reproduce the exact color palette and tonal values, (2) match typography weight class and type treatment, (3) match background treatment and texture density, (4) match visual density and whitespace ratio, (5) match compositional approach (centered/asymmetric/full-bleed). The output MUST look like a visual sibling — same DNA, adapted for this asset format.' });
     }
-    allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''} - match this visual aesthetic and mood`.trim() }));
-    allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN ${allPatternImages.length > 1 ? i + 1 : ''} - use as decorative/background element`.trim() }));
-    if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO - composite the design into this real venue environment' });
+    allVibeImages.forEach((img, i) => referenceImages.push({ url: img, label: `STYLE REFERENCE ${allVibeImages.length > 1 ? i + 1 : ''}: extract and apply — (1) dominant color palette at same saturation level, (2) light/dark contrast ratio, (3) graphic style (photo-real vs illustrative vs geometric), (4) whitespace density, (5) emotional mood and atmosphere. Make the output feel like it was designed in the same creative session as this reference.`.trim() }));
+    allPatternImages.forEach((img, i) => referenceImages.push({ url: img, label: `PATTERN REFERENCE ${allPatternImages.length > 1 ? i + 1 : ''}: integrate this pattern into background or accent zones; preserve the pattern's scale, repeat frequency, and color relationships relative to the overall design size`.trim() }));
+    if (venueImageBase64) referenceImages.push({ url: venueImageBase64, label: 'VENUE PHOTO — photorealistic composite (follow each step): (1) identify the specific surface/wall/object where the design will be installed, (2) apply correct perspective transform to match that surface angle, (3) scale the design to be physically realistic in the space, (4) add realistic shadow matching the venue\'s visible light sources, (5) blend design edges into the material (cloth drape, glass reflection, wall texture). Final result must be indistinguishable from a real photograph of the installed branding.' });
 
-    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages, 2, imageModel);
+    const imageUrl = await generateImageWithRetry(LOVABLE_API_KEY, fullPrompt, assetType, referenceImages, 2, effectiveImageModel);
     
     console.log(`Successfully generated ${isPrint ? 'PRINT-READY' : renderMode} image for ${assetType}`);
 

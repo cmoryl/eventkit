@@ -211,7 +211,45 @@ export async function generateImageWithRetry(
           const label = img.label || `Reference Image`;
           return `  Image ${i + 1}: ${label}`;
         });
-        imageMapDescription = `\n\nREFERENCE IMAGES PROVIDED (${validImages.length} total):\n${labelLines.join('\n')}\n\nCRITICAL USAGE RULES:\n- STYLE REFERENCE images: match the visual aesthetic and mood.\n- PATTERN images: use as decorative/background elements.\n- VENUE PHOTO: composite the design into the real venue environment.\n- NOTE: The brand logo is NOT included as a reference image. It will be composited automatically after generation. Just leave clean space in the logo zone.\n`;
+        imageMapDescription = `
+
+REFERENCE IMAGES PROVIDED (${validImages.length} total):
+${labelLines.join('\n')}
+
+CRITICAL REFERENCE IMAGE USAGE — read carefully before generating:
+
+${validImages.some(img => img.label?.startsWith('KIT STYLE ANCHOR')) ? `KIT STYLE ANCHOR (highest priority reference):
+  This is the MASTER VISUAL REFERENCE. Before generating, extract from this image:
+  • Primary, secondary, and accent colors → use the EXACT same hex values and saturation
+  • Typography weight class (thin/regular/bold/black) → use the same weight class
+  • Background treatment (dark solid / light / gradient / textured) → replicate it
+  • Visual density: ratio of graphic elements to empty space → match it
+  • Compositional approach (centered / asymmetric / full-bleed / grid-based) → replicate it
+  Your output MUST be a visual sibling of this image — same aesthetic family, adapted layout.
+
+` : ''}${validImages.some(img => img.label?.startsWith('STYLE REFERENCE')) ? `STYLE REFERENCE images — apply these 5 extractions:
+  1. Dominant color palette at the same saturation level
+  2. Light/dark contrast ratio and tonal balance
+  3. Graphic style category: photo-realistic, illustrative, or geometric → reproduce it
+  4. Whitespace density: how much breathing room exists between elements
+  5. Emotional mood: reproduce the same feeling (energetic, calm, luxurious, playful, etc.)
+
+` : ''}${validImages.some(img => img.label?.startsWith('PATTERN')) ? `PATTERN REFERENCE images:
+  Integrate into background or accent areas. Preserve the pattern's scale relative to the design dimensions and maintain color relationships.
+
+` : ''}${validImages.some(img => img.label?.startsWith('VENUE PHOTO')) ? `VENUE PHOTO — photorealistic composite (follow every step):
+  Step 1: Identify the specific surface/wall/object where the design installs
+  Step 2: Apply a perspective transform matching that surface's exact angle and foreshortening
+  Step 3: Scale the design so it appears physically realistic (not oversized or tiny)
+  Step 4: Add cast shadow that matches the venue photo's visible light source direction
+  Step 5: Blend edges into the surface material (fabric texture, glass reflection, wall texture)
+  Step 6: Verify the result looks like an actual photograph — not a composited render
+
+` : ''}IMPORTANT — brand logo handling:
+  The brand logo is NOT included as a reference image. It will be composited automatically post-generation by our pipeline.
+  → Leave a clean, uncluttered zone in the designated logo placement area.
+  → Do NOT draw, render, or place any logo, wordmark, or placeholder in that zone.
+`;
       }
 
       // Add text prompt with image map
