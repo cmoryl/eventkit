@@ -16,6 +16,7 @@ import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
 import { type PdfThumbnail } from "@/lib/pdfThumbnails";
 import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
 import { SelectedPagesOrder } from "@/components/powerpoint/SelectedPagesOrder";
+import { BrandHubSourcePicker, type BrandHubSourcePick } from "@/components/powerpoint/BrandHubSourcePicker";
 
 interface DeckResult {
   downloadUrl: string;
@@ -88,6 +89,8 @@ const PowerPointAgent: React.FC = () => {
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
   const selectedPagesSet = React.useMemo(() => new Set(selectedPages), [selectedPages]);
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
+  // BrandHub source pick (brand / event / product) — alternative or supplement to PDF source
+  const [brandHubSource, setBrandHubSource] = useState<BrandHubSourcePick | null>(null);
 
   const loadBrands = useCallback(async () => {
     if (!user) return;
