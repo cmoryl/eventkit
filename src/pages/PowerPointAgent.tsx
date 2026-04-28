@@ -377,30 +377,136 @@ const PowerPointAgent: React.FC = () => {
 
       <main ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-          {/* Empty state */}
+          {/* Empty state — hero composer */}
           {history.length === 0 && (
-            <div className="text-center py-8 space-y-6">
+            <div className="text-center pt-8 pb-4 space-y-6">
               <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent">
                 <Sparkles className="h-8 w-8 text-primary-foreground" />
               </div>
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold">Generate a PowerPoint deck</h2>
                 <p className="text-muted-foreground max-w-xl mx-auto">
-                  Describe what you need. I'll draft an outline, design the slides with your brand colors, and export a real .pptx file.
+                  Describe your deck. We handle the rest — outline, design, and a downloadable .pptx file.
                 </p>
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-3 max-w-3xl mx-auto pt-2">
+              {/* Hero composer */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  generate();
+                }}
+                className="max-w-3xl mx-auto"
+              >
+                <div className="rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm p-3 space-y-3">
+                  <div className="flex gap-2 items-stretch">
+                    <textarea
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          generate();
+                        }
+                      }}
+                      rows={2}
+                      placeholder="e.g. Pitch deck for a B2B SaaS launching AI scheduling tool"
+                      className="flex-1 resize-none rounded-xl border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      disabled={isGenerating}
+                      autoFocus
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!topic.trim() || isGenerating}
+                      size="lg"
+                      className="self-stretch px-6"
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4" /> Generate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Chips row */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <BrandPopover
+                      brands={brands}
+                      selectedBrandId={selectedBrandId}
+                      setSelectedBrandId={setSelectedBrandId}
+                      useBrand={useBrand}
+                      setUseBrand={setUseBrand}
+                      disabled={isGenerating}
+                      onOpenImport={() => setShowImportModal(true)}
+                    />
+                    <SourceSheet
+                      pdfFile={pdfFile}
+                      fileInputRef={fileInputRef}
+                      extracting={extracting}
+                      extractedSource={extractedSource}
+                      includeText={includeText}
+                      setIncludeText={setIncludeText}
+                      includeImagery={includeImagery}
+                      setIncludeImagery={setIncludeImagery}
+                      includeLookAndFeel={includeLookAndFeel}
+                      setIncludeLookAndFeel={setIncludeLookAndFeel}
+                      influence={influence}
+                      setInfluence={setInfluence}
+                      thumbnails={thumbnails}
+                      selectedPages={selectedPages}
+                      selectedPagesSet={selectedPagesSet}
+                      selectedSections={selectedSections}
+                      togglePage={togglePage}
+                      reorderSelectedPages={reorderSelectedPages}
+                      setSelectedPages={setSelectedPages}
+                      clearPageSelection={clearPageSelection}
+                      toggleSection={toggleSection}
+                      selectAllSections={selectAllSections}
+                      clearSectionSelection={clearSectionSelection}
+                      setThumbnails={setThumbnails}
+                      handlePdfSelect={handlePdfSelect}
+                      rerunExtraction={rerunExtraction}
+                      clearPdf={clearPdf}
+                      brandHubSource={brandHubSource}
+                      setBrandHubSource={setBrandHubSource}
+                      disabled={isGenerating}
+                    />
+                    <RefinePopover
+                      audience={audience}
+                      setAudience={setAudience}
+                      tone={tone}
+                      setTone={setTone}
+                      slideCount={slideCount}
+                      setSlideCount={setSlideCount}
+                      themeOverride={themeOverride}
+                      setThemeOverride={setThemeOverride}
+                      disabled={isGenerating}
+                    />
+                  </div>
+                </div>
+              </form>
+
+              {/* Suggestion chips */}
+              <div className="flex flex-wrap gap-2 justify-center max-w-3xl mx-auto pt-2">
                 {SUGGESTIONS.map((s) => (
-                  <Card
+                  <button
                     key={s}
-                    onClick={() => { setTopic(s); }}
-                    className="p-4 text-left text-sm cursor-pointer hover:border-primary/50 hover:shadow-md transition-all"
+                    type="button"
+                    onClick={() => setTopic(s)}
+                    disabled={isGenerating}
+                    className="px-3 py-1.5 text-xs rounded-full border bg-background hover:border-primary/50 hover:bg-accent/30 transition-colors text-left text-muted-foreground hover:text-foreground"
                   >
                     {s}
-                  </Card>
+                  </button>
                 ))}
               </div>
+
+              <p className="text-[11px] text-muted-foreground/80 pt-2">
+                Outputs a real .pptx file you can edit in PowerPoint, Keynote, or Google Slides.
+              </p>
             </div>
           )}
 
@@ -412,17 +518,22 @@ const PowerPointAgent: React.FC = () => {
                   item.role === "user" ? "bg-primary text-primary-foreground" : "bg-card border"
                 }`}
               >
-                <p className="whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{
-                  __html: item.content
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\n/g, '<br/>'),
-                }} />
+                <p
+                  className="whitespace-pre-wrap text-sm"
+                  dangerouslySetInnerHTML={{
+                    __html: item.content
+                      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                      .replace(/\n/g, "<br/>"),
+                  }}
+                />
 
                 {item.deck && (
                   <Card className="mt-4 p-4 bg-background/50 border-primary/30">
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
-                           style={{ background: `#${item.deck.palette.primary}` }}>
+                      <div
+                        className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ background: `#${item.deck.palette.primary}` }}
+                      >
                         <Presentation className="h-5 w-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -431,21 +542,26 @@ const PowerPointAgent: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Palette swatches */}
                     <div className="flex gap-1.5 mb-3">
                       {Object.entries(item.deck.palette).map(([key, hex]) => (
-                        <div key={key} className="flex-1 h-6 rounded" style={{ background: `#${hex}` }} title={`${key}: #${hex}`} />
+                        <div
+                          key={key}
+                          className="flex-1 h-6 rounded"
+                          style={{ background: `#${hex}` }}
+                          title={`${key}: #${hex}`}
+                        />
                       ))}
                     </div>
 
-                    {/* Slide list */}
                     <div className="text-xs text-muted-foreground space-y-1 max-h-40 overflow-y-auto mb-3 pr-1">
                       {item.deck.slides.map((s, idx) => (
                         <div key={idx} className="flex items-center gap-2">
                           <span className="text-[10px] uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded text-muted-foreground shrink-0 w-20 text-center">
                             {s.layout}
                           </span>
-                          <span className="truncate">{idx + 1}. {s.title}</span>
+                          <span className="truncate">
+                            {idx + 1}. {s.title}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -461,7 +577,7 @@ const PowerPointAgent: React.FC = () => {
             </div>
           ))}
 
-          {isGenerating && (
+          {isGenerating && history.length > 0 && (
             <div className="flex justify-start">
               <div className="bg-card border rounded-2xl px-5 py-3 flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -472,319 +588,92 @@ const PowerPointAgent: React.FC = () => {
         </div>
       </main>
 
-      {/* Composer */}
-      <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0">
-        <div className="max-w-5xl mx-auto px-6 py-4 space-y-3">
-          {/* Options row */}
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[160px]">
-              <Label htmlFor="audience" className="text-xs">Audience (optional)</Label>
-              <Input id="audience" value={audience} onChange={(e) => setAudience(e.target.value)}
-                placeholder="e.g. Series A investors" className="h-9" disabled={isGenerating} />
-            </div>
-            <div className="flex-1 min-w-[140px]">
-              <Label htmlFor="tone" className="text-xs">Tone (optional)</Label>
-              <Input id="tone" value={tone} onChange={(e) => setTone(e.target.value)}
-                placeholder="bold, formal, playful…" className="h-9" disabled={isGenerating} />
-            </div>
-            <div className="w-24">
-              <Label htmlFor="slides" className="text-xs">Slides</Label>
-              <Input id="slides" type="number" min={3} max={30} value={slideCount}
-                onChange={(e) => setSlideCount(Math.max(3, Math.min(30, Number(e.target.value) || 10)))}
-                className="h-9" disabled={isGenerating} />
-            </div>
-          </div>
-
-          {/* Brand picker row */}
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[240px]">
-              <Label className="text-xs flex items-center gap-1.5">
-                <Library className="h-3 w-3" /> Brand guide reference
-              </Label>
-              <div className="flex gap-2">
-                <Select
-                  value={selectedBrandId || "none"}
-                  onValueChange={(v) => {
-                    if (v === "none") { setSelectedBrandId(""); setUseBrand(false); }
-                    else { setSelectedBrandId(v); setUseBrand(true); }
-                  }}
-                  disabled={isGenerating}
-                >
-                  <SelectTrigger className="h-9 flex-1">
-                    <SelectValue placeholder="No brand styling" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    <SelectItem value="none">No brand — neutral styling</SelectItem>
-                    {brands.length > 0 && (
-                      <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
-                        Your imported brands
-                      </div>
-                    )}
-                    {brands.map((b) => (
-                      <SelectItem key={b.id} value={b.id}>
-                        <div className="flex items-center gap-2">
-                          {b.styles?.primary_color && (
-                            <span className="h-3 w-3 rounded-full border border-border/50" style={{ background: b.styles.primary_color }} />
-                          )}
-                          <span>{b.name}</span>
-                          {b.isFromBrandHub && <span className="text-[10px] text-muted-foreground">· BrandHub</span>}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-9"
-                  onClick={() => setShowImportModal(true)}
-                  disabled={isGenerating}
-                  title="Import from BrandHub"
-                >
-                  <Plus className="h-4 w-4" /> BrandHub
-                </Button>
-              </div>
-            </div>
-            {selectedBrand && (
-              <div className="flex items-center gap-2 h-9 px-3 rounded-lg border bg-background">
-                <Switch id="brand" checked={useBrand} onCheckedChange={setUseBrand} disabled={isGenerating} />
-                <Label htmlFor="brand" className="text-xs cursor-pointer">Apply styling</Label>
-              </div>
-            )}
-          </div>
-
-          {/* BrandHub source picker (brand / event / product) */}
-          <BrandHubSourcePicker
-            picked={brandHubSource}
-            onPick={setBrandHubSource}
-            disabled={isGenerating}
-          />
-
-          {/* PDF source uploader */}
-          <div className="rounded-lg border bg-background/40 p-3 space-y-3">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => handlePdfSelect(e.target.files?.[0] || null)}
-            />
-
-            {!pdfFile ? (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isGenerating}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-md border border-dashed border-border hover:border-primary/50 hover:bg-accent/30 transition-colors text-sm text-muted-foreground"
-              >
-                <Upload className="h-4 w-4" />
-                Upload a PDF (optional) — extract content, imagery & look-and-feel
-              </button>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 text-sm">
-                  <FileUp className="h-4 w-4 text-primary shrink-0" />
-                  <span className="truncate flex-1">{pdfFile.name}</span>
-                  {extracting && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                  {extractedSource && !extracting && (
-                    <span className="text-xs text-muted-foreground">
-                      {extractedSource.extracted?.pageCount || "?"} pages
-                    </span>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 px-2 text-xs gap-1"
-                    onClick={rerunExtraction}
-                    disabled={isGenerating || extracting}
-                    title="Re-run extraction with current toggles & influence"
-                  >
-                    {extracting ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3 w-3" />
-                    )}
-                    Re-run
-                  </Button>
-                  <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearPdf} disabled={isGenerating || extracting}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <Switch checked={includeText} onCheckedChange={setIncludeText} disabled={isGenerating} />
-                    Text & info
-                  </label>
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <Switch checked={includeImagery} onCheckedChange={setIncludeImagery} disabled={isGenerating} />
-                    Imagery
-                  </label>
-                  <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <Switch checked={includeLookAndFeel} onCheckedChange={setIncludeLookAndFeel} disabled={isGenerating} />
-                    Look & feel
-                  </label>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <Label className="text-xs">How much to use from PDF</Label>
-                    <span className="text-muted-foreground">{influence}%</span>
-                  </div>
-                  <Slider
-                    value={[influence]}
-                    onValueChange={(v) => setInfluence(v[0])}
-                    min={10}
-                    max={100}
-                    step={10}
-                    disabled={isGenerating}
-                  />
-                  <p className="text-[10px] text-muted-foreground">
-                    {influence >= 70 ? "Stay close to source structure & tone" : influence >= 40 ? "Use as primary inspiration" : "Light reference only"}
-                  </p>
-                </div>
-
-                {/* Outline section picker */}
-                {extractedSource?.extracted?.outline?.length > 0 && (
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs flex items-center gap-1.5">
-                        <FileText className="h-3 w-3" />
-                        Extracted sections
-                        <span className="text-muted-foreground font-normal">
-                          · {selectedSections.size}/{extractedSource.extracted.outline.length} included
-                        </span>
-                      </Label>
-                      <div className="flex gap-1">
-                        <button
-                          type="button"
-                          onClick={selectAllSections}
-                          disabled={isGenerating}
-                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          All
-                        </button>
-                        <span className="text-[10px] text-muted-foreground">·</span>
-                        <button
-                          type="button"
-                          onClick={clearSectionSelection}
-                          disabled={isGenerating}
-                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          None
-                        </button>
-                      </div>
-                    </div>
-                    <div className="max-h-56 overflow-y-auto rounded-md border bg-background/50 divide-y divide-border/50">
-                      {extractedSource.extracted.outline.map((section: { heading: string; bullets: string[] }, i: number) => {
-                        const checked = selectedSections.has(i);
-                        return (
-                          <label
-                            key={i}
-                            className={`flex items-start gap-2.5 p-2.5 cursor-pointer hover:bg-accent/30 transition-colors ${checked ? '' : 'opacity-60'}`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              onChange={() => toggleSection(i)}
-                              disabled={isGenerating}
-                              className="mt-1 h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer shrink-0"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-xs font-medium truncate">{section.heading}</div>
-                              {section.bullets?.length > 0 && (
-                                <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
-                                  {section.bullets.slice(0, 3).join(' · ')}
-                                  {section.bullets.length > 3 && ` · +${section.bullets.length - 3} more`}
-                                </div>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
-                    {selectedSections.size === 0 && (
-                      <p className="text-[10px] text-amber-500">
-                        No sections selected — the deck will rely on summary, look & feel, and your topic only.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Page thumbnail gallery (lazy + virtualized) */}
-                <LazyPdfGallery
-                  file={pdfFile}
-                  selectedPages={selectedPagesSet}
-                  onTogglePage={togglePage}
-                  onSelectAll={(all) => {
-                    // Preserve existing order; append newly added pages at the end
-                    setSelectedPages((prev) => {
-                      const existing = prev.filter((p) => all.includes(p));
-                      const additions = all.filter((p) => !prev.includes(p));
-                      return [...existing, ...additions];
-                    });
-                  }}
-                  onClearSelection={clearPageSelection}
-                  onThumbnailRendered={(thumb) =>
-                    setThumbnails((prev) => {
-                      if (prev.has(thumb.page)) return prev;
-                      const next = new Map(prev);
-                      next.set(thumb.page, thumb);
-                      return next;
-                    })
-                  }
-                  disabled={isGenerating}
-                  maxPages={200}
-                  defaultPickFirstN={3}
-                />
-
-                {/* Drag-and-drop reorder strip for selected pages */}
-                <SelectedPagesOrder
-                  orderedPages={selectedPages}
-                  thumbnails={thumbnails}
-                  onReorder={reorderSelectedPages}
-                  onRemove={togglePage}
-                  disabled={isGenerating}
-                />
-
-              </>
-            )}
-          </div>
-
-
-          <Input
-            value={themeOverride}
-            onChange={(e) => setThemeOverride(e.target.value)}
-            placeholder="Theme override (optional) — e.g. 'dark navy with gold accents, serif headings'"
-            className="h-9 text-sm"
-            disabled={isGenerating}
-          />
-
-          {/* Topic */}
-          <form onSubmit={(e) => { e.preventDefault(); generate(); }} className="flex gap-2">
-            <textarea
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); generate(); }
+      {/* Sticky footer composer — only shown after the first deck */}
+      {history.length > 0 && (
+        <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0">
+          <div className="max-w-5xl mx-auto px-6 py-3 space-y-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                generate();
               }}
-              rows={2}
-              placeholder="Describe the deck you need…"
-              className="flex-1 resize-none rounded-xl border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              disabled={isGenerating}
-            />
-            <Button type="submit" disabled={!topic.trim() || isGenerating} size="lg">
-              {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4" /> Generate</>}
-            </Button>
-          </form>
-
-          <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
-            <FileText className="h-3 w-3" /> Outputs a real .pptx file you can edit in PowerPoint, Keynote, or Google Slides.
-          </p>
-        </div>
-      </footer>
+              className="flex gap-2"
+            >
+              <textarea
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    generate();
+                  }
+                }}
+                rows={1}
+                placeholder="Refine, or describe a new deck…"
+                className="flex-1 resize-none rounded-xl border bg-background px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={isGenerating}
+              />
+              <Button type="submit" disabled={!topic.trim() || isGenerating} size="default">
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4" /> Generate</>}
+              </Button>
+            </form>
+            <div className="flex flex-wrap items-center gap-2">
+              <BrandPopover
+                brands={brands}
+                selectedBrandId={selectedBrandId}
+                setSelectedBrandId={setSelectedBrandId}
+                useBrand={useBrand}
+                setUseBrand={setUseBrand}
+                disabled={isGenerating}
+                onOpenImport={() => setShowImportModal(true)}
+              />
+              <SourceSheet
+                pdfFile={pdfFile}
+                fileInputRef={fileInputRef}
+                extracting={extracting}
+                extractedSource={extractedSource}
+                includeText={includeText}
+                setIncludeText={setIncludeText}
+                includeImagery={includeImagery}
+                setIncludeImagery={setIncludeImagery}
+                includeLookAndFeel={includeLookAndFeel}
+                setIncludeLookAndFeel={setIncludeLookAndFeel}
+                influence={influence}
+                setInfluence={setInfluence}
+                thumbnails={thumbnails}
+                selectedPages={selectedPages}
+                selectedPagesSet={selectedPagesSet}
+                selectedSections={selectedSections}
+                togglePage={togglePage}
+                reorderSelectedPages={reorderSelectedPages}
+                setSelectedPages={setSelectedPages}
+                clearPageSelection={clearPageSelection}
+                toggleSection={toggleSection}
+                selectAllSections={selectAllSections}
+                clearSectionSelection={clearSectionSelection}
+                setThumbnails={setThumbnails}
+                handlePdfSelect={handlePdfSelect}
+                rerunExtraction={rerunExtraction}
+                clearPdf={clearPdf}
+                brandHubSource={brandHubSource}
+                setBrandHubSource={setBrandHubSource}
+                disabled={isGenerating}
+              />
+              <RefinePopover
+                audience={audience}
+                setAudience={setAudience}
+                tone={tone}
+                setTone={setTone}
+                slideCount={slideCount}
+                setSlideCount={setSlideCount}
+                themeOverride={themeOverride}
+                setThemeOverride={setThemeOverride}
+                disabled={isGenerating}
+              />
+            </div>
+          </div>
+        </footer>
+      )}
 
       <BrandHubImportModal
         isOpen={showImportModal}
