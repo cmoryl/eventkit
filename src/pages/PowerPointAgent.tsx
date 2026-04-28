@@ -34,7 +34,7 @@ interface ChatItem {
   deck?: DeckResult;
 }
 
-const SUGGESTIONS = [
+const FALLBACK_SUGGESTIONS = [
   "Pitch deck for a B2B SaaS launching AI scheduling tool",
   "Investor update for Q3 — revenue, growth, key wins",
   "Workshop deck: Intro to design systems, 12 slides",
