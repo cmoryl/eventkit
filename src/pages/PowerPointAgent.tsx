@@ -571,6 +571,90 @@ const PowerPointAgent: React.FC = () => {
                     {influence >= 70 ? "Stay close to source structure & tone" : influence >= 40 ? "Use as primary inspiration" : "Light reference only"}
                   </p>
                 </div>
+
+                {/* Page thumbnail gallery */}
+                {(renderingThumbs || thumbnails.length > 0) && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <ImageIcon className="h-3 w-3" />
+                        Page previews
+                        {thumbnails.length > 0 && (
+                          <span className="text-muted-foreground font-normal">
+                            · {selectedPages.size}/{thumbnails.length} picked
+                          </span>
+                        )}
+                      </Label>
+                      {thumbnails.length > 0 && (
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={selectAllPages}
+                            disabled={isGenerating}
+                            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            All
+                          </button>
+                          <span className="text-[10px] text-muted-foreground">·</span>
+                          <button
+                            type="button"
+                            onClick={clearPageSelection}
+                            disabled={isGenerating}
+                            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            None
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {renderingThumbs && thumbnails.length === 0 ? (
+                      <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Rendering page previews…
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto pr-1">
+                        {thumbnails.map((t) => {
+                          const picked = selectedPages.has(t.page);
+                          return (
+                            <button
+                              type="button"
+                              key={t.page}
+                              onClick={() => togglePage(t.page)}
+                              disabled={isGenerating}
+                              className={`group relative aspect-[3/4] rounded-md overflow-hidden border-2 transition-all ${
+                                picked
+                                  ? "border-primary ring-2 ring-primary/30"
+                                  : "border-border/50 hover:border-primary/50 opacity-70 hover:opacity-100"
+                              }`}
+                              title={`Page ${t.page}${picked ? " — selected" : ""}`}
+                            >
+                              <img src={t.dataUrl} alt={`Page ${t.page}`} className="w-full h-full object-cover bg-white" />
+                              <div className="absolute top-1 left-1 bg-background/80 backdrop-blur-sm text-[9px] font-medium px-1 py-0.5 rounded">
+                                {t.page}
+                              </div>
+                              {picked && (
+                                <div className="absolute top-1 right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                        {renderingThumbs && (
+                          <div className="aspect-[3/4] rounded-md border border-dashed border-border/50 flex items-center justify-center">
+                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {thumbnails.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Click pages to include them as visual references in your deck.
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
