@@ -27,6 +27,9 @@ import { AISlideGenerator } from './AISlideGenerator';
 import { exportSlidesToPptx } from './exportPptx';
 import { parsePptxFile } from './importPptx';
 import { toast } from 'sonner';
+import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
+import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
+import { Library } from 'lucide-react';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -71,6 +74,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [slideTransition, setSlideTransition] = useState<SlideTransition>('fade');
   const [isGridView, setIsGridView] = useState(false);
   const [animatedBackgrounds, setAnimatedBackgrounds] = useState(true);
+  const [isAssetsLibraryOpen, setIsAssetsLibraryOpen] = useState(false);
+  const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
+
+  // Auto-discover BrandHub files for the active brand so we can show a "Brand Decks" hint.
+  const { byCategory: brandFilesByCategory } = useBrandHubFiles({
+    shareToken: brand?.brandhub_share_token ?? null,
+    enabled: isOpen,
+  });
+  const brandDeckCount = brandFilesByCategory.deck.length;
 
   const activeSlide = slides[activeIndex];
 
@@ -204,6 +216,39 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     }
   }, []);
 
+  // Load a deck from a BrandHub-hosted URL by fetching the bytes and parsing
+  // them with the existing pptx importer. Falls back to opening the URL when
+  // the file extension isn't .pptx (e.g. Google Slides links).
+  const handleLoadDeckFromBrandHub = useCallback(async (file: BrandFile) => {
+    const ext = file.ext.toLowerCase();
+    if (ext !== 'pptx' && ext !== 'ppt') {
+      window.open(file.url, '_blank', 'noopener,noreferrer');
+      toast.info(`${file.name} opened in a new tab — only .pptx files can be imported directly.`);
+      return;
+    }
+    const loadingToast = toast.loading(`Loading ${file.name}…`);
+    try {
+      const res = await fetch(file.url, { mode: 'cors' });
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const blob = await res.blob();
+      const fakeFile = new File([blob], file.name, { type: blob.type || 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+      const imported = await parsePptxFile(fakeFile);
+      setSlides(imported);
+      setActiveIndex(0);
+      toast.dismiss(loadingToast);
+      toast.success(`Imported ${imported.length} slides from ${file.name}`);
+      setIsAssetsLibraryOpen(false);
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      console.error('BrandHub deck import error:', err);
+      toast.error(
+        err instanceof Error
+          ? `Couldn't import that deck (${err.message}). It may be hosted on a server that blocks cross-origin downloads.`
+          : "Couldn't import that deck.",
+      );
+    }
+  }, []);
+
   if (isPresentationMode) {
     return (
       <PresentationMode
@@ -306,6 +351,29 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                   </span>
                 </Button>
               </label>
+
+              {brand?.brandhub_share_token && (
+                <Button
+                  size="sm"
+                  variant={brandDeckCount > 0 ? 'default' : 'outline'}
+                  onClick={() => setIsAssetsLibraryOpen(true)}
+                  className="gap-1.5"
+                  title="Browse files attached to this brand on BrandHub"
+                >
+                  <Library className="h-3.5 w-3.5" />
+                  Brand Assets
+                  {brandDeckCount > 0 && (
+                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-background/20 px-1.5 text-[10px] font-medium">
+                      {brandDeckCount} deck{brandDeckCount === 1 ? '' : 's'}
+                    </span>
+                  )}
+                  {referenceFiles.length > 0 && (
+                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-primary/20 text-primary px-1.5 text-[10px] font-medium">
+                      {referenceFiles.length} ref
+                    </span>
+                  )}
+                </Button>
+              )}
 
               <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName, { transition: slideTransition })}>
                 <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -1062,6 +1130,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
       brandName={brand?.name}
       brandId={brand?.id}
       brandImagery={brandImagery}
+      referenceFiles={referenceFiles}
+    />
+
+    <BrandAssetsLibrary
+      isOpen={isAssetsLibraryOpen}
+      onClose={() => setIsAssetsLibraryOpen(false)}
+      brandName={brand?.name || 'Brand'}
+      shareToken={brand?.brandhub_share_token ?? null}
+      onLoadDeck={handleLoadDeckFromBrandHub}
+      onReferenceSelectionChange={setReferenceFiles}
+      initialReferences={referenceFiles}
     />
     </>
   );

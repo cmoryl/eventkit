@@ -119,6 +119,9 @@ serve(async (req) => {
       infographicNotes,               // free-form string — highest-priority interpretation guidance
       executiveSummaryNotes,          // free-form string — drives opening summary + closing takeaways
       chartCalloutNotes,              // free-form string — per-chart annotations and callouts
+      // Optional style anchors picked by the user from the BrandHub assets library.
+      // Each entry: { url, name, category: 'deck'|'document'|'image'|'video', sectionLabel, sourceName }
+      references,
     } = await req.json();
 
     const clampedSlideCount = Math.min(Math.max(parseInt(String(slideCount)) || 6, 1), 20);
@@ -253,6 +256,17 @@ ${cleanStats.map((s) => `- ${s}`).join("\n")}`
     const chartNotesText = typeof chartCalloutNotes === "string" ? chartCalloutNotes.trim() : "";
     const insightNotesText = typeof infographicNotes === "string" ? infographicNotes.trim() : "";
 
+    // Style references picked from the brand's BrandHub asset library
+    const refList = Array.isArray(references) ? references.slice(0, 8) : [];
+    const referencesInfo = refList.length
+      ? `\n\nBRAND REFERENCE MATERIAL: The user picked ${refList.length} existing brand asset(s) as style anchors. Mirror their tone, structure, and visual vocabulary where appropriate:\n${refList
+          .map(
+            (r: { name?: string; category?: string; sectionLabel?: string; sourceName?: string }, i: number) =>
+              `${i + 1}. ${r.name || "Asset"} (${r.category || "file"}) — from ${r.sourceName || "brand"}${r.sectionLabel ? ` · ${r.sectionLabel}` : ""}`,
+          )
+          .join("\n")}`
+      : "";
+
     const advancedInfographicsInfo =
       lensList.length || layoutsList.length || advancedFlags.length || densityHint || colorHint || narrativeHint || insightNotesText || execNotesText || chartNotesText
         ? `\n\nADVANCED INFOGRAPHIC INTERPRETATION:
@@ -357,7 +371,7 @@ When the content contains numbers, percentages, or trends — DO NOT put them in
 - Chronological events → "timeline" layout
 - Step-by-step → "process" layout
 
-Generate exactly ${clampedSlideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}`;
+Generate exactly ${clampedSlideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}${referencesInfo}`;
 
     const tools = [
       {

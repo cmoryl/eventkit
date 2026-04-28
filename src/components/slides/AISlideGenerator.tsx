@@ -59,6 +59,14 @@ interface AISlideGeneratorProps {
   brandName?: string;
   brandId?: string;
   brandImagery?: BrandHubImagery;
+  /** Style anchors picked from the brand's BrandHub asset library. */
+  referenceFiles?: Array<{
+    url: string;
+    name: string;
+    category: string;
+    sectionLabel: string;
+    sourceName: string;
+  }>;
 }
 
 export function AISlideGenerator({
@@ -68,6 +76,7 @@ export function AISlideGenerator({
   brandName,
   brandId,
   brandImagery,
+  referenceFiles,
 }: AISlideGeneratorProps) {
   const [topic, setTopic] = useState('');
   const [slideCount, setSlideCount] = useState('6');
@@ -192,6 +201,16 @@ export function AISlideGenerator({
           brandHubOnly: brandHubOnly && hasBrandHubAssets,
           approvedImagery: brandHubOnly && hasBrandHubAssets ? filteredImagery : undefined,
           approvedCategories: brandHubOnly && hasBrandHubAssets ? Array.from(selectedCategories) : undefined,
+          // Style references picked from the BrandHub assets library
+          references: referenceFiles && referenceFiles.length
+            ? referenceFiles.map((r) => ({
+                url: r.url,
+                name: r.name,
+                category: r.category,
+                sectionLabel: r.sectionLabel,
+                sourceName: r.sourceName,
+              }))
+            : undefined,
           // Content-aware features
           enableInfographics,
           imageMatchMode,
