@@ -43,6 +43,7 @@ interface DeckRequest {
   tone?: string;
   brand?: BrandStyle;
   themeOverride?: string; // free-form override "use a dark navy and gold theme"
+  templateId?: string; // e.g. "transperfect-2026" — enables branded background imagery
   source?: ExtractedSource; // PDF-derived material
   prebuiltOutline?: DeckOutline; // skip AI planning and just build .pptx from this
 }
@@ -209,7 +210,45 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
   return JSON.parse(args) as DeckOutline;
 }
 
-function buildPptx(outline: DeckOutline): Promise<ArrayBuffer> {
+// Map of template id -> bundled background images (public URLs)
+const TEMPLATE_IMAGES: Record<string, Record<string, string>> = {
+  "transperfect-2026": {
+    hero: "https://fkrxorswdcuaiyiesooj.supabase.co/storage/v1/object/public/asset-images/templates/transperfect-2026/hero.jpg",
+    heroSquare: "https://fkrxorswdcuaiyiesooj.supabase.co/storage/v1/object/public/asset-images/templates/transperfect-2026/hero-square.jpg",
+    sectionBg: "https://fkrxorswdcuaiyiesooj.supabase.co/storage/v1/object/public/asset-images/templates/transperfect-2026/section-bg.jpg",
+    lightPattern: "https://fkrxorswdcuaiyiesooj.supabase.co/storage/v1/object/public/asset-images/templates/transperfect-2026/light-pattern.jpg",
+    card: "https://fkrxorswdcuaiyiesooj.supabase.co/storage/v1/object/public/asset-images/templates/transperfect-2026/card.jpg",
+    caseStudy: "https://fkrxorswdcuaiyiesooj.supabase.co/storage/v1/object/public/asset-images/templates/transperfect-2026/case-study.jpg",
+  },
+};
+
+async function fetchAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const buf = await r.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    let bin = "";
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return `data:image/jpeg;base64,${btoa(bin)}`;
+  } catch {
+    return null;
+  }
+}
+
+async function loadTemplateImages(templateId?: string): Promise<Record<string, string>> {
+  if (!templateId) return {};
+  const map = TEMPLATE_IMAGES[templateId];
+  if (!map) return {};
+  const entries = await Promise.all(
+    Object.entries(map).map(async ([k, url]) => [k, await fetchAsDataUrl(url)] as const),
+  );
+  const out: Record<string, string> = {};
+  for (const [k, v] of entries) if (v) out[k] = v;
+  return out;
+}
+
+function buildPptx(outline: DeckOutline, templateImages: Record<string, string> = {}): Promise<ArrayBuffer> {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE"; // 13.33 x 7.5
   pptx.title = outline.title;
@@ -229,10 +268,31 @@ function buildPptx(outline: DeckOutline): Promise<ArrayBuffer> {
   const BG = clean(p.background);
   const TEXT = clean(p.text);
 
+  // Pick a background image for a given layout from the template library
+  const bgFor = (layout: string): string | undefined => {
+    if (!templateImages || Object.keys(templateImages).length === 0) return undefined;
+    switch (layout) {
+      case "title": return templateImages.hero;
+      case "closing": return templateImages.hero;
+      case "section": return templateImages.sectionBg;
+      case "quote": return templateImages.heroSquare || templateImages.hero;
+      case "stat": return templateImages.card;
+      case "two_column": return templateImages.lightPattern;
+      case "bullets":
+      default: return templateImages.lightPattern;
+    }
+  };
+
   outline.slides.forEach((s, idx) => {
     const slide = pptx.addSlide();
-    slide.background = { color: BG };
+    const tplBg = bgFor(s.layout);
+    if (tplBg) {
+      slide.background = { data: tplBg };
+    } else {
+      slide.background = { color: BG };
+    }
     if (s.notes) slide.addNotes(s.notes);
+
 
     // Page number / footer (skip on title)
     if (idx > 0 && s.layout !== "title") {
@@ -248,7 +308,7 @@ function buildPptx(outline: DeckOutline): Promise<ArrayBuffer> {
 
     switch (s.layout) {
       case "title": {
-        slide.background = { color: PRIMARY };
+        if (!tplBg) slide.background = { color: PRIMARY };
         // Accent bar
         slide.addShape("rect", { x: 0, y: H / 2 + 1.5, w: 1.5, h: 0.08, fill: { color: ACCENT } });
         slide.addText(s.title, {
@@ -265,7 +325,7 @@ function buildPptx(outline: DeckOutline): Promise<ArrayBuffer> {
       }
 
       case "section": {
-        slide.background = { color: SECONDARY };
+        if (!tplBg) slide.background = { color: SECONDARY };
         slide.addText(`0${idx + 1}`.slice(-2), {
           x: PAD, y: PAD, w: 2, h: 1, fontSize: 56, bold: true, color: ACCENT, fontFace: headFont,
         });
@@ -300,7 +360,7 @@ function buildPptx(outline: DeckOutline): Promise<ArrayBuffer> {
       }
 
       case "quote": {
-        slide.background = { color: PRIMARY };
+        if (!tplBg) slide.background = { color: PRIMARY };
         slide.addText("\u201C", {
           x: PAD, y: PAD, w: 2, h: 2, fontSize: 180, color: ACCENT, fontFace: headFont, bold: true,
         });
@@ -347,7 +407,7 @@ function buildPptx(outline: DeckOutline): Promise<ArrayBuffer> {
       }
 
       case "closing": {
-        slide.background = { color: PRIMARY };
+        if (!tplBg) slide.background = { color: PRIMARY };
         slide.addText(s.title, {
           x: PAD, y: H / 2 - 1, w: W - PAD * 2, h: 1.5,
           fontSize: 56, bold: true, color: "FFFFFF", fontFace: headFont, align: "center",
@@ -431,7 +491,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2) Build .pptx
-    const pptxBuffer = await buildPptx(outline);
+    const templateImages = await loadTemplateImages(body.templateId);
+    const pptxBuffer = await buildPptx(outline, templateImages);
 
     // 3) Upload to storage
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);

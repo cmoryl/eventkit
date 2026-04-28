@@ -363,6 +363,7 @@ const PowerPointAgent: React.FC = () => {
           tone: tone || undefined,
           brand: brandPayload,
           themeOverride: themeOverride || undefined,
+          templateId: selectedTemplateId || undefined,
           source: sourcePayload,
         },
       });
