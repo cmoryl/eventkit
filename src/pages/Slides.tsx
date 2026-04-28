@@ -389,6 +389,23 @@ export default function SlidesPage() {
     setIsEditorOpen(true);
   };
 
+  const openWithAISlides = (slides: SlideData[]) => {
+    setPendingSlides(slides);
+    setEditorKey(k => k + 1);
+    setIsEditorOpen(true);
+  };
+
+  // Brand payload for AI generation (mirrors PowerPointAgent shape)
+  const brandPayload = activeBrand
+    ? {
+        primary: (activeBrand as any)?.styles?.primary_color || (activeBrand as any)?.primary_color || undefined,
+        secondary: (activeBrand as any)?.styles?.secondary_color || (activeBrand as any)?.secondary_color || undefined,
+        accent: (activeBrand as any)?.styles?.accent_color || (activeBrand as any)?.accent_color || undefined,
+        headingFont: (activeBrand as any)?.styles?.heading_font || undefined,
+        bodyFont: (activeBrand as any)?.styles?.body_font || undefined,
+      }
+    : undefined;
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <AuthModal
