@@ -360,16 +360,6 @@ When the content contains numbers, percentages, or trends — DO NOT put them in
 - Chronological events → "timeline" layout
 - Step-by-step → "process" layout
 
-    const refList = Array.isArray(references) ? references.slice(0, 8) : [];
-    const referencesInfo = refList.length
-      ? `\n\nBRAND REFERENCE MATERIAL: The user picked ${refList.length} existing brand asset(s) as style anchors. Mirror their tone, structure, and visual vocabulary where appropriate:\n${refList
-          .map(
-            (r: { name?: string; category?: string; sectionLabel?: string; sourceName?: string }, i: number) =>
-              `${i + 1}. ${r.name || "Asset"} (${r.category || "file"}) — from ${r.sourceName || "brand"}${r.sectionLabel ? ` · ${r.sectionLabel}` : ""}`,
-          )
-          .join("\n")}`
-      : "";
-
 Generate exactly ${clampedSlideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}${referencesInfo}`;
 
     const tools = [
