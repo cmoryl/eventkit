@@ -491,7 +491,8 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2) Build .pptx
-    const pptxBuffer = await buildPptx(outline);
+    const templateImages = await loadTemplateImages(body.templateId);
+    const pptxBuffer = await buildPptx(outline, templateImages);
 
     // 3) Upload to storage
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
