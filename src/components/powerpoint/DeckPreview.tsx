@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, Pencil, Check, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Copy } from "lucide-react";
+import { Download, Pencil, Check, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Copy, Wand2, Minimize2, Maximize2, Shuffle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
