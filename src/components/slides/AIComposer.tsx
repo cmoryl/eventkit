@@ -265,10 +265,21 @@ export const AIComposer: React.FC<Props> = ({ onSlidesReady, brandPayload }) => 
             disabled={busy}
           />
 
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-2">
             <Button size="lg" onClick={planOutline} disabled={busy} className="gap-2">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
               {busy ? "Drafting outline…" : "Draft outline"}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => setPendingOutline(EXAMPLE_OUTLINE)}
+              disabled={busy}
+              className="gap-2"
+              title="Load a fixture covering every layout for visual verification"
+            >
+              <FlaskConical className="w-4 h-4" />
+              Load examples
             </Button>
           </div>
         </>
