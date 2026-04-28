@@ -30,9 +30,8 @@ const AdminUsersManager: React.FC = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const adminToken = sessionStorage.getItem('admin_token') || undefined;
       const { data, error } = await supabase.functions.invoke('admin-users', {
-        body: { action: 'list', adminToken },
+        body: { action: 'list' },
       });
       if (error) throw error;
       setUsers(data?.users || []);
@@ -62,13 +61,11 @@ const AdminUsersManager: React.FC = () => {
     const isAdmin = u.roles.includes('admin');
     setBusyId(u.id);
     try {
-      const adminToken = sessionStorage.getItem('admin_token') || undefined;
       const { error } = await supabase.functions.invoke('admin-users', {
         body: {
           action: isAdmin ? 'revoke_admin' : 'grant_admin',
           targetUserId: u.id,
           role: 'admin',
-          adminToken,
         },
       });
       if (error) throw error;

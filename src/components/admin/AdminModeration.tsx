@@ -56,9 +56,8 @@ const AdminModeration: React.FC = () => {
   const remove = async (id: string) => {
     setBusyId(id);
     try {
-      const adminToken = sessionStorage.getItem('admin_token') || undefined;
       const { error } = await supabase.functions.invoke('admin-users', {
-        body: { action: 'delete_generation', targetUserId: id, adminToken },
+        body: { action: 'delete_generation', targetUserId: id },
       });
       if (error) throw error;
       setRows((prev) => prev.filter((r) => r.id !== id));
