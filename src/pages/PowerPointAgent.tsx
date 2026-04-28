@@ -495,7 +495,7 @@ const PowerPointAgent: React.FC = () => {
 
               {/* Suggestion chips */}
               <div className="flex flex-wrap gap-2 justify-center max-w-3xl mx-auto pt-2">
-                {SUGGESTIONS.map((s) => (
+                {suggestions.map((s) => (
                   <button
                     key={s}
                     type="button"
