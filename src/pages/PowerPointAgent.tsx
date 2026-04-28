@@ -461,7 +461,79 @@ const PowerPointAgent: React.FC = () => {
             )}
           </div>
 
-          {/* Theme override */}
+          {/* PDF source uploader */}
+          <div className="rounded-lg border bg-background/40 p-3 space-y-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => handlePdfSelect(e.target.files?.[0] || null)}
+            />
+
+            {!pdfFile ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isGenerating}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-md border border-dashed border-border hover:border-primary/50 hover:bg-accent/30 transition-colors text-sm text-muted-foreground"
+              >
+                <Upload className="h-4 w-4" />
+                Upload a PDF (optional) — extract content, imagery & look-and-feel
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-sm">
+                  <FileUp className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate flex-1">{pdfFile.name}</span>
+                  {extracting && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  {extractedSource && !extracting && (
+                    <span className="text-xs text-muted-foreground">
+                      {extractedSource.extracted?.pageCount || "?"} pages
+                    </span>
+                  )}
+                  <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearPdf} disabled={isGenerating || extracting}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeText} onCheckedChange={setIncludeText} disabled={isGenerating} />
+                    Text & info
+                  </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeImagery} onCheckedChange={setIncludeImagery} disabled={isGenerating} />
+                    Imagery
+                  </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeLookAndFeel} onCheckedChange={setIncludeLookAndFeel} disabled={isGenerating} />
+                    Look & feel
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <Label className="text-xs">How much to use from PDF</Label>
+                    <span className="text-muted-foreground">{influence}%</span>
+                  </div>
+                  <Slider
+                    value={[influence]}
+                    onValueChange={(v) => setInfluence(v[0])}
+                    min={10}
+                    max={100}
+                    step={10}
+                    disabled={isGenerating}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    {influence >= 70 ? "Stay close to source structure & tone" : influence >= 40 ? "Use as primary inspiration" : "Light reference only"}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+
           <Input
             value={themeOverride}
             onChange={(e) => setThemeOverride(e.target.value)}
