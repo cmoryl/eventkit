@@ -305,29 +305,13 @@ const PowerPointAgent: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const generate = async (overrideTopic?: string) => {
-    const finalTopic = (overrideTopic ?? topic).trim();
-    if (!finalTopic || isGenerating) return;
-
-    const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
-    const pickedCount = selectedPages.length;
+  /**
+   * Build the shared body sent to generate-deck. Used for both planning and final build.
+   */
+  const buildInvokePayload = (finalTopic: string, opts: { planOnly?: boolean; prebuiltOutline?: DeckOutline } = {}) => {
     const fullOutline = extractedSource?.extracted?.outline || [];
     const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
-    const sectionLabel = extractedSource && fullOutline.length
-      ? `, ${filteredOutline.length}/${fullOutline.length} section${fullOutline.length === 1 ? '' : 's'}`
-      : '';
-    const sourceLabel = extractedSource
-      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''}${sectionLabel})`
-      : '';
-    const userMsg: ChatItem = {
-      role: "user",
-      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
-    };
-    setHistory((h) => [...h, userMsg]);
-    setIsGenerating(true);
-    setTopic("");
 
-    // Preserve user-defined order: iterate selectedPages (ordered) and look up each thumbnail
     const pickedImages = selectedPages
       .map((page) => thumbnails.get(page))
       .filter((t): t is NonNullable<typeof t> => !!t)
@@ -357,22 +341,81 @@ const PowerPointAgent: React.FC = () => {
       : undefined;
 
     const sourcePayload =
-      pdfSource || brandHubPayload
-        ? { ...(pdfSource || {}), brandHub: brandHubPayload }
-        : undefined;
+      pdfSource || brandHubPayload ? { ...(pdfSource || {}), brandHub: brandHubPayload } : undefined;
+
+    return {
+      topic: finalTopic,
+      audience: audience || undefined,
+      slideCount,
+      tone: tone || undefined,
+      brand: brandPayload,
+      themeOverride: themeOverride || undefined,
+      templateId: selectedTemplateId || undefined,
+      source: sourcePayload,
+      planOnly: opts.planOnly || undefined,
+      prebuiltOutline: opts.prebuiltOutline,
+    };
+  };
+
+  /**
+   * Step 1 — Outline-first flow (Gamma-style).
+   * Asks AI for an outline only; user reviews/edits before we build the .pptx.
+   */
+  const planOutline = async (overrideTopic?: string) => {
+    const finalTopic = (overrideTopic ?? topic).trim();
+    if (!finalTopic || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-deck", {
+        body: buildInvokePayload(finalTopic, { planOnly: true }),
+      });
+      if (error) {
+        const status = (error as { context?: { status?: number } }).context?.status;
+        if (status === 429) toast({ title: "Rate limit", description: "Please wait a moment.", variant: "destructive" });
+        else if (status === 402) toast({ title: "AI credits exhausted", description: "Add credits in Settings → Workspace → Usage.", variant: "destructive" });
+        else toast({ title: "Outline failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      if (data?.outline) {
+        setPendingOutline(data.outline as DeckOutline);
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "Could not draft outline.", variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  /**
+   * Step 2 — Build .pptx from approved outline (or directly when called without one).
+   */
+  const generate = async (opts: { overrideTopic?: string; prebuiltOutline?: DeckOutline } = {}) => {
+    const finalTopic = (opts.overrideTopic ?? pendingOutline?.title ?? topic).trim();
+    if (!finalTopic || isGenerating) return;
+
+    const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
+    const pickedCount = selectedPages.length;
+    const fullOutline = extractedSource?.extracted?.outline || [];
+    const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
+    const sectionLabel = extractedSource && fullOutline.length
+      ? `, ${filteredOutline.length}/${fullOutline.length} section${fullOutline.length === 1 ? '' : 's'}`
+      : '';
+    const sourceLabel = extractedSource
+      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''}${sectionLabel})`
+      : '';
+    const userMsg: ChatItem = {
+      role: "user",
+      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
+    };
+    setHistory((h) => [...h, userMsg]);
+    setIsGenerating(true);
+    setTopic("");
+    setPendingOutline(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
-        body: {
-          topic: finalTopic,
-          audience: audience || undefined,
-          slideCount,
-          tone: tone || undefined,
-          brand: brandPayload,
-          themeOverride: themeOverride || undefined,
-          templateId: selectedTemplateId || undefined,
-          source: sourcePayload,
-        },
+        body: buildInvokePayload(finalTopic, { prebuiltOutline: opts.prebuiltOutline }),
       });
 
       if (error) {
