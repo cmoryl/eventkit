@@ -374,16 +374,20 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
   );
 };
 
-const SlideRenderer: React.FC<{ slide: SlideOutline; palette: DeckOutline["palette"]; fonts: DeckOutline["fonts"] }> = ({ slide, palette, fonts }) => {
+const SlideRenderer: React.FC<{ slide: SlideOutline; palette: DeckOutline["palette"]; fonts: DeckOutline["fonts"]; templateId?: string }> = ({ slide, palette, fonts, templateId }) => {
   const headingStyle: React.CSSProperties = { fontFamily: fonts?.heading, color: `#${palette.text}` };
   const accent = `#${palette.accent}`;
+  const hasTemplateImage = !!templatePreviewImage(templateId, slide.layout);
+  const surfaceClass = hasTemplateImage ? "rounded-lg bg-background/70 p-4 backdrop-blur-sm" : "";
 
   if (slide.layout === "title" || slide.layout === "closing") {
     return (
       <div className="h-full flex flex-col justify-center items-center text-center gap-3">
-        <h1 className="text-3xl font-bold leading-tight" style={headingStyle}>{slide.title}</h1>
-        {slide.subtitle && <p className="text-sm opacity-75">{slide.subtitle}</p>}
-        <div className="h-1 w-16 rounded mt-2" style={{ background: accent }} />
+        <div className={surfaceClass}>
+          <h1 className="text-3xl font-bold leading-tight" style={headingStyle}>{slide.title}</h1>
+          {slide.subtitle && <p className="text-sm opacity-75">{slide.subtitle}</p>}
+          <div className="h-1 w-16 rounded mt-2 mx-auto" style={{ background: accent }} />
+        </div>
       </div>
     );
   }
