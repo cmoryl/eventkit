@@ -662,7 +662,11 @@ export default function SlidesPage() {
                 viewport={{ once: true }}
                 transition={{ delay: Math.min(i * 0.06, 0.4) }}
               >
-                <TemplateCard template={template} onClick={() => openWithTemplate(template)} />
+                <TemplateCard
+                  template={template}
+                  onClick={() => openWithTemplate(template)}
+                  onSelectSibling={(t) => openWithTemplate(t)}
+                />
               </motion.div>
             ))}
           </div>
