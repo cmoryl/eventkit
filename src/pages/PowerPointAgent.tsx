@@ -408,6 +408,12 @@ const PowerPointAgent: React.FC = () => {
           </p>
         </div>
       </footer>
+
+      <BrandHubImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onBrandImported={() => { setShowImportModal(false); loadBrands(); }}
+      />
     </div>
   );
 };
