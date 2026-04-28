@@ -1,4 +1,5 @@
 // Event Planning Agent - streaming chat via Lovable AI Gateway
+import { requireUser } from "../_shared/auth.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
