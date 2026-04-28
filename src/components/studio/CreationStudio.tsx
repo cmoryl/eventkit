@@ -688,7 +688,7 @@ export const CreationStudio: React.FC = () => {
         <Button
           variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
           size="icon"
-          className="h-8 w-8"
+          className={`h-8 w-8 ${viewMode === 'grid' ? 'text-secondary-foreground' : 'text-foreground/80 hover:text-foreground'}`}
           onClick={() => setViewMode('grid')}
         >
           <Grid className="h-4 w-4" />
@@ -696,7 +696,7 @@ export const CreationStudio: React.FC = () => {
         <Button
           variant={viewMode === 'list' ? 'secondary' : 'ghost'}
           size="icon"
-          className="h-8 w-8"
+          className={`h-8 w-8 ${viewMode === 'list' ? 'text-secondary-foreground' : 'text-foreground/80 hover:text-foreground'}`}
           onClick={() => setViewMode('list')}
         >
           <List className="h-4 w-4" />
