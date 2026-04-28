@@ -43,6 +43,7 @@ interface DeckRequest {
   tone?: string;
   brand?: BrandStyle;
   themeOverride?: string; // free-form override "use a dark navy and gold theme"
+  templateId?: string; // e.g. "transperfect-2026" — enables branded background imagery
   source?: ExtractedSource; // PDF-derived material
   prebuiltOutline?: DeckOutline; // skip AI planning and just build .pptx from this
 }
