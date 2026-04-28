@@ -482,8 +482,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
             </div>
 
             {/* Properties panel */}
-            <div className="w-[300px] border-l bg-card overflow-y-auto shrink-0">
-              <div className="p-4 space-y-5">
+            <div className="w-[300px] border-l bg-card overflow-y-auto shrink-0 h-full min-h-0 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+              <div className="p-4 pb-12 space-y-5">
                 <h3 className="font-semibold text-sm">Slide Properties</h3>
 
                 {/* Layout selector */}
