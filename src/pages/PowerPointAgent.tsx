@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
 import { type PdfThumbnail } from "@/lib/pdfThumbnails";
 import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
+import { SelectedPagesOrder } from "@/components/powerpoint/SelectedPagesOrder";
 
 interface DeckResult {
   downloadUrl: string;
@@ -83,7 +84,9 @@ const PowerPointAgent: React.FC = () => {
   const [influence, setInfluence] = useState<number>(70);
   // Cache of rendered thumbnails (populated lazily by LazyPdfGallery as pages scroll into view)
   const [thumbnails, setThumbnails] = useState<Map<number, PdfThumbnail>>(new Map());
-  const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
+  // Ordered list of selected pages — order is preserved when sent to the deck generator
+  const [selectedPages, setSelectedPages] = useState<number[]>([]);
+  const selectedPagesSet = React.useMemo(() => new Set(selectedPages), [selectedPages]);
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
 
   const loadBrands = useCallback(async () => {
@@ -191,7 +194,7 @@ const PowerPointAgent: React.FC = () => {
     }
     setPdfFile(file);
     setThumbnails(new Map());
-    setSelectedPages(new Set());
+    setSelectedPages([]);
     // Gallery handles lazy thumbnail rendering on its own.
 
     const ok = await runExtraction(file);
@@ -199,14 +202,23 @@ const PowerPointAgent: React.FC = () => {
   };
 
   const togglePage = (page: number) => {
+    setSelectedPages((prev) =>
+      prev.includes(page) ? prev.filter((p) => p !== page) : [...prev, page],
+    );
+  };
+
+  const reorderSelectedPages = (fromIdx: number, toIdx: number) => {
     setSelectedPages((prev) => {
-      const next = new Set(prev);
-      if (next.has(page)) next.delete(page); else next.add(page);
+      if (fromIdx === toIdx || fromIdx < 0 || fromIdx >= prev.length) return prev;
+      const next = prev.slice();
+      const [moved] = next.splice(fromIdx, 1);
+      const insertAt = Math.max(0, Math.min(toIdx, next.length));
+      next.splice(insertAt, 0, moved);
       return next;
     });
   };
 
-  const clearPageSelection = () => setSelectedPages(new Set());
+  const clearPageSelection = () => setSelectedPages([]);
 
   const toggleSection = (idx: number) => {
     setSelectedSections((prev) => {
@@ -225,7 +237,7 @@ const PowerPointAgent: React.FC = () => {
     setPdfFile(null);
     setExtractedSource(null);
     setThumbnails(new Map());
-    setSelectedPages(new Set());
+    setSelectedPages([]);
     setSelectedSections(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -235,7 +247,7 @@ const PowerPointAgent: React.FC = () => {
     if (!finalTopic || isGenerating) return;
 
     const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
-    const pickedCount = selectedPages.size;
+    const pickedCount = selectedPages.length;
     const fullOutline = extractedSource?.extracted?.outline || [];
     const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
     const sectionLabel = extractedSource && fullOutline.length
@@ -252,8 +264,10 @@ const PowerPointAgent: React.FC = () => {
     setIsGenerating(true);
     setTopic("");
 
-    const pickedImages = Array.from(thumbnails.values())
-      .filter((t) => selectedPages.has(t.page))
+    // Preserve user-defined order: iterate selectedPages (ordered) and look up each thumbnail
+    const pickedImages = selectedPages
+      .map((page) => thumbnails.get(page))
+      .filter((t): t is NonNullable<typeof t> => !!t)
       .map((t) => ({ page: t.page, dataUrl: t.dataUrl }));
 
     const sourcePayload = extractedSource
@@ -679,9 +693,16 @@ const PowerPointAgent: React.FC = () => {
                 {/* Page thumbnail gallery (lazy + virtualized) */}
                 <LazyPdfGallery
                   file={pdfFile}
-                  selectedPages={selectedPages}
+                  selectedPages={selectedPagesSet}
                   onTogglePage={togglePage}
-                  onSelectAll={(all) => setSelectedPages(new Set(all))}
+                  onSelectAll={(all) => {
+                    // Preserve existing order; append newly added pages at the end
+                    setSelectedPages((prev) => {
+                      const existing = prev.filter((p) => all.includes(p));
+                      const additions = all.filter((p) => !prev.includes(p));
+                      return [...existing, ...additions];
+                    });
+                  }}
                   onClearSelection={clearPageSelection}
                   onThumbnailRendered={(thumb) =>
                     setThumbnails((prev) => {
@@ -694,6 +715,15 @@ const PowerPointAgent: React.FC = () => {
                   disabled={isGenerating}
                   maxPages={200}
                   defaultPickFirstN={3}
+                />
+
+                {/* Drag-and-drop reorder strip for selected pages */}
+                <SelectedPagesOrder
+                  orderedPages={selectedPages}
+                  thumbnails={thumbnails}
+                  onReorder={reorderSelectedPages}
+                  onRemove={togglePage}
+                  disabled={isGenerating}
                 />
 
               </>
