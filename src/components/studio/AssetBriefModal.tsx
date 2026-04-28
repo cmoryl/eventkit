@@ -13,6 +13,11 @@ import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import AssetSpecificFields from '@/components/AssetSpecificFields';
 import { useGoogleFonts } from '@/hooks/useGoogleFonts';
+import {
+  BriefBrandHubContext,
+  composeBrandHubBriefAddendum,
+  type BrandHubContextSelection,
+} from './BriefBrandHubContext';
 
 // Google Fonts configuration for high-quality typography
 export interface GoogleFontSelection {
