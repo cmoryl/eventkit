@@ -115,8 +115,18 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
       model: "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: SYSTEM },
-        { role: "user", content: userPrompt },
-      ],
+        {
+          role: "user",
+          content: src?.selectedImages?.length
+            ? [
+                { type: "text", text: userPrompt + `\n\nThe user attached ${src.selectedImages.length} reference page image(s) from the source PDF (page numbers: ${src.selectedImages.map((i) => i.page).join(", ")}). Use these as primary visual & layout inspiration — match their imagery, color tone, layout style, and information hierarchy where appropriate. Reference them in speaker notes (e.g. "based on PDF p.${src.selectedImages[0].page}").` },
+                ...src.selectedImages.map((img) => ({
+                  type: "image_url" as const,
+                  image_url: { url: img.dataUrl },
+                })),
+              ]
+            : userPrompt,
+        },
       tools: [
         {
           type: "function",
