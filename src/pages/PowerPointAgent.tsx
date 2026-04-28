@@ -15,6 +15,9 @@ import { BrandPopover } from "@/components/powerpoint/composer/BrandPopover";
 import { SourceSheet } from "@/components/powerpoint/composer/SourceSheet";
 import { RefinePopover } from "@/components/powerpoint/composer/RefinePopover";
 import { TemplateGallery, ALL_DECK_TEMPLATES, type DeckTemplate } from "@/components/powerpoint/composer/TemplateGallery";
+import { ModeCards, type Mode } from "@/components/powerpoint/composer/ModeCards";
+import { QuickControls } from "@/components/powerpoint/composer/QuickControls";
+import { OutlineReview } from "@/components/powerpoint/composer/OutlineReview";
 
 import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
 
