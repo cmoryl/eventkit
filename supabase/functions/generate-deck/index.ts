@@ -127,6 +127,7 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
               ]
             : userPrompt,
         },
+      ],
       tools: [
         {
           type: "function",
