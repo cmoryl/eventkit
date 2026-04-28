@@ -32,6 +32,7 @@ interface ExtractedSource {
   influence?: number;
   scope?: { text?: boolean; imagery?: boolean; lookAndFeel?: boolean };
   fileName?: string;
+  selectedImages?: { page: number; dataUrl: string }[]; // user-picked PDF page snapshots
 }
 
 interface DeckRequest {
