@@ -30,6 +30,7 @@ const TEMPLATE_DEFAULT_TOPICS: Record<string, { topic: string; audience?: string
 interface DeckResult {
   downloadUrl: string;
   filename: string;
+  templateId?: string;
   title: string;
   subtitle: string;
   slideCount: number;
@@ -651,11 +652,12 @@ const PowerPointAgent: React.FC = () => {
                     outline={item.deck.outline}
                     downloadUrl={item.deck.downloadUrl}
                     filename={item.deck.filename}
+                    templateId={item.deck.templateId}
                     onUpdated={(next) => {
                       setHistory((h) =>
                         h.map((x, xi) =>
                           xi === i && x.deck
-                            ? { ...x, deck: { ...x.deck, outline: next.outline, downloadUrl: next.downloadUrl, filename: next.filename } }
+                            ? { ...x, deck: { ...x.deck, outline: next.outline, downloadUrl: next.downloadUrl, filename: next.filename, templateId: next.templateId } }
                             : x,
                         ),
                       );
