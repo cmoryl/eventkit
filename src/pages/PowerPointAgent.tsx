@@ -17,6 +17,7 @@ import { type PdfThumbnail } from "@/lib/pdfThumbnails";
 import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
 import { SelectedPagesOrder } from "@/components/powerpoint/SelectedPagesOrder";
 import { BrandHubSourcePicker, type BrandHubSourcePick } from "@/components/powerpoint/BrandHubSourcePicker";
+import { VoiceAgentPanel } from "@/components/powerpoint/VoiceAgentPanel";
 
 interface DeckResult {
   downloadUrl: string;
@@ -793,6 +794,29 @@ const PowerPointAgent: React.FC = () => {
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onBrandImported={() => { setShowImportModal(false); loadBrands(); }}
+      />
+
+      <VoiceAgentPanel
+        context={{
+          brandName: selectedBrand?.name,
+          isFromBrandHub: selectedBrand?.isFromBrandHub,
+          selectedPages: selectedPages.length,
+          topic,
+          audience,
+          slideCount,
+          tone,
+          themeOverride,
+          useBrand,
+        }}
+        actions={{
+          setTopic,
+          setAudience,
+          setSlideCount,
+          setTone,
+          setThemeOverride,
+          setUseBrand,
+          triggerGenerate: () => generate(),
+        }}
       />
     </div>
   );
