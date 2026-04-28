@@ -103,12 +103,44 @@ const HOW = [
 const SLIDE_W = 1920;
 const SLIDE_H = 1080;
 
+function MiniSlide({ template }: { template: InfographicTemplate }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.05);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      if (w > 0) setScale(w / SLIDE_W);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className="relative w-full rounded-md overflow-hidden border border-border/40"
+      style={{ paddingBottom: '56.25%' }}
+    >
+      <div className="absolute inset-0">
+        <div style={{ width: SLIDE_W, height: SLIDE_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+          <SlideRenderer slide={{ ...template.slide, id: `mini-${template.id}` } as SlideData} animated={false} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TemplateCard({
   template,
   onClick,
+  onSelectSibling,
 }: {
   template: InfographicTemplate;
   onClick: () => void;
+  onSelectSibling?: (t: InfographicTemplate) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -127,6 +159,14 @@ function TemplateCard({
     return () => ro.disconnect();
   }, []);
 
+  const siblings = useMemo(
+    () =>
+      INFOGRAPHIC_TEMPLATES.filter(
+        (t) => t.category === template.category && t.id !== template.id
+      ).slice(0, 3),
+    [template.category, template.id]
+  );
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -134,10 +174,10 @@ function TemplateCard({
       className="group cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={onClick}
     >
       {/* 16:9 container */}
       <div
+        onClick={onClick}
         ref={containerRef}
         className="relative w-full rounded-xl overflow-hidden border border-border/50 group-hover:border-primary/50 shadow-md group-hover:shadow-xl group-hover:shadow-primary/10 transition-all duration-300"
         style={{ paddingBottom: '56.25%' }}
@@ -175,12 +215,33 @@ function TemplateCard({
       </div>
 
       <div className="mt-2.5 px-0.5">
-        <p className="text-sm font-medium text-foreground truncate">{template.name}</p>
+        <p className="text-sm font-medium text-foreground truncate" onClick={onClick}>{template.name}</p>
         <p className="text-xs text-muted-foreground mt-0.5 truncate">{template.description}</p>
       </div>
+
+      {/* Sub-slide thumbnails (sibling layouts in same category) */}
+      {siblings.length > 0 && (
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          {siblings.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectSibling ? onSelectSibling(s) : onClick();
+              }}
+              className="block w-full rounded-md overflow-hidden hover:ring-2 hover:ring-primary/60 transition-all"
+              title={s.name}
+            >
+              <MiniSlide template={s} />
+            </button>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }
+
 
 // ── Hero animated slide preview ───────────────────────────────────────────
 function HeroSlideStack() {
