@@ -455,7 +455,9 @@ Deno.serve(async (req: Request) => {
       subtitle: outline.subtitle,
       slideCount: outline.slides.length,
       palette: outline.palette,
+      fonts: outline.fonts,
       slides: outline.slides.map((s) => ({ layout: s.layout, title: s.title })),
+      outline, // full editable outline for client-side preview/edit
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
