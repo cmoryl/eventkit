@@ -338,14 +338,14 @@ export default function SlidesPage() {
         onClose={() => setIsEditorOpen(false)}
         assetType="presentation"
         assetName="New Presentation"
-        brand={activeBrand}
+        brand={activeBrand as any}
         initialSlides={pendingSlides}
       />
 
       {/* Template gallery standalone dialog */}
       <TemplateGalleryDialog
-        open={isGalleryOpen}
-        onOpenChange={setIsGalleryOpen}
+        isOpen={isGalleryOpen}
+        onClose={() => setIsGalleryOpen(false)}
         onSelect={(template) => {
           setIsGalleryOpen(false);
           openWithTemplate(template);
