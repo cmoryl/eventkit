@@ -83,7 +83,9 @@ const PowerPointAgent: React.FC = () => {
   const [influence, setInfluence] = useState<number>(70);
   // Cache of rendered thumbnails (populated lazily by LazyPdfGallery as pages scroll into view)
   const [thumbnails, setThumbnails] = useState<Map<number, PdfThumbnail>>(new Map());
-  const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
+  // Ordered list of selected pages — order is preserved when sent to the deck generator
+  const [selectedPages, setSelectedPages] = useState<number[]>([]);
+  const selectedPagesSet = React.useMemo(() => new Set(selectedPages), [selectedPages]);
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
 
   const loadBrands = useCallback(async () => {
@@ -199,14 +201,23 @@ const PowerPointAgent: React.FC = () => {
   };
 
   const togglePage = (page: number) => {
+    setSelectedPages((prev) =>
+      prev.includes(page) ? prev.filter((p) => p !== page) : [...prev, page],
+    );
+  };
+
+  const reorderSelectedPages = (fromIdx: number, toIdx: number) => {
     setSelectedPages((prev) => {
-      const next = new Set(prev);
-      if (next.has(page)) next.delete(page); else next.add(page);
+      if (fromIdx === toIdx || fromIdx < 0 || fromIdx >= prev.length) return prev;
+      const next = prev.slice();
+      const [moved] = next.splice(fromIdx, 1);
+      const insertAt = Math.max(0, Math.min(toIdx, next.length));
+      next.splice(insertAt, 0, moved);
       return next;
     });
   };
 
-  const clearPageSelection = () => setSelectedPages(new Set());
+  const clearPageSelection = () => setSelectedPages([]);
 
   const toggleSection = (idx: number) => {
     setSelectedSections((prev) => {
@@ -225,7 +236,7 @@ const PowerPointAgent: React.FC = () => {
     setPdfFile(null);
     setExtractedSource(null);
     setThumbnails(new Map());
-    setSelectedPages(new Set());
+    setSelectedPages([]);
     setSelectedSections(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
