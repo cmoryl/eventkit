@@ -799,7 +799,7 @@ const PowerPointAgent: React.FC = () => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                generate();
+                planOutline();
               }}
               className="flex gap-2"
             >
@@ -809,7 +809,7 @@ const PowerPointAgent: React.FC = () => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    generate();
+                    planOutline();
                   }
                 }}
                 rows={1}
