@@ -713,10 +713,10 @@ export const CreationStudio: React.FC = () => {
       </Button>
 
       <Button
-        variant={showAccessibility ? 'secondary' : 'outline'}
+        variant="outline"
         size="sm"
         onClick={() => setShowAccessibility(!showAccessibility)}
-        className="hidden lg:flex"
+        className={`hidden lg:flex ${showAccessibility ? 'bg-foreground/15 text-foreground border-foreground/20' : 'text-foreground/90'}`}
         title="Accessibility Analysis"
       >
         <Accessibility className="h-4 w-4 mr-2" />
