@@ -16,6 +16,24 @@ interface BrandStyle {
   bodyFont?: string;
 }
 
+interface ExtractedSource {
+  summary?: string;
+  outline?: { heading: string; bullets: string[] }[];
+  keyFacts?: string[];
+  quotes?: { text: string; attribution?: string }[];
+  lookAndFeel?: {
+    palette?: string[];
+    headingFont?: string;
+    bodyFont?: string;
+    mood?: string;
+    description?: string;
+  };
+  imageDescriptions?: string[];
+  influence?: number;
+  scope?: { text?: boolean; imagery?: boolean; lookAndFeel?: boolean };
+  fileName?: string;
+}
+
 interface DeckRequest {
   topic: string;
   audience?: string;
@@ -23,6 +41,7 @@ interface DeckRequest {
   tone?: string;
   brand?: BrandStyle;
   themeOverride?: string; // free-form override "use a dark navy and gold theme"
+  source?: ExtractedSource; // PDF-derived material
 }
 
 interface SlideOutline {
