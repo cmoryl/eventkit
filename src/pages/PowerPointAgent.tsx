@@ -83,6 +83,7 @@ const PowerPointAgent: React.FC = () => {
   const [thumbnails, setThumbnails] = useState<PdfThumbnail[]>([]);
   const [renderingThumbs, setRenderingThumbs] = useState(false);
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
+  const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
 
   const loadBrands = useCallback(async () => {
     if (!user) return;
