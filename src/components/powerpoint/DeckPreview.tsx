@@ -133,6 +133,42 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
     setDirty(true);
   };
 
+  const runAi = async (
+    action: "rewrite" | "shorten" | "expand" | "tone" | "convert" | "regenerate",
+    extras: { tone?: string; targetLayout?: SlideOutline["layout"]; instruction?: string } = {},
+  ) => {
+    setAiBusy(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("edit-slide", {
+        body: {
+          slide: outline.slides[activeIdx],
+          action,
+          deckTitle: outline.title,
+          deckTopic: outline.subtitle,
+          ...extras,
+        },
+      });
+      if (error) {
+        const status = (error as { context?: { status?: number } }).context?.status;
+        toast({
+          title: status === 402 ? "AI credits exhausted" : status === 429 ? "Rate limited" : "AI edit failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      if (data?.slide) {
+        setOutline((o) => ({ ...o, slides: o.slides.map((s, i) => (i === activeIdx ? data.slide : s)) }));
+        setDirty(true);
+        toast({ title: "Slide updated", description: "AI rewrote this slide." });
+      }
+    } catch (e) {
+      toast({ title: "AI edit failed", description: String(e), variant: "destructive" });
+    } finally {
+      setAiBusy(null);
+    }
+  };
+
   const rebuild = async () => {
     setRebuilding(true);
     try {
