@@ -15,6 +15,9 @@ import { BrandPopover } from "@/components/powerpoint/composer/BrandPopover";
 import { SourceSheet } from "@/components/powerpoint/composer/SourceSheet";
 import { RefinePopover } from "@/components/powerpoint/composer/RefinePopover";
 import { TemplateGallery, ALL_DECK_TEMPLATES, type DeckTemplate } from "@/components/powerpoint/composer/TemplateGallery";
+import { ModeCards, type Mode } from "@/components/powerpoint/composer/ModeCards";
+import { QuickControls } from "@/components/powerpoint/composer/QuickControls";
+import { OutlineReview } from "@/components/powerpoint/composer/OutlineReview";
 
 import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
 
@@ -86,6 +89,9 @@ const PowerPointAgent: React.FC = () => {
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [mode, setMode] = useState<Mode>("prompt");
+  const [pendingOutline, setPendingOutline] = useState<DeckOutline | null>(null);
+  const [pasteText, setPasteText] = useState("");
   const [searchParams] = useSearchParams();
 
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
@@ -299,29 +305,13 @@ const PowerPointAgent: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const generate = async (overrideTopic?: string) => {
-    const finalTopic = (overrideTopic ?? topic).trim();
-    if (!finalTopic || isGenerating) return;
-
-    const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
-    const pickedCount = selectedPages.length;
+  /**
+   * Build the shared body sent to generate-deck. Used for both planning and final build.
+   */
+  const buildInvokePayload = (finalTopic: string, opts: { planOnly?: boolean; prebuiltOutline?: DeckOutline } = {}) => {
     const fullOutline = extractedSource?.extracted?.outline || [];
     const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
-    const sectionLabel = extractedSource && fullOutline.length
-      ? `, ${filteredOutline.length}/${fullOutline.length} section${fullOutline.length === 1 ? '' : 's'}`
-      : '';
-    const sourceLabel = extractedSource
-      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''}${sectionLabel})`
-      : '';
-    const userMsg: ChatItem = {
-      role: "user",
-      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
-    };
-    setHistory((h) => [...h, userMsg]);
-    setIsGenerating(true);
-    setTopic("");
 
-    // Preserve user-defined order: iterate selectedPages (ordered) and look up each thumbnail
     const pickedImages = selectedPages
       .map((page) => thumbnails.get(page))
       .filter((t): t is NonNullable<typeof t> => !!t)
@@ -351,22 +341,81 @@ const PowerPointAgent: React.FC = () => {
       : undefined;
 
     const sourcePayload =
-      pdfSource || brandHubPayload
-        ? { ...(pdfSource || {}), brandHub: brandHubPayload }
-        : undefined;
+      pdfSource || brandHubPayload ? { ...(pdfSource || {}), brandHub: brandHubPayload } : undefined;
+
+    return {
+      topic: finalTopic,
+      audience: audience || undefined,
+      slideCount,
+      tone: tone || undefined,
+      brand: brandPayload,
+      themeOverride: themeOverride || undefined,
+      templateId: selectedTemplateId || undefined,
+      source: sourcePayload,
+      planOnly: opts.planOnly || undefined,
+      prebuiltOutline: opts.prebuiltOutline,
+    };
+  };
+
+  /**
+   * Step 1 — Outline-first flow (Gamma-style).
+   * Asks AI for an outline only; user reviews/edits before we build the .pptx.
+   */
+  const planOutline = async (overrideTopic?: string) => {
+    const finalTopic = (overrideTopic ?? topic).trim();
+    if (!finalTopic || isGenerating) return;
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-deck", {
+        body: buildInvokePayload(finalTopic, { planOnly: true }),
+      });
+      if (error) {
+        const status = (error as { context?: { status?: number } }).context?.status;
+        if (status === 429) toast({ title: "Rate limit", description: "Please wait a moment.", variant: "destructive" });
+        else if (status === 402) toast({ title: "AI credits exhausted", description: "Add credits in Settings → Workspace → Usage.", variant: "destructive" });
+        else toast({ title: "Outline failed", description: error.message, variant: "destructive" });
+        return;
+      }
+      if (data?.outline) {
+        setPendingOutline(data.outline as DeckOutline);
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "Could not draft outline.", variant: "destructive" });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  /**
+   * Step 2 — Build .pptx from approved outline (or directly when called without one).
+   */
+  const generate = async (opts: { overrideTopic?: string; prebuiltOutline?: DeckOutline } = {}) => {
+    const finalTopic = (opts.overrideTopic ?? pendingOutline?.title ?? topic).trim();
+    if (!finalTopic || isGenerating) return;
+
+    const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
+    const pickedCount = selectedPages.length;
+    const fullOutline = extractedSource?.extracted?.outline || [];
+    const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
+    const sectionLabel = extractedSource && fullOutline.length
+      ? `, ${filteredOutline.length}/${fullOutline.length} section${fullOutline.length === 1 ? '' : 's'}`
+      : '';
+    const sourceLabel = extractedSource
+      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''}${sectionLabel})`
+      : '';
+    const userMsg: ChatItem = {
+      role: "user",
+      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
+    };
+    setHistory((h) => [...h, userMsg]);
+    setIsGenerating(true);
+    setTopic("");
+    setPendingOutline(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
-        body: {
-          topic: finalTopic,
-          audience: audience || undefined,
-          slideCount,
-          tone: tone || undefined,
-          brand: brandPayload,
-          themeOverride: themeOverride || undefined,
-          templateId: selectedTemplateId || undefined,
-          source: sourcePayload,
-        },
+        body: buildInvokePayload(finalTopic, { prebuiltOutline: opts.prebuiltOutline }),
       });
 
       if (error) {
@@ -454,18 +503,32 @@ const PowerPointAgent: React.FC = () => {
 
       <main ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+          {/* Outline review step (Gamma-style) */}
+          {pendingOutline && (
+            <OutlineReview
+              outline={pendingOutline}
+              onChange={setPendingOutline}
+              onBack={() => setPendingOutline(null)}
+              onConfirm={() => generate({ prebuiltOutline: pendingOutline })}
+              building={isGenerating}
+            />
+          )}
+
           {/* Empty state — hero composer */}
-          {history.length === 0 && (
-            <div className="text-center pt-8 pb-4 space-y-6">
+          {history.length === 0 && !pendingOutline && (
+            <div className="text-center pt-4 pb-4 space-y-6">
               <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent">
                 <Sparkles className="h-8 w-8 text-primary-foreground" />
               </div>
               <div className="space-y-2">
                 <h2 className="text-3xl font-bold">Generate a PowerPoint deck</h2>
                 <p className="text-muted-foreground max-w-xl mx-auto">
-                  Describe your deck. We handle the rest — outline, design, and a downloadable .pptx file.
+                  Pick how you want to start. We draft an outline you can edit before building the .pptx.
                 </p>
               </div>
+
+              {/* Step 1 — choose mode */}
+              <ModeCards active={mode} onChange={setMode} disabled={isGenerating} />
 
               {/* Active template banner */}
               {selectedTemplateId && (() => {
@@ -501,7 +564,7 @@ const PowerPointAgent: React.FC = () => {
                 );
               })()}
 
-              {/* Template gallery (shown when nothing picked yet) */}
+              {/* Template gallery — only matters in 'blank' mode but shown anywhere a template isn't picked */}
               {!selectedTemplateId && (
                 <TemplateGallery
                   selectedId={selectedTemplateId}
@@ -510,48 +573,62 @@ const PowerPointAgent: React.FC = () => {
                 />
               )}
 
-              {/* Hero composer */}
+              {/* Step 2 — quick controls always visible */}
+              <QuickControls
+                slideCount={slideCount}
+                setSlideCount={setSlideCount}
+                tone={tone}
+                setTone={setTone}
+                audience={audience}
+                setAudience={setAudience}
+                disabled={isGenerating}
+              />
+
+              {/* Step 3 — composer (changes by mode) */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  generate();
+                  if (mode === "paste" && pasteText.trim()) {
+                    // Use the pasted text as the topic + add it as light context
+                    planOutline(`Build a deck from this content:\n\n${pasteText.trim().slice(0, 4000)}`);
+                  } else {
+                    planOutline();
+                  }
                 }}
                 className="max-w-3xl mx-auto"
               >
                 <div className="rounded-2xl border bg-card/60 backdrop-blur-sm shadow-sm p-3 space-y-3">
-                  <div className="flex gap-2 items-stretch">
+                  {mode === "paste" ? (
                     <textarea
-                      value={topic}
-                      onChange={(e) => setTopic(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          generate();
-                        }
-                      }}
-                      rows={2}
-                      placeholder="e.g. Pitch deck for a B2B SaaS launching AI scheduling tool"
-                      className="flex-1 resize-none rounded-xl border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={pasteText}
+                      onChange={(e) => setPasteText(e.target.value)}
+                      rows={6}
+                      placeholder="Paste your notes, brief, transcript, or article here…"
+                      className="w-full resize-none rounded-xl border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       disabled={isGenerating}
-                      autoFocus
                     />
-                    <Button
-                      type="submit"
-                      disabled={!topic.trim() || isGenerating}
-                      size="lg"
-                      className="self-stretch px-6"
-                    >
-                      {isGenerating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4" /> Generate
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="flex gap-2 items-stretch">
+                      <textarea
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            planOutline();
+                          }
+                        }}
+                        rows={2}
+                        placeholder={mode === "blank"
+                          ? "Title for your deck (e.g. Q3 Sales Review)"
+                          : "e.g. Pitch deck for a B2B SaaS launching AI scheduling tool"}
+                        className="flex-1 resize-none rounded-xl border bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        disabled={isGenerating}
+                        autoFocus
+                      />
+                    </div>
+                  )}
 
-                  {/* Chips row */}
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                     <BrandPopover
                       brands={brands}
@@ -605,27 +682,43 @@ const PowerPointAgent: React.FC = () => {
                       setThemeOverride={setThemeOverride}
                       disabled={isGenerating}
                     />
+                    <div className="flex-1" />
+                    <Button
+                      type="submit"
+                      size="lg"
+                      disabled={isGenerating || (mode === "paste" ? !pasteText.trim() : !topic.trim())}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4" /> {mode === "blank" ? "Draft outline" : "Generate outline"}
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </form>
 
-              {/* Suggestion chips */}
-              <div className="flex flex-wrap gap-2 justify-center max-w-3xl mx-auto pt-2">
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setTopic(s)}
-                    disabled={isGenerating}
-                    className="px-3 py-1.5 text-xs rounded-full border bg-background hover:border-primary/50 hover:bg-accent/30 transition-colors text-left text-muted-foreground hover:text-foreground"
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
+              {/* Suggestion chips — only relevant in prompt mode */}
+              {mode === "prompt" && (
+                <div className="flex flex-wrap gap-2 justify-center max-w-3xl mx-auto pt-2">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setTopic(s)}
+                      disabled={isGenerating}
+                      className="px-3 py-1.5 text-xs rounded-full border bg-background hover:border-primary/50 hover:bg-accent/30 transition-colors text-left text-muted-foreground hover:text-foreground"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <p className="text-[11px] text-muted-foreground/80 pt-2">
-                Outputs a real .pptx file you can edit in PowerPoint, Keynote, or Google Slides.
+                Outline first → review & edit → we build a real .pptx you can open in PowerPoint, Keynote, or Google Slides.
               </p>
             </div>
           )}
@@ -706,7 +799,7 @@ const PowerPointAgent: React.FC = () => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                generate();
+                planOutline();
               }}
               className="flex gap-2"
             >
@@ -716,7 +809,7 @@ const PowerPointAgent: React.FC = () => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    generate();
+                    planOutline();
                   }
                 }}
                 rows={1}
@@ -811,7 +904,7 @@ const PowerPointAgent: React.FC = () => {
           setTone,
           setThemeOverride,
           setUseBrand,
-          triggerGenerate: () => generate(),
+          triggerGenerate: () => planOutline(),
         }}
       />
     </div>
