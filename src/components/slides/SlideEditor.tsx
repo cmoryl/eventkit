@@ -816,7 +816,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-border hover:border-primary/50 text-muted-foreground"
                               )}
-                              onClick={() => updateSlide(activeIndex, { layout: value })}
+                              onClick={() => {
+                                if (value === 'parallax' && (!activeSlide.parallaxLayers || activeSlide.parallaxLayers.length === 0)) {
+                                  import('./slideTypes').then(({ DEFAULT_PARALLAX_LAYERS }) => {
+                                    updateSlide(activeIndex, { layout: value, parallaxLayers: DEFAULT_PARALLAX_LAYERS.map(l => ({ ...l, id: `${l.id}-${Date.now()}` })), parallaxIntensity: 1 });
+                                  });
+                                } else {
+                                  updateSlide(activeIndex, { layout: value });
+                                }
+                              }}
                             >
                               <Icon className="h-4 w-4" />
                             </button>
