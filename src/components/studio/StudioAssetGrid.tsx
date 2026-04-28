@@ -618,14 +618,14 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
                    )}
                 </div>
                 
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">{info.name}</h3>
-                  <p className="text-sm text-muted-foreground">{info.description}</p>
-                </div>
-                
-                <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-                  {info.dimensions}
-                </div>
+                 <div className="flex-1">
+                   <h3 className="font-semibold text-foreground text-base">{info.name}</h3>
+                   <p className="text-sm text-foreground/75">{info.description}</p>
+                 </div>
+                 
+                 <div className="text-xs font-medium text-foreground/90 bg-muted/80 border border-border/60 px-2 py-1 rounded">
+                   {info.dimensions}
+                 </div>
                 
                 <div className="flex items-center gap-2">
                   {PRINT_ASSET_TYPES.has(assetType) && (
@@ -1051,11 +1051,11 @@ export const StudioAssetGrid: React.FC<StudioAssetGridProps> = ({
               
               {/* Info */}
               <div className="p-3 bg-card">
-                <h3 className="font-medium text-sm text-foreground truncate">{info.name}</h3>
+                <h3 className="font-semibold text-sm text-foreground truncate">{info.name}</h3>
                 <div className="flex items-center justify-between mt-1">
-                  <p className="text-xs text-muted-foreground truncate">{info.description}</p>
+                  <p className="text-xs text-foreground/75 truncate">{info.description}</p>
                 </div>
-                <div className="mt-2 text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded inline-block">
+                <div className="mt-2 text-[10px] font-medium text-foreground/90 bg-muted/80 border border-border/60 px-2 py-0.5 rounded inline-block">
                   {info.dimensions}
                 </div>
               </div>
