@@ -314,13 +314,63 @@ const PowerPointAgent: React.FC = () => {
               <Input id="slides" type="number" min={3} max={30} value={slideCount}
                 onChange={(e) => setSlideCount(Math.max(3, Math.min(30, Number(e.target.value) || 10)))}
                 className="h-9" disabled={isGenerating} />
+          </div>
+
+          {/* Brand picker row */}
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[240px]">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Library className="h-3 w-3" /> Brand guide reference
+              </Label>
+              <div className="flex gap-2">
+                <Select
+                  value={selectedBrandId || "none"}
+                  onValueChange={(v) => {
+                    if (v === "none") { setSelectedBrandId(""); setUseBrand(false); }
+                    else { setSelectedBrandId(v); setUseBrand(true); }
+                  }}
+                  disabled={isGenerating}
+                >
+                  <SelectTrigger className="h-9 flex-1">
+                    <SelectValue placeholder="No brand styling" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover z-50">
+                    <SelectItem value="none">No brand — neutral styling</SelectItem>
+                    {brands.length > 0 && (
+                      <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Your imported brands
+                      </div>
+                    )}
+                    {brands.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>
+                        <div className="flex items-center gap-2">
+                          {b.styles?.primary_color && (
+                            <span className="h-3 w-3 rounded-full border border-border/50" style={{ background: b.styles.primary_color }} />
+                          )}
+                          <span>{b.name}</span>
+                          {b.isFromBrandHub && <span className="text-[10px] text-muted-foreground">· BrandHub</span>}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  onClick={() => setShowImportModal(true)}
+                  disabled={isGenerating}
+                  title="Import from BrandHub"
+                >
+                  <Plus className="h-4 w-4" /> BrandHub
+                </Button>
+              </div>
             </div>
-            {activeBrand && (
+            {selectedBrand && (
               <div className="flex items-center gap-2 h-9 px-3 rounded-lg border bg-background">
                 <Switch id="brand" checked={useBrand} onCheckedChange={setUseBrand} disabled={isGenerating} />
-                <Label htmlFor="brand" className="text-xs cursor-pointer truncate max-w-[120px]">
-                  Use {activeBrand.name}
-                </Label>
+                <Label htmlFor="brand" className="text-xs cursor-pointer">Apply styling</Label>
               </div>
             )}
           </div>
