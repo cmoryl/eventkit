@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Sparkles, Loader2, Wand2 } from "lucide-react";
+import { Sparkles, Loader2, Wand2, FlaskConical } from "lucide-react";
+import { EXAMPLE_OUTLINE } from "@/components/slides/outlineFixtures";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
