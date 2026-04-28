@@ -1,6 +1,5 @@
 // Mints a short-lived ElevenLabs WebRTC conversation token for the PowerPoint agent.
-// Keeps ELEVENLABS_API_KEY server-side only.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// Public endpoint — keeps ELEVENLABS_API_KEY server-side only.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,28 +14,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Auth: require a logged-in user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
-    );
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    // Public endpoint: no auth required (voice agent is available to anonymous users on /agent/powerpoint)
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     const AGENT_ID = Deno.env.get("ELEVENLABS_POWERPOINT_AGENT_ID");
 
