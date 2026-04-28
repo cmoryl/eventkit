@@ -517,7 +517,7 @@ const PowerPointAgent: React.FC = () => {
           {history.map((item, i) => (
             <div key={i} className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[85%] rounded-2xl px-5 py-4 ${
+                className={`max-w-[95%] rounded-2xl px-5 py-4 ${
                   item.role === "user" ? "bg-primary text-primary-foreground" : "bg-card border"
                 }`}
               >
