@@ -134,36 +134,10 @@ const PowerPointAgent: React.FC = () => {
       reader.readAsDataURL(file);
     });
 
-  const handlePdfSelect = async (file: File | null) => {
-    if (!file) return;
-    if (file.type !== "application/pdf") {
-      toast({ title: "PDF only", description: "Please upload a .pdf file.", variant: "destructive" });
-      return;
-    }
-    if (file.size > 20 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 20MB.", variant: "destructive" });
-      return;
-    }
-    setPdfFile(file);
+  const runExtraction = async (file: File) => {
     setExtractedSource(null);
-    setThumbnails([]);
-    setSelectedPages(new Set());
+    setSelectedSections(new Set());
     setExtracting(true);
-    setRenderingThumbs(true);
-
-    // Render thumbnails in parallel with AI extraction
-    renderPdfThumbnails(file, { maxWidth: 480, quality: 0.7, maxPages: 50 })
-      .then((thumbs) => {
-        setThumbnails(thumbs);
-        // Default-select first 3 pages so users get instant value
-        setSelectedPages(new Set(thumbs.slice(0, 3).map((t) => t.page)));
-      })
-      .catch((e) => {
-        console.error("Thumb render failed:", e);
-        toast({ title: "Thumbnails unavailable", description: "Couldn't preview pages.", variant: "destructive" });
-      })
-      .finally(() => setRenderingThumbs(false));
-
     try {
       const fileBase64 = await fileToBase64(file);
       const { data, error } = await supabase.functions.invoke("extract-pdf-source", {
@@ -183,20 +157,56 @@ const PowerPointAgent: React.FC = () => {
           description: error.message,
           variant: "destructive",
         });
-        setPdfFile(null);
-        return;
+        return false;
       }
       setExtractedSource({ ...data, _imageDescriptions: data.imageDescriptions });
       const sectionCount = (data.extracted?.outline || []).length;
       setSelectedSections(new Set(Array.from({ length: sectionCount }, (_, i) => i)));
       toast({ title: "PDF extracted", description: `${data.extracted?.pageCount || "?"} pages parsed.` });
+      return true;
     } catch (e) {
       console.error(e);
       toast({ title: "Couldn't read PDF", variant: "destructive" });
-      setPdfFile(null);
+      return false;
     } finally {
       setExtracting(false);
     }
+  };
+
+  const rerunExtraction = async () => {
+    if (!pdfFile || extracting || isGenerating) return;
+    await runExtraction(pdfFile);
+  };
+
+  const handlePdfSelect = async (file: File | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast({ title: "PDF only", description: "Please upload a .pdf file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 20MB.", variant: "destructive" });
+      return;
+    }
+    setPdfFile(file);
+    setThumbnails([]);
+    setSelectedPages(new Set());
+    setRenderingThumbs(true);
+
+    // Render thumbnails in parallel with AI extraction
+    renderPdfThumbnails(file, { maxWidth: 480, quality: 0.7, maxPages: 50 })
+      .then((thumbs) => {
+        setThumbnails(thumbs);
+        setSelectedPages(new Set(thumbs.slice(0, 3).map((t) => t.page)));
+      })
+      .catch((e) => {
+        console.error("Thumb render failed:", e);
+        toast({ title: "Thumbnails unavailable", description: "Couldn't preview pages.", variant: "destructive" });
+      })
+      .finally(() => setRenderingThumbs(false));
+
+    const ok = await runExtraction(file);
+    if (!ok) setPdfFile(null);
   };
 
   const togglePage = (page: number) => {
@@ -557,6 +567,22 @@ const PowerPointAgent: React.FC = () => {
                       {extractedSource.extracted?.pageCount || "?"} pages
                     </span>
                   )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs gap-1"
+                    onClick={rerunExtraction}
+                    disabled={isGenerating || extracting}
+                    title="Re-run extraction with current toggles & influence"
+                  >
+                    {extracting ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Re-run
+                  </Button>
                   <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearPdf} disabled={isGenerating || extracting}>
                     <X className="h-4 w-4" />
                   </Button>
