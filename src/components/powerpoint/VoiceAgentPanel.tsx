@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useConversation } from "@elevenlabs/react";
+import { useConversation, ConversationProvider } from "@elevenlabs/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, MicOff, Phone, PhoneOff, Loader2, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ interface Props {
   actions: VoiceAgentActions;
 }
 
-export const VoiceAgentPanel: React.FC<Props> = ({ context, actions }) => {
+const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -352,5 +352,11 @@ export const VoiceAgentPanel: React.FC<Props> = ({ context, actions }) => {
     </div>
   );
 };
+
+export const VoiceAgentPanel: React.FC<Props> = (props) => (
+  <ConversationProvider>
+    <VoiceAgentPanelInner {...props} />
+  </ConversationProvider>
+);
 
 export default VoiceAgentPanel;
