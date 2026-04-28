@@ -70,6 +70,16 @@ const PowerPointAgent: React.FC = () => {
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [showImportModal, setShowImportModal] = useState(false);
 
+  // PDF source
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractedSource, setExtractedSource] = useState<any | null>(null);
+  const [includeText, setIncludeText] = useState(true);
+  const [includeImagery, setIncludeImagery] = useState(true);
+  const [includeLookAndFeel, setIncludeLookAndFeel] = useState(true);
+  const [influence, setInfluence] = useState<number>(70);
+
   const loadBrands = useCallback(async () => {
     if (!user) return;
     const { data, error } = await supabase
