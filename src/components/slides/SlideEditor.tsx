@@ -226,26 +226,77 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
       toast.info(`${file.name} opened in a new tab — only .pptx files can be imported directly.`);
       return;
     }
+
+    // Try direct → proxy → open-in-new-tab. BrandHub hosts often omit
+    // Access-Control-Allow-Origin which causes the browser to throw a TypeError
+    // before we ever see a status code, so we fall through to the server-side
+    // proxy and finally surface a clear retry message with an "Open" action.
     const loadingToast = toast.loading(`Loading ${file.name}…`);
-    try {
-      const res = await fetch(file.url, { mode: 'cors' });
-      if (!res.ok) throw new Error(`Download failed (${res.status})`);
-      const blob = await res.blob();
-      const fakeFile = new File([blob], file.name, { type: blob.type || 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    const tryParse = async (blob: Blob) => {
+      const fakeFile = new File([blob], file.name, {
+        type: blob.type || 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      });
       const imported = await parsePptxFile(fakeFile);
       setSlides(imported);
       setActiveIndex(0);
       toast.dismiss(loadingToast);
       toast.success(`Imported ${imported.length} slides from ${file.name}`);
       setIsAssetsLibraryOpen(false);
-    } catch (err) {
+    };
+
+    const fetchViaProxy = async (): Promise<Blob> => {
+      const { data, error } = await supabase.functions.invoke('proxy-brandhub-file', {
+        body: null,
+        // invoke doesn't support GET query strings cleanly; use direct URL.
+      });
+      // Fallback: invoke() can't do query strings reliably, so call the
+      // function URL directly.
+      if (error || !data) {
+        const base = (import.meta as any).env?.VITE_SUPABASE_URL;
+        const proxyUrl = `${base}/functions/v1/proxy-brandhub-file?url=${encodeURIComponent(file.url)}`;
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
+        return await res.blob();
+      }
+      return data as Blob;
+    };
+
+    const openInNewTabFallback = (reason: string) => {
       toast.dismiss(loadingToast);
-      console.error('BrandHub deck import error:', err);
+      console.warn('BrandHub deck import fallback:', reason);
       toast.error(
-        err instanceof Error
-          ? `Couldn't import that deck (${err.message}). It may be hosted on a server that blocks cross-origin downloads.`
-          : "Couldn't import that deck.",
+        `Couldn't import "${file.name}" automatically — the host blocked the download (CORS). Opening it in a new tab so you can save it locally and re-import.`,
+        {
+          duration: 8000,
+          action: {
+            label: 'Open file',
+            onClick: () => window.open(file.url, '_blank', 'noopener,noreferrer'),
+          },
+        },
       );
+      // Auto-open as well so the user immediately gets the file.
+      window.open(file.url, '_blank', 'noopener,noreferrer');
+    };
+
+    // 1) Direct fetch
+    try {
+      const res = await fetch(file.url, { mode: 'cors' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await tryParse(await res.blob());
+      return;
+    } catch (directErr) {
+      console.warn('Direct BrandHub fetch failed, trying proxy:', directErr);
+    }
+
+    // 2) Server-side proxy retry
+    try {
+      toast.loading(`Retrying via secure proxy…`, { id: loadingToast });
+      const blob = await fetchViaProxy();
+      await tryParse(blob);
+      return;
+    } catch (proxyErr) {
+      // 3) Final fallback — open in new tab with retry messaging.
+      openInNewTabFallback(proxyErr instanceof Error ? proxyErr.message : 'proxy failed');
     }
   }, []);
 
