@@ -16,7 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/types/studio.types';
-import { SlideData, DEFAULT_SLIDES, SLIDE_TEMPLATES } from './slideTypes';
+import { SlideData, DEFAULT_SLIDES, SLIDE_TEMPLATES, SlideBgEffect, SlideBgEffectType, SlideBgEffectPresetName, BG_EFFECT_PRESETS } from './slideTypes';
+import { Slider } from '@/components/ui/slider';
+import { TemplateGalleryDialog } from './TemplateGalleryDialog';
+import type { InfographicTemplate } from './infographicTemplates';
 import { SlideRenderer } from './SlideRenderer';
 import { SlideThumbnail } from './SlideThumbnail';
 import { CenteredScaledSlide } from './ScaledSlide';
@@ -74,6 +77,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [slideTransition, setSlideTransition] = useState<SlideTransition>('fade');
   const [isGridView, setIsGridView] = useState(false);
   const [animatedBackgrounds, setAnimatedBackgrounds] = useState(true);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isAssetsLibraryOpen, setIsAssetsLibraryOpen] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
 
@@ -199,6 +203,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     setSlides(newSlides);
     setActiveIndex(0);
   }, []);
+
+  const handleTemplateSelected = useCallback((template: InfographicTemplate) => {
+    const newSlide: SlideData = { ...template.slide, id: uuidv4() };
+    setSlides(prev => {
+      const next = [...prev];
+      next.splice(activeIndex + 1, 0, newSlide);
+      return next;
+    });
+    setActiveIndex(prev => prev + 1);
+    toast.success(`Inserted "${template.name}"`);
+  }, [activeIndex]);
 
   const handleImportPptx = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -379,6 +394,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                   </div>
                 </PopoverContent>
               </Popover>
+
+              <Button size="sm" variant="outline" onClick={() => setIsGalleryOpen(true)}>
+                <LayoutTemplate className="h-3.5 w-3.5 mr-1.5" />
+                Gallery
+              </Button>
 
               <Button size="sm" variant="default" onClick={() => setIsAIGeneratorOpen(true)}>
                 <Sparkles className="h-3.5 w-3.5 mr-1.5" />
@@ -697,6 +717,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                     )}
                   </div>
                 </div>
+
+                {/* Background effect */}
+                <BgEffectEditor slide={activeSlide} onUpdate={(updates) => updateSlide(activeIndex, updates)} />
 
                 {/* Text alignment */}
                 <div className="space-y-2">
@@ -1185,7 +1208,231 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
       onReferenceSelectionChange={setReferenceFiles}
       initialReferences={referenceFiles}
     />
+
+    <TemplateGalleryDialog
+      isOpen={isGalleryOpen}
+      onClose={() => setIsGalleryOpen(false)}
+      onSelect={handleTemplateSelected}
+      brandColors={brandColors}
+      brandFonts={brandFonts}
+    />
     </>
+  );
+}
+
+// ── Background effect editor ───────────────────────────────────────────────
+const EFFECT_LABELS: { value: SlideBgEffectType; label: string }[] = [
+  { value: 'none',      label: 'None' },
+  { value: 'orbs',      label: 'Orbs' },
+  { value: 'particles', label: 'Particles' },
+  { value: 'mesh',      label: 'Mesh' },
+  { value: 'grid',      label: 'Grid Pulse' },
+  { value: 'waves',     label: 'Waves' },
+  { value: 'grain',     label: 'Film Grain' },
+  { value: 'beam',      label: 'Light Beam' },
+];
+
+const PRESET_NAMES: SlideBgEffectPresetName[] = ['calm', 'subtle', 'active', 'dramatic'];
+
+function BgEffectEditor({ slide, onUpdate }: { slide: SlideData; onUpdate: (updates: Partial<SlideData>) => void }) {
+  const effect = slide.bgEffect ?? { type: 'none' as const };
+  const isOn = effect.type !== 'none';
+
+  const setEffect = (patch: Partial<SlideBgEffect>) => {
+    onUpdate({ bgEffect: { ...effect, ...patch } });
+  };
+
+  const applyPreset = (name: SlideBgEffectPresetName) => {
+    if (effect.type === 'none') return;
+    const preset = BG_EFFECT_PRESETS[effect.type][name];
+    onUpdate({ bgEffect: { type: effect.type, color: effect.color, ...preset } });
+  };
+
+  const changeType = (next: SlideBgEffectType) => {
+    if (next === 'none') {
+      onUpdate({ bgEffect: undefined });
+      return;
+    }
+    const preset = BG_EFFECT_PRESETS[next].subtle;
+    onUpdate({ bgEffect: { type: next, color: effect.color, ...preset } });
+  };
+
+  return (
+    <div className="space-y-2 rounded-md border border-border bg-muted/20 p-2.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+          <Sparkles className="h-3 w-3" />
+          Background Effect
+        </label>
+        {isOn && effect.color && (
+          <button
+            type="button"
+            onClick={() => setEffect({ color: undefined })}
+            className="text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            reset color
+          </button>
+        )}
+      </div>
+
+      <Select value={effect.type} onValueChange={(v) => changeType(v as SlideBgEffectType)}>
+        <SelectTrigger className="h-8 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {EFFECT_LABELS.map(({ value, label }) => (
+            <SelectItem key={value} value={value}>{label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {isOn && (
+        <>
+          <div className="grid grid-cols-4 gap-1">
+            {PRESET_NAMES.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => applyPreset(name)}
+                className="text-[10px] px-1.5 py-1 rounded border border-border bg-background hover:bg-primary/10 hover:border-primary/40 capitalize"
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>Speed</span>
+              <span className="font-mono">{(effect.speed ?? 1).toFixed(1)}×</span>
+            </div>
+            <Slider
+              value={[effect.speed ?? 1]}
+              min={0.3} max={3} step={0.1}
+              onValueChange={([v]) => setEffect({ speed: v })}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] text-muted-foreground">
+              <span>Intensity</span>
+              <span className="font-mono">{Math.round((effect.intensity ?? 0.6) * 100)}%</span>
+            </div>
+            <Slider
+              value={[effect.intensity ?? 0.6]}
+              min={0.05} max={1} step={0.05}
+              onValueChange={([v]) => setEffect({ intensity: v })}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground">Color</label>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="color"
+                value={effect.color || '#6366f1'}
+                onChange={(e) => setEffect({ color: e.target.value })}
+                className="h-7 w-7 rounded border border-border cursor-pointer"
+              />
+              <Input
+                className="h-7 text-[10px] font-mono flex-1"
+                value={effect.color || ''}
+                onChange={(e) => setEffect({ color: e.target.value || undefined })}
+                placeholder="Auto (brand accent)"
+              />
+            </div>
+          </div>
+
+          {effect.type === 'orbs' && (
+            <>
+              <ParamSlider label="Count" value={effect.count ?? 3} min={2} max={6} step={1} unit="" onChange={(v) => setEffect({ count: v })} />
+              <ParamSlider label="Size" value={effect.size ?? 50} min={20} max={100} step={5} unit="%" onChange={(v) => setEffect({ size: v })} />
+              <ParamSlider label="Blur" value={effect.blur ?? 80} min={20} max={150} step={5} unit="px" onChange={(v) => setEffect({ blur: v })} />
+            </>
+          )}
+
+          {effect.type === 'particles' && (
+            <>
+              <ParamSlider label="Count" value={effect.count ?? 30} min={5} max={80} step={1} unit="" onChange={(v) => setEffect({ count: v })} />
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground">Direction</label>
+                <div className="grid grid-cols-3 gap-1">
+                  {(['up', 'down', 'float'] as const).map((dir) => (
+                    <button
+                      key={dir}
+                      type="button"
+                      onClick={() => setEffect({ direction: dir })}
+                      className={cn(
+                        'text-[10px] px-1.5 py-1 rounded border capitalize',
+                        (effect.direction || 'up') === dir
+                          ? 'bg-primary/10 border-primary/40 text-foreground'
+                          : 'bg-background border-border text-muted-foreground',
+                      )}
+                    >
+                      {dir}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {effect.type === 'mesh' && (
+            <>
+              <ParamSlider label="Blur" value={effect.blur ?? 60} min={20} max={120} step={5} unit="px" onChange={(v) => setEffect({ blur: v })} />
+              <ParamSlider label="Hue Shift" value={effect.hueRotate ?? 60} min={0} max={360} step={15} unit="°" onChange={(v) => setEffect({ hueRotate: v })} />
+            </>
+          )}
+
+          {effect.type === 'grid' && (
+            <>
+              <ParamSlider label="Spacing" value={effect.spacing ?? 50} min={20} max={100} step={5} unit="px" onChange={(v) => setEffect({ spacing: v })} />
+              <ParamSlider label="Dot Size" value={effect.dotSize ?? 2} min={1} max={5} step={0.5} unit="px" onChange={(v) => setEffect({ dotSize: v })} />
+              <ParamSlider label="Pulse Depth" value={effect.pulseDepth ?? 0.5} min={0.1} max={1} step={0.05} unit="" fractionDigits={2} onChange={(v) => setEffect({ pulseDepth: v })} />
+            </>
+          )}
+
+          {effect.type === 'waves' && (
+            <>
+              <ParamSlider label="Amplitude" value={effect.amplitude ?? 30} min={10} max={80} step={5} unit="" onChange={(v) => setEffect({ amplitude: v })} />
+              <ParamSlider label="Layers" value={effect.layers ?? 2} min={1} max={4} step={1} unit="" onChange={(v) => setEffect({ layers: v })} />
+            </>
+          )}
+
+          {effect.type === 'grain' && (
+            <ParamSlider label="Density" value={effect.density ?? 0.6} min={0.1} max={1} step={0.05} unit="" fractionDigits={2} onChange={(v) => setEffect({ density: v })} />
+          )}
+
+          {effect.type === 'beam' && (
+            <>
+              <ParamSlider label="Angle" value={effect.angle ?? 30} min={-60} max={60} step={5} unit="°" onChange={(v) => setEffect({ angle: v })} />
+              <ParamSlider label="Width" value={effect.width ?? 200} min={60} max={400} step={10} unit="px" onChange={(v) => setEffect({ width: v })} />
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function ParamSlider({ label, value, min, max, step, unit, fractionDigits = 0, onChange }: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  unit: string;
+  fractionDigits?: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-[10px] text-muted-foreground">
+        <span>{label}</span>
+        <span className="font-mono">{value.toFixed(fractionDigits)}{unit}</span>
+      </div>
+      <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} />
+    </div>
   );
 }
 
