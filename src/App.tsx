@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Admin from "./pages/Admin";
+import Agent from "./pages/Agent";
 import NotFound from "./pages/NotFound";
 import { CreationStudio } from "@/components/studio/CreationStudio";
 import { initializeBrandTheme } from "@/services/brandThemeService";
@@ -38,6 +39,7 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/agent" element={<Agent />} />
                 <Route path="/studio/:studioId" element={<CreationStudio />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
