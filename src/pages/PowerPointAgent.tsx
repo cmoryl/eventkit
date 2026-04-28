@@ -15,6 +15,8 @@ import { BrandPopover } from "@/components/powerpoint/composer/BrandPopover";
 import { SourceSheet } from "@/components/powerpoint/composer/SourceSheet";
 import { RefinePopover } from "@/components/powerpoint/composer/RefinePopover";
 
+import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
+
 interface DeckResult {
   downloadUrl: string;
   filename: string;
@@ -23,6 +25,7 @@ interface DeckResult {
   slideCount: number;
   palette: { primary: string; secondary: string; accent: string; background: string; text: string };
   slides: { layout: string; title: string }[];
+  outline?: DeckOutline;
 }
 
 interface ChatItem {
