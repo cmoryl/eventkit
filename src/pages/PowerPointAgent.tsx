@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -14,8 +14,18 @@ import { VoiceAgentPanel } from "@/components/powerpoint/VoiceAgentPanel";
 import { BrandPopover } from "@/components/powerpoint/composer/BrandPopover";
 import { SourceSheet } from "@/components/powerpoint/composer/SourceSheet";
 import { RefinePopover } from "@/components/powerpoint/composer/RefinePopover";
+import { TemplateGallery, ALL_DECK_TEMPLATES, type DeckTemplate } from "@/components/powerpoint/composer/TemplateGallery";
 
 import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
+
+// Default 10-slide outline suggestions per template — populates topic area when picked
+const TEMPLATE_DEFAULT_TOPICS: Record<string, { topic: string; audience?: string; tone?: string }> = {
+  "transperfect-2026": {
+    topic: "TransPerfect 2026 — Global Language & AI Solutions overview. 10 slides covering: 1) Cover, 2) Who we are, 3) Mission & vision, 4) Global footprint, 5) Service portfolio, 6) AI platform (GlobalLink NEXT), 7) Industry expertise, 8) Case study highlight, 9) Why TransPerfect, 10) Contact / next steps.",
+    audience: "Enterprise prospects, marketing & localization leaders",
+    tone: "Authoritative, modern, human, transformative",
+  },
+};
 
 interface DeckResult {
   downloadUrl: string;
@@ -74,6 +84,32 @@ const PowerPointAgent: React.FC = () => {
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [searchParams] = useSearchParams();
+
+  const applyTemplate = useCallback((tpl: DeckTemplate) => {
+    setSelectedTemplateId(tpl.id);
+    setThemeOverride(tpl.themePrompt);
+    const defaults = TEMPLATE_DEFAULT_TOPICS[tpl.id];
+    if (defaults) {
+      // Only prefill empty fields so we never overwrite the user's typing
+      setTopic((prev) => prev.trim() ? prev : defaults.topic);
+      setAudience((prev) => prev.trim() ? prev : defaults.audience || prev);
+      setTone((prev) => prev.trim() ? prev : defaults.tone || prev);
+      setSlideCount(10);
+    }
+    toast({ title: `${tpl.name} template applied`, description: "Look & feel locked in. Edit the topic and hit Generate." });
+  }, [toast]);
+
+  // Apply ?template= from URL once brands etc. are ready
+  useEffect(() => {
+    const tplId = searchParams.get("template");
+    if (!tplId || selectedTemplateId) return;
+    const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === tplId);
+    if (tpl) applyTemplate(tpl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
 
   // PDF source
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -428,6 +464,49 @@ const PowerPointAgent: React.FC = () => {
                   Describe your deck. We handle the rest — outline, design, and a downloadable .pptx file.
                 </p>
               </div>
+
+              {/* Active template banner */}
+              {selectedTemplateId && (() => {
+                const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === selectedTemplateId);
+                if (!tpl) return null;
+                return (
+                  <div className="max-w-3xl mx-auto flex items-center gap-3 rounded-xl border bg-card/60 backdrop-blur-sm p-3 text-left">
+                    <div
+                      className="h-10 w-14 rounded-md border shrink-0"
+                      style={{ background: tpl.palette.bg }}
+                    >
+                      <div className="flex gap-1 p-1.5">
+                        <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.accent }} />
+                        <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.secondary }} />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold flex items-center gap-1.5">
+                        <Check className="h-3.5 w-3.5 text-primary" />
+                        {tpl.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{tpl.description || "Look & feel applied to your deck"}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => { setSelectedTemplateId(""); setThemeOverride(""); }}
+                    >
+                      Change
+                    </Button>
+                  </div>
+                );
+              })()}
+
+              {/* Template gallery (shown when nothing picked yet) */}
+              {!selectedTemplateId && (
+                <TemplateGallery
+                  selectedId={selectedTemplateId}
+                  onSelect={applyTemplate}
+                  disabled={isGenerating}
+                />
+              )}
 
               {/* Hero composer */}
               <form
