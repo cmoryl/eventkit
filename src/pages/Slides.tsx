@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Presentation, Wand2, Download, Play,
   ArrowRight, Layers, LayoutGrid, Zap, FileDown,
-  ChevronRight, Star, Bot, Palette,
+  ChevronRight, Star, Bot, Palette, Crown,
 } from 'lucide-react';
+import transperfectHero from '@/assets/templates/transperfect-hero.jpg';
 import { Button } from '@/components/ui/button';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { SlideEditor } from '@/components/slides/SlideEditor';
