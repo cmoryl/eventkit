@@ -218,7 +218,6 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       await conversation.startSession({
         conversationToken: data.token,
         connectionType: "webrtc",
-        volume: 1,
         overrides: {
           agent: {
             prompt: { prompt: buildDynamicPrompt() },
