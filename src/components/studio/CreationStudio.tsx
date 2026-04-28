@@ -724,9 +724,9 @@ export const CreationStudio: React.FC = () => {
       </Button>
 
       <Button
-        variant={showBrandsPanel ? 'secondary' : 'outline'}
+        variant="outline"
         size="icon"
-        className="h-8 w-8 hidden md:flex"
+        className={`h-8 w-8 hidden md:flex ${showBrandsPanel ? 'bg-foreground/15 text-foreground border-foreground/20' : 'text-foreground/80 hover:text-foreground'}`}
         onClick={() => setShowBrandsPanel(!showBrandsPanel)}
         title={showBrandsPanel ? 'Hide Brands Panel' : 'Show Brands Panel'}
       >
