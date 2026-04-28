@@ -8,6 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import transperfectHero from "@/assets/templates/transperfect-hero.jpg";
+import transperfectHeroSquare from "@/assets/templates/transperfect-hero-square.jpg";
+import transperfectSectionBg from "@/assets/templates/transperfect-section-bg.jpg";
+import transperfectLightPattern from "@/assets/templates/transperfect-light-pattern.jpg";
+import transperfectCard from "@/assets/templates/transperfect-card.jpg";
 
 export interface SlideOutline {
   layout: "title" | "section" | "bullets" | "two_column" | "stat" | "quote" | "closing";
@@ -50,6 +55,21 @@ const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
 const LAYOUT_OPTIONS: SlideOutline["layout"][] = [
   "title", "section", "bullets", "two_column", "stat", "quote", "closing",
 ];
+
+const TEMPLATE_PREVIEW_IMAGES: Record<string, Record<SlideOutline["layout"], string>> = {
+  "transperfect-2026": {
+    title: transperfectHero,
+    closing: transperfectHero,
+    section: transperfectSectionBg,
+    bullets: transperfectLightPattern,
+    two_column: transperfectLightPattern,
+    stat: transperfectCard,
+    quote: transperfectHeroSquare,
+  },
+};
+
+const templatePreviewImage = (templateId: string | undefined, layout: SlideOutline["layout"]) =>
+  templateId ? TEMPLATE_PREVIEW_IMAGES[templateId]?.[layout] : undefined;
 
 export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: initialUrl, filename: initialFile, templateId, onUpdated }) => {
   const { toast } = useToast();
