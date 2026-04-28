@@ -7,6 +7,10 @@ import {
   ChevronRight, Star, Bot, Palette, Crown,
 } from 'lucide-react';
 import transperfectHero from '@/assets/templates/transperfect-hero.jpg';
+import transperfectSection from '@/assets/templates/transperfect-section-bg.jpg';
+import transperfectLight from '@/assets/templates/transperfect-light-pattern.jpg';
+import transperfectCard from '@/assets/templates/transperfect-card.jpg';
+import transperfectCaseStudy from '@/assets/templates/transperfect-case-study.jpg';
 import { Button } from '@/components/ui/button';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { SlideEditor } from '@/components/slides/SlideEditor';
