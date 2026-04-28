@@ -41,6 +41,7 @@ const App: React.FC = () => {
                 <Route path="/" element={<Index />} />
                 <Route path="/admin" element={<Admin />} />
                 <Route path="/agent" element={<Agent />} />
+                <Route path="/agent/powerpoint" element={<PowerPointAgent />} />
                 <Route path="/studio/:studioId" element={<CreationStudio />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
