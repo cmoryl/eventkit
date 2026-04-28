@@ -37,6 +37,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'big-number',
+      variation: 'split',
       title: 'Expected ROI',
       subtitle: 'based on current team size and process costs',
       variant: 'brand',
@@ -52,6 +53,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['kpi', 'metrics', 'dashboard', 'grid'],
     slide: {
       layout: 'stats',
+      variation: 'grid',
       title: 'Quarterly Highlights',
       variant: 'minimal',
       stats: [
@@ -71,6 +73,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'stats',
+      variation: 'ranked',
       title: 'Year in Numbers',
       variant: 'gradient',
       stats: [
@@ -90,6 +93,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'big-number',
+      variation: 'gauge',
       title: 'Customer Retention',
       subtitle: 'industry benchmark: 78%',
       variant: 'dark',
@@ -107,6 +111,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['bar', 'quarterly', 'revenue', 'chart'],
     slide: {
       layout: 'chart',
+      variation: 'callout',
       title: 'Quarterly Revenue',
       variant: 'default',
       chart: {
@@ -128,6 +133,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'chart',
+      variation: 'takeaway',
       title: 'Monthly Active Users',
       variant: 'minimal',
       chart: {
@@ -215,6 +221,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'timeline',
+      variation: 'vertical',
       title: 'A Year of Milestones',
       variant: 'gradient',
       timeline: [
@@ -234,6 +241,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['timeline', 'roadmap', 'launch', 'product'],
     slide: {
       layout: 'timeline',
+      variation: 'zigzag',
       title: 'Launch Plan',
       variant: 'minimal',
       timeline: [
@@ -295,6 +303,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['comparison', 'before-after', 'vs'],
     slide: {
       layout: 'comparison',
+      variation: 'cards',
       title: 'Before vs After',
       variant: 'default',
       body: 'Manual processes\nSlow turnaround\nHigh error rate\nFragmented tools\n---\nAutomated workflows\nInstant results\n99.9% accuracy\nOne unified platform',
@@ -367,6 +376,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'title',
+      variation: 'split',
       title: 'We Don\'t Compete on Price.',
       subtitle: 'We compete on outcomes.',
       variant: 'bold',
@@ -399,6 +409,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'quote',
+      variation: 'magazine',
       title: '"This is the first tool our team actually uses every day. The ROI was obvious within two weeks."',
       quoteAuthor: 'VP of Operations, Fortune 500',
       variant: 'brand',
@@ -415,6 +426,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['kpi', 'dashboard', 'trend', 'metrics'],
     slide: {
       layout: 'stats',
+      variation: 'cards',
       title: 'Health Dashboard',
       variant: 'default',
       stats: [
@@ -475,6 +487,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['bar', 'target', 'plan-vs-actual', 'chart'],
     slide: {
       layout: 'chart',
+      variation: 'with-stat',
       title: 'Performance vs Plan',
       variant: 'minimal',
       chart: {
@@ -549,6 +562,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['timeline', 'project', 'phases', 'lifecycle'],
     slide: {
       layout: 'timeline',
+      variation: 'cards',
       title: 'Project Phases',
       variant: 'default',
       timeline: [
@@ -569,6 +583,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'timeline',
+      variation: 'zigzag',
       title: 'Our Story',
       variant: 'dark',
       timeline: [
@@ -590,6 +605,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['process', 'product', 'launch', '3-step'],
     slide: {
       layout: 'process',
+      variation: 'stairs',
       title: 'How We Ship',
       variant: 'minimal',
       process: [
@@ -607,6 +623,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['process', 'journey', 'customer', 'lifecycle'],
     slide: {
       layout: 'process',
+      variation: 'cards',
       title: 'Customer Journey',
       variant: 'default',
       process: [
@@ -627,6 +644,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'process',
+      variation: 'circular',
       title: 'Continuous Improvement',
       variant: 'brand',
       process: [
@@ -648,6 +666,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['comparison', 'old-vs-new', 'modernization'],
     slide: {
       layout: 'comparison',
+      variation: 'stacked',
       title: 'The Old Way vs The New Way',
       variant: 'minimal',
       body: 'Spreadsheets everywhere\nManual data entry\nWeekly status emails\nFire-drill reporting\n---\nOne source of truth\nAuto-synced data\nReal-time dashboards\nProactive alerts',
@@ -661,6 +680,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['comparison', 'cloud', 'self-hosted', 'deployment'],
     slide: {
       layout: 'two-column',
+      variation: 'wide-left',
       title: 'Deployment Models',
       variant: 'default',
       body: '✓ Full data control\n✓ Custom integrations\n✓ One-time license\n✗ Ops + maintenance\n✗ Slower upgrades\n---\n✓ Auto upgrades\n✓ Elastic scale\n✓ Lower TCO\n✗ Network dependency\n✗ Less customization',
@@ -674,6 +694,7 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     tags: ['comparison', 'quadrant', '2x2', 'strategy'],
     slide: {
       layout: 'two-column',
+      variation: 'stacked',
       title: 'Build vs Buy Decision',
       variant: 'minimal',
       body: 'Build (high effort, high control)\n→ Core differentiators\n→ Long-term IP\n→ Strategic moats\n---\nBuy (low effort, fast)\n→ Commodity functions\n→ Industry standards\n→ Time-sensitive needs',
@@ -733,10 +754,158 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     animated: true,
     slide: {
       layout: 'title',
+      variation: 'asymmetric',
       title: 'Designing for Trust',
       subtitle: 'Lessons from shipping to 5 million users',
       variant: 'dark',
       bgEffect: { type: 'particles', speed: 1, intensity: 0.5, count: 35, direction: 'up' },
+    },
+  },
+
+  // ── Variations showcase ────────────────────────────────────────
+  {
+    id: 'quote-punch',
+    name: 'Oversized Punch Quote',
+    category: 'sections',
+    description: 'Giant text fills the frame for maximum visual impact',
+    tags: ['quote', 'bold', 'impact', 'typography'],
+    animated: true,
+    slide: {
+      layout: 'quote',
+      variation: 'punch',
+      title: '"Speed is the ultimate competitive advantage."',
+      quoteAuthor: 'Reid Hoffman',
+      variant: 'dark',
+      bgEffect: { type: 'grain', speed: 1, intensity: 0.35, density: 0.6 },
+    },
+  },
+  {
+    id: 'comparison-bars-feature',
+    name: 'Feature Comparison Bars',
+    category: 'comparison',
+    description: 'Bar-head comparison highlighting your advantage on each dimension',
+    tags: ['comparison', 'features', 'competitive', 'bars'],
+    slide: {
+      layout: 'comparison',
+      variation: 'bars',
+      title: 'How We Stack Up',
+      variant: 'default',
+      body: 'Ease of setup\nTime to first value\nIntegration depth\nEnterprise readiness\n---\nCompetitor\nCompetitor\nCompetitor\nCompetitor',
+    },
+  },
+  {
+    id: 'content-two-col',
+    name: 'Two-Column Content',
+    category: 'lists',
+    description: 'Body text split into two balanced columns',
+    tags: ['content', 'columns', 'two-column', 'layout'],
+    slide: {
+      layout: 'content',
+      variation: 'columns',
+      title: 'What We Learned',
+      variant: 'default',
+      body: 'Users want speed above all else\nSimplicity beats feature richness\nMobile is the primary surface\nOnboarding drives retention\n---\nEnterprise needs audit trails\nPricing drives expansion\nSupport SLA is a deal-breaker\nSecurity review blocks sales',
+    },
+  },
+  {
+    id: 'content-icon-markers',
+    name: 'Icon-Marked Points',
+    category: 'lists',
+    description: 'Bullet points with accent icon markers for visual separation',
+    tags: ['content', 'icons', 'bullets', 'visual'],
+    slide: {
+      layout: 'content',
+      variation: 'icons',
+      title: 'Why We Win',
+      variant: 'brand',
+      body: '10× faster time-to-value than legacy tools\nZero-config integrations with 200+ apps\nEnterprise security built in from day one\nWorld-class support with <1h response',
+    },
+  },
+  {
+    id: 'content-card-grid',
+    name: 'Card Grid Points',
+    category: 'lists',
+    description: 'Each bullet rendered as an elevated card — ideal for key messages',
+    tags: ['content', 'cards', 'grid', 'key-points'],
+    animated: true,
+    slide: {
+      layout: 'content',
+      variation: 'cards',
+      title: 'Strategic Pillars',
+      variant: 'minimal',
+      body: 'Win enterprise\nExpand platform\nGrow ecosystem\nIncrease retention',
+      bgEffect: { type: 'grid', speed: 0.8, intensity: 0.2, spacing: 55, dotSize: 1.5, pulseDepth: 0.4 },
+    },
+  },
+  {
+    id: 'two-col-image-text',
+    name: 'Image + Text Panel',
+    category: 'sections',
+    description: 'Left image pane with right-side body text — editorial layout',
+    tags: ['two-column', 'image', 'editorial', 'layout'],
+    slide: {
+      layout: 'two-column',
+      variation: 'image-text',
+      title: 'The Problem We Solve',
+      variant: 'default',
+      body: 'Teams waste 30% of their time hunting for information spread across a dozen disconnected tools.\n\nWe bring everything into one place so your people can focus on work that matters.',
+    },
+  },
+  {
+    id: 'comparison-vs-split',
+    name: 'VS Split Comparison',
+    category: 'comparison',
+    description: 'Classic two-panel VS divider — your brand on the left, competitor on the right',
+    tags: ['comparison', 'vs', 'competitive', 'split'],
+    slide: {
+      layout: 'comparison',
+      title: 'Us vs The Old Way',
+      variant: 'brand',
+      body: 'Instant onboarding\nAI-powered automation\nReal-time collaboration\nTransparent pricing\n---\nWeeks of setup\nManual everything\nEmail-based handoffs\nHidden seat fees',
+    },
+  },
+  {
+    id: 'chart-callout-highlight',
+    name: 'Chart with Annotation',
+    category: 'charts',
+    description: 'Bar chart with a key data point called out for emphasis',
+    tags: ['chart', 'callout', 'annotation', 'bar'],
+    animated: true,
+    slide: {
+      layout: 'chart',
+      variation: 'callout',
+      title: 'Revenue by Region',
+      variant: 'brand',
+      chart: {
+        type: 'bar',
+        title: 'FY revenue ($M)',
+        data: [
+          { label: 'NA', value: 6.4 }, { label: 'EMEA', value: 3.1 },
+          { label: 'APAC', value: 2.2 }, { label: 'LATAM', value: 0.8 },
+        ],
+      },
+      bgEffect: { type: 'orbs', speed: 0.7, intensity: 0.35, count: 2, size: 60, blur: 100 },
+    },
+  },
+  {
+    id: 'stat-cards-exec',
+    name: 'Executive KPI Cards',
+    category: 'stats',
+    description: 'KPIs rendered as elevated floating cards — premium look for exec audiences',
+    tags: ['stats', 'kpi', 'cards', 'executive'],
+    animated: true,
+    slide: {
+      layout: 'stats',
+      variation: 'cards',
+      title: 'Key Metrics',
+      variant: 'gradient',
+      stats: [
+        { value: '$28M', label: 'ARR' },
+        { value: '↑ 41%', label: 'Growth YoY' },
+        { value: '118%', label: 'NRR' },
+        { value: '4.8★', label: 'G2 Rating' },
+      ],
+      bgEffect: { type: 'mesh', speed: 0.5, intensity: 0.45, blur: 80, hueRotate: 60 },
     },
   },
 
