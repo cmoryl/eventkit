@@ -1,6 +1,5 @@
 // Mints a short-lived ElevenLabs WebRTC conversation token for the PowerPoint agent.
-// Keeps ELEVENLABS_API_KEY server-side only.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+// Public endpoint — keeps ELEVENLABS_API_KEY server-side only.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
