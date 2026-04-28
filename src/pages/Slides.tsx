@@ -552,6 +552,16 @@ export default function SlidesPage() {
         </div>
       </section>
 
+      {/* ── AI Composer (outline-first flow) ── */}
+      <section id="ai-composer" className="px-6 pb-16 -mt-6">
+        <div className="max-w-5xl mx-auto">
+          <AIComposer
+            brandPayload={brandPayload}
+            onSlidesReady={(slides) => openWithAISlides(slides)}
+          />
+        </div>
+      </section>
+
       {/* ── Stats strip ── */}
       <section className="py-8 border-y border-border/50 bg-muted/20">
         <div className="max-w-5xl mx-auto px-6">
