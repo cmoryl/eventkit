@@ -312,7 +312,57 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
             </Button>
           </div>
 
-          {/* Editor */}
+          {/* AI action bar — Gamma-style per-slide AI editing */}
+          <div className="px-3 py-2 border-b bg-gradient-to-r from-primary/5 via-accent/5 to-transparent flex items-center gap-1 flex-wrap">
+            <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground pr-2">
+              <Sparkles className="h-3 w-3 text-primary" /> AI
+            </div>
+            <Button size="sm" variant="ghost" disabled={!!aiBusy} onClick={() => runAi("rewrite")} title="Rewrite for clarity">
+              {aiBusy === "rewrite" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />} Rewrite
+            </Button>
+            <Button size="sm" variant="ghost" disabled={!!aiBusy} onClick={() => runAi("shorten")} title="Cut filler">
+              {aiBusy === "shorten" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Minimize2 className="h-3 w-3" />} Shorten
+            </Button>
+            <Button size="sm" variant="ghost" disabled={!!aiBusy} onClick={() => runAi("expand")} title="Add depth">
+              {aiBusy === "expand" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Maximize2 className="h-3 w-3" />} Expand
+            </Button>
+            <Button size="sm" variant="ghost" disabled={!!aiBusy} onClick={() => runAi("regenerate")} title="Different angle">
+              {aiBusy === "regenerate" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Shuffle className="h-3 w-3" />} Regenerate
+            </Button>
+            <div className="h-4 w-px bg-border mx-1" />
+            <select
+              disabled={!!aiBusy}
+              onChange={(e) => { if (e.target.value) { runAi("tone", { tone: e.target.value }); e.target.value = ""; } }}
+              defaultValue=""
+              className="text-xs rounded border bg-background px-2 py-1 h-7"
+              title="Change tone"
+            >
+              <option value="" disabled>Change tone…</option>
+              <option value="professional">Professional</option>
+              <option value="casual">Casual</option>
+              <option value="bold">Bold</option>
+              <option value="friendly">Friendly</option>
+              <option value="executive">Executive</option>
+              <option value="storytelling">Storytelling</option>
+            </select>
+            <select
+              disabled={!!aiBusy}
+              onChange={(e) => {
+                const v = e.target.value as SlideOutline["layout"] | "";
+                if (v && v !== active.layout) { runAi("convert", { targetLayout: v }); }
+                e.target.value = "";
+              }}
+              defaultValue=""
+              className="text-xs rounded border bg-background px-2 py-1 h-7"
+              title="Convert layout"
+            >
+              <option value="" disabled>Convert to…</option>
+              {LAYOUT_OPTIONS.filter((l) => l !== active.layout).map((l) => (
+                <option key={l} value={l}>{LAYOUT_LABELS[l]}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[280px]">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" className="text-[10px]">{LAYOUT_LABELS[active.layout]}</Badge>
