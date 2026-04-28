@@ -190,21 +190,9 @@ const PowerPointAgent: React.FC = () => {
       return;
     }
     setPdfFile(file);
-    setThumbnails([]);
+    setThumbnails(new Map());
     setSelectedPages(new Set());
-    setRenderingThumbs(true);
-
-    // Render thumbnails in parallel with AI extraction
-    renderPdfThumbnails(file, { maxWidth: 480, quality: 0.7, maxPages: 50 })
-      .then((thumbs) => {
-        setThumbnails(thumbs);
-        setSelectedPages(new Set(thumbs.slice(0, 3).map((t) => t.page)));
-      })
-      .catch((e) => {
-        console.error("Thumb render failed:", e);
-        toast({ title: "Thumbnails unavailable", description: "Couldn't preview pages.", variant: "destructive" });
-      })
-      .finally(() => setRenderingThumbs(false));
+    // Gallery handles lazy thumbnail rendering on its own.
 
     const ok = await runExtraction(file);
     if (!ok) setPdfFile(null);
