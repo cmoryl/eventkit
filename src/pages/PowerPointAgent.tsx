@@ -206,7 +206,8 @@ const PowerPointAgent: React.FC = () => {
     });
   };
 
-  const selectAllPages = () => setSelectedPages(new Set(thumbnails.map((t) => t.page)));
+  const selectAllPages = (allPages?: number[]) =>
+    setSelectedPages(new Set(allPages ?? Array.from(thumbnails.keys())));
   const clearPageSelection = () => setSelectedPages(new Set());
 
   const toggleSection = (idx: number) => {
@@ -225,7 +226,7 @@ const PowerPointAgent: React.FC = () => {
   const clearPdf = () => {
     setPdfFile(null);
     setExtractedSource(null);
-    setThumbnails([]);
+    setThumbnails(new Map());
     setSelectedPages(new Set());
     setSelectedSections(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -253,7 +254,7 @@ const PowerPointAgent: React.FC = () => {
     setIsGenerating(true);
     setTopic("");
 
-    const pickedImages = thumbnails
+    const pickedImages = Array.from(thumbnails.values())
       .filter((t) => selectedPages.has(t.page))
       .map((t) => ({ page: t.page, dataUrl: t.dataUrl }));
 
