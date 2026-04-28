@@ -66,6 +66,12 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
   const conversation = useConversation({
     onConnect: () => {
       toast({ title: "Voice agent connected", description: "Say something or ask me to build a deck." });
+      hasAgentSpokenRef.current = false;
+      if (fallbackGreetingTimerRef.current) window.clearTimeout(fallbackGreetingTimerRef.current);
+      fallbackGreetingTimerRef.current = window.setTimeout(() => {
+        if (hasAgentSpokenRef.current) return;
+        conversation.sendUserMessage("Briefly greet me as the EventKIT PowerPoint assistant and ask what presentation we are building.");
+      }, 2500);
     },
     onDisconnect: () => {
       setOutputVolume(0);
@@ -198,11 +204,12 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       // release this temporary stream so the ElevenLabs WebRTC session owns the mic.
       const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       const unlockContext = AudioContextCtor ? new AudioContextCtor() : null;
+      const permissionPromise = navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
       await unlockContext?.resume().catch(() => undefined);
-      await unlockContext?.close().catch(() => undefined);
-      permissionStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      permissionStream = await permissionPromise;
       permissionStream.getTracks().forEach((track) => track.stop());
       permissionStream = null;
+      await unlockContext?.close().catch(() => undefined);
 
       // Mint a server-side WebRTC token
       const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
@@ -227,11 +234,6 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       });
       conversation.setMuted(false);
       conversation.setVolume({ volume: 1 });
-      hasAgentSpokenRef.current = false;
-      fallbackGreetingTimerRef.current = window.setTimeout(() => {
-        if (hasAgentSpokenRef.current || conversation.status !== "connected") return;
-        conversation.sendUserMessage("Briefly greet me as the EventKIT PowerPoint assistant and ask what presentation we are building.");
-      }, 2500);
     } catch (e: unknown) {
       console.error(e);
       const msg = (e as Error)?.message || "Microphone access denied.";
