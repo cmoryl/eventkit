@@ -331,7 +331,16 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
   };
 
   const handleSubmit = () => {
-    onSubmit(brief);
+    const addendum = composeBrandHubBriefAddendum(brandHubContext);
+    const finalBrief: AssetBrief = addendum
+      ? {
+          ...brief,
+          additionalNotes: [brief.additionalNotes?.trim(), addendum]
+            .filter(Boolean)
+            .join(' '),
+        }
+      : brief;
+    onSubmit(finalBrief);
   };
 
   if (!isOpen) return null;
