@@ -620,3 +620,67 @@
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.04); }
 }
+
+@keyframes slide-orb-orbit {
+  0%   { transform: translate(0%, 0%) scale(1); }
+  25%  { transform: translate(15%, -10%) scale(1.15); }
+  50%  { transform: translate(8%, 15%) scale(0.9); }
+  75%  { transform: translate(-12%, 8%) scale(1.1); }
+  100% { transform: translate(0%, 0%) scale(1); }
+}
+
+@keyframes slide-particle-up {
+  0%   { transform: translateY(110%) translateX(0); opacity: 0; }
+  10%  { opacity: var(--p-opacity, 0.7); }
+  90%  { opacity: var(--p-opacity, 0.7); }
+  100% { transform: translateY(-10%) translateX(var(--p-drift, 20px)); opacity: 0; }
+}
+
+@keyframes slide-particle-down {
+  0%   { transform: translateY(-10%) translateX(0); opacity: 0; }
+  10%  { opacity: var(--p-opacity, 0.7); }
+  90%  { opacity: var(--p-opacity, 0.7); }
+  100% { transform: translateY(110%) translateX(var(--p-drift, 20px)); opacity: 0; }
+}
+
+@keyframes slide-particle-float {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(20px, -30px); }
+  50% { transform: translate(-15px, -50px); }
+  75% { transform: translate(-25px, -20px); }
+}
+
+@keyframes slide-mesh-rotate {
+  0%   { transform: rotate(0deg) scale(1.4); }
+  100% { transform: rotate(360deg) scale(1.4); }
+}
+
+@keyframes slide-grid-pulse {
+  0%, 100% { opacity: var(--g-min, 0.3); }
+  50% { opacity: var(--g-max, 0.7); }
+}
+
+@keyframes slide-wave-drift {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes slide-grain-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-2%, -1%); }
+  20% { transform: translate(1%, 2%); }
+  30% { transform: translate(-1%, 1%); }
+  40% { transform: translate(2%, -2%); }
+  50% { transform: translate(-2%, 2%); }
+  60% { transform: translate(1%, -1%); }
+  70% { transform: translate(-2%, 1%); }
+  80% { transform: translate(2%, 2%); }
+  90% { transform: translate(-1%, -2%); }
+}
+
+@keyframes slide-beam-sweep {
+  0%   { transform: translateX(-150%) rotate(var(--b-angle, 30deg)); opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateX(150%) rotate(var(--b-angle, 30deg)); opacity: 0; }
+}
