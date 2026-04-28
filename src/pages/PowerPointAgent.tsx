@@ -114,9 +114,10 @@ const PowerPointAgent: React.FC = () => {
     const finalTopic = (overrideTopic ?? topic).trim();
     if (!finalTopic || isGenerating) return;
 
+    const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
     const userMsg: ChatItem = {
       role: "user",
-      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : useBrand ? `  \nUsing active brand styling` : ""}`,
+      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}`,
     };
     setHistory((h) => [...h, userMsg]);
     setIsGenerating(true);
