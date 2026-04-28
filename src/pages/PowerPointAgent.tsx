@@ -119,6 +119,22 @@ const PowerPointAgent: React.FC = () => {
     loadBrands();
   }, [loadBrands]);
 
+  // Load suggestion chips from agent_prompt_presets so admins can edit them
+  // without redeploys. Falls back to the hardcoded list on any failure.
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("agent_prompt_presets")
+        .select("prompt")
+        .eq("agent_key", "powerpoint")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (!error && data && data.length) {
+        setSuggestions(data.map((r: { prompt: string }) => r.prompt));
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [history, isGenerating]);
