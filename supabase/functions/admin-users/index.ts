@@ -20,11 +20,11 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const adminPassword = Deno.env.get('ADMIN_PASSWORD');
 
     // Authorize: caller must be an authenticated user who is either pre-approved
-    // OR pass an `adminToken` matching ADMIN_PASSWORD (mirrors password gate session).
+    // by SERVER-VERIFIED email OR has the admin role in the database.
     const authHeader = req.headers.get('Authorization') || '';
+    if (!authHeader.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401);
     const jwt = authHeader.replace('Bearer ', '');
 
     const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
@@ -38,17 +38,15 @@ serve(async (req) => {
     const callerId = userData.user.id;
 
     const body = await req.json().catch(() => ({}));
-    const { action, adminToken, targetUserId, role } = body as {
+    const { action, targetUserId, role } = body as {
       action: 'list' | 'grant_admin' | 'revoke_admin' | 'delete_generation' | 'delete_project';
-      adminToken?: string;
       targetUserId?: string;
       role?: 'admin' | 'moderator' | 'user';
     };
 
     const isPreApproved = PRE_APPROVED_ADMINS.includes(callerEmail);
-    const tokenOk = !!adminToken && !!adminPassword && adminToken === adminPassword;
 
-    // Also accept users that already have admin role in DB
+    // Verify admin role in DB
     const admin = createClient(supabaseUrl, serviceKey);
     const { data: roleRow } = await admin
       .from('user_roles')
@@ -57,7 +55,7 @@ serve(async (req) => {
       .eq('role', 'admin')
       .maybeSingle();
 
-    if (!isPreApproved && !tokenOk && !roleRow) {
+    if (!isPreApproved && !roleRow) {
       return json({ error: 'Forbidden' }, 403);
     }
 

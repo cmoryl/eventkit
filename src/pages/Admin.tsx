@@ -87,8 +87,6 @@ const Admin: React.FC = () => {
       if (data?.success) {
         setIsAdminAuthenticated(true);
         sessionStorage.setItem('admin_authenticated', 'true');
-        // Cache token for service-role admin function calls (users/moderation)
-        sessionStorage.setItem('admin_token', password);
         toast.success('Welcome to Admin Panel');
       } else {
         toast.error('Invalid password');
@@ -104,7 +102,6 @@ const Admin: React.FC = () => {
   const handleLogout = () => {
     setIsAdminAuthenticated(false);
     sessionStorage.removeItem('admin_authenticated');
-    sessionStorage.removeItem('admin_token');
     setPassword('');
     toast.info('Logged out of admin panel');
   };
