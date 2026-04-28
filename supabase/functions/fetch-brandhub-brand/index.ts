@@ -301,6 +301,65 @@ async function normalizeSharedBrandResponse(data: Record<string, unknown>, resol
   });
 }
 
+async function resolveBrandHubSlug(
+  slug: string,
+): Promise<{ resolvedToken?: string; response?: Response }> {
+  const encodedSlug = encodeURIComponent(slug);
+  console.log("Resolving BrandHub slug:", slug);
+
+  const brandRes = await fetch(
+    `${BRANDHUB_REST_URL}/brands?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,share_token,guide_data&limit=1`,
+    { headers: brandHubHeaders },
+  );
+  if (brandRes.ok) {
+    const brands = await brandRes.json();
+    const brand = Array.isArray(brands) ? brands[0] : null;
+    if (brand?.share_token) {
+      console.log("Resolved brand slug to token:", brand.share_token);
+      return { resolvedToken: brand.share_token };
+    }
+    if (brand?.guide_data) {
+      console.log("Building brand data directly from brand guide_data");
+      return { response: buildBrandFromEventGuideData(brand, brand.guide_data) };
+    }
+  }
+
+  for (const table of ["events", "products"] as const) {
+    console.log(`Trying ${table} table for slug:`, slug);
+    const res = await fetch(
+      `${BRANDHUB_REST_URL}/${table}?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,parent_brand_id,guide_data&limit=1`,
+      { headers: brandHubHeaders },
+    );
+    if (!res.ok) continue;
+
+    const rows = await res.json();
+    const entityData = Array.isArray(rows) ? rows[0] : null;
+    if (!entityData) continue;
+
+    console.log(`Found ${table.slice(0, -1)} by slug:`, entityData.name);
+    if (entityData.parent_brand_id) {
+      const parentRes = await fetch(
+        `${BRANDHUB_REST_URL}/brands?id=eq.${encodeURIComponent(entityData.parent_brand_id)}&select=share_token&limit=1`,
+        { headers: brandHubHeaders },
+      );
+      if (parentRes.ok) {
+        const parents = await parentRes.json();
+        if (Array.isArray(parents) && parents[0]?.share_token) {
+          console.log(`Resolved ${table.slice(0, -1)} parent brand to token:`, parents[0].share_token);
+          return { resolvedToken: parents[0].share_token };
+        }
+      }
+    }
+
+    if (entityData.guide_data) {
+      console.log(`Building brand data directly from ${table.slice(0, -1)} guide_data`);
+      return { response: buildBrandFromEventGuideData(entityData, entityData.guide_data) };
+    }
+  }
+
+  return {};
+}
+
 function extractEventDetails(
   brandData: Record<string, unknown>
 ): Record<string, unknown> {
