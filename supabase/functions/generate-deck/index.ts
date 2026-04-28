@@ -308,7 +308,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
 
     switch (s.layout) {
       case "title": {
-        slide.background = { color: PRIMARY };
+        if (!tplBg) slide.background = { color: PRIMARY };
         // Accent bar
         slide.addShape("rect", { x: 0, y: H / 2 + 1.5, w: 1.5, h: 0.08, fill: { color: ACCENT } });
         slide.addText(s.title, {
@@ -325,7 +325,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
       }
 
       case "section": {
-        slide.background = { color: SECONDARY };
+        if (!tplBg) slide.background = { color: SECONDARY };
         slide.addText(`0${idx + 1}`.slice(-2), {
           x: PAD, y: PAD, w: 2, h: 1, fontSize: 56, bold: true, color: ACCENT, fontFace: headFont,
         });
@@ -360,7 +360,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
       }
 
       case "quote": {
-        slide.background = { color: PRIMARY };
+        if (!tplBg) slide.background = { color: PRIMARY };
         slide.addText("\u201C", {
           x: PAD, y: PAD, w: 2, h: 2, fontSize: 180, color: ACCENT, fontFace: headFont, bold: true,
         });
@@ -407,7 +407,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
       }
 
       case "closing": {
-        slide.background = { color: PRIMARY };
+        if (!tplBg) slide.background = { color: PRIMARY };
         slide.addText(s.title, {
           x: PAD, y: H / 2 - 1, w: W - PAD * 2, h: 1.5,
           fontSize: 56, bold: true, color: "FFFFFF", fontFace: headFont, align: "center",
