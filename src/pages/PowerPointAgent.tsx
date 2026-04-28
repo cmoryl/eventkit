@@ -904,7 +904,7 @@ const PowerPointAgent: React.FC = () => {
           setTone,
           setThemeOverride,
           setUseBrand,
-          triggerGenerate: () => generate(),
+          triggerGenerate: () => planOutline(),
         }}
       />
     </div>
