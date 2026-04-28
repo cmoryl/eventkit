@@ -349,6 +349,25 @@ const PowerPointAgent: React.FC = () => {
           deck,
         },
       ]);
+
+      // Archive the outline so it isn't lost. Best-effort — never block the UX.
+      if (user && deck.outline) {
+        supabase
+          .from("deck_outlines")
+          .insert({
+            user_id: user.id,
+            title: deck.title,
+            subtitle: deck.subtitle,
+            outline: deck.outline as any,
+            download_url: deck.downloadUrl,
+            filename: deck.filename,
+            source_kind: extractedSource ? "pdf" : brandHubSource ? "brandhub" : "prompt",
+            brand_id: useBrand && selectedBrand ? selectedBrand.id : null,
+          })
+          .then(({ error: archiveErr }) => {
+            if (archiveErr) console.warn("Deck archive failed:", archiveErr);
+          });
+      }
     } catch (e) {
       console.error(e);
       toast({ title: "Error", description: "Could not reach the agent.", variant: "destructive" });
