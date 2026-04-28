@@ -11,6 +11,14 @@ export interface DeckTemplate {
 
 export const DECK_TEMPLATES: DeckTemplate[] = [
   {
+    id: "transperfect-2026",
+    name: "TransPerfect 2026",
+    description: "Light bars · Geist · global authority",
+    themePrompt:
+      "TransPerfect 2026 brand system. Deep navy gradient backgrounds (#03002C → #002673 → #003FC7) on title and section slides; alabaster #E7E3DA or blue-white #E0E8F5 backgrounds on content slides. Use Geist Sans (Google Fonts) — Bold for headings (tight tracking -2 to -4), Regular for body. Visual motif: rhythmic vertical light bars/rays in turquoise #A1F9F9, lavender #C2A3FF, and electric blue #4D88FF used sparingly as a side band or footer rhythm — never decorative noise. Primary text #FFFFFF on dark, #03002C on light. Accent pops in 10% only: turquoise, lavender, orange #FF9878, pink #EC388A. No gradients on text. Generous whitespace, soft transitions between sections. Tone: authoritative, modern, human, transformative.",
+    palette: { bg: "#03002C", text: "#FFFFFF", accent: "#A1F9F9", secondary: "#C2A3FF" },
+  },
+  {
     id: "modern-dark",
     name: "Modern Dark",
     description: "High-contrast tech vibe",
