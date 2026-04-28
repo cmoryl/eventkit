@@ -18,6 +18,7 @@ import { SlideRenderer } from '@/components/slides/SlideRenderer';
 import { TemplateGalleryDialog } from '@/components/slides/TemplateGalleryDialog';
 import { INFOGRAPHIC_TEMPLATES, type InfographicTemplate } from '@/components/slides/infographicTemplates';
 import type { SlideData } from '@/components/slides/slideTypes';
+import { AIComposer } from '@/components/slides/AIComposer';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/auth/AuthModal';
