@@ -238,8 +238,13 @@ const PowerPointAgent: React.FC = () => {
 
     const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
     const pickedCount = selectedPages.size;
+    const fullOutline = extractedSource?.extracted?.outline || [];
+    const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
+    const sectionLabel = extractedSource && fullOutline.length
+      ? `, ${filteredOutline.length}/${fullOutline.length} section${fullOutline.length === 1 ? '' : 's'}`
+      : '';
     const sourceLabel = extractedSource
-      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''})`
+      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''}${sectionLabel})`
       : '';
     const userMsg: ChatItem = {
       role: "user",
@@ -256,6 +261,7 @@ const PowerPointAgent: React.FC = () => {
     const sourcePayload = extractedSource
       ? {
           ...extractedSource.extracted,
+          outline: filteredOutline, // only user-selected sections
           imageDescriptions: extractedSource._imageDescriptions || [],
           fileName: extractedSource.fileName,
           influence,
