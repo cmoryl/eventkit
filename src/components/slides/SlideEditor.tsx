@@ -84,6 +84,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isAssetsLibraryOpen, setIsAssetsLibraryOpen] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
+  const [canvasFileOver, setCanvasFileOver] = useState(false);
+  const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
 
   // Auto-discover BrandHub files for the active brand so we can show a "Brand Decks" hint.
   const { byCategory: brandFilesByCategory } = useBrandHubFiles({
@@ -202,6 +204,117 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setDragOverIndex(null);
     setDragPosition(null);
   }, [dragIndex, dragPosition, reorderSlide]);
+
+  // ── File drag-and-drop helpers ────────────────────────────────────────
+  const loadImageFile = useCallback((file: File, slideIndex: number) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setSlides(prev => prev.map((s, i) => {
+        if (i !== slideIndex) return s;
+        const needsImageLayout = !['image-left', 'image-right', 'full-image'].includes(s.layout);
+        return {
+          ...s,
+          imageUrl: dataUrl,
+          images: [dataUrl, ...(s.images ?? []).slice(1)],
+          ...(needsImageLayout && { layout: 'image-left' as const }),
+        };
+      }));
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setCanvasFileOver(true);
+  }, []);
+
+  const handleCanvasDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setCanvasFileOver(false);
+    }
+  }, []);
+
+  const handleCanvasDrop = useCallback(async (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setCanvasFileOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    const pptxFile = files.find(f => f.name.toLowerCase().endsWith('.pptx'));
+
+    if (pptxFile) {
+      try {
+        const imported = await parsePptxFile(pptxFile);
+        setSlides(prev => {
+          const next = [...prev];
+          next.splice(activeIndex + 1, 0, ...imported);
+          return next;
+        });
+        toast.success(`Imported ${imported.length} slides from ${pptxFile.name}`);
+      } catch (err: unknown) {
+        toast.error((err as Error).message ?? 'Failed to import PPTX');
+      }
+    }
+
+    if (imageFiles.length === 1) {
+      loadImageFile(imageFiles[0], activeIndex);
+      toast.success('Image added to slide');
+    } else if (imageFiles.length > 1) {
+      loadImageFile(imageFiles[0], activeIndex);
+      const extras = await Promise.all(
+        imageFiles.slice(1).map(file =>
+          new Promise<SlideData>(resolve => {
+            const r = new FileReader();
+            r.onload = () => resolve({
+              id: uuidv4(),
+              layout: 'full-image',
+              title: file.name.replace(/\.[^/.]+$/, ''),
+              variant: 'default',
+              imageUrl: r.result as string,
+              images: [r.result as string],
+            });
+            r.readAsDataURL(file);
+          })
+        )
+      );
+      setSlides(prev => {
+        const next = [...prev];
+        next.splice(activeIndex + 1, 0, ...extras);
+        return next;
+      });
+      toast.success(`Added ${imageFiles.length} images as slides`);
+    }
+  }, [activeIndex, loadImageFile]);
+
+  const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setThumbFileOver(index);
+  }, []);
+
+  const handleThumbFileDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setThumbFileOver(null);
+    }
+  }, []);
+
+  const handleThumbFileDrop = useCallback((index: number) => (e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('Files')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setThumbFileOver(null);
+    const file = e.dataTransfer.files[0];
+    if (file?.type.startsWith('image/')) {
+      loadImageFile(file, index);
+      setActiveIndex(index);
+      toast.success('Image added to slide');
+    }
+  }, [loadImageFile]);
 
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
     setSlides(newSlides);
@@ -504,7 +617,13 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             <div className="w-[220px] border-r bg-muted/30 flex flex-col shrink-0">
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {slides.map((slide, i) => (
-                  <div key={slide.id} className={cn("relative group", dragIndex === i && 'opacity-50')}>
+                  <div
+                    key={slide.id}
+                    className={cn("relative group", dragIndex === i && 'opacity-50')}
+                    onDragOver={handleThumbFileDragOver(i)}
+                    onDragLeave={handleThumbFileDragLeave}
+                    onDrop={handleThumbFileDrop(i)}
+                  >
                     <SlideThumbnail
                       slideNumber={i + 1}
                       isActive={i === activeIndex}
@@ -518,6 +637,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                     >
                       <SlideRenderer slide={slide} brandColors={brandColors} brandFonts={brandFonts} />
                     </SlideThumbnail>
+                    {/* File drop overlay on thumbnail */}
+                    {thumbFileOver === i && (
+                      <div className="absolute inset-0 rounded-lg border-2 border-dashed border-primary bg-primary/20 z-20 flex items-center justify-center pointer-events-none">
+                        <ImagePlus className="w-4 h-4 text-primary" />
+                      </div>
+                    )}
                     {/* Hover actions */}
                     <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
                       <Button variant="ghost" size="icon" className="h-5 w-5 bg-background/80 hover:bg-background" onClick={() => duplicateSlide(i)}>
@@ -552,14 +677,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                         "group relative cursor-pointer rounded-lg border-2 overflow-hidden transition-all hover:shadow-lg",
                         i === activeIndex
                           ? "border-primary ring-2 ring-primary/20"
-                          : "border-border hover:border-primary/50"
+                          : "border-border hover:border-primary/50",
+                        thumbFileOver === i && "border-primary ring-2 ring-primary/30"
                       )}
                       draggable
                       onDragStart={handleDragStart(i)}
                       onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver(i)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop(i)}
+                      onDragOver={(e) => { handleDragOver(i)(e); handleThumbFileDragOver(i)(e); }}
+                      onDragLeave={(e) => { handleDragLeave(); handleThumbFileDragLeave(e); }}
+                      onDrop={(e) => { handleDrop(i)(e); handleThumbFileDrop(i)(e); }}
                       onClick={() => {
                         setActiveIndex(i);
                         setIsGridView(false);
@@ -570,6 +696,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                           <SlideRenderer slide={slide} brandColors={brandColors} brandFonts={brandFonts} />
                         </div>
                       </div>
+                      {/* File drop overlay on grid card */}
+                      {thumbFileOver === i && (
+                        <div className="absolute inset-0 bg-primary/20 border-2 border-dashed border-primary z-20 flex items-center justify-center pointer-events-none">
+                          <ImagePlus className="w-6 h-6 text-primary" />
+                        </div>
+                      )}
                       {/* Slide number badge */}
                       <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm text-foreground text-xs font-mono px-1.5 py-0.5 rounded">
                         {i + 1}
@@ -616,11 +748,29 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             <>
             {/* Canvas */}
             <div className={cn("flex-1 flex flex-col min-w-0", isDarkCanvas ? 'bg-slate-900' : 'bg-muted/50')}>
-              {/* Slide canvas */}
-              <div className="flex-1 p-8 min-h-0">
+              {/* Slide canvas — drop zone for files */}
+              <div
+                className="flex-1 p-8 min-h-0 relative"
+                onDragOver={handleCanvasDragOver}
+                onDragLeave={handleCanvasDragLeave}
+                onDrop={handleCanvasDrop}
+              >
                 <CenteredScaledSlide zoom={zoom}>
                   <SlideRenderer slide={activeSlide} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} />
                 </CenteredScaledSlide>
+
+                {/* Drop overlay */}
+                {canvasFileOver && (
+                  <div className="absolute inset-4 rounded-xl border-2 border-dashed border-primary bg-primary/10 z-50 flex flex-col items-center justify-center gap-3 pointer-events-none">
+                    <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center">
+                      <ImagePlus className="w-7 h-7 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-primary font-semibold text-sm">Drop to add to this slide</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Images · PPTX files</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Navigation pills */}
