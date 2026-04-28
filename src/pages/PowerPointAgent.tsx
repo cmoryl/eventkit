@@ -1,23 +1,19 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus, Upload, X, FileUp } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useActiveBrand } from "@/hooks/useActiveBrand";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
 import { type PdfThumbnail } from "@/lib/pdfThumbnails";
-import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
-import { SelectedPagesOrder } from "@/components/powerpoint/SelectedPagesOrder";
-import { BrandHubSourcePicker, type BrandHubSourcePick } from "@/components/powerpoint/BrandHubSourcePicker";
+import { type BrandHubSourcePick } from "@/components/powerpoint/BrandHubSourcePicker";
 import { VoiceAgentPanel } from "@/components/powerpoint/VoiceAgentPanel";
+import { BrandPopover } from "@/components/powerpoint/composer/BrandPopover";
+import { SourceSheet } from "@/components/powerpoint/composer/SourceSheet";
+import { RefinePopover } from "@/components/powerpoint/composer/RefinePopover";
 
 interface DeckResult {
   downloadUrl: string;
