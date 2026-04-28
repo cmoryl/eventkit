@@ -16,6 +16,24 @@ interface BrandStyle {
   bodyFont?: string;
 }
 
+interface ExtractedSource {
+  summary?: string;
+  outline?: { heading: string; bullets: string[] }[];
+  keyFacts?: string[];
+  quotes?: { text: string; attribution?: string }[];
+  lookAndFeel?: {
+    palette?: string[];
+    headingFont?: string;
+    bodyFont?: string;
+    mood?: string;
+    description?: string;
+  };
+  imageDescriptions?: string[];
+  influence?: number;
+  scope?: { text?: boolean; imagery?: boolean; lookAndFeel?: boolean };
+  fileName?: string;
+}
+
 interface DeckRequest {
   topic: string;
   audience?: string;
@@ -23,6 +41,7 @@ interface DeckRequest {
   tone?: string;
   brand?: BrandStyle;
   themeOverride?: string; // free-form override "use a dark navy and gold theme"
+  source?: ExtractedSource; // PDF-derived material
 }
 
 interface SlideOutline {
@@ -55,6 +74,28 @@ Layout rules:
 - Always include speaker notes (1-3 sentences per slide)`;
 
 async function planDeck(req: DeckRequest, apiKey: string): Promise<DeckOutline> {
+  const src = req.source;
+  const sourceBlock = src
+    ? `\n\n=== SOURCE DOCUMENT ${src.fileName ? `(${src.fileName})` : ""} ===
+Influence: ${src.influence ?? 70}/100 — ${(src.influence ?? 70) >= 70 ? "stay very close to source" : (src.influence ?? 70) >= 40 ? "primary inspiration" : "light reference"}
+Scope: ${[src.scope?.text && "text", src.scope?.imagery && "imagery", src.scope?.lookAndFeel && "look-and-feel"].filter(Boolean).join(", ") || "all"}
+
+Summary: ${src.summary || "(none)"}
+
+${src.outline?.length ? `Outline:\n${src.outline.map((o) => `• ${o.heading}\n${o.bullets.map((b) => `   - ${b}`).join("\n")}`).join("\n")}` : ""}
+
+${src.keyFacts?.length ? `Key facts:\n${src.keyFacts.map((f) => `- ${f}`).join("\n")}` : ""}
+
+${src.quotes?.length ? `Quotes:\n${src.quotes.map((q) => `"${q.text}"${q.attribution ? ` — ${q.attribution}` : ""}`).join("\n")}` : ""}
+
+${src.scope?.lookAndFeel && src.lookAndFeel ? `Source look-and-feel: palette ${(src.lookAndFeel.palette || []).join(", ")}; fonts ${src.lookAndFeel.headingFont || "?"} / ${src.lookAndFeel.bodyFont || "?"}; mood ${src.lookAndFeel.mood || "?"}. ${src.lookAndFeel.description || ""}` : ""}
+
+${src.scope?.imagery && src.imageDescriptions?.length ? `Imagery cues to evoke (describe in speaker notes):\n${src.imageDescriptions.map((d) => `- ${d}`).join("\n")}` : ""}
+=== END SOURCE ===
+
+Use the source material as the primary content backbone proportional to the influence level. Faithfully preserve facts and quotes; do not invent contradicting data.`
+    : "";
+
   const userPrompt = `Create a ${req.slideCount}-slide deck.
 
 Topic: ${req.topic}
@@ -62,8 +103,9 @@ ${req.audience ? `Audience: ${req.audience}` : ""}
 ${req.tone ? `Tone: ${req.tone}` : ""}
 ${req.themeOverride ? `Theme override: ${req.themeOverride}` : ""}
 ${req.brand ? `Brand colors available: primary ${req.brand.primary}, secondary ${req.brand.secondary}, accent ${req.brand.accent}. Brand fonts: ${req.brand.headingFont || "default"} / ${req.brand.bodyFont || "default"}.` : ""}
+${sourceBlock}
 
-Pick a palette that fits the topic. If brand colors were provided and no theme override, use them. Use HEX colors WITHOUT the # prefix.`;
+Pick a palette that fits the topic. Priority: theme override > brand > source look-and-feel > your judgement. Use HEX colors WITHOUT the # prefix.`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",

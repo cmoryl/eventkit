@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus, Upload, X, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useActiveBrand } from "@/hooks/useActiveBrand";
@@ -69,6 +70,16 @@ const PowerPointAgent: React.FC = () => {
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [showImportModal, setShowImportModal] = useState(false);
 
+  // PDF source
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractedSource, setExtractedSource] = useState<any | null>(null);
+  const [includeText, setIncludeText] = useState(true);
+  const [includeImagery, setIncludeImagery] = useState(true);
+  const [includeLookAndFeel, setIncludeLookAndFeel] = useState(true);
+  const [influence, setInfluence] = useState<number>(70);
+
   const loadBrands = useCallback(async () => {
     if (!user) return;
     const { data, error } = await supabase
@@ -110,18 +121,89 @@ const PowerPointAgent: React.FC = () => {
       }
     : undefined;
 
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handlePdfSelect = async (file: File | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast({ title: "PDF only", description: "Please upload a .pdf file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 20MB.", variant: "destructive" });
+      return;
+    }
+    setPdfFile(file);
+    setExtractedSource(null);
+    setExtracting(true);
+    try {
+      const fileBase64 = await fileToBase64(file);
+      const { data, error } = await supabase.functions.invoke("extract-pdf-source", {
+        body: {
+          fileBase64,
+          fileName: file.name,
+          includeText,
+          includeImagery,
+          includeLookAndFeel,
+          influence,
+        },
+      });
+      if (error) {
+        const status = (error as { context?: { status?: number } }).context?.status;
+        toast({
+          title: status === 402 ? "AI credits exhausted" : "Extraction failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setPdfFile(null);
+        return;
+      }
+      setExtractedSource({ ...data, _imageDescriptions: data.imageDescriptions });
+      toast({ title: "PDF extracted", description: `${data.extracted?.pageCount || "?"} pages parsed.` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Couldn't read PDF", variant: "destructive" });
+      setPdfFile(null);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const clearPdf = () => {
+    setPdfFile(null);
+    setExtractedSource(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const generate = async (overrideTopic?: string) => {
     const finalTopic = (overrideTopic ?? topic).trim();
     if (!finalTopic || isGenerating) return;
 
     const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
+    const sourceLabel = extractedSource ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence)` : '';
     const userMsg: ChatItem = {
       role: "user",
-      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}`,
+      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
     };
     setHistory((h) => [...h, userMsg]);
     setIsGenerating(true);
     setTopic("");
+
+    const sourcePayload = extractedSource
+      ? {
+          ...extractedSource.extracted,
+          imageDescriptions: extractedSource._imageDescriptions || [],
+          fileName: extractedSource.fileName,
+          influence,
+          scope: { text: includeText, imagery: includeImagery, lookAndFeel: includeLookAndFeel },
+        }
+      : undefined;
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
@@ -132,6 +214,7 @@ const PowerPointAgent: React.FC = () => {
           tone: tone || undefined,
           brand: brandPayload,
           themeOverride: themeOverride || undefined,
+          source: sourcePayload,
         },
       });
 
@@ -168,6 +251,7 @@ const PowerPointAgent: React.FC = () => {
     setTone("");
     setThemeOverride("");
     setSlideCount(10);
+    clearPdf();
   };
 
   return (
@@ -377,7 +461,79 @@ const PowerPointAgent: React.FC = () => {
             )}
           </div>
 
-          {/* Theme override */}
+          {/* PDF source uploader */}
+          <div className="rounded-lg border bg-background/40 p-3 space-y-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              className="hidden"
+              onChange={(e) => handlePdfSelect(e.target.files?.[0] || null)}
+            />
+
+            {!pdfFile ? (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isGenerating}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-md border border-dashed border-border hover:border-primary/50 hover:bg-accent/30 transition-colors text-sm text-muted-foreground"
+              >
+                <Upload className="h-4 w-4" />
+                Upload a PDF (optional) — extract content, imagery & look-and-feel
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-sm">
+                  <FileUp className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate flex-1">{pdfFile.name}</span>
+                  {extracting && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  {extractedSource && !extracting && (
+                    <span className="text-xs text-muted-foreground">
+                      {extractedSource.extracted?.pageCount || "?"} pages
+                    </span>
+                  )}
+                  <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearPdf} disabled={isGenerating || extracting}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeText} onCheckedChange={setIncludeText} disabled={isGenerating} />
+                    Text & info
+                  </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeImagery} onCheckedChange={setIncludeImagery} disabled={isGenerating} />
+                    Imagery
+                  </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeLookAndFeel} onCheckedChange={setIncludeLookAndFeel} disabled={isGenerating} />
+                    Look & feel
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <Label className="text-xs">How much to use from PDF</Label>
+                    <span className="text-muted-foreground">{influence}%</span>
+                  </div>
+                  <Slider
+                    value={[influence]}
+                    onValueChange={(v) => setInfluence(v[0])}
+                    min={10}
+                    max={100}
+                    step={10}
+                    disabled={isGenerating}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    {influence >= 70 ? "Stay close to source structure & tone" : influence >= 40 ? "Use as primary inspiration" : "Light reference only"}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+
+
           <Input
             value={themeOverride}
             onChange={(e) => setThemeOverride(e.target.value)}
