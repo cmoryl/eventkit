@@ -354,7 +354,7 @@ const PowerPointAgent: React.FC = () => {
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button asChild variant="ghost" size="sm">
               <Link to="/"><ArrowLeft className="h-4 w-4" /> Back</Link>
@@ -379,7 +379,7 @@ const PowerPointAgent: React.FC = () => {
       </header>
 
       <main ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-8 space-y-6">
+        <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
           {/* Empty state — hero composer */}
           {history.length === 0 && (
             <div className="text-center pt-8 pb-4 space-y-6">
@@ -584,7 +584,7 @@ const PowerPointAgent: React.FC = () => {
       {/* Sticky footer composer — only shown after the first deck */}
       {history.length > 0 && (
         <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0">
-          <div className="max-w-5xl mx-auto px-6 py-3 space-y-2">
+          <div className="max-w-6xl mx-auto px-6 py-3 space-y-2">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
