@@ -13,7 +13,8 @@ import { useActiveBrand } from "@/hooks/useActiveBrand";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
-import { renderPdfThumbnails, type PdfThumbnail } from "@/lib/pdfThumbnails";
+import { type PdfThumbnail } from "@/lib/pdfThumbnails";
+import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
 
 interface DeckResult {
   downloadUrl: string;
@@ -80,8 +81,8 @@ const PowerPointAgent: React.FC = () => {
   const [includeImagery, setIncludeImagery] = useState(true);
   const [includeLookAndFeel, setIncludeLookAndFeel] = useState(true);
   const [influence, setInfluence] = useState<number>(70);
-  const [thumbnails, setThumbnails] = useState<PdfThumbnail[]>([]);
-  const [renderingThumbs, setRenderingThumbs] = useState(false);
+  // Cache of rendered thumbnails (populated lazily by LazyPdfGallery as pages scroll into view)
+  const [thumbnails, setThumbnails] = useState<Map<number, PdfThumbnail>>(new Map());
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
 
