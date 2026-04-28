@@ -717,6 +717,15 @@ const PowerPointAgent: React.FC = () => {
                   defaultPickFirstN={3}
                 />
 
+                {/* Drag-and-drop reorder strip for selected pages */}
+                <SelectedPagesOrder
+                  orderedPages={selectedPages}
+                  thumbnails={thumbnails}
+                  onReorder={reorderSelectedPages}
+                  onRemove={togglePage}
+                  disabled={isGenerating}
+                />
+
               </>
             )}
           </div>
