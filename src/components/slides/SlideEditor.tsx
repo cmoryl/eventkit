@@ -353,6 +353,29 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 </Button>
               </label>
 
+              {brand?.brandhub_share_token && (
+                <Button
+                  size="sm"
+                  variant={brandDeckCount > 0 ? 'default' : 'outline'}
+                  onClick={() => setIsAssetsLibraryOpen(true)}
+                  className="gap-1.5"
+                  title="Browse files attached to this brand on BrandHub"
+                >
+                  <Library className="h-3.5 w-3.5" />
+                  Brand Assets
+                  {brandDeckCount > 0 && (
+                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-background/20 px-1.5 text-[10px] font-medium">
+                      {brandDeckCount} deck{brandDeckCount === 1 ? '' : 's'}
+                    </span>
+                  )}
+                  {referenceFiles.length > 0 && (
+                    <span className="ml-0.5 inline-flex items-center justify-center rounded-full bg-primary/20 text-primary px-1.5 text-[10px] font-medium">
+                      {referenceFiles.length} ref
+                    </span>
+                  )}
+                </Button>
+              )}
+
               <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName, { transition: slideTransition })}>
                 <Download className="h-3.5 w-3.5 mr-1.5" />
                 Export
@@ -1111,6 +1134,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
       brandName={brand?.name}
       brandId={brand?.id}
       brandImagery={brandImagery}
+      referenceFiles={referenceFiles}
+    />
+
+    <BrandAssetsLibrary
+      isOpen={isAssetsLibraryOpen}
+      onClose={() => setIsAssetsLibraryOpen(false)}
+      brandName={brand?.name || 'Brand'}
+      shareToken={brand?.brandhub_share_token ?? null}
+      onLoadDeck={handleLoadDeckFromBrandHub}
+      onReferenceSelectionChange={setReferenceFiles}
+      initialReferences={referenceFiles}
     />
     </>
   );
