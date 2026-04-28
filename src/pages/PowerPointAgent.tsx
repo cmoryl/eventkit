@@ -145,7 +145,24 @@ const PowerPointAgent: React.FC = () => {
     }
     setPdfFile(file);
     setExtractedSource(null);
+    setThumbnails([]);
+    setSelectedPages(new Set());
     setExtracting(true);
+    setRenderingThumbs(true);
+
+    // Render thumbnails in parallel with AI extraction
+    renderPdfThumbnails(file, { maxWidth: 480, quality: 0.7, maxPages: 50 })
+      .then((thumbs) => {
+        setThumbnails(thumbs);
+        // Default-select first 3 pages so users get instant value
+        setSelectedPages(new Set(thumbs.slice(0, 3).map((t) => t.page)));
+      })
+      .catch((e) => {
+        console.error("Thumb render failed:", e);
+        toast({ title: "Thumbnails unavailable", description: "Couldn't preview pages.", variant: "destructive" });
+      })
+      .finally(() => setRenderingThumbs(false));
+
     try {
       const fileBase64 = await fileToBase64(file);
       const { data, error } = await supabase.functions.invoke("extract-pdf-source", {
@@ -179,9 +196,22 @@ const PowerPointAgent: React.FC = () => {
     }
   };
 
+  const togglePage = (page: number) => {
+    setSelectedPages((prev) => {
+      const next = new Set(prev);
+      if (next.has(page)) next.delete(page); else next.add(page);
+      return next;
+    });
+  };
+
+  const selectAllPages = () => setSelectedPages(new Set(thumbnails.map((t) => t.page)));
+  const clearPageSelection = () => setSelectedPages(new Set());
+
   const clearPdf = () => {
     setPdfFile(null);
     setExtractedSource(null);
+    setThumbnails([]);
+    setSelectedPages(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
