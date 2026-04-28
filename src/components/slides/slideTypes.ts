@@ -3,7 +3,37 @@ export type SlideLayout =
   | 'title' | 'content' | 'image-left' | 'image-right' | 'blank'
   | 'section' | 'two-column' | 'quote' | 'stats' | 'full-image'
   | 'comparison' | 'timeline' | 'process' | 'chart'
-  | 'agenda' | 'big-number';
+  | 'agenda' | 'big-number' | 'parallax';
+
+/**
+ * One depth layer in a parallax slide.
+ * `depth` controls 3D Z-offset and parallax intensity:
+ *   -100 = far background (slowest, smallest motion, deepest blur)
+ *      0 = mid plane (no depth offset, sharp focus)
+ *   +100 = far foreground (largest motion, slight blur from camera DOF)
+ */
+export interface ParallaxLayer {
+  id: string;
+  kind: 'image' | 'text' | 'shape';
+  /** -100…+100 */
+  depth: number;
+  /** image src OR text content OR shape color */
+  content: string;
+  /** Position % of slide width/height (0-100). Default 50/50 = centered. */
+  x?: number;
+  y?: number;
+  /** Scale relative to natural size (1 = 100%). */
+  scale?: number;
+  /** Text-only styling */
+  fontSize?: number;
+  fontWeight?: number;
+  color?: string;
+  fontFamily?: string;
+  /** Image-only — apply blur in px when at extreme depth */
+  blur?: number;
+  /** Optional opacity 0-1 */
+  opacity?: number;
+}
 
 export interface ChartData {
   type: 'bar' | 'line' | 'pie' | 'doughnut';
@@ -152,6 +182,10 @@ export interface SlideData {
   bgEffect?: SlideBgEffect;
   /** Visual variation of the active layout — see LAYOUT_VARIATIONS for valid values per layout */
   variation?: string;
+  /** Depth layers for parallax slides (back→front order). */
+  parallaxLayers?: ParallaxLayer[];
+  /** Parallax camera intensity multiplier (0 = static, 1 = default, 2 = dramatic). */
+  parallaxIntensity?: number;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
@@ -213,7 +247,21 @@ export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; lab
     { value: 'image-text',  label: 'Image + Text' },
     { value: 'stacked',     label: 'Stacked' },
   ],
+  parallax: [
+    { value: 'cinematic',  label: 'Cinematic Drift' },
+    { value: 'tilt',       label: 'Mouse / Pointer Tilt' },
+    { value: 'dolly',      label: 'Dolly Push-In' },
+  ],
 };
+
+/** Starter parallax layers — back→front. Used when a user adds a fresh parallax slide. */
+export const DEFAULT_PARALLAX_LAYERS: ParallaxLayer[] = [
+  { id: 'bg',  kind: 'shape', depth: -90, content: 'linear-gradient(135deg,#1e1b4b,#0b1024)', x: 50, y: 50, scale: 1.4, blur: 0 },
+  { id: 'mid', kind: 'shape', depth: -30, content: 'radial-gradient(circle at 30% 40%, rgba(99,102,241,0.55), transparent 60%)', x: 50, y: 50, scale: 1.2, blur: 20 },
+  { id: 'h1',  kind: 'text',  depth: 10,  content: 'Depth perception,\nin every slide.', x: 50, y: 50, fontSize: 120, fontWeight: 800, color: '#ffffff' },
+  { id: 'sub', kind: 'text',  depth: 40,  content: 'Drag the depth slider to move planes through space.', x: 50, y: 70, fontSize: 36, fontWeight: 400, color: 'rgba(255,255,255,0.75)' },
+  { id: 'fg',  kind: 'shape', depth: 80,  content: 'radial-gradient(circle, rgba(167,139,250,0.45), transparent 65%)', x: 80, y: 20, scale: 0.6, blur: 12 },
+];
 
 export const DEFAULT_SLIDES: SlideData[] = [
   {

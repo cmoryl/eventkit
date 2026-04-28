@@ -2,6 +2,7 @@ import React from 'react';
 import { SlideData } from './slideTypes';
 import { SlideLayout } from './SlideLayout';
 import { renderLayoutVariation } from './SlideLayoutVariations';
+import { ParallaxRenderer } from './ParallaxRenderer';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -12,6 +13,10 @@ interface SlideRendererProps {
   brandColors?: { primary?: string; secondary?: string; accent?: string };
   brandFonts?: { heading?: string; body?: string };
   animated?: boolean;
+  /** How parallax slides should animate. Defaults to 'mouse' (editor). */
+  parallaxMotion?: 'mouse' | 'time' | 'dolly' | 'static';
+  /** 0-1 progress for dolly mode (used by MP4 export). */
+  parallaxProgress?: number;
 }
 
 function ImageGallery({ images }: { images: string[] }) {
@@ -48,7 +53,7 @@ function SlideImages({ images, variant }: { images: string[]; variant: SlideData
   );
 }
 
-export function SlideRenderer({ slide, brandColors, brandFonts, animated }: SlideRendererProps) {
+export function SlideRenderer({ slide, brandColors, brandFonts, animated, parallaxMotion = 'mouse', parallaxProgress }: SlideRendererProps) {
   const headingFont = brandFonts?.heading || 'inherit';
   const bodyFont = brandFonts?.body || 'inherit';
   const accentColor = brandColors?.primary;
@@ -58,6 +63,11 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated }: Slid
   const hSize = slide.headingSize || 0;
   const bSize = slide.bodySize || 0;
   const align = slide.textAlign || 'left';
+
+  // Parallax slides own their own background + composition — bypass SlideLayout.
+  if (slide.layout === 'parallax') {
+    return <ParallaxRenderer slide={slide} motion={parallaxMotion} progress={parallaxProgress} />;
+  }
 
   const variationNode = renderLayoutVariation({
     slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align,

@@ -21,6 +21,7 @@ import { Slider } from '@/components/ui/slider';
 import { TemplateGalleryDialog } from './TemplateGalleryDialog';
 import type { InfographicTemplate } from './infographicTemplates';
 import { SlideRenderer } from './SlideRenderer';
+import { ParallaxLayerEditor } from './ParallaxLayerEditor';
 import { SlideThumbnail } from './SlideThumbnail';
 import { CenteredScaledSlide } from './ScaledSlide';
 import { PresentationMode, SlideTransition } from './PresentationMode';
@@ -51,6 +52,7 @@ const LAYOUT_OPTIONS: { value: SlideData['layout']; label: string; icon: React.E
   { value: 'chart', label: 'Chart', icon: BarChart3 },
   { value: 'agenda', label: 'Agenda', icon: Layout },
   { value: 'big-number', label: 'Big Number', icon: BarChart3 },
+  { value: 'parallax', label: '3D · Parallax', icon: Maximize2 },
   { value: 'section', label: 'Section Break', icon: Square },
   { value: 'blank', label: 'Blank', icon: Square },
 ];
@@ -433,7 +435,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         onExit={() => setIsPresentationMode(false)}
         transition={slideTransition}
       >
-        {(idx) => <SlideRenderer slide={slides[idx]} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} />}
+        {(idx) => <SlideRenderer slide={slides[idx]} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} parallaxMotion="time" />}
       </PresentationMode>
     );
   }
@@ -815,7 +817,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                                   ? "border-primary bg-primary/10 text-primary"
                                   : "border-border hover:border-primary/50 text-muted-foreground"
                               )}
-                              onClick={() => updateSlide(activeIndex, { layout: value })}
+                              onClick={() => {
+                                if (value === 'parallax' && (!activeSlide.parallaxLayers || activeSlide.parallaxLayers.length === 0)) {
+                                  import('./slideTypes').then(({ DEFAULT_PARALLAX_LAYERS }) => {
+                                    updateSlide(activeIndex, { layout: value, parallaxLayers: DEFAULT_PARALLAX_LAYERS.map(l => ({ ...l, id: `${l.id}-${Date.now()}` })), parallaxIntensity: 1 });
+                                  });
+                                } else {
+                                  updateSlide(activeIndex, { layout: value });
+                                }
+                              }}
                             >
                               <Icon className="h-4 w-4" />
                             </button>
@@ -903,6 +913,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 {/* Background effect */}
                 <BgEffectEditor slide={activeSlide} onUpdate={(updates) => updateSlide(activeIndex, updates)} />
 
+                {/* Parallax depth layers — only for parallax slides */}
+                {activeSlide.layout === 'parallax' && (
+                  <ParallaxLayerEditor slide={activeSlide} onChange={(updates) => updateSlide(activeIndex, updates)} />
+                )}
                 {/* Text alignment */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground">Text Alignment</label>
