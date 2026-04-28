@@ -51,6 +51,7 @@ const LAYOUT_OPTIONS: { value: SlideData['layout']; label: string; icon: React.E
   { value: 'chart', label: 'Chart', icon: BarChart3 },
   { value: 'agenda', label: 'Agenda', icon: Layout },
   { value: 'big-number', label: 'Big Number', icon: BarChart3 },
+  { value: 'parallax', label: '3D · Parallax', icon: Maximize2 },
   { value: 'section', label: 'Section Break', icon: Square },
   { value: 'blank', label: 'Blank', icon: Square },
 ];
