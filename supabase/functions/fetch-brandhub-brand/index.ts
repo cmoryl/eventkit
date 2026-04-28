@@ -10,6 +10,11 @@ const BRANDHUB_API_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/functions/v1/
 const BRANDHUB_REST_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1";
 const BRANDHUB_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
 
+const brandHubHeaders = {
+  "apikey": BRANDHUB_ANON_KEY,
+  "Authorization": `Bearer ${BRANDHUB_ANON_KEY}`,
+};
+
 function json(status: number, payload: unknown) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -31,65 +36,19 @@ serve(async (req) => {
 
     let resolvedToken = shareToken;
 
-    // If slug provided, try to resolve via BrandHub REST API (brands table, then events table)
+    // If slug provided, try to resolve via BrandHub REST API (brands table, then events/products table)
     if (!resolvedToken && slug) {
-      console.log("Resolving slug to share token:", slug);
-      
-      // Try brands table first
-      const brandRes = await fetch(
-        `${BRANDHUB_REST_URL}/brands?slug=eq.${encodeURIComponent(slug)}&is_public=eq.true&select=share_token`,
-        { headers: { "apikey": BRANDHUB_ANON_KEY, "Authorization": `Bearer ${BRANDHUB_ANON_KEY}` } }
-      );
-      if (brandRes.ok) {
-        const rows = await brandRes.json();
-        if (Array.isArray(rows) && rows.length > 0 && rows[0].share_token) {
-          resolvedToken = rows[0].share_token;
-          console.log("Resolved brand slug to token:", resolvedToken);
-        }
+      const directResult = await resolveBrandHubSlug(slug);
+      if (directResult.resolvedToken) {
+        resolvedToken = directResult.resolvedToken;
+      } else if (directResult.response) {
+        return directResult.response;
       }
+    }
 
-      // Try events table (event slugs like globallink-next)
-      if (!resolvedToken) {
-        console.log("Trying events table for slug:", slug);
-        const eventRes = await fetch(
-          `${BRANDHUB_REST_URL}/events?slug=eq.${encodeURIComponent(slug)}&select=id,name,slug,guide_data`,
-          { headers: { "apikey": BRANDHUB_ANON_KEY, "Authorization": `Bearer ${BRANDHUB_ANON_KEY}` } }
-        );
-        if (eventRes.ok) {
-          const events = await eventRes.json();
-          if (Array.isArray(events) && events.length > 0) {
-            const eventData = events[0];
-            console.log("Found event by slug:", eventData.name);
-            // Extract brand data directly from the event's guide_data
-            const guideData = eventData.guide_data || {};
-            // Check if event has a parent_brand_id with a share_token
-            if (eventData.parent_brand_id) {
-              const parentRes = await fetch(
-                `${BRANDHUB_REST_URL}/brands?id=eq.${eventData.parent_brand_id}&select=share_token`,
-                { headers: { "apikey": BRANDHUB_ANON_KEY, "Authorization": `Bearer ${BRANDHUB_ANON_KEY}` } }
-              );
-              if (parentRes.ok) {
-                const parents = await parentRes.json();
-                if (Array.isArray(parents) && parents.length > 0 && parents[0].share_token) {
-                  resolvedToken = parents[0].share_token;
-                  console.log("Resolved event parent brand to token:", resolvedToken);
-                }
-              }
-            }
-            
-            // If still no token, build brand data directly from event guide_data
-            if (!resolvedToken && guideData) {
-              console.log("Building brand data directly from event guide_data");
-              return buildBrandFromEventGuideData(eventData, guideData);
-            }
-          }
-        }
-      }
-
-      if (!resolvedToken) {
-        console.warn("Could not resolve slug, trying slug as token fallback");
-        resolvedToken = slug;
-      }
+    if (!resolvedToken && slug) {
+      console.warn("Could not resolve slug, trying slug as token fallback");
+      resolvedToken = slug;
     }
 
     console.log("Fetching brand from BrandHub with token:", resolvedToken);
@@ -103,6 +62,26 @@ serve(async (req) => {
     const data = await response.json();
 
     if (!response.ok) {
+      // Users often paste/type product or event slugs (e.g. "dataforce") into the token field.
+      // If the share endpoint rejects it, treat the token as a slug and resolve live tables.
+      if (shareToken && !slug) {
+        const fallbackResult = await resolveBrandHubSlug(shareToken);
+        if (fallbackResult.resolvedToken && fallbackResult.resolvedToken !== shareToken) {
+          resolvedToken = fallbackResult.resolvedToken;
+          const retry = await fetch(BRANDHUB_API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ shareToken: resolvedToken, includeEvent: includeEvent ?? true }),
+          });
+          const retryData = await retry.json();
+          if (retry.ok) {
+            return normalizeSharedBrandResponse(retryData, resolvedToken);
+          }
+        }
+        if (fallbackResult.response) {
+          return fallbackResult.response;
+        }
+      }
       console.error("BrandHub API error:", response.status, data);
       return json(200, {
         success: false,
