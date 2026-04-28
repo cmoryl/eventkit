@@ -228,9 +228,15 @@ async function fetchAsDataUrl(url: string): Promise<string | null> {
     if (!r.ok) return null;
     const buf = await r.arrayBuffer();
     const bytes = new Uint8Array(buf);
+    const mime =
+      bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47
+        ? "image/png"
+        : bytes[0] === 0xff && bytes[1] === 0xd8
+        ? "image/jpeg"
+        : r.headers.get("content-type")?.split(";")[0] || "image/png";
     let bin = "";
     for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-    return `data:image/jpeg;base64,${btoa(bin)}`;
+    return `data:${mime};base64,${btoa(bin)}`;
   } catch {
     return null;
   }
@@ -283,6 +289,16 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
     }
   };
 
+  const paintTemplateBackground = (slide: any, image?: string) => {
+    slide.background = { color: BG };
+    if (!image) return;
+    slide.addImage({
+      data: image,
+      x: 0, y: 0, w: W, h: H,
+      sizing: { type: "cover", x: 0, y: 0, w: W, h: H },
+    });
+  };
+
   // Fallback placeholder content (used when AI returns sparse fields)
   const ph = {
     title: "Untitled slide",
@@ -313,11 +329,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
   outline.slides.forEach((s, idx) => {
     const slide = pptx.addSlide();
     const tplBg = bgFor(s.layout);
-    if (tplBg) {
-      slide.background = { data: tplBg };
-    } else {
-      slide.background = { color: BG };
-    }
+    paintTemplateBackground(slide, tplBg);
     if (s.notes) slide.addNotes(s.notes);
 
     const slideTitle = orPh(s.title, ph.title);
@@ -543,6 +555,7 @@ Deno.serve(async (req: Request) => {
       success: true,
       downloadUrl: pub.publicUrl,
       filename: `${safeName}.pptx`,
+      templateId: body.templateId,
       title: outline.title,
       subtitle: outline.subtitle,
       slideCount: outline.slides.length,

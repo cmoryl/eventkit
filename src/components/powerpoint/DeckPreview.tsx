@@ -8,6 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import transperfectHero from "@/assets/templates/transperfect-hero.jpg";
+import transperfectHeroSquare from "@/assets/templates/transperfect-hero-square.jpg";
+import transperfectSectionBg from "@/assets/templates/transperfect-section-bg.jpg";
+import transperfectLightPattern from "@/assets/templates/transperfect-light-pattern.jpg";
+import transperfectCard from "@/assets/templates/transperfect-card.jpg";
 
 export interface SlideOutline {
   layout: "title" | "section" | "bullets" | "two_column" | "stat" | "quote" | "closing";
@@ -33,7 +38,8 @@ interface Props {
   outline: DeckOutline;
   downloadUrl: string;
   filename: string;
-  onUpdated?: (next: { outline: DeckOutline; downloadUrl: string; filename: string }) => void;
+  templateId?: string;
+  onUpdated?: (next: { outline: DeckOutline; downloadUrl: string; filename: string; templateId?: string }) => void;
 }
 
 const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
@@ -50,7 +56,22 @@ const LAYOUT_OPTIONS: SlideOutline["layout"][] = [
   "title", "section", "bullets", "two_column", "stat", "quote", "closing",
 ];
 
-export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: initialUrl, filename: initialFile, onUpdated }) => {
+const TEMPLATE_PREVIEW_IMAGES: Record<string, Record<SlideOutline["layout"], string>> = {
+  "transperfect-2026": {
+    title: transperfectHero,
+    closing: transperfectHero,
+    section: transperfectSectionBg,
+    bullets: transperfectLightPattern,
+    two_column: transperfectLightPattern,
+    stat: transperfectCard,
+    quote: transperfectHeroSquare,
+  },
+};
+
+const templatePreviewImage = (templateId: string | undefined, layout: SlideOutline["layout"]) =>
+  templateId ? TEMPLATE_PREVIEW_IMAGES[templateId]?.[layout] : undefined;
+
+export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: initialUrl, filename: initialFile, templateId, onUpdated }) => {
   const { toast } = useToast();
   const [outline, setOutline] = useState<DeckOutline>(initial);
   const [downloadUrl, setDownloadUrl] = useState(initialUrl);
@@ -115,7 +136,7 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
     setRebuilding(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
-        body: { topic: outline.title, slideCount: outline.slides.length, prebuiltOutline: outline },
+        body: { topic: outline.title, slideCount: outline.slides.length, prebuiltOutline: outline, templateId },
       });
       if (error) {
         toast({ title: "Rebuild failed", description: error.message, variant: "destructive" });
@@ -124,7 +145,7 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
       setDownloadUrl(data.downloadUrl);
       setFilename(data.filename);
       setDirty(false);
-      onUpdated?.({ outline, downloadUrl: data.downloadUrl, filename: data.filename });
+      onUpdated?.({ outline, downloadUrl: data.downloadUrl, filename: data.filename, templateId: data.templateId || templateId });
       toast({ title: "Updated .pptx ready", description: "Your edits are baked into a fresh download." });
     } catch (e) {
       toast({ title: "Rebuild failed", description: String(e), variant: "destructive" });
@@ -193,7 +214,12 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
               className={`w-full text-left rounded-md border-2 transition-all overflow-hidden ${
                 i === activeIdx ? "border-primary shadow-sm" : "border-transparent hover:border-border"
               }`}
-              style={{ background: `#${outline.palette.background}` }}
+              style={{
+                backgroundColor: `#${outline.palette.background}`,
+                backgroundImage: templatePreviewImage(templateId, s.layout) ? `url(${templatePreviewImage(templateId, s.layout)})` : undefined,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
             >
               <div className="aspect-video p-2 relative">
                 <div className="text-[6px] font-bold leading-tight line-clamp-2" style={{ color: `#${outline.palette.text}` }}>
@@ -214,8 +240,16 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
         <div className="flex flex-col">
           {/* Canvas preview */}
           <div className="p-4 border-b" style={{ background: `#${outline.palette.background}` }}>
-            <div className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner" style={{ color: `#${outline.palette.text}`, fontFamily: outline.fonts?.body }}>
-              <SlideRenderer slide={active} palette={outline.palette} fonts={outline.fonts} />
+            <div
+              className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner bg-cover bg-center"
+              style={{
+                color: `#${outline.palette.text}`,
+                fontFamily: outline.fonts?.body,
+                backgroundColor: `#${outline.palette.background}`,
+                backgroundImage: templatePreviewImage(templateId, active.layout) ? `url(${templatePreviewImage(templateId, active.layout)})` : undefined,
+              }}
+            >
+              <SlideRenderer slide={active} palette={outline.palette} fonts={outline.fonts} templateId={templateId} />
             </div>
           </div>
 
@@ -340,16 +374,20 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
   );
 };
 
-const SlideRenderer: React.FC<{ slide: SlideOutline; palette: DeckOutline["palette"]; fonts: DeckOutline["fonts"] }> = ({ slide, palette, fonts }) => {
+const SlideRenderer: React.FC<{ slide: SlideOutline; palette: DeckOutline["palette"]; fonts: DeckOutline["fonts"]; templateId?: string }> = ({ slide, palette, fonts, templateId }) => {
   const headingStyle: React.CSSProperties = { fontFamily: fonts?.heading, color: `#${palette.text}` };
   const accent = `#${palette.accent}`;
+  const hasTemplateImage = !!templatePreviewImage(templateId, slide.layout);
+  const surfaceClass = hasTemplateImage ? "rounded-lg bg-background/70 p-4 backdrop-blur-sm" : "";
 
   if (slide.layout === "title" || slide.layout === "closing") {
     return (
       <div className="h-full flex flex-col justify-center items-center text-center gap-3">
-        <h1 className="text-3xl font-bold leading-tight" style={headingStyle}>{slide.title}</h1>
-        {slide.subtitle && <p className="text-sm opacity-75">{slide.subtitle}</p>}
-        <div className="h-1 w-16 rounded mt-2" style={{ background: accent }} />
+        <div className={surfaceClass}>
+          <h1 className="text-3xl font-bold leading-tight" style={headingStyle}>{slide.title}</h1>
+          {slide.subtitle && <p className="text-sm opacity-75">{slide.subtitle}</p>}
+          <div className="h-1 w-16 rounded mt-2 mx-auto" style={{ background: accent }} />
+        </div>
       </div>
     );
   }
