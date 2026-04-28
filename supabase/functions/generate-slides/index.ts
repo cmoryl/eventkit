@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
+import { requireUser } from "../_shared/auth.ts";
 
 const LOVABLE_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const GOOGLE_GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
@@ -80,6 +81,9 @@ function pickImage(
 serve(async (req) => {
   const cors = handleCors(req);
   if (cors) return cors;
+
+  const auth = await requireUser(req, corsHeaders);
+  if ("error" in auth) return auth.error;
 
   try {
     const {

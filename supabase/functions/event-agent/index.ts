@@ -1,4 +1,5 @@
 // Event Planning Agent - streaming chat via Lovable AI Gateway
+import { requireUser } from "../_shared/auth.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -23,6 +24,9 @@ Your role:
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireUser(req, corsHeaders);
+  if ("error" in auth) return auth.error;
 
   try {
     const { messages } = await req.json();

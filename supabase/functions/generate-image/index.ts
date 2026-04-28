@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders, handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
+import { requireUser } from "../_shared/auth.ts";
 import type { GenerateImageRequest, ImageAnalysis } from "../_shared/types.ts";
 import { getBasePrompt, isPrintAsset } from "../_shared/asset-prompts.ts";
 import type { LabeledImage, ImageModelTier } from "../_shared/ai-gateway.ts";
@@ -23,6 +24,10 @@ serve(async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
+
+  // Require authenticated user
+  const auth = await requireUser(req, corsHeaders);
+  if ("error" in auth) return auth.error;
 
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
