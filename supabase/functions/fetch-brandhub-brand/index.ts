@@ -337,6 +337,11 @@ async function resolveBrandHubSlug(
     if (!entityData) continue;
 
     console.log(`Found ${table.slice(0, -1)} by slug:`, entityData.name);
+    if (entityData.guide_data) {
+      console.log(`Building brand data directly from ${table.slice(0, -1)} guide_data`);
+      return { response: buildBrandFromEventGuideData(entityData, entityData.guide_data) };
+    }
+
     if (entityData.parent_brand_id) {
       const parentRes = await fetch(
         `${BRANDHUB_REST_URL}/brands?id=eq.${encodeURIComponent(entityData.parent_brand_id)}&select=share_token&limit=1`,
@@ -349,11 +354,6 @@ async function resolveBrandHubSlug(
           return { resolvedToken: parents[0].share_token };
         }
       }
-    }
-
-    if (entityData.guide_data) {
-      console.log(`Building brand data directly from ${table.slice(0, -1)} guide_data`);
-      return { response: buildBrandFromEventGuideData(entityData, entityData.guide_data) };
     }
   }
 
