@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,6 +7,10 @@ import {
   ChevronRight, Star, Bot, Palette, Crown,
 } from 'lucide-react';
 import transperfectHero from '@/assets/templates/transperfect-hero.jpg';
+import transperfectSection from '@/assets/templates/transperfect-section-bg.jpg';
+import transperfectLight from '@/assets/templates/transperfect-light-pattern.jpg';
+import transperfectCard from '@/assets/templates/transperfect-card.jpg';
+import transperfectCaseStudy from '@/assets/templates/transperfect-case-study.jpg';
 import { Button } from '@/components/ui/button';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { SlideEditor } from '@/components/slides/SlideEditor';
@@ -99,12 +103,44 @@ const HOW = [
 const SLIDE_W = 1920;
 const SLIDE_H = 1080;
 
+function MiniSlide({ template }: { template: InfographicTemplate }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.05);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      if (w > 0) setScale(w / SLIDE_W);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className="relative w-full rounded-md overflow-hidden border border-border/40"
+      style={{ paddingBottom: '56.25%' }}
+    >
+      <div className="absolute inset-0">
+        <div style={{ width: SLIDE_W, height: SLIDE_H, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+          <SlideRenderer slide={{ ...template.slide, id: `mini-${template.id}` } as SlideData} animated={false} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TemplateCard({
   template,
   onClick,
+  onSelectSibling,
 }: {
   template: InfographicTemplate;
   onClick: () => void;
+  onSelectSibling?: (t: InfographicTemplate) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,6 +159,14 @@ function TemplateCard({
     return () => ro.disconnect();
   }, []);
 
+  const siblings = useMemo(
+    () =>
+      INFOGRAPHIC_TEMPLATES.filter(
+        (t) => t.category === template.category && t.id !== template.id
+      ).slice(0, 3),
+    [template.category, template.id]
+  );
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
@@ -130,10 +174,10 @@ function TemplateCard({
       className="group cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={onClick}
     >
       {/* 16:9 container */}
       <div
+        onClick={onClick}
         ref={containerRef}
         className="relative w-full rounded-xl overflow-hidden border border-border/50 group-hover:border-primary/50 shadow-md group-hover:shadow-xl group-hover:shadow-primary/10 transition-all duration-300"
         style={{ paddingBottom: '56.25%' }}
@@ -171,12 +215,33 @@ function TemplateCard({
       </div>
 
       <div className="mt-2.5 px-0.5">
-        <p className="text-sm font-medium text-foreground truncate">{template.name}</p>
+        <p className="text-sm font-medium text-foreground truncate" onClick={onClick}>{template.name}</p>
         <p className="text-xs text-muted-foreground mt-0.5 truncate">{template.description}</p>
       </div>
+
+      {/* Sub-slide thumbnails (sibling layouts in same category) */}
+      {siblings.length > 0 && (
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          {siblings.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectSibling ? onSelectSibling(s) : onClick();
+              }}
+              className="block w-full rounded-md overflow-hidden hover:ring-2 hover:ring-primary/60 transition-all"
+              title={s.name}
+            >
+              <MiniSlide template={s} />
+            </button>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 }
+
 
 // ── Hero animated slide preview ───────────────────────────────────────────
 function HeroSlideStack() {
@@ -540,15 +605,42 @@ export default function SlidesPage() {
                 <div>
                   <h3 className="text-2xl font-bold mb-2">TransPerfect 2026</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    Deep navy gradients, electric blue accents, and rhythmic light bars.
-                    Built from the official TransPerfect 2026 brand system with AI-curated imagery.
+                    Deep navy gradients, glowing orbs, and atmospheric light blooms.
+                    Built from the official TransPerfect 2026 brand system with curated imagery.
                   </p>
                 </div>
+
+                {/* Sub-slide previews */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+                    Includes layouts
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { src: transperfectHero, label: 'Hero' },
+                      { src: transperfectSection, label: 'Section' },
+                      { src: transperfectCard, label: 'Card' },
+                      { src: transperfectCaseStudy, label: 'Case study' },
+                      { src: transperfectLight, label: 'Divider' },
+                    ].slice(0, 4).map((s) => (
+                      <div
+                        key={s.label}
+                        className="relative aspect-[16/10] rounded-md overflow-hidden border border-border/40 shadow-sm"
+                      >
+                        <img src={s.src} alt={s.label} className="absolute inset-0 w-full h-full object-cover" />
+                        <span className="absolute bottom-0.5 left-1 text-[8px] font-medium text-white/90 drop-shadow">
+                          {s.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 flex-wrap">
                   {['#03002C', '#003FC7', '#A1F9F9', '#C2A3FF'].map((c) => (
                     <span
                       key={c}
-                      className="h-6 w-6 rounded-full border border-border/40 shadow-sm"
+                      className="h-5 w-5 rounded-full border border-border/40 shadow-sm"
                       style={{ background: c }}
                     />
                   ))}
@@ -570,7 +662,11 @@ export default function SlidesPage() {
                 viewport={{ once: true }}
                 transition={{ delay: Math.min(i * 0.06, 0.4) }}
               >
-                <TemplateCard template={template} onClick={() => openWithTemplate(template)} />
+                <TemplateCard
+                  template={template}
+                  onClick={() => openWithTemplate(template)}
+                  onSelectSibling={(t) => openWithTemplate(t)}
+                />
               </motion.div>
             ))}
           </div>
