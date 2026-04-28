@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus, Upload, X, FileUp } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus, Upload, X, FileUp, Check, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { useActiveBrand } from "@/hooks/useActiveBrand";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
+import { renderPdfThumbnails, type PdfThumbnail } from "@/lib/pdfThumbnails";
 
 interface DeckResult {
   downloadUrl: string;
@@ -79,6 +80,9 @@ const PowerPointAgent: React.FC = () => {
   const [includeImagery, setIncludeImagery] = useState(true);
   const [includeLookAndFeel, setIncludeLookAndFeel] = useState(true);
   const [influence, setInfluence] = useState<number>(70);
+  const [thumbnails, setThumbnails] = useState<PdfThumbnail[]>([]);
+  const [renderingThumbs, setRenderingThumbs] = useState(false);
+  const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
 
   const loadBrands = useCallback(async () => {
     if (!user) return;
@@ -141,7 +145,24 @@ const PowerPointAgent: React.FC = () => {
     }
     setPdfFile(file);
     setExtractedSource(null);
+    setThumbnails([]);
+    setSelectedPages(new Set());
     setExtracting(true);
+    setRenderingThumbs(true);
+
+    // Render thumbnails in parallel with AI extraction
+    renderPdfThumbnails(file, { maxWidth: 480, quality: 0.7, maxPages: 50 })
+      .then((thumbs) => {
+        setThumbnails(thumbs);
+        // Default-select first 3 pages so users get instant value
+        setSelectedPages(new Set(thumbs.slice(0, 3).map((t) => t.page)));
+      })
+      .catch((e) => {
+        console.error("Thumb render failed:", e);
+        toast({ title: "Thumbnails unavailable", description: "Couldn't preview pages.", variant: "destructive" });
+      })
+      .finally(() => setRenderingThumbs(false));
+
     try {
       const fileBase64 = await fileToBase64(file);
       const { data, error } = await supabase.functions.invoke("extract-pdf-source", {
@@ -175,9 +196,22 @@ const PowerPointAgent: React.FC = () => {
     }
   };
 
+  const togglePage = (page: number) => {
+    setSelectedPages((prev) => {
+      const next = new Set(prev);
+      if (next.has(page)) next.delete(page); else next.add(page);
+      return next;
+    });
+  };
+
+  const selectAllPages = () => setSelectedPages(new Set(thumbnails.map((t) => t.page)));
+  const clearPageSelection = () => setSelectedPages(new Set());
+
   const clearPdf = () => {
     setPdfFile(null);
     setExtractedSource(null);
+    setThumbnails([]);
+    setSelectedPages(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -186,7 +220,10 @@ const PowerPointAgent: React.FC = () => {
     if (!finalTopic || isGenerating) return;
 
     const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
-    const sourceLabel = extractedSource ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence)` : '';
+    const pickedCount = selectedPages.size;
+    const sourceLabel = extractedSource
+      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''})`
+      : '';
     const userMsg: ChatItem = {
       role: "user",
       content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
@@ -195,6 +232,10 @@ const PowerPointAgent: React.FC = () => {
     setIsGenerating(true);
     setTopic("");
 
+    const pickedImages = thumbnails
+      .filter((t) => selectedPages.has(t.page))
+      .map((t) => ({ page: t.page, dataUrl: t.dataUrl }));
+
     const sourcePayload = extractedSource
       ? {
           ...extractedSource.extracted,
@@ -202,6 +243,7 @@ const PowerPointAgent: React.FC = () => {
           fileName: extractedSource.fileName,
           influence,
           scope: { text: includeText, imagery: includeImagery, lookAndFeel: includeLookAndFeel },
+          selectedImages: pickedImages,
         }
       : undefined;
 
@@ -529,6 +571,90 @@ const PowerPointAgent: React.FC = () => {
                     {influence >= 70 ? "Stay close to source structure & tone" : influence >= 40 ? "Use as primary inspiration" : "Light reference only"}
                   </p>
                 </div>
+
+                {/* Page thumbnail gallery */}
+                {(renderingThumbs || thumbnails.length > 0) && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <ImageIcon className="h-3 w-3" />
+                        Page previews
+                        {thumbnails.length > 0 && (
+                          <span className="text-muted-foreground font-normal">
+                            · {selectedPages.size}/{thumbnails.length} picked
+                          </span>
+                        )}
+                      </Label>
+                      {thumbnails.length > 0 && (
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={selectAllPages}
+                            disabled={isGenerating}
+                            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            All
+                          </button>
+                          <span className="text-[10px] text-muted-foreground">·</span>
+                          <button
+                            type="button"
+                            onClick={clearPageSelection}
+                            disabled={isGenerating}
+                            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            None
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {renderingThumbs && thumbnails.length === 0 ? (
+                      <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Rendering page previews…
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto pr-1">
+                        {thumbnails.map((t) => {
+                          const picked = selectedPages.has(t.page);
+                          return (
+                            <button
+                              type="button"
+                              key={t.page}
+                              onClick={() => togglePage(t.page)}
+                              disabled={isGenerating}
+                              className={`group relative aspect-[3/4] rounded-md overflow-hidden border-2 transition-all ${
+                                picked
+                                  ? "border-primary ring-2 ring-primary/30"
+                                  : "border-border/50 hover:border-primary/50 opacity-70 hover:opacity-100"
+                              }`}
+                              title={`Page ${t.page}${picked ? " — selected" : ""}`}
+                            >
+                              <img src={t.dataUrl} alt={`Page ${t.page}`} className="w-full h-full object-cover bg-white" />
+                              <div className="absolute top-1 left-1 bg-background/80 backdrop-blur-sm text-[9px] font-medium px-1 py-0.5 rounded">
+                                {t.page}
+                              </div>
+                              {picked && (
+                                <div className="absolute top-1 right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                        {renderingThumbs && (
+                          <div className="aspect-[3/4] rounded-md border border-dashed border-border/50 flex items-center justify-center">
+                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {thumbnails.length > 0 && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Click pages to include them as visual references in your deck.
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
