@@ -407,23 +407,27 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing server configuration");
     }
 
-    // 1) Plan outline via AI
+    // 1) Plan outline via AI (or use prebuilt one for re-renders after editing)
     let outline: DeckOutline;
-    try {
-      outline = await planDeck({ ...body, slideCount }, LOVABLE_API_KEY);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg === "RATE_LIMIT") {
-        return new Response(JSON.stringify({ error: "Rate limit. Please try again." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+    if (body.prebuiltOutline && Array.isArray(body.prebuiltOutline.slides) && body.prebuiltOutline.slides.length) {
+      outline = body.prebuiltOutline;
+    } else {
+      try {
+        outline = await planDeck({ ...body, slideCount }, LOVABLE_API_KEY);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg === "RATE_LIMIT") {
+          return new Response(JSON.stringify({ error: "Rate limit. Please try again." }), {
+            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (msg === "PAYMENT_REQUIRED") {
+          return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Settings → Workspace → Usage." }), {
+            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        throw e;
       }
-      if (msg === "PAYMENT_REQUIRED") {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Settings → Workspace → Usage." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      throw e;
     }
 
     // 2) Build .pptx
