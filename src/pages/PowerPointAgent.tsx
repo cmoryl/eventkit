@@ -273,10 +273,10 @@ const PowerPointAgent: React.FC = () => {
       .filter((t): t is NonNullable<typeof t> => !!t)
       .map((t) => ({ page: t.page, dataUrl: t.dataUrl }));
 
-    const sourcePayload = extractedSource
+    const pdfSource = extractedSource
       ? {
           ...extractedSource.extracted,
-          outline: filteredOutline, // only user-selected sections
+          outline: filteredOutline,
           imageDescriptions: extractedSource._imageDescriptions || [],
           fileName: extractedSource.fileName,
           influence,
@@ -284,6 +284,22 @@ const PowerPointAgent: React.FC = () => {
           selectedImages: pickedImages,
         }
       : undefined;
+
+    const brandHubPayload = brandHubSource
+      ? {
+          type: brandHubSource.type,
+          name: brandHubSource.name,
+          slug: brandHubSource.slug,
+          shareToken: brandHubSource.shareToken,
+          guide: brandHubSource.payload,
+          influence,
+        }
+      : undefined;
+
+    const sourcePayload =
+      pdfSource || brandHubPayload
+        ? { ...(pdfSource || {}), brandHub: brandHubPayload }
+        : undefined;
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
@@ -540,6 +556,13 @@ const PowerPointAgent: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* BrandHub source picker (brand / event / product) */}
+          <BrandHubSourcePicker
+            picked={brandHubSource}
+            onPick={setBrandHubSource}
+            disabled={isGenerating}
+          />
 
           {/* PDF source uploader */}
           <div className="rounded-lg border bg-background/40 p-3 space-y-3">
