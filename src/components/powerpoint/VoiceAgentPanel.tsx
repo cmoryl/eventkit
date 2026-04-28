@@ -353,4 +353,10 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
   );
 };
 
+export const VoiceAgentPanel: React.FC<Props> = (props) => (
+  <ConversationProvider>
+    <VoiceAgentPanelInner {...props} />
+  </ConversationProvider>
+);
+
 export default VoiceAgentPanel;
