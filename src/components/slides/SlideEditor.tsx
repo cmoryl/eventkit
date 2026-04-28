@@ -912,6 +912,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 {/* Background effect */}
                 <BgEffectEditor slide={activeSlide} onUpdate={(updates) => updateSlide(activeIndex, updates)} />
 
+                {/* Parallax depth layers — only for parallax slides */}
+                {activeSlide.layout === 'parallax' && (
+                  <ParallaxLayerEditor slide={activeSlide} onChange={(updates) => updateSlide(activeIndex, updates)} />
+                )}
                 {/* Text alignment */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground">Text Alignment</label>
