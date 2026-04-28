@@ -555,6 +555,7 @@ Deno.serve(async (req: Request) => {
       success: true,
       downloadUrl: pub.publicUrl,
       filename: `${safeName}.pptx`,
+      templateId: body.templateId,
       title: outline.title,
       subtitle: outline.subtitle,
       slideCount: outline.slides.length,
