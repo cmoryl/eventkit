@@ -595,6 +595,73 @@ const PowerPointAgent: React.FC = () => {
                   </p>
                 </div>
 
+                {/* Outline section picker */}
+                {extractedSource?.extracted?.outline?.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <FileText className="h-3 w-3" />
+                        Extracted sections
+                        <span className="text-muted-foreground font-normal">
+                          · {selectedSections.size}/{extractedSource.extracted.outline.length} included
+                        </span>
+                      </Label>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={selectAllSections}
+                          disabled={isGenerating}
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          All
+                        </button>
+                        <span className="text-[10px] text-muted-foreground">·</span>
+                        <button
+                          type="button"
+                          onClick={clearSectionSelection}
+                          disabled={isGenerating}
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          None
+                        </button>
+                      </div>
+                    </div>
+                    <div className="max-h-56 overflow-y-auto rounded-md border bg-background/50 divide-y divide-border/50">
+                      {extractedSource.extracted.outline.map((section: { heading: string; bullets: string[] }, i: number) => {
+                        const checked = selectedSections.has(i);
+                        return (
+                          <label
+                            key={i}
+                            className={`flex items-start gap-2.5 p-2.5 cursor-pointer hover:bg-accent/30 transition-colors ${checked ? '' : 'opacity-60'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleSection(i)}
+                              disabled={isGenerating}
+                              className="mt-1 h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-xs font-medium truncate">{section.heading}</div>
+                              {section.bullets?.length > 0 && (
+                                <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                                  {section.bullets.slice(0, 3).join(' · ')}
+                                  {section.bullets.length > 3 && ` · +${section.bullets.length - 3} more`}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {selectedSections.size === 0 && (
+                      <p className="text-[10px] text-amber-500">
+                        No sections selected — the deck will rely on summary, look & feel, and your topic only.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Page thumbnail gallery */}
                 {(renderingThumbs || thumbnails.length > 0) && (
                   <div className="space-y-2 pt-1">
