@@ -245,20 +245,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     };
 
     const fetchViaProxy = async (): Promise<Blob> => {
-      const { data, error } = await supabase.functions.invoke('proxy-brandhub-file', {
-        body: null,
-        // invoke doesn't support GET query strings cleanly; use direct URL.
-      });
-      // Fallback: invoke() can't do query strings reliably, so call the
-      // function URL directly.
-      if (error || !data) {
-        const base = (import.meta as any).env?.VITE_SUPABASE_URL;
-        const proxyUrl = `${base}/functions/v1/proxy-brandhub-file?url=${encodeURIComponent(file.url)}`;
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
-        return await res.blob();
-      }
-      return data as Blob;
+      const base = (import.meta as any).env?.VITE_SUPABASE_URL;
+      if (!base) throw new Error('Proxy unavailable');
+      const proxyUrl = `${base}/functions/v1/proxy-brandhub-file?url=${encodeURIComponent(file.url)}`;
+      const res = await fetch(proxyUrl);
+      if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
+      return await res.blob();
     };
 
     const openInNewTabFallback = (reason: string) => {
