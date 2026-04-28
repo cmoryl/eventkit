@@ -80,6 +80,9 @@ const PowerPointAgent: React.FC = () => {
   const [includeImagery, setIncludeImagery] = useState(true);
   const [includeLookAndFeel, setIncludeLookAndFeel] = useState(true);
   const [influence, setInfluence] = useState<number>(70);
+  const [thumbnails, setThumbnails] = useState<PdfThumbnail[]>([]);
+  const [renderingThumbs, setRenderingThumbs] = useState(false);
+  const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
 
   const loadBrands = useCallback(async () => {
     if (!user) return;
