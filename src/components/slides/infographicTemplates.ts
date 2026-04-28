@@ -405,4 +405,355 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
       bgEffect: { type: 'particles', speed: 0.6, intensity: 0.4, count: 18, direction: 'float' },
     },
   },
+
+  // ── Stats & KPIs (additional) ─────────────────────────────────
+  {
+    id: 'stat-trend-dashboard',
+    name: 'KPI Trend Dashboard',
+    category: 'stats',
+    description: 'Four KPIs with trend arrows for at-a-glance health',
+    tags: ['kpi', 'dashboard', 'trend', 'metrics'],
+    slide: {
+      layout: 'stats',
+      title: 'Health Dashboard',
+      variant: 'default',
+      stats: [
+        { value: '↑ 24%', label: 'Revenue' },
+        { value: '↑ 18%', label: 'Users' },
+        { value: '↓ 5%', label: 'Churn' },
+        { value: '92', label: 'NPS' },
+      ],
+    },
+  },
+  {
+    id: 'stat-quarterly-vs',
+    name: 'Quarterly vs Prior Period',
+    category: 'stats',
+    description: 'Three KPIs showing quarter-over-quarter movement',
+    tags: ['kpi', 'qoq', 'comparison', 'metrics'],
+    animated: true,
+    slide: {
+      layout: 'stats',
+      title: 'This Quarter vs Last',
+      variant: 'minimal',
+      stats: [
+        { value: '+$1.4M', label: 'Net New ARR' },
+        { value: '+312', label: 'New Customers' },
+        { value: '−2.1pp', label: 'Churn Reduction' },
+      ],
+      bgEffect: { type: 'grid', speed: 0.8, intensity: 0.25, spacing: 60, dotSize: 1.5, pulseDepth: 0.3 },
+    },
+  },
+
+  // ── Charts (additional) ────────────────────────────────────────
+  {
+    id: 'chart-pie-mix',
+    name: 'Revenue Mix Pie',
+    category: 'charts',
+    description: 'Pie chart showing revenue split across segments',
+    tags: ['pie', 'composition', 'mix', 'chart'],
+    slide: {
+      layout: 'chart',
+      title: 'Revenue by Segment',
+      variant: 'default',
+      chart: {
+        type: 'pie',
+        title: 'Where revenue came from this year',
+        data: [
+          { label: 'Enterprise', value: 58 },
+          { label: 'Mid-market', value: 27 },
+          { label: 'SMB', value: 15 },
+        ],
+      },
+    },
+  },
+  {
+    id: 'chart-actual-vs-target',
+    name: 'Actual vs Target Bars',
+    category: 'charts',
+    description: 'Two-series bars comparing performance to plan',
+    tags: ['bar', 'target', 'plan-vs-actual', 'chart'],
+    slide: {
+      layout: 'chart',
+      title: 'Performance vs Plan',
+      variant: 'minimal',
+      chart: {
+        type: 'bar',
+        title: 'Quarterly revenue ($M)',
+        data: [
+          { label: 'Q1', value: 4.2 }, { label: 'Q2', value: 5.1 },
+          { label: 'Q3', value: 6.4 }, { label: 'Q4', value: 7.8 },
+        ],
+        series2: [
+          { label: 'Q1', value: 4.0 }, { label: 'Q2', value: 5.0 },
+          { label: 'Q3', value: 6.0 }, { label: 'Q4', value: 7.0 },
+        ],
+        series1Name: 'Actual', series2Name: 'Target',
+      },
+    },
+  },
+  {
+    id: 'chart-multi-line',
+    name: 'Year-Over-Year Lines',
+    category: 'charts',
+    description: 'Two trend lines comparing this year to last',
+    tags: ['line', 'yoy', 'comparison', 'trend'],
+    animated: true,
+    slide: {
+      layout: 'chart',
+      title: 'YoY Growth Comparison',
+      variant: 'default',
+      chart: {
+        type: 'line',
+        title: 'Monthly active users (thousands)',
+        data: [
+          { label: 'Jan', value: 22 }, { label: 'Feb', value: 25 }, { label: 'Mar', value: 29 },
+          { label: 'Apr', value: 33 }, { label: 'May', value: 38 }, { label: 'Jun', value: 44 },
+        ],
+        series2: [
+          { label: 'Jan', value: 14 }, { label: 'Feb', value: 16 }, { label: 'Mar', value: 18 },
+          { label: 'Apr', value: 20 }, { label: 'May', value: 22 }, { label: 'Jun', value: 25 },
+        ],
+        series1Name: 'This Year', series2Name: 'Last Year',
+      },
+      bgEffect: { type: 'grid', speed: 1, intensity: 0.2, spacing: 50, dotSize: 1.5, pulseDepth: 0.4 },
+    },
+  },
+  {
+    id: 'chart-donut-traffic',
+    name: 'Traffic by Channel',
+    category: 'charts',
+    description: 'Donut showing acquisition channel mix',
+    tags: ['donut', 'traffic', 'channels', 'acquisition'],
+    slide: {
+      layout: 'chart',
+      title: 'Traffic by Channel',
+      variant: 'minimal',
+      chart: {
+        type: 'doughnut',
+        title: 'Acquisition mix',
+        data: [
+          { label: 'Organic', value: 38 }, { label: 'Paid', value: 24 },
+          { label: 'Referral', value: 18 }, { label: 'Social', value: 14 }, { label: 'Direct', value: 6 },
+        ],
+      },
+    },
+  },
+
+  // ── Timelines (additional) ─────────────────────────────────────
+  {
+    id: 'timeline-project-phases',
+    name: 'Project Phase Timeline',
+    category: 'timelines',
+    description: 'Five-phase project lifecycle with status hints',
+    tags: ['timeline', 'project', 'phases', 'lifecycle'],
+    slide: {
+      layout: 'timeline',
+      title: 'Project Phases',
+      variant: 'default',
+      timeline: [
+        { date: 'Phase 1', title: 'Discovery', description: 'Research & alignment' },
+        { date: 'Phase 2', title: 'Design', description: 'Architecture & specs' },
+        { date: 'Phase 3', title: 'Build', description: 'Implementation sprint' },
+        { date: 'Phase 4', title: 'Test', description: 'QA & user validation' },
+        { date: 'Phase 5', title: 'Launch', description: 'Production rollout' },
+      ],
+    },
+  },
+  {
+    id: 'timeline-company-history',
+    name: 'Company History',
+    category: 'timelines',
+    description: 'Founding to today milestones',
+    tags: ['timeline', 'history', 'founding', 'milestones'],
+    animated: true,
+    slide: {
+      layout: 'timeline',
+      title: 'Our Story',
+      variant: 'dark',
+      timeline: [
+        { date: '2018', title: 'Founded', description: 'Two co-founders, one garage' },
+        { date: '2020', title: 'Seed Round', description: '$3M from top angels' },
+        { date: '2022', title: 'Product-Market Fit', description: '50K active users' },
+        { date: '2024', title: 'Series B', description: '$45M, 200 employees' },
+      ],
+      bgEffect: { type: 'mesh', speed: 0.5, intensity: 0.4, blur: 80, hueRotate: 30 },
+    },
+  },
+
+  // ── Process & Flow (additional) ───────────────────────────────
+  {
+    id: 'process-discovery-build-launch',
+    name: '3-Step: Discover → Build → Launch',
+    category: 'process',
+    description: 'Compact three-step product process',
+    tags: ['process', 'product', 'launch', '3-step'],
+    slide: {
+      layout: 'process',
+      title: 'How We Ship',
+      variant: 'minimal',
+      process: [
+        { title: 'Discover', description: 'Customer research + problem framing' },
+        { title: 'Build', description: 'Prototype, iterate, measure' },
+        { title: 'Launch', description: 'Roll out, monitor, expand' },
+      ],
+    },
+  },
+  {
+    id: 'process-customer-journey',
+    name: 'Customer Journey',
+    category: 'process',
+    description: 'Five touchpoints from first visit to advocacy',
+    tags: ['process', 'journey', 'customer', 'lifecycle'],
+    slide: {
+      layout: 'process',
+      title: 'Customer Journey',
+      variant: 'default',
+      process: [
+        { title: 'Awareness', description: 'First touchpoint' },
+        { title: 'Consider', description: 'Compare options' },
+        { title: 'Purchase', description: 'Convert to customer' },
+        { title: 'Adopt', description: 'Aha moment' },
+        { title: 'Advocate', description: 'Refer others' },
+      ],
+    },
+  },
+  {
+    id: 'process-pdca',
+    name: 'Plan-Do-Check-Act Cycle',
+    category: 'process',
+    description: 'Classic continuous improvement loop',
+    tags: ['process', 'pdca', 'methodology', 'cycle'],
+    animated: true,
+    slide: {
+      layout: 'process',
+      title: 'Continuous Improvement',
+      variant: 'brand',
+      process: [
+        { title: 'Plan', description: 'Define goals + hypothesis' },
+        { title: 'Do', description: 'Run small experiment' },
+        { title: 'Check', description: 'Measure results' },
+        { title: 'Act', description: 'Standardize or pivot' },
+      ],
+      bgEffect: { type: 'orbs', speed: 0.7, intensity: 0.4, count: 2, size: 60, blur: 90 },
+    },
+  },
+
+  // ── Comparison (additional) ────────────────────────────────────
+  {
+    id: 'comparison-old-vs-new',
+    name: 'Old Way vs New Way',
+    category: 'comparison',
+    description: 'Status quo versus modernized approach',
+    tags: ['comparison', 'old-vs-new', 'modernization'],
+    slide: {
+      layout: 'comparison',
+      title: 'The Old Way vs The New Way',
+      variant: 'minimal',
+      body: 'Spreadsheets everywhere\nManual data entry\nWeekly status emails\nFire-drill reporting\n---\nOne source of truth\nAuto-synced data\nReal-time dashboards\nProactive alerts',
+    },
+  },
+  {
+    id: 'comparison-self-vs-cloud',
+    name: 'Self-Hosted vs Cloud',
+    category: 'comparison',
+    description: 'Two-column tradeoff between deployment models',
+    tags: ['comparison', 'cloud', 'self-hosted', 'deployment'],
+    slide: {
+      layout: 'two-column',
+      title: 'Deployment Models',
+      variant: 'default',
+      body: '✓ Full data control\n✓ Custom integrations\n✓ One-time license\n✗ Ops + maintenance\n✗ Slower upgrades\n---\n✓ Auto upgrades\n✓ Elastic scale\n✓ Lower TCO\n✗ Network dependency\n✗ Less customization',
+    },
+  },
+  {
+    id: 'comparison-quadrant-2x2',
+    name: 'Strategic Quadrant',
+    category: 'comparison',
+    description: 'Four-quadrant 2×2 framing of options',
+    tags: ['comparison', 'quadrant', '2x2', 'strategy'],
+    slide: {
+      layout: 'two-column',
+      title: 'Build vs Buy Decision',
+      variant: 'minimal',
+      body: 'Build (high effort, high control)\n→ Core differentiators\n→ Long-term IP\n→ Strategic moats\n---\nBuy (low effort, fast)\n→ Commodity functions\n→ Industry standards\n→ Time-sensitive needs',
+    },
+  },
+
+  // ── Lists & Agenda (additional) ────────────────────────────────
+  {
+    id: 'list-workshop-agenda',
+    name: 'Workshop Agenda',
+    category: 'lists',
+    description: 'Five-segment workshop session plan',
+    tags: ['agenda', 'workshop', 'session'],
+    slide: {
+      layout: 'agenda',
+      title: 'Workshop Plan',
+      variant: 'brand',
+      body: 'Welcome & Goals (15m)\nWarm-up Exercise (20m)\nDeep-Dive Discussion (40m)\nHands-on Practice (30m)\nWrap-up & Next Steps (15m)',
+    },
+  },
+  {
+    id: 'list-top-5-priorities',
+    name: 'Top 5 Priorities',
+    category: 'lists',
+    description: 'Numbered priority list with rationale',
+    tags: ['list', 'priorities', 'top-5', 'numbered'],
+    slide: {
+      layout: 'content',
+      title: 'Top 5 Priorities for Next Quarter',
+      variant: 'default',
+      body: '1. Hit $5M ARR — closing key enterprise pipeline\n2. Launch platform API — unlock partner ecosystem\n3. Reduce churn to <2% — invest in onboarding\n4. Hire 10 engineers — expand product velocity\n5. EU compliance certification — enable expansion',
+    },
+  },
+
+  // ── Hero & Title (additional) ──────────────────────────────────
+  {
+    id: 'hero-annual-report',
+    name: 'Annual Report Cover',
+    category: 'hero',
+    description: 'Year-stamped report cover with elegant gradient',
+    tags: ['title', 'annual-report', 'cover', 'hero'],
+    animated: true,
+    slide: {
+      layout: 'title',
+      title: '2025 Annual Report',
+      subtitle: 'A year of momentum',
+      variant: 'gradient',
+      bgEffect: { type: 'mesh', speed: 0.5, intensity: 0.55, blur: 70, hueRotate: 60 },
+    },
+  },
+  {
+    id: 'hero-conference-talk',
+    name: 'Conference Talk Opening',
+    category: 'hero',
+    description: 'High-impact title slide for talks and keynotes',
+    tags: ['title', 'conference', 'talk', 'keynote'],
+    animated: true,
+    slide: {
+      layout: 'title',
+      title: 'Designing for Trust',
+      subtitle: 'Lessons from shipping to 5 million users',
+      variant: 'dark',
+      bgEffect: { type: 'particles', speed: 1, intensity: 0.5, count: 35, direction: 'up' },
+    },
+  },
+
+  // ── Sections & Quotes (additional) ─────────────────────────────
+  {
+    id: 'section-thank-you',
+    name: 'Thank You Closing',
+    category: 'sections',
+    description: 'Final slide with contact and thanks',
+    tags: ['section', 'thank-you', 'closing', 'contact'],
+    animated: true,
+    slide: {
+      layout: 'section',
+      title: 'Thank You',
+      subtitle: 'Let\'s keep the conversation going — hello@company.com',
+      variant: 'gradient',
+      bgEffect: { type: 'beam', speed: 0.7, intensity: 0.45, angle: 30, width: 200 },
+    },
+  },
 ];
