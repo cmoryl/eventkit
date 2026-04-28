@@ -70,6 +70,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
   const [slideTransition, setSlideTransition] = useState<SlideTransition>('fade');
   const [isGridView, setIsGridView] = useState(false);
+  const [animatedBackgrounds, setAnimatedBackgrounds] = useState(true);
 
   const activeSlide = slides[activeIndex];
 
@@ -212,7 +213,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
         onExit={() => setIsPresentationMode(false)}
         transition={slideTransition}
       >
-        {(idx) => <SlideRenderer slide={slides[idx]} brandColors={brandColors} brandFonts={brandFonts} />}
+        {(idx) => <SlideRenderer slide={slides[idx]} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} />}
       </PresentationMode>
     );
   }
@@ -306,23 +307,44 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                 </Button>
               </label>
 
-              <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName)}>
+              <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName, { transition: slideTransition })}>
                 <Download className="h-3.5 w-3.5 mr-1.5" />
                 Export
               </Button>
 
               <Select value={slideTransition} onValueChange={(v) => setSlideTransition(v as SlideTransition)}>
-                <SelectTrigger className="h-8 w-[100px] text-xs">
+                <SelectTrigger className="h-8 w-[110px] text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No Transition</SelectItem>
                   <SelectItem value="fade">Fade</SelectItem>
+                  <SelectItem value="dissolve">Dissolve</SelectItem>
                   <SelectItem value="slide">Slide</SelectItem>
+                  <SelectItem value="push">Push</SelectItem>
+                  <SelectItem value="cover">Cover</SelectItem>
                   <SelectItem value="zoom">Zoom</SelectItem>
                   <SelectItem value="flip">Flip</SelectItem>
+                  <SelectItem value="cube">Cube</SelectItem>
                 </SelectContent>
               </Select>
+
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant={animatedBackgrounds ? 'default' : 'outline'}
+                      onClick={() => setAnimatedBackgrounds(v => !v)}
+                      className="gap-1.5"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Animated BG
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Animate slide backgrounds (canvas + presentation only — does not affect PPTX export).</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               <Button
                 size="sm"
@@ -462,7 +484,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
               {/* Slide canvas */}
               <div className="flex-1 p-8 min-h-0">
                 <CenteredScaledSlide zoom={zoom}>
-                  <SlideRenderer slide={activeSlide} brandColors={brandColors} brandFonts={brandFonts} />
+                  <SlideRenderer slide={activeSlide} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} />
                 </CenteredScaledSlide>
               </div>
 

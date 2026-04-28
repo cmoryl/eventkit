@@ -10,6 +10,7 @@ interface SlideRendererProps {
   slide: SlideData;
   brandColors?: { primary?: string; secondary?: string; accent?: string };
   brandFonts?: { heading?: string; body?: string };
+  animated?: boolean;
 }
 
 function ImageGallery({ images }: { images: string[] }) {
@@ -46,7 +47,7 @@ function SlideImages({ images, variant }: { images: string[]; variant: SlideData
   );
 }
 
-export function SlideRenderer({ slide, brandColors, brandFonts }: SlideRendererProps) {
+export function SlideRenderer({ slide, brandColors, brandFonts, animated }: SlideRendererProps) {
   const headingFont = brandFonts?.heading || 'inherit';
   const bodyFont = brandFonts?.body || 'inherit';
   const accentColor = brandColors?.primary;
@@ -58,7 +59,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts }: SlideRendererP
   const align = slide.textAlign || 'left';
 
   return (
-    <SlideLayout variant={slide.variant} accentColor={accentColor} bgColor={slide.bgColor}>
+    <SlideLayout variant={slide.variant} accentColor={accentColor} bgColor={slide.bgColor} animated={animated}>
       {slide.layout === 'title' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
           <h1

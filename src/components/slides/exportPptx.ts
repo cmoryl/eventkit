@@ -1,6 +1,22 @@
 import pptxgen from 'pptxgenjs';
 import type { SlideData } from './slideTypes';
 
+export type ExportTransition =
+  | 'none' | 'fade' | 'slide' | 'zoom' | 'flip' | 'cube' | 'dissolve' | 'push' | 'cover';
+
+/** Map our internal transition names to pptxgenjs/PowerPoint native transition types. */
+const PPTX_TRANSITION_MAP: Record<ExportTransition, string | null> = {
+  none: null,
+  fade: 'fade',
+  dissolve: 'fade',
+  slide: 'push',
+  push: 'push',
+  cover: 'cover',
+  zoom: 'zoom',
+  flip: 'cube',
+  cube: 'cube',
+};
+
 const VARIANT_BG: Record<SlideData['variant'], string> = {
   default: 'FFFFFF',
   dark: '0F172A',
@@ -36,13 +52,28 @@ function imgSrc(url: string): { path: string } | { data: string } {
   return url.startsWith('data:') ? { data: url } : { path: url };
 }
 
-export async function exportSlidesToPptx(slides: SlideData[], deckTitle: string) {
+export async function exportSlidesToPptx(
+  slides: SlideData[],
+  deckTitle: string,
+  options?: { transition?: ExportTransition },
+) {
   const pptx = new pptxgen();
   pptx.layout = 'LAYOUT_16x9';
   pptx.title = deckTitle;
 
+  const pptxTransition = options?.transition && options.transition !== 'none'
+    ? PPTX_TRANSITION_MAP[options.transition]
+    : null;
+
   for (const slide of slides) {
     const s = pptx.addSlide();
+    if (pptxTransition) {
+      // pptxgenjs writes the slide-level transition when this property is set.
+      (s as unknown as { transition: { type: string; dur: number } }).transition = {
+        type: pptxTransition,
+        dur: 800,
+      };
+    }
     const bg = VARIANT_BG[slide.variant];
     const fg = VARIANT_TEXT[slide.variant];
     const muted = VARIANT_MUTED[slide.variant];
