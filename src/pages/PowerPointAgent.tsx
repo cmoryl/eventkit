@@ -314,6 +314,7 @@ const PowerPointAgent: React.FC = () => {
               <Input id="slides" type="number" min={3} max={30} value={slideCount}
                 onChange={(e) => setSlideCount(Math.max(3, Math.min(30, Number(e.target.value) || 10)))}
                 className="h-9" disabled={isGenerating} />
+            </div>
           </div>
 
           {/* Brand picker row */}
