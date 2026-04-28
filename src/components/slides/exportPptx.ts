@@ -327,6 +327,66 @@ export async function exportSlidesToPptx(slides: SlideData[], deckTitle: string)
         });
         break;
 
+      case 'agenda': {
+        s.addText(slide.title, {
+          x: 0.6, y: 0.8, w: 3.5, h: 2.0,
+          fontSize: 32, bold: true, color: fg, fontFace: 'Arial', valign: 'middle',
+        });
+        s.addShape(pptx.ShapeType.rect, {
+          x: 0.6, y: 2.9, w: 0.7, h: 0.06,
+          fill: { color: ACCENT },
+        });
+        const items = (slide.body || '').split('\n').filter(Boolean);
+        items.forEach((item, ii) => {
+          const rowY = 1.0 + ii * 0.65;
+          s.addShape(pptx.ShapeType.ellipse, {
+            x: 4.4, y: rowY + 0.05, w: 0.4, h: 0.4,
+            fill: { color: ACCENT },
+          });
+          s.addText(String(ii + 1), {
+            x: 4.4, y: rowY + 0.05, w: 0.4, h: 0.4,
+            fontSize: 11, bold: true, color: 'FFFFFF',
+            align: 'center', valign: 'middle', fontFace: 'Arial',
+          });
+          s.addText(item, {
+            x: 4.9, y: rowY, w: 4.5, h: 0.5,
+            fontSize: 16, color: fg, fontFace: 'Arial', valign: 'middle',
+          });
+        });
+        break;
+      }
+
+      case 'big-number': {
+        if (slide.title) {
+          s.addText(slide.title, {
+            x: 1, y: 0.3, w: 8, h: 0.6,
+            fontSize: 18, bold: false, color: muted,
+            align: 'center', fontFace: 'Arial',
+          });
+        }
+        const heroStat = slide.stats?.[0];
+        if (heroStat) {
+          s.addText(heroStat.value, {
+            x: 0.5, y: 1.0, w: 9, h: 2.8,
+            fontSize: 96, bold: true, color: ACCENT,
+            align: 'center', valign: 'middle', fontFace: 'Arial',
+          });
+          s.addText(heroStat.label, {
+            x: 1, y: 3.8, w: 8, h: 0.7,
+            fontSize: 22, color: fg,
+            align: 'center', fontFace: 'Arial',
+          });
+        }
+        if (slide.subtitle) {
+          s.addText(slide.subtitle, {
+            x: 1.5, y: 4.6, w: 7, h: 0.5,
+            fontSize: 14, color: muted,
+            align: 'center', fontFace: 'Arial',
+          });
+        }
+        break;
+      }
+
       case 'blank':
       default:
         if (slide.title) {

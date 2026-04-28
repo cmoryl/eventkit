@@ -194,8 +194,11 @@ export function SlideRenderer({ slide, brandColors, brandFonts }: SlideRendererP
             {slide.title}
           </h2>
           <div className="flex-1 flex items-center justify-center">
+            {!(slide.stats?.length) && (
+              <p className="opacity-30 text-[32px]">No stats yet — add some in the editor</p>
+            )}
             <div className="flex gap-[100px]">
-              {(slide.stats || [{ value: '—', label: 'Metric' }]).map((stat, i) => (
+              {(slide.stats || []).map((stat, i) => (
                 <div key={i} className="text-center">
                   <div
                     className="font-bold mb-[16px]"
@@ -463,6 +466,74 @@ export function SlideRenderer({ slide, brandColors, brandFonts }: SlideRendererP
           )}
           {slide.images && slide.images.length > 0 && (
             <SlideImages images={slide.images} variant={slide.variant} />
+          )}
+        </div>
+      )}
+
+      {slide.layout === 'agenda' && (
+        <div className="flex h-full px-[120px] py-[100px] gap-[120px]">
+          <div className="flex flex-col justify-center" style={{ minWidth: 320 }}>
+            <h2
+              className="font-bold leading-tight"
+              style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 80 }}
+            >
+              {slide.title}
+            </h2>
+            <div className="mt-[40px] w-[80px] h-[8px] rounded-full" style={{ backgroundColor: accentColor || '#6366f1' }} />
+          </div>
+          <div className="flex-1 flex flex-col justify-center gap-[24px]">
+            {(slide.body || '').split('\n').filter(Boolean).map((item, i) => (
+              <div key={i} className="flex items-center gap-[32px]">
+                <div
+                  className="rounded-full flex items-center justify-center font-bold text-white shrink-0"
+                  style={{ width: 64, height: 64, backgroundColor: accentColor || '#6366f1', fontFamily: headingFont, fontSize: 28 }}
+                >
+                  {String(i + 1).padStart(2, '0')}
+                </div>
+                <span className="font-medium" style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}>
+                  {item}
+                </span>
+              </div>
+            ))}
+            {!(slide.body?.trim()) && (
+              <p className="opacity-30 text-[32px]">Add agenda items in the editor</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {slide.layout === 'big-number' && (
+        <div className="flex flex-col items-center justify-center h-full px-[160px] text-center gap-[32px]">
+          {slide.title && (
+            <h2
+              className="font-semibold opacity-70 uppercase tracking-widest"
+              style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize ? hSize * 0.45 : 36 }}
+            >
+              {slide.title}
+            </h2>
+          )}
+          {slide.stats?.[0] ? (
+            <>
+              <div
+                className="font-bold leading-none"
+                style={{ fontSize: 200, color: accentColor || (isDark ? '#a78bfa' : '#6366f1'), fontFamily: headingFont }}
+              >
+                {slide.stats[0].value}
+              </div>
+              <div
+                className="font-medium opacity-80"
+                style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}
+              >
+                {slide.stats[0].label}
+              </div>
+            </>
+          ) : (
+            <p className="opacity-30 text-[40px]">Add a stat in the editor</p>
+          )}
+          {slide.subtitle && (
+            <p className="opacity-50 mt-[8px]" style={{ fontFamily: bodyFont, fontSize: bSize ? bSize * 0.7 : 28 }}>
+              {slide.subtitle}
+            </p>
           )}
         </div>
       )}

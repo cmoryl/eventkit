@@ -40,6 +40,11 @@ const LAYOUT_OPTIONS: { value: SlideData['layout']; label: string; icon: React.E
   { value: 'stats', label: 'Stats', icon: BarChart3 },
   { value: 'full-image', label: 'Full Image', icon: Maximize2 },
   { value: 'comparison', label: 'Comparison', icon: GitCompare },
+  { value: 'timeline', label: 'Timeline', icon: Layout },
+  { value: 'process', label: 'Process', icon: Layout },
+  { value: 'chart', label: 'Chart', icon: BarChart3 },
+  { value: 'agenda', label: 'Agenda', icon: Layout },
+  { value: 'big-number', label: 'Big Number', icon: BarChart3 },
   { value: 'section', label: 'Section Break', icon: Square },
   { value: 'blank', label: 'Blank', icon: Square },
 ];
@@ -868,6 +873,32 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                           />
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {activeSlide.layout === 'big-number' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Hero Metric</label>
+                    <div className="space-y-2">
+                      <Input
+                        className="h-7 text-xs"
+                        value={activeSlide.stats?.[0]?.value || ''}
+                        onChange={(e) => {
+                          const current = activeSlide.stats?.[0] || { value: '', label: '' };
+                          updateSlide(activeIndex, { stats: [{ ...current, value: e.target.value }] });
+                        }}
+                        placeholder="Value (e.g. 3.4×, $20M, 62%)"
+                      />
+                      <Input
+                        className="h-7 text-xs"
+                        value={activeSlide.stats?.[0]?.label || ''}
+                        onChange={(e) => {
+                          const current = activeSlide.stats?.[0] || { value: '', label: '' };
+                          updateSlide(activeIndex, { stats: [{ ...current, label: e.target.value }] });
+                        }}
+                        placeholder="Label / descriptor"
+                      />
                     </div>
                   </div>
                 )}

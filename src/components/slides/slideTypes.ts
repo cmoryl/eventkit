@@ -2,7 +2,8 @@
 export type SlideLayout =
   | 'title' | 'content' | 'image-left' | 'image-right' | 'blank'
   | 'section' | 'two-column' | 'quote' | 'stats' | 'full-image'
-  | 'comparison' | 'timeline' | 'process' | 'chart';
+  | 'comparison' | 'timeline' | 'process' | 'chart'
+  | 'agenda' | 'big-number';
 
 export interface ChartData {
   type: 'bar' | 'line' | 'pie' | 'doughnut';
@@ -307,6 +308,295 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
         { date: 'Nov', title: 'Global rollout', description: '38 countries live' },
       ]},
       { layout: 'section', title: 'Onward', subtitle: 'The story continues', variant: 'gradient' },
+    ],
+  },
+  {
+    name: 'Board Deck',
+    slides: [
+      { layout: 'title', title: 'Board Meeting', subtitle: 'Q4 Update • [Date]', variant: 'brand' },
+      { layout: 'agenda', title: 'Today\'s Agenda', body: 'Financial Highlights\nStrategic Priorities\nProduct & Engineering Update\nCustomer & Market\nOperational Health\nQ&A', variant: 'default' },
+      { layout: 'stats', title: 'Financial Highlights', variant: 'brand', stats: [
+        { value: '$14.2M', label: 'ARR' },
+        { value: '134%', label: 'Net Retention' },
+        { value: '↑ 31%', label: 'QoQ Growth' },
+        { value: '18mo', label: 'Runway' },
+      ]},
+      { layout: 'chart', title: 'ARR Progression', variant: 'default', chart: {
+        type: 'line', title: 'Annual recurring revenue ($M)',
+        data: [
+          { label: 'Q1', value: 8.4 }, { label: 'Q2', value: 10.1 },
+          { label: 'Q3', value: 12.2 }, { label: 'Q4', value: 14.2 },
+        ],
+      }},
+      { layout: 'content', title: 'Strategic Priorities', body: '• Expand enterprise segment — target Fortune 500\n• Platform API — launch Q1 next year\n• EU market entry — regulatory filing in progress\n• Series B — targeting $40M close by Q2', variant: 'minimal' },
+      { layout: 'stats', title: 'Operational Health', variant: 'minimal', stats: [
+        { value: '99.95%', label: 'Uptime' },
+        { value: '94', label: 'NPS' },
+        { value: '1.8%', label: 'Churn Rate' },
+        { value: '$18K', label: 'ACV' },
+      ]},
+      { layout: 'section', title: 'Questions & Discussion', variant: 'dark' },
+    ],
+  },
+  {
+    name: 'Sales Proposal',
+    slides: [
+      { layout: 'title', title: 'Proposal for [Company]', subtitle: 'Prepared by [Your Company] • [Date]', variant: 'bold' },
+      { layout: 'content', title: 'What We Heard From You', body: '• Growing pains slowing your team down\n• Manual processes eating 15+ hours/week\n• Lack of visibility across projects\n• Hard to scale without adding headcount', variant: 'default' },
+      { layout: 'big-number', title: 'Expected ROI', variant: 'brand', stats: [{ value: '3.4×', label: 'return on investment in year one' }], subtitle: 'based on your current team size and process costs' },
+      { layout: 'content', title: 'Our Solution', body: '• Automated workflows cut manual work by 80%\n• Real-time dashboards give full visibility\n• Scales to 10x volume without new hires\n• Dedicated onboarding + success team', variant: 'default' },
+      { layout: 'comparison', title: 'Before vs After', body: 'Hours wasted on manual tasks\nMissed deadlines\nSiloed teams\nMonthly reporting pain\n---\nFully automated workflows\nOn-time delivery dashboard\nOne shared source of truth\nReal-time reporting, one click', variant: 'minimal' },
+      { layout: 'timeline', title: 'Implementation Plan', variant: 'default', timeline: [
+        { date: 'Week 1', title: 'Kickoff', description: 'Setup + team training' },
+        { date: 'Week 2-3', title: 'Migrate', description: 'Data + workflow migration' },
+        { date: 'Week 4', title: 'Go Live', description: 'Full production launch' },
+        { date: 'Week 6', title: 'Review', description: 'Outcomes check-in' },
+      ]},
+      { layout: 'stats', title: 'Why Teams Choose Us', variant: 'minimal', stats: [
+        { value: '500+', label: 'Customers' },
+        { value: '4.9★', label: 'G2 Rating' },
+        { value: '<48h', label: 'Avg Onboarding' },
+        { value: '97%', label: 'Renewal Rate' },
+      ]},
+      { layout: 'section', title: 'Ready to Get Started?', subtitle: 'Let\'s align on next steps', variant: 'gradient' },
+    ],
+  },
+  {
+    name: 'Product Launch',
+    slides: [
+      { layout: 'title', title: 'Introducing [Product]', subtitle: 'The better way to [core benefit]', variant: 'gradient' },
+      { layout: 'content', title: 'The Problem We\'re Solving', body: '• Teams waste hours on [pain point]\n• Existing tools are fragmented and slow\n• No single solution does all three things well', variant: 'default' },
+      { layout: 'full-image', title: '[Product] — See It in Action', variant: 'dark' },
+      { layout: 'content', title: 'Three Core Capabilities', body: '• Feature 1 — [one-line benefit]\n• Feature 2 — [one-line benefit]\n• Feature 3 — [one-line benefit]', variant: 'default' },
+      { layout: 'big-number', title: 'Beta Results', variant: 'brand', stats: [{ value: '62%', label: 'faster than the leading alternative' }], subtitle: 'across 250 beta users over 8 weeks' },
+      { layout: 'chart', title: 'Market Opportunity', variant: 'default', chart: {
+        type: 'bar', title: 'Serviceable market by segment ($M)',
+        data: [
+          { label: 'Enterprise', value: 1200 }, { label: 'Mid-market', value: 680 },
+          { label: 'SMB', value: 420 }, { label: 'Startup', value: 190 },
+        ],
+      }},
+      { layout: 'timeline', title: 'Launch Roadmap', variant: 'minimal', timeline: [
+        { date: 'Now', title: 'Early Access', description: 'Waitlist + invite-only' },
+        { date: 'Month 1', title: 'Public Beta', description: 'Open sign-up, free tier' },
+        { date: 'Month 3', title: 'GA', description: 'Paid plans live' },
+        { date: 'Month 6', title: 'Platform API', description: 'Developer ecosystem' },
+      ]},
+      { layout: 'stats', title: 'Launch Goals', variant: 'brand', stats: [
+        { value: '1K', label: 'Signups Wk 1' },
+        { value: '100', label: 'Paying Customers' },
+        { value: '$25K', label: 'MRR by Month 3' },
+        { value: '50+', label: 'Press Mentions' },
+      ]},
+      { layout: 'section', title: 'Launch Day Is Here', subtitle: 'Go to [url]', variant: 'bold' },
+    ],
+  },
+  {
+    name: 'Go-To-Market',
+    slides: [
+      { layout: 'title', title: 'Go-To-Market Strategy', subtitle: '[Product] • [Year]', variant: 'brand' },
+      { layout: 'agenda', title: 'Agenda', body: 'Market Opportunity\nTarget Segments\nGTM Motion\nChannels & Messaging\nLaunch Timeline\nSuccess Metrics', variant: 'default' },
+      { layout: 'stats', title: 'Market Opportunity', variant: 'minimal', stats: [
+        { value: '$6.2B', label: 'TAM' },
+        { value: '$1.1B', label: 'SAM' },
+        { value: '$85M', label: 'Year 1 Target' },
+      ]},
+      { layout: 'chart', title: 'Segment Sizing', variant: 'default', chart: {
+        type: 'pie', title: 'Addressable revenue by segment',
+        data: [
+          { label: 'Enterprise', value: 55 }, { label: 'Mid-market', value: 30 }, { label: 'SMB', value: 15 },
+        ],
+      }},
+      { layout: 'process', title: 'GTM Motion', variant: 'default', process: [
+        { title: 'Awareness', description: 'Content + paid social' },
+        { title: 'Acquisition', description: 'PLG free trial' },
+        { title: 'Activation', description: 'Onboarding flow' },
+        { title: 'Expansion', description: 'CSM-led upsell' },
+        { title: 'Advocacy', description: 'Referral program' },
+      ]},
+      { layout: 'two-column', title: 'Channels & Messaging', body: 'Inbound: SEO blog\nProduct-led: Free tier\nOutbound: ABM enterprise\nEvents: 4 conferences/yr\n---\nEnterprise: "Scale without risk"\nMid-market: "Grow without chaos"\nSMB: "Start strong, stay lean"\nDev: "Build on our platform"', variant: 'minimal' },
+      { layout: 'timeline', title: 'GTM Timeline', variant: 'default', timeline: [
+        { date: 'M1', title: 'Foundation', description: 'ICP + positioning finalized' },
+        { date: 'M2', title: 'Seed', description: 'Content + outbound live' },
+        { date: 'M3', title: 'Launch', description: 'Public GA + PR push' },
+        { date: 'M6', title: 'Scale', description: 'Paid channels + partnerships' },
+      ]},
+      { layout: 'section', title: 'Align & Execute', subtitle: 'One team, one plan', variant: 'gradient' },
+    ],
+  },
+  {
+    name: 'Case Study',
+    slides: [
+      { layout: 'title', title: '[Customer] Success Story', subtitle: 'How [outcome] was achieved in [timeframe]', variant: 'dark' },
+      { layout: 'content', title: 'The Challenge', body: '• [Customer] was struggling with [pain point]\n• Manual processes created [problem]\n• Teams spent [X] hours/week on [task]\n• Previous solution couldn\'t scale past [limit]', variant: 'default' },
+      { layout: 'content', title: 'Our Approach', body: '• Deployed [product] across [N] teams in [timeframe]\n• Migrated [X] workflows in the first week\n• Custom integration with [their existing tools]\n• Dedicated success team for onboarding', variant: 'minimal' },
+      { layout: 'stats', title: 'Results After 90 Days', variant: 'brand', stats: [
+        { value: '68%', label: 'Time Saved' },
+        { value: '3.1×', label: 'Output Increase' },
+        { value: '$420K', label: 'Annual Savings' },
+        { value: '9.2/10', label: 'Team NPS' },
+      ]},
+      { layout: 'quote', title: '"This is the first tool our team actually uses every day. The ROI was obvious within two weeks."', quoteAuthor: 'VP of Operations, [Customer]', variant: 'dark' },
+      { layout: 'chart', title: 'Time Spent on Manual Work', variant: 'default', chart: {
+        type: 'bar', title: 'Hours per week (team average)',
+        data: [{ label: 'Before', value: 18 }, { label: 'After', value: 6 }],
+      }},
+      { layout: 'section', title: 'Ready for Your Story?', subtitle: 'Let\'s talk', variant: 'gradient' },
+    ],
+  },
+  {
+    name: 'OKR Review',
+    slides: [
+      { layout: 'title', title: 'Q[N] OKR Review', subtitle: '[Company] • [Year]', variant: 'minimal' },
+      { layout: 'stats', title: 'Quarter at a Glance', variant: 'brand', stats: [
+        { value: '3/4', label: 'Objectives on track' },
+        { value: '78%', label: 'Key results met' },
+        { value: '↑ 12%', label: 'vs Last Quarter' },
+      ]},
+      { layout: 'content', title: 'O1: Grow Revenue', body: '• KR1: Reach $5M ARR — ✅ Achieved ($5.2M)\n• KR2: Close 20 enterprise deals — ⚠️ 14/20\n• KR3: Launch new pricing tier — ✅ Done in M2\n• KR4: Improve NRR to 120% — ✅ 124%', variant: 'default' },
+      { layout: 'chart', title: 'ARR vs Target', variant: 'default', chart: {
+        type: 'bar', title: 'Monthly ARR ($M)',
+        data: [
+          { label: 'Jul', value: 4.1 }, { label: 'Aug', value: 4.5 },
+          { label: 'Sep', value: 5.2 },
+        ],
+        series2: [
+          { label: 'Jul', value: 4.0 }, { label: 'Aug', value: 4.5 },
+          { label: 'Sep', value: 5.0 },
+        ],
+        series1Name: 'Actual', series2Name: 'Target',
+      }},
+      { layout: 'content', title: 'O2: Improve Product Quality', body: '• KR1: P0 bugs < 2/month — ✅ Avg 1.3\n• KR2: Page load < 1.5s — ❌ P95 still 2.1s\n• KR3: Ship 4 major features — ✅ 4 shipped\n• KR4: User CSAT ≥ 4.5 — ✅ 4.7', variant: 'minimal' },
+      { layout: 'comparison', title: 'Planned vs Actual', body: 'Launch 3 integrations\n$5M ARR by Q end\n90-day onboarding\nNPS > 50\n---\nShipped 4 integrations ✅\nReached $5.2M ARR ✅\n60-day onboarding ✅\nNPS = 62 ✅', variant: 'default' },
+      { layout: 'process', title: 'Next Quarter Focus', variant: 'minimal', process: [
+        { title: 'Revenue', description: 'Hit $7M ARR' },
+        { title: 'Platform', description: 'API v2 launch' },
+        { title: 'Retention', description: 'NRR > 130%' },
+        { title: 'Hiring', description: '12 new hires' },
+      ]},
+      { layout: 'section', title: 'Q&A + Team Discussion', variant: 'dark' },
+    ],
+  },
+  {
+    name: 'Competitive Analysis',
+    slides: [
+      { layout: 'title', title: 'Competitive Landscape', subtitle: '[Market] • [Year] Analysis', variant: 'gradient' },
+      { layout: 'content', title: 'Who We\'re Up Against', body: '• Competitor A — market leader, expensive, slow\n• Competitor B — cheap, missing enterprise features\n• Competitor C — good UX, weak data layer\n• Legacy players — dominant but losing ground', variant: 'default' },
+      { layout: 'comparison', title: 'Us vs the Market Leader', body: '5× faster implementation\nNo-code configuration\nModular pricing\n99.95% SLA guarantee\nBuilt-in analytics\n---\n3-6 month implementation\nRequires dev team\nEnterprise bundles only\n99.5% SLA\nThird-party BI only', variant: 'default' },
+      { layout: 'chart', title: 'Market Share (Est.)', variant: 'minimal', chart: {
+        type: 'doughnut', title: 'Revenue share by vendor',
+        data: [
+          { label: 'Competitor A', value: 38 }, { label: 'Competitor B', value: 22 },
+          { label: 'Us', value: 18 }, { label: 'Competitor C', value: 12 }, { label: 'Other', value: 10 },
+        ],
+      }},
+      { layout: 'chart', title: 'Win Rate by Competitor', variant: 'default', chart: {
+        type: 'bar', title: '% of head-to-head deals won',
+        data: [
+          { label: 'vs A', value: 54 }, { label: 'vs B', value: 71 },
+          { label: 'vs C', value: 62 }, { label: 'vs Legacy', value: 83 },
+        ],
+      }},
+      { layout: 'stats', title: 'Our Competitive Edge', variant: 'brand', stats: [
+        { value: '54%', label: 'Win Rate vs Leader' },
+        { value: '5×', label: 'Faster Setup' },
+        { value: '#1', label: 'G2 Category' },
+        { value: '2.4×', label: 'More Integrations' },
+      ]},
+      { layout: 'content', title: 'Strategic Response', body: '• Double down on enterprise: high-touch outbound vs Competitor A\n• Own the mid-market: land-and-expand vs Competitor B\n• Speed narrative: lead with time-to-value in all materials\n• Partnerships: ecosystem approach that competitors can\'t match', variant: 'default' },
+      { layout: 'section', title: 'Key Takeaway', subtitle: 'We win on speed, price, and ecosystem', variant: 'dark' },
+    ],
+  },
+  {
+    name: 'Project Status',
+    slides: [
+      { layout: 'title', title: '[Project Name] Status Update', subtitle: 'Week [N] • [Date]', variant: 'minimal' },
+      { layout: 'stats', title: 'Status Overview', variant: 'default', stats: [
+        { value: '🟢', label: 'Overall Health' },
+        { value: '72%', label: 'Complete' },
+        { value: '3', label: 'Open Blockers' },
+        { value: 'On Track', label: 'vs Deadline' },
+      ]},
+      { layout: 'timeline', title: 'Project Milestones', variant: 'default', timeline: [
+        { date: 'Week 1', title: 'Kickoff', description: '✅ Done' },
+        { date: 'Week 3', title: 'Design', description: '✅ Done' },
+        { date: 'Week 6', title: 'Build', description: '🔄 In progress' },
+        { date: 'Week 8', title: 'QA', description: '⏳ Upcoming' },
+        { date: 'Week 10', title: 'Launch', description: '⏳ Upcoming' },
+      ]},
+      { layout: 'chart', title: 'Progress by Workstream', variant: 'default', chart: {
+        type: 'bar', title: '% complete per workstream',
+        data: [
+          { label: 'Design', value: 100 }, { label: 'Frontend', value: 80 },
+          { label: 'Backend', value: 65 }, { label: 'QA', value: 20 }, { label: 'Docs', value: 40 },
+        ],
+      }},
+      { layout: 'comparison', title: 'Risks & Mitigations', body: 'API dependency delay (high)\nResource gap in QA\nScope creep — feature requests\n---\nParallel dev track started\nContractor engaged for 2 weeks\nChange control process added', variant: 'minimal' },
+      { layout: 'process', title: 'Next Steps (This Week)', variant: 'default', process: [
+        { title: 'Unblock API', description: 'Sync with vendor Tue' },
+        { title: 'QA Sprint', description: 'Start regression testing' },
+        { title: 'Stakeholder Demo', description: 'Thursday 3pm' },
+        { title: 'Scope Freeze', description: 'Sign-off by Friday' },
+      ]},
+      { layout: 'section', title: 'Questions & Actions', variant: 'dark' },
+    ],
+  },
+  {
+    name: 'Team Introduction',
+    slides: [
+      { layout: 'title', title: 'Meet the [Team Name] Team', subtitle: '[Company] • [Department]', variant: 'brand' },
+      { layout: 'content', title: 'Who We Are', body: '• [N] people across [X] time zones\n• Building [product/service] since [year]\n• Mix of [roles/backgrounds]\n• United by [mission/value]', variant: 'default' },
+      { layout: 'stats', title: 'Team by the Numbers', variant: 'minimal', stats: [
+        { value: '12', label: 'Team Members' },
+        { value: '4', label: 'Time Zones' },
+        { value: '8 yrs', label: 'Avg Experience' },
+        { value: '94%', label: 'Retention Rate' },
+      ]},
+      { layout: 'process', title: 'How We Work', variant: 'default', process: [
+        { title: 'Async-first', description: 'Docs over meetings' },
+        { title: 'Ship weekly', description: 'Small, frequent releases' },
+        { title: 'Own it', description: 'One DRI per project' },
+        { title: 'Feedback', description: 'Retro every sprint' },
+      ]},
+      { layout: 'content', title: 'What We\'re Working On', body: '• Priority 1 — [current initiative]\n• Priority 2 — [current initiative]\n• Priority 3 — [current initiative]', variant: 'minimal' },
+      { layout: 'two-column', title: 'Our Strengths', body: '✓ Deep domain expertise\n✓ Fast iteration cycles\n✓ Strong cross-functional partnerships\n✓ Data-driven decisions\n---\n✓ Customer obsession\n✓ Transparent communication\n✓ Bias for action\n✓ High ownership culture', variant: 'default' },
+      { layout: 'section', title: 'Let\'s Build Together', subtitle: 'Reach us at [team-channel]', variant: 'gradient' },
+    ],
+  },
+  {
+    name: 'Annual Review',
+    slides: [
+      { layout: 'title', title: '[Company] Annual Review', subtitle: 'Year in Review • [Year]', variant: 'gradient' },
+      { layout: 'big-number', title: 'Biggest Win of the Year', variant: 'brand', stats: [{ value: '$20M', label: 'ARR crossed — 2× year over year' }], subtitle: 'the milestone we set out to hit on day one' },
+      { layout: 'stats', title: 'Year in Numbers', variant: 'brand', stats: [
+        { value: '420K', label: 'Total Users' },
+        { value: '↑ 210%', label: 'Revenue Growth' },
+        { value: '97%', label: 'Customer Retention' },
+        { value: '62', label: 'Employees' },
+      ]},
+      { layout: 'chart', title: 'Revenue Growth', variant: 'default', chart: {
+        type: 'line', title: 'Monthly recurring revenue ($K)',
+        data: [
+          { label: 'Jan', value: 820 }, { label: 'Mar', value: 980 }, { label: 'May', value: 1200 },
+          { label: 'Jul', value: 1460 }, { label: 'Sep', value: 1680 }, { label: 'Dec', value: 2100 },
+        ],
+      }},
+      { layout: 'chart', title: 'Customer Mix', variant: 'minimal', chart: {
+        type: 'doughnut', title: 'Revenue by customer segment',
+        data: [
+          { label: 'Enterprise', value: 52 }, { label: 'Mid-market', value: 31 }, { label: 'SMB', value: 17 },
+        ],
+      }},
+      { layout: 'content', title: 'Product Milestones', body: '• Shipped [Feature A] — [impact]\n• Launched platform API — 200+ integrations live\n• Mobile apps — iOS + Android, 4.8★\n• Rebuilt infrastructure — 10× performance', variant: 'default' },
+      { layout: 'timeline', title: 'Year Timeline', variant: 'minimal', timeline: [
+        { date: 'Q1', title: 'Series B', description: '$30M raised' },
+        { date: 'Q2', title: 'EU Launch', description: '12 new markets' },
+        { date: 'Q3', title: 'Platform', description: 'API released' },
+        { date: 'Q4', title: '$20M ARR', description: 'Milestone hit' },
+      ]},
+      { layout: 'comparison', title: 'Goals vs Achieved', body: '$18M ARR\n350K users\nLaunch 3 markets\n45 employees\n---\n$20M ARR ✅\n420K users ✅\n12 markets ✅\n62 employees ✅', variant: 'default' },
+      { layout: 'content', title: 'Looking Ahead', body: '• Double ARR to $40M\n• Ship next-gen AI features\n• Expand to 30 markets\n• Build toward IPO readiness', variant: 'bold' },
+      { layout: 'section', title: 'Thank You', subtitle: 'To our customers, team, and investors', variant: 'dark' },
     ],
   },
 ];

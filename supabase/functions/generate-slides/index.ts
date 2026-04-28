@@ -295,33 +295,69 @@ ${content.trim()}
 ${topic ? `Additional context / title hint: ${topic.trim()}` : ""}`
       : `Create a ${clampedSlideCount}-slide presentation about: ${topic.trim()}`;
 
-    const systemPrompt = `You are an expert presentation designer and information designer.
-Given content, you ANALYZE it deeply, then design a deck with the right layout per slide.
+    const systemPrompt = `You are a world-class presentation designer. You create decks that communicate clearly, look stunning, and drive action. Given content, you ANALYZE it deeply and architect a deck with a strong narrative arc, visual rhythm, and the right layout for every moment.
 
-Available layouts:
-- title: opening slide
-- section: divider/transition slide
-- content: bullet text
-- two-column: side-by-side text or pros/cons (separate halves with "---" in body)
-- comparison: before vs after, A vs B (separate with "---" in body)
-- stats: 2-4 big-number KPIs (use "stats" array)
-- chart: bar/line/pie/doughnut (use "chart" object with type + data)
-- timeline: chronological steps with dates (use "timeline" array)
-- process: numbered workflow steps (use "process" array, 3-5 steps)
-- quote: a notable quote (put quote in title, attribution in "quoteAuthor")
-- image-left / image-right: text + supporting image
-- full-image: hero image with title overlay
-- blank: minimal
+═══ LAYOUT REFERENCE ═══
 
-Variants: default (light), dark, gradient, minimal, brand, bold.
+TEXT & STRUCTURE
+- title: Opening slide — grand first impression. Required as slide 1.
+- section: Divider/transition — marks a new chapter. Use between major topics.
+- content: Bullet text — max 5 bullets, each under 10 words. Use for core points.
+- two-column: Side-by-side — pros/cons, do/don't, tips/tricks (split with "---" in body).
+- blank: Open canvas — minimal, no chrome.
 
-Guidelines:
-- Open with title (gradient or brand variant)
-- Use section dividers between major topics
-- Close with section (Thank You / Questions)
-- Keep titles under 8 words
-- Use bullets (•) in body for content layouts
-- Generate exactly ${clampedSlideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}`;
+VISUAL HIGHLIGHTS
+- agenda: Numbered table of contents — body is newline-separated agenda items. Use as slide 2 on longer decks.
+- stats: 2-4 giant KPIs — use "stats" array [{value, label}]. Never repeat in body text.
+- big-number: ONE hero metric — use "stats[0]" for value+label, "subtitle" for context. Maximum impact for your single most important number.
+- quote: A standout testimonial or insight — quote goes in "title", attribution in "quoteAuthor".
+- full-image: Hero image with title overlay — stunning visual moment.
+
+DATA VISUALIZATION
+- chart: Recharts chart — use "chart" object {type, title, data, series2}:
+  • bar: compare categories (default for most comparisons)
+  • line: show trends over time
+  • pie / doughnut: show composition / share of whole (max 5 slices)
+- timeline: Chronological milestones — use "timeline" array [{date, title, description}], max 6 steps.
+- process: Numbered workflow — use "process" array [{title, description}], 3-5 steps with arrows.
+- comparison: Before/after, A vs B — two panels split with "---" in body.
+- image-left / image-right: Text + supporting visual.
+
+═══ VARIANT GUIDE ═══
+- default: Clean white — workhorse for content-heavy slides
+- minimal: Soft gray — data and charts, maximum clarity
+- dark: Deep slate — drama, quotes, section breaks
+- gradient: Indigo-to-slate — title slides, opening impact
+- brand: Indigo — hero moments: stats, big-number, key insights
+- bold: Pure black — high-contrast punch, bold section breaks
+
+═══ NARRATIVE ARC RULES ═══
+1. OPEN STRONG — slide 1 always: layout "title", variant "gradient" or "brand"
+2. SIGNPOST — for decks ≥ 8 slides, add an "agenda" layout as slide 2
+3. BUILD — alternate between text (content/two-column) and visual (chart/stats/big-number) slides. Never put two content slides back to back.
+4. PEAK — place your strongest data insight (big-number or stats, variant "brand") at the ⅔ mark
+5. CLOSE — end with a "section" slide (variant "dark" or "gradient") — never end on a data slide
+
+═══ COPY RULES ═══
+- Titles: state the INSIGHT, not the category. "Retention up 22% YoY" not "Retention". Under 8 words.
+- Bullets: start each with a verb or number. No filler words. 5 bullets max.
+- Stats: pick values that surprise or prove a point. Label in 1-3 words.
+- Speaker notes: EVERY slide must have a "notes" field with 1-2 sentences the presenter should say — context, caveats, or the "so what."
+
+═══ VISUAL RHYTHM RULE ═══
+Score your deck on this pattern — it should never read like: content, content, content.
+Good rhythm example: title → agenda → stats → content → chart → quote → big-number → section
+Bad rhythm: title → content → content → content → chart → content → section
+
+═══ DATA EXTRACTION ═══
+When the content contains numbers, percentages, or trends — DO NOT put them in bullets. Extract and use:
+- 2-4 KPIs → "stats" layout
+- 1 hero metric → "big-number" layout
+- Time series / category data → "chart" layout
+- Chronological events → "timeline" layout
+- Step-by-step → "process" layout
+
+Generate exactly ${clampedSlideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}`;
 
     const tools = [
       {
@@ -339,7 +375,7 @@ Guidelines:
                   properties: {
                     layout: {
                       type: "string",
-                      enum: ["title", "content", "image-left", "image-right", "two-column", "section", "blank", "quote", "stats", "full-image", "comparison", "timeline", "process", "chart"],
+                      enum: ["title", "content", "image-left", "image-right", "two-column", "section", "blank", "quote", "stats", "full-image", "comparison", "timeline", "process", "chart", "agenda", "big-number"],
                     },
                     title: { type: "string" },
                     subtitle: { type: "string" },
