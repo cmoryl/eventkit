@@ -21,6 +21,7 @@ import { Slider } from '@/components/ui/slider';
 import { TemplateGalleryDialog } from './TemplateGalleryDialog';
 import type { InfographicTemplate } from './infographicTemplates';
 import { SlideRenderer } from './SlideRenderer';
+import { ParallaxLayerEditor } from './ParallaxLayerEditor';
 import { SlideThumbnail } from './SlideThumbnail';
 import { CenteredScaledSlide } from './ScaledSlide';
 import { PresentationMode, SlideTransition } from './PresentationMode';
