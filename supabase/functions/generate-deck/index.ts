@@ -46,6 +46,7 @@ interface DeckRequest {
   templateId?: string; // e.g. "transperfect-2026" — enables branded background imagery
   source?: ExtractedSource; // PDF-derived material
   prebuiltOutline?: DeckOutline; // skip AI planning and just build .pptx from this
+  planOnly?: boolean; // when true, return outline only — skip .pptx build & upload
 }
 
 interface SlideOutline {
