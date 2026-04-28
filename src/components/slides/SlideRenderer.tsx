@@ -53,7 +53,7 @@ function SlideImages({ images, variant }: { images: string[]; variant: SlideData
   );
 }
 
-export function SlideRenderer({ slide, brandColors, brandFonts, animated }: SlideRendererProps) {
+export function SlideRenderer({ slide, brandColors, brandFonts, animated, parallaxMotion = 'mouse', parallaxProgress }: SlideRendererProps) {
   const headingFont = brandFonts?.heading || 'inherit';
   const bodyFont = brandFonts?.body || 'inherit';
   const accentColor = brandColors?.primary;
@@ -63,6 +63,11 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated }: Slid
   const hSize = slide.headingSize || 0;
   const bSize = slide.bodySize || 0;
   const align = slide.textAlign || 'left';
+
+  // Parallax slides own their own background + composition — bypass SlideLayout.
+  if (slide.layout === 'parallax') {
+    return <ParallaxRenderer slide={slide} motion={parallaxMotion} progress={parallaxProgress} />;
+  }
 
   const variationNode = renderLayoutVariation({
     slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align,
