@@ -24,6 +24,9 @@ Your role:
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const auth = await requireUser(req, corsHeaders);
+  if ("error" in auth) return auth.error;
+
   try {
     const { messages } = await req.json();
     if (!Array.isArray(messages)) {

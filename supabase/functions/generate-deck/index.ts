@@ -1,6 +1,7 @@
 // PowerPoint Deck Generator - AI plans outline, pptxgenjs builds .pptx
 import PptxGenJS from "https://esm.sh/pptxgenjs@3.12.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -385,6 +386,9 @@ function buildPptx(outline: DeckOutline): Promise<ArrayBuffer> {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireUser(req, corsHeaders);
+  if ("error" in auth) return auth.error;
 
   try {
     const body = (await req.json()) as DeckRequest;
