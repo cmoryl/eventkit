@@ -193,7 +193,7 @@ const PowerPointAgent: React.FC = () => {
     }
     setPdfFile(file);
     setThumbnails(new Map());
-    setSelectedPages(new Set());
+    setSelectedPages([]);
     // Gallery handles lazy thumbnail rendering on its own.
 
     const ok = await runExtraction(file);
@@ -246,7 +246,7 @@ const PowerPointAgent: React.FC = () => {
     if (!finalTopic || isGenerating) return;
 
     const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
-    const pickedCount = selectedPages.size;
+    const pickedCount = selectedPages.length;
     const fullOutline = extractedSource?.extracted?.outline || [];
     const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
     const sectionLabel = extractedSource && fullOutline.length
@@ -263,8 +263,10 @@ const PowerPointAgent: React.FC = () => {
     setIsGenerating(true);
     setTopic("");
 
-    const pickedImages = Array.from(thumbnails.values())
-      .filter((t) => selectedPages.has(t.page))
+    // Preserve user-defined order: iterate selectedPages (ordered) and look up each thumbnail
+    const pickedImages = selectedPages
+      .map((page) => thumbnails.get(page))
+      .filter((t): t is NonNullable<typeof t> => !!t)
       .map((t) => ({ page: t.page, dataUrl: t.dataUrl }));
 
     const sourcePayload = extractedSource
@@ -690,9 +692,9 @@ const PowerPointAgent: React.FC = () => {
                 {/* Page thumbnail gallery (lazy + virtualized) */}
                 <LazyPdfGallery
                   file={pdfFile}
-                  selectedPages={selectedPages}
+                  selectedPages={selectedPagesSet}
                   onTogglePage={togglePage}
-                  onSelectAll={(all) => setSelectedPages(new Set(all))}
+                  onSelectAll={(all) => setSelectedPages(all)}
                   onClearSelection={clearPageSelection}
                   onThumbnailRendered={(thumb) =>
                     setThumbnails((prev) => {
