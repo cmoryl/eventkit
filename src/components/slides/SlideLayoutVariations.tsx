@@ -1,5 +1,9 @@
 import React from 'react';
-import type { SlideData } from './slideTypes';
+import type { SlideData, ChartData } from './slideTypes';
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
 
 export interface VariationContext {
   slide: SlideData;
@@ -535,6 +539,496 @@ function TitleAsymmetric({ slide, headingFont, bodyFont, accentColor, headingCol
   );
 }
 
+// ── CONTENT ──────────────────────────────────────────────────────
+function ContentColumns({ slide, headingFont, bodyFont, headingColor, hSize, bSize, align }: VariationContext) {
+  const lines = (slide.body || '').split('\n').filter(Boolean);
+  const half = Math.ceil(lines.length / 2);
+  const left = lines.slice(0, half);
+  const right = lines.slice(half);
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
+      <h2 className="font-bold mb-[60px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 72 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 grid grid-cols-2 gap-[80px]">
+        {[left, right].map((col, ci) => (
+          <div key={ci}>
+            {col.map((line, i) => (
+              <p key={i} className="leading-relaxed mb-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 36 }}>
+                {line}
+              </p>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ContentIcons({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align }: VariationContext) {
+  const lines = (slide.body || '').split('\n').filter(Boolean).map(l => l.replace(/^[•✓✗\-]\s*/, ''));
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
+      <h2 className="font-bold mb-[60px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 72 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 flex flex-col justify-center gap-[28px]">
+        {lines.map((line, i) => (
+          <div key={i} className="flex items-start gap-[28px]">
+            <div
+              className="rounded-full flex items-center justify-center font-bold text-white shrink-0 mt-[6px]"
+              style={{ width: 48, height: 48, backgroundColor: accent, fontFamily: headingFont, fontSize: 22 }}
+            >
+              {i + 1}
+            </div>
+            <p className="leading-snug" style={{ fontFamily: bodyFont, fontSize: bSize || 36, color: headingColor }}>
+              {line}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ContentCards({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align }: VariationContext) {
+  const lines = (slide.body || '').split('\n').filter(Boolean).map(l => l.replace(/^[•✓✗\-]\s*/, ''));
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const cols = lines.length <= 2 ? 2 : lines.length <= 4 ? 2 : 3;
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
+      <h2 className="font-bold mb-[50px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 72 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 grid gap-[24px]" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+        {lines.map((line, i) => (
+          <div
+            key={i}
+            className="rounded-[18px] p-[32px] flex items-start gap-[18px]"
+            style={{
+              backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'white',
+              border: `2px solid ${accent}33`,
+              boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.3)' : '0 6px 20px rgba(0,0,0,0.06)',
+            }}
+          >
+            <div className="font-bold shrink-0" style={{ fontSize: 36, color: accent, fontFamily: headingFont, lineHeight: 1 }}>
+              {String(i + 1).padStart(2, '0')}
+            </div>
+            <p className="leading-snug" style={{ fontFamily: bodyFont, fontSize: bSize || 28, color: headingColor }}>
+              {line}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── CHART (helper + 3 variations) ───────────────────────────────
+function buildChartPalette(accentColor: string | undefined, brandSecondary?: string, brandAccent?: string) {
+  return [
+    accentColor || '#6366f1',
+    brandSecondary || '#a855f7',
+    brandAccent || '#ec4899',
+    '#f59e0b', '#10b981', '#3b82f6', '#ef4444',
+  ];
+}
+
+function ChartCore({ chart, accentColor, isDark, height = '100%' }: {
+  chart: ChartData;
+  accentColor?: string;
+  isDark: boolean;
+  height?: number | string;
+}) {
+  const palette = buildChartPalette(accentColor);
+  const tickColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
+  const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+  if (chart.type === 'pie' || chart.type === 'doughnut') {
+    return (
+      <ResponsiveContainer width="100%" height={height}>
+        <PieChart>
+          <Pie
+            data={chart.data}
+            dataKey="value"
+            nameKey="label"
+            cx="50%" cy="50%"
+            outerRadius="80%"
+            innerRadius={chart.type === 'doughnut' ? '45%' : 0}
+            label={{ fontSize: 22, fill: tickColor }}
+          >
+            {chart.data.map((_, i) => <Cell key={i} fill={palette[i % palette.length]} />)}
+          </Pie>
+          <Tooltip />
+          <Legend wrapperStyle={{ fontSize: 22 }} />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  }
+  const merged = chart.data.map((d, i) => ({
+    label: d.label,
+    [chart.series1Name || 'Value']: d.value,
+    ...(chart.series2 && chart.series2[i] ? { [chart.series2Name || 'Series 2']: chart.series2[i].value } : {}),
+  }));
+  if (chart.type === 'line') {
+    return (
+      <ResponsiveContainer width="100%" height={height}>
+        <LineChart data={merged}>
+          <CartesianGrid stroke={gridColor} />
+          <XAxis dataKey="label" tick={{ fontSize: 20, fill: tickColor }} />
+          <YAxis tick={{ fontSize: 20, fill: tickColor }} />
+          <Tooltip />
+          <Legend wrapperStyle={{ fontSize: 22 }} />
+          <Line type="monotone" dataKey={chart.series1Name || 'Value'} stroke={palette[0]} strokeWidth={4} dot={{ r: 6 }} />
+          {chart.series2 && <Line type="monotone" dataKey={chart.series2Name || 'Series 2'} stroke={palette[1]} strokeWidth={4} dot={{ r: 6 }} />}
+        </LineChart>
+      </ResponsiveContainer>
+    );
+  }
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={merged}>
+        <CartesianGrid stroke={gridColor} />
+        <XAxis dataKey="label" tick={{ fontSize: 20, fill: tickColor }} />
+        <YAxis tick={{ fontSize: 20, fill: tickColor }} />
+        <Tooltip />
+        <Legend wrapperStyle={{ fontSize: 22 }} />
+        <Bar dataKey={chart.series1Name || 'Value'} fill={palette[0]} radius={[8, 8, 0, 0]} />
+        {chart.series2 && <Bar dataKey={chart.series2Name || 'Series 2'} fill={palette[1]} radius={[8, 8, 0, 0]} />}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+function ChartCallout({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, align }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  if (!slide.chart || !slide.chart.data?.length) {
+    return <div className="h-full flex items-center justify-center opacity-30 text-[32px]">No chart data</div>;
+  }
+  // Pull the max value as the headline callout
+  const peak = slide.chart.data.reduce((acc, d) => (d.value > acc.value ? d : acc), slide.chart.data[0]);
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[80px]">
+      <h2 className="font-bold mb-[40px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 grid gap-[60px]" style={{ gridTemplateColumns: '1fr 360px' }}>
+        <div className="min-h-0">
+          <ChartCore chart={slide.chart} accentColor={accent} isDark={isDark} />
+        </div>
+        <div
+          className="flex flex-col items-center justify-center text-center rounded-[24px] p-[40px]"
+          style={{
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(99,102,241,0.05)',
+            border: `2px solid ${accent}40`,
+          }}
+        >
+          <div className="uppercase tracking-widest font-semibold opacity-60 mb-[16px]" style={{ fontFamily: bodyFont, fontSize: 22 }}>
+            Peak
+          </div>
+          <div className="font-bold mb-[12px]" style={{ fontSize: 84, color: accent, fontFamily: headingFont, lineHeight: 1 }}>
+            {peak.value.toLocaleString()}
+          </div>
+          <div className="font-medium opacity-80" style={{ fontFamily: bodyFont, fontSize: 26, color: headingColor }}>
+            {peak.label}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChartWithStat({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, align }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const stat = slide.stats?.[0];
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[80px]">
+      <h2 className="font-bold mb-[40px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 grid gap-[80px]" style={{ gridTemplateColumns: '1.4fr 1fr' }}>
+        <div className="min-h-0">
+          {slide.chart && slide.chart.data?.length ? (
+            <ChartCore chart={slide.chart} accentColor={accent} isDark={isDark} />
+          ) : (
+            <div className="h-full flex items-center justify-center opacity-30 text-[32px]">No chart data</div>
+          )}
+        </div>
+        <div className="flex flex-col items-center justify-center text-center">
+          {stat ? (
+            <>
+              <div className="font-bold mb-[20px]" style={{ fontSize: 160, color: accent, fontFamily: headingFont, lineHeight: 0.9 }}>
+                {stat.value}
+              </div>
+              <div className="opacity-75 leading-snug" style={{ fontFamily: bodyFont, fontSize: 32, color: headingColor }}>
+                {stat.label}
+              </div>
+            </>
+          ) : (
+            <p className="opacity-30 text-[28px]">Add a stat for the side panel</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChartTakeaway({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, align }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const takeaway = slide.notes || slide.body || '';
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[60px]">
+      <h2 className="font-bold mb-[24px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 56, textAlign: align }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 min-h-0 mb-[32px]">
+        {slide.chart && slide.chart.data?.length ? (
+          <ChartCore chart={slide.chart} accentColor={accent} isDark={isDark} />
+        ) : (
+          <div className="h-full flex items-center justify-center opacity-30 text-[32px]">No chart data</div>
+        )}
+      </div>
+      {takeaway && (
+        <div
+          className="rounded-[18px] p-[32px] flex items-start gap-[20px]"
+          style={{
+            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(99,102,241,0.06)',
+            borderLeft: `6px solid ${accent}`,
+          }}
+        >
+          <div className="font-bold uppercase tracking-widest shrink-0 mt-[2px]" style={{ fontFamily: headingFont, color: accent, fontSize: 22 }}>
+            Takeaway
+          </div>
+          <p className="leading-snug" style={{ fontFamily: bodyFont, fontSize: 28, color: headingColor }}>
+            {takeaway}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── COMPARISON ──────────────────────────────────────────────────
+function ComparisonCards({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const [leftRaw = '', rightRaw = ''] = (slide.body || '').split('---');
+  const renderPanel = (raw: string, isHero: boolean) => {
+    const lines = raw.trim().split('\n').filter(Boolean);
+    const heading = lines[0] || (isHero ? 'After' : 'Before');
+    const items = lines.slice(1);
+    return (
+      <div
+        className="flex-1 rounded-[24px] p-[48px] flex flex-col"
+        style={{
+          backgroundColor: isHero ? `${accent}1a` : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'),
+          border: `2px solid ${isHero ? accent : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)')}`,
+          boxShadow: isHero ? `0 12px 40px ${accent}30` : 'none',
+        }}
+      >
+        <div className="uppercase tracking-widest font-bold mb-[24px]" style={{ fontFamily: headingFont, color: isHero ? accent : headingColor, fontSize: 26, opacity: isHero ? 1 : 0.6 }}>
+          {heading}
+        </div>
+        <div className="flex-1 flex flex-col gap-[16px]">
+          {items.map((line, i) => (
+            <p key={i} className="leading-snug" style={{ fontFamily: bodyFont, fontSize: bSize || 32, color: headingColor }}>
+              {line.replace(/^[•✓✗\-]\s*/, '')}
+            </p>
+          ))}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[80px]">
+      <h2 className="font-bold mb-[40px] text-center" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 flex gap-[40px]">
+        {renderPanel(leftRaw, false)}
+        {renderPanel(rightRaw, true)}
+      </div>
+    </div>
+  );
+}
+
+function ComparisonStacked({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const [topRaw = '', bottomRaw = ''] = (slide.body || '').split('---');
+  const lineToBullet = (line: string) => line.replace(/^[•✓✗\-]\s*/, '');
+  const topLines = topRaw.trim().split('\n').filter(Boolean);
+  const bottomLines = bottomRaw.trim().split('\n').filter(Boolean);
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[80px]">
+      <h2 className="font-bold mb-[32px] text-center" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 60 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 grid grid-rows-2 gap-[28px]">
+        <div
+          className="rounded-[20px] p-[36px] flex flex-col justify-center"
+          style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }}
+        >
+          <div className="font-bold uppercase tracking-widest mb-[12px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: 24, opacity: 0.6 }}>
+            Before
+          </div>
+          <div className="flex flex-wrap gap-x-[40px] gap-y-[8px]">
+            {topLines.map((l, i) => (
+              <p key={i} style={{ fontFamily: bodyFont, fontSize: bSize || 30, color: headingColor }}>{lineToBullet(l)}</p>
+            ))}
+          </div>
+        </div>
+        <div
+          className="rounded-[20px] p-[36px] flex flex-col justify-center"
+          style={{ backgroundColor: `${accent}1a`, border: `2px solid ${accent}66` }}
+        >
+          <div className="font-bold uppercase tracking-widest mb-[12px]" style={{ fontFamily: headingFont, color: accent, fontSize: 24 }}>
+            After
+          </div>
+          <div className="flex flex-wrap gap-x-[40px] gap-y-[8px]">
+            {bottomLines.map((l, i) => (
+              <p key={i} style={{ fontFamily: bodyFont, fontSize: bSize || 30, color: headingColor }}>{lineToBullet(l)}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComparisonBars({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const muted = isDark ? '#475569' : '#cbd5e1';
+  const [leftRaw = '', rightRaw = ''] = (slide.body || '').split('---');
+  const leftLines = leftRaw.trim().split('\n').filter(Boolean);
+  const rightLines = rightRaw.trim().split('\n').filter(Boolean);
+  const max = Math.max(leftLines.length, rightLines.length);
+  const rows = Array.from({ length: max }, (_, i) => ({
+    left: leftLines[i] || '',
+    right: rightLines[i] || '',
+  }));
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[80px]">
+      <h2 className="font-bold mb-[40px] text-center" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 grid gap-[20px]" style={{ gridTemplateRows: `repeat(${max}, 1fr)` }}>
+        {rows.map((row, i) => {
+          const leftLen = parseMagnitude(row.left.replace(/[^\d.×%$]/g, '')) || row.left.length;
+          const rightLen = parseMagnitude(row.right.replace(/[^\d.×%$]/g, '')) || row.right.length;
+          const total = Math.max(leftLen + rightLen, 1);
+          const lp = (leftLen / total) * 100;
+          return (
+            <div key={i} className="grid items-center gap-[16px]" style={{ gridTemplateColumns: '1fr 80px 1fr' }}>
+              <div className="h-[60px] rounded-l-[12px] flex items-center justify-end px-[24px]" style={{ background: `linear-gradient(90deg, transparent, ${muted})`, width: `${Math.max(20, lp)}%`, marginLeft: 'auto', color: headingColor, fontFamily: bodyFont, fontSize: 24 }}>
+                {row.left.replace(/^[•✓✗\-]\s*/, '')}
+              </div>
+              <div className="text-center font-bold" style={{ fontFamily: headingFont, color: accent, fontSize: 22 }}>VS</div>
+              <div className="h-[60px] rounded-r-[12px] flex items-center px-[24px]" style={{ background: `linear-gradient(90deg, ${accent}, ${accent}66)`, width: `${Math.max(20, 100 - lp)}%`, color: 'white', fontFamily: bodyFont, fontSize: 24, fontWeight: 600 }}>
+                {row.right.replace(/^[•✓✗\-]\s*/, '')}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── TWO-COLUMN ──────────────────────────────────────────────────
+function TwoColumnWideLeft({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const [leftRaw = '', rightRaw = ''] = (slide.body || '').split('---');
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
+      <h2 className="font-bold mb-[60px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 grid gap-[60px]" style={{ gridTemplateColumns: '7fr 3fr' }}>
+        <div>
+          {leftRaw.trim().split('\n').filter(Boolean).map((line, i) => (
+            <p key={i} className="leading-relaxed mb-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 38 }}>{line}</p>
+          ))}
+        </div>
+        <div className="rounded-[20px] p-[32px]" style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)', borderLeft: `4px solid ${accent}` }}>
+          {rightRaw.trim().split('\n').filter(Boolean).map((line, i) => (
+            <p key={i} className="leading-snug mb-[14px]" style={{ fontFamily: bodyFont, fontSize: bSize || 28, color: headingColor }}>{line}</p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TwoColumnImageText({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const lines = (slide.body || '').replace(/---/g, '\n').split('\n').filter(Boolean);
+  const heroImg = slide.imageUrl || slide.images?.[0];
+  return (
+    <div className="flex h-full">
+      <div className="w-[45%] relative" style={{ backgroundColor: isDark ? '#1e293b' : '#f1f5f9' }}>
+        {heroImg ? (
+          <img src={heroImg} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}66)` }}>
+            <p className="text-white/60 text-[28px]">Add an image</p>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 flex flex-col justify-center px-[80px] py-[80px]" style={{ textAlign: align }}>
+        <div className="w-[60px] h-[6px] rounded-full mb-[24px]" style={{ backgroundColor: accent }} />
+        <h2 className="font-bold mb-[36px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 56 }}>
+          {slide.title}
+        </h2>
+        <div>
+          {lines.map((line, i) => (
+            <p key={i} className="leading-relaxed mb-[18px]" style={{ fontFamily: bodyFont, fontSize: bSize || 32 }}>{line}</p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TwoColumnStacked({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align }: VariationContext) {
+  const accent = accentColor || (isDark ? '#a78bfa' : '#6366f1');
+  const [topRaw = '', bottomRaw = ''] = (slide.body || '').split('---');
+  const splitInTwo = (raw: string) => {
+    const lines = raw.trim().split('\n').filter(Boolean);
+    const half = Math.ceil(lines.length / 2);
+    return [lines.slice(0, half), lines.slice(half)];
+  };
+  const [topL, topR] = splitInTwo(topRaw);
+  const [botL, botR] = splitInTwo(bottomRaw);
+  const renderRow = (left: string[], right: string[], label: string, hero: boolean) => (
+    <div
+      className="flex-1 rounded-[20px] p-[36px]"
+      style={{
+        backgroundColor: hero ? `${accent}14` : (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'),
+        border: hero ? `2px solid ${accent}55` : 'none',
+      }}
+    >
+      <div className="uppercase tracking-widest font-bold mb-[16px]" style={{ fontFamily: headingFont, color: hero ? accent : headingColor, fontSize: 22, opacity: hero ? 1 : 0.6 }}>
+        {label}
+      </div>
+      <div className="grid grid-cols-2 gap-x-[40px] gap-y-[10px]">
+        {[...left, ...right].map((line, i) => (
+          <p key={i} style={{ fontFamily: bodyFont, fontSize: bSize || 26, color: headingColor }}>{line.replace(/^[•✓✗\-]\s*/, '')}</p>
+        ))}
+      </div>
+    </div>
+  );
+  return (
+    <div className="flex flex-col h-full px-[120px] py-[80px]" style={{ textAlign: align }}>
+      <h2 className="font-bold mb-[32px] text-center" style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 60 }}>
+        {slide.title}
+      </h2>
+      <div className="flex-1 flex flex-col gap-[24px]">
+        {renderRow(topL, topR, 'Section A', false)}
+        {renderRow(botL, botR, 'Section B', true)}
+      </div>
+    </div>
+  );
+}
+
 // ── DISPATCHER ──────────────────────────────────────────────────
 export function renderLayoutVariation(ctx: VariationContext): React.ReactNode | null {
   const { layout, variation } = ctx.slide;
@@ -556,6 +1050,18 @@ export function renderLayoutVariation(ctx: VariationContext): React.ReactNode | 
     case 'quote:punch':        return <QuotePunch {...ctx} />;
     case 'title:split':        return <TitleSplit {...ctx} />;
     case 'title:asymmetric':   return <TitleAsymmetric {...ctx} />;
+    case 'content:columns':    return <ContentColumns {...ctx} />;
+    case 'content:icons':      return <ContentIcons {...ctx} />;
+    case 'content:cards':      return <ContentCards {...ctx} />;
+    case 'chart:callout':      return <ChartCallout {...ctx} />;
+    case 'chart:with-stat':    return <ChartWithStat {...ctx} />;
+    case 'chart:takeaway':     return <ChartTakeaway {...ctx} />;
+    case 'comparison:cards':   return <ComparisonCards {...ctx} />;
+    case 'comparison:stacked': return <ComparisonStacked {...ctx} />;
+    case 'comparison:bars':    return <ComparisonBars {...ctx} />;
+    case 'two-column:wide-left':  return <TwoColumnWideLeft {...ctx} />;
+    case 'two-column:image-text': return <TwoColumnImageText {...ctx} />;
+    case 'two-column:stacked':    return <TwoColumnStacked {...ctx} />;
     default: return null;
   }
 }

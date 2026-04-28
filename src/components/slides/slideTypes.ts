@@ -161,6 +161,12 @@ export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; lab
     { value: 'split',       label: 'Split Screen' },
     { value: 'asymmetric',  label: 'Asymmetric' },
   ],
+  content: [
+    { value: 'bullets',     label: 'Bullets' },
+    { value: 'columns',     label: '2 Columns' },
+    { value: 'icons',       label: 'Icon Markers' },
+    { value: 'cards',       label: 'Cards' },
+  ],
   stats: [
     { value: 'row',         label: 'Row' },
     { value: 'grid',        label: 'Grid' },
@@ -188,6 +194,24 @@ export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; lab
     { value: 'centered',    label: 'Centered' },
     { value: 'magazine',    label: 'Magazine' },
     { value: 'punch',       label: 'Oversized Punch' },
+  ],
+  chart: [
+    { value: 'plain',       label: 'Plain' },
+    { value: 'callout',     label: 'With Callout' },
+    { value: 'with-stat',   label: 'Chart + Stat' },
+    { value: 'takeaway',    label: 'With Takeaway' },
+  ],
+  comparison: [
+    { value: 'vs',          label: 'VS Split' },
+    { value: 'cards',       label: 'Side Cards' },
+    { value: 'stacked',     label: 'Stacked' },
+    { value: 'bars',        label: 'Bar Heads' },
+  ],
+  'two-column': [
+    { value: 'equal',       label: 'Equal Split' },
+    { value: 'wide-left',   label: '70 / 30' },
+    { value: 'image-text',  label: 'Image + Text' },
+    { value: 'stacked',     label: 'Stacked' },
   ],
 };
 
