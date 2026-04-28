@@ -84,6 +84,32 @@ const PowerPointAgent: React.FC = () => {
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [showImportModal, setShowImportModal] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [searchParams] = useSearchParams();
+
+  const applyTemplate = useCallback((tpl: DeckTemplate) => {
+    setSelectedTemplateId(tpl.id);
+    setThemeOverride(tpl.themePrompt);
+    const defaults = TEMPLATE_DEFAULT_TOPICS[tpl.id];
+    if (defaults) {
+      // Only prefill empty fields so we never overwrite the user's typing
+      setTopic((prev) => prev.trim() ? prev : defaults.topic);
+      setAudience((prev) => prev.trim() ? prev : defaults.audience || prev);
+      setTone((prev) => prev.trim() ? prev : defaults.tone || prev);
+      setSlideCount(10);
+    }
+    toast({ title: `${tpl.name} template applied`, description: "Look & feel locked in. Edit the topic and hit Generate." });
+  }, [toast]);
+
+  // Apply ?template= from URL once brands etc. are ready
+  useEffect(() => {
+    const tplId = searchParams.get("template");
+    if (!tplId || selectedTemplateId) return;
+    const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === tplId);
+    if (tpl) applyTemplate(tpl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
 
   // PDF source
   const fileInputRef = useRef<HTMLInputElement>(null);
