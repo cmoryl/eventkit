@@ -75,6 +75,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
   const [slideTransition, setSlideTransition] = useState<SlideTransition>('fade');
   const [isGridView, setIsGridView] = useState(false);
   const [animatedBackgrounds, setAnimatedBackgrounds] = useState(true);
+  const [isAssetsLibraryOpen, setIsAssetsLibraryOpen] = useState(false);
+  const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
+
+  // Auto-discover BrandHub files for the active brand so we can show a "Brand Decks" hint.
+  const { byCategory: brandFilesByCategory } = useBrandHubFiles({
+    shareToken: brand?.brandhub_share_token ?? null,
+    enabled: isOpen,
+  });
+  const brandDeckCount = brandFilesByCategory.deck.length;
 
   const activeSlide = slides[activeIndex];
 
@@ -205,6 +214,39 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     } catch (err: any) {
       console.error('PPTX import error:', err);
       toast.error(err.message || 'Failed to import PPTX file');
+    }
+  }, []);
+
+  // Load a deck from a BrandHub-hosted URL by fetching the bytes and parsing
+  // them with the existing pptx importer. Falls back to opening the URL when
+  // the file extension isn't .pptx (e.g. Google Slides links).
+  const handleLoadDeckFromBrandHub = useCallback(async (file: BrandFile) => {
+    const ext = file.ext.toLowerCase();
+    if (ext !== 'pptx' && ext !== 'ppt') {
+      window.open(file.url, '_blank', 'noopener,noreferrer');
+      toast.info(`${file.name} opened in a new tab — only .pptx files can be imported directly.`);
+      return;
+    }
+    const loadingToast = toast.loading(`Loading ${file.name}…`);
+    try {
+      const res = await fetch(file.url, { mode: 'cors' });
+      if (!res.ok) throw new Error(`Download failed (${res.status})`);
+      const blob = await res.blob();
+      const fakeFile = new File([blob], file.name, { type: blob.type || 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+      const imported = await parsePptxFile(fakeFile);
+      setSlides(imported);
+      setActiveIndex(0);
+      toast.dismiss(loadingToast);
+      toast.success(`Imported ${imported.length} slides from ${file.name}`);
+      setIsAssetsLibraryOpen(false);
+    } catch (err) {
+      toast.dismiss(loadingToast);
+      console.error('BrandHub deck import error:', err);
+      toast.error(
+        err instanceof Error
+          ? `Couldn't import that deck (${err.message}). It may be hosted on a server that blocks cross-origin downloads.`
+          : "Couldn't import that deck.",
+      );
     }
   }, []);
 
