@@ -567,6 +567,22 @@ const PowerPointAgent: React.FC = () => {
                       {extractedSource.extracted?.pageCount || "?"} pages
                     </span>
                   )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs gap-1"
+                    onClick={rerunExtraction}
+                    disabled={isGenerating || extracting}
+                    title="Re-run extraction with current toggles & influence"
+                  >
+                    {extracting ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Re-run
+                  </Button>
                   <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearPdf} disabled={isGenerating || extracting}>
                     <X className="h-4 w-4" />
                   </Button>
