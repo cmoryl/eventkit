@@ -137,7 +137,7 @@ const slides: SlideOutline[] = [
   },
   {
     layout: "closing",
-    // No title → mapper defaults to "Thank You"
+    title: "", // empty → mapper defaults to "Thank You"
     bullets: ["Subtitle promoted from this bullet"],
   },
 ];
