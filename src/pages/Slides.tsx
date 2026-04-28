@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Presentation, Wand2, Download, Play,
   ArrowRight, Layers, LayoutGrid, Zap, FileDown,
-  ChevronRight, Star, Bot, Palette,
+  ChevronRight, Star, Bot, Palette, Crown,
 } from 'lucide-react';
+import transperfectHero from '@/assets/templates/transperfect-hero.jpg';
 import { Button } from '@/components/ui/button';
 import { AppNavHeader } from '@/components/layout/AppNavHeader';
 import { SlideEditor } from '@/components/slides/SlideEditor';
@@ -511,6 +512,54 @@ export default function SlidesPage() {
               Hover to animate. Click to open in the editor.
             </p>
           </motion.div>
+
+          {/* Featured brand template */}
+          <motion.button
+            type="button"
+            onClick={() => navigate('/agent/powerpoint?template=transperfect-2026')}
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            whileHover={{ scale: 1.005 }}
+            className="group relative w-full mb-8 overflow-hidden rounded-2xl border border-border/60 bg-card text-left shadow-sm hover:shadow-xl transition-shadow block"
+          >
+            <div className="grid md:grid-cols-[1.4fr_1fr]">
+              <div className="relative aspect-[16/9] md:aspect-auto md:min-h-[320px] overflow-hidden">
+                <img
+                  src={transperfectHero}
+                  alt="TransPerfect 2026 brand template preview"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-[#03002C]/70 via-[#003FC7]/20 to-transparent" />
+                <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/90 backdrop-blur text-xs font-semibold">
+                  <Crown className="h-3.5 w-3.5 text-amber-500" />
+                  New brand template
+                </div>
+              </div>
+              <div className="p-8 flex flex-col justify-center gap-4">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">TransPerfect 2026</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
+                    Deep navy gradients, electric blue accents, and rhythmic light bars.
+                    Built from the official TransPerfect 2026 brand system with AI-curated imagery.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {['#03002C', '#003FC7', '#A1F9F9', '#C2A3FF'].map((c) => (
+                    <span
+                      key={c}
+                      className="h-6 w-6 rounded-full border border-border/40 shadow-sm"
+                      style={{ background: c }}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 text-sm font-medium text-primary">
+                  Generate with this template
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+            </div>
+          </motion.button>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {FEATURED.map((template, i) => (
