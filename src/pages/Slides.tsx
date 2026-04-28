@@ -544,15 +544,42 @@ export default function SlidesPage() {
                 <div>
                   <h3 className="text-2xl font-bold mb-2">TransPerfect 2026</h3>
                   <p className="text-muted-foreground text-sm leading-relaxed">
-                    Deep navy gradients, electric blue accents, and rhythmic light bars.
-                    Built from the official TransPerfect 2026 brand system with AI-curated imagery.
+                    Deep navy gradients, glowing orbs, and atmospheric light blooms.
+                    Built from the official TransPerfect 2026 brand system with curated imagery.
                   </p>
                 </div>
+
+                {/* Sub-slide previews */}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-semibold">
+                    Includes layouts
+                  </p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { src: transperfectHero, label: 'Hero' },
+                      { src: transperfectSection, label: 'Section' },
+                      { src: transperfectCard, label: 'Card' },
+                      { src: transperfectCaseStudy, label: 'Case study' },
+                      { src: transperfectLight, label: 'Divider' },
+                    ].slice(0, 4).map((s) => (
+                      <div
+                        key={s.label}
+                        className="relative aspect-[16/10] rounded-md overflow-hidden border border-border/40 shadow-sm"
+                      >
+                        <img src={s.src} alt={s.label} className="absolute inset-0 w-full h-full object-cover" />
+                        <span className="absolute bottom-0.5 left-1 text-[8px] font-medium text-white/90 drop-shadow">
+                          {s.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 flex-wrap">
                   {['#03002C', '#003FC7', '#A1F9F9', '#C2A3FF'].map((c) => (
                     <span
                       key={c}
-                      className="h-6 w-6 rounded-full border border-border/40 shadow-sm"
+                      className="h-5 w-5 rounded-full border border-border/40 shadow-sm"
                       style={{ background: c }}
                     />
                   ))}
