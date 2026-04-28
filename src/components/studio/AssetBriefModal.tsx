@@ -391,6 +391,12 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                 <span className="text-xs text-muted-foreground">brand applied</span>
               </div>
             )}
+
+            {/* BrandHub product/event context */}
+            <BriefBrandHubContext
+              brandId={brand?.id}
+              onChange={setBrandHubContext}
+            />
           </div>
 
           {/* Scrollable Content */}
