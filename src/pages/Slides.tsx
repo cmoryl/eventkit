@@ -18,6 +18,7 @@ import { SlideRenderer } from '@/components/slides/SlideRenderer';
 import { TemplateGalleryDialog } from '@/components/slides/TemplateGalleryDialog';
 import { INFOGRAPHIC_TEMPLATES, type InfographicTemplate } from '@/components/slides/infographicTemplates';
 import type { SlideData } from '@/components/slides/slideTypes';
+import { AIComposer } from '@/components/slides/AIComposer';
 import { useActiveBrand } from '@/hooks/useActiveBrand';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -389,6 +390,23 @@ export default function SlidesPage() {
     setIsEditorOpen(true);
   };
 
+  const openWithAISlides = (slides: SlideData[]) => {
+    setPendingSlides(slides);
+    setEditorKey(k => k + 1);
+    setIsEditorOpen(true);
+  };
+
+  // Brand payload for AI generation (mirrors PowerPointAgent shape)
+  const brandPayload = activeBrand
+    ? {
+        primary: (activeBrand as any)?.styles?.primary_color || (activeBrand as any)?.primary_color || undefined,
+        secondary: (activeBrand as any)?.styles?.secondary_color || (activeBrand as any)?.secondary_color || undefined,
+        accent: (activeBrand as any)?.styles?.accent_color || (activeBrand as any)?.accent_color || undefined,
+        headingFont: (activeBrand as any)?.styles?.heading_font || undefined,
+        bodyFont: (activeBrand as any)?.styles?.body_font || undefined,
+      }
+    : undefined;
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       <AuthModal
@@ -532,6 +550,16 @@ export default function SlidesPage() {
               <HeroSlideStack />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ── AI Composer (outline-first flow) ── */}
+      <section id="ai-composer" className="px-6 pb-16 -mt-6">
+        <div className="max-w-5xl mx-auto">
+          <AIComposer
+            brandPayload={brandPayload}
+            onSlidesReady={(slides) => openWithAISlides(slides)}
+          />
         </div>
       </section>
 
