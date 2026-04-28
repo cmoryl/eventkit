@@ -530,7 +530,22 @@ const PowerPointAgent: React.FC = () => {
                   }}
                 />
 
-                {item.deck && (
+                {item.deck && (item.deck.outline ? (
+                  <DeckPreview
+                    outline={item.deck.outline}
+                    downloadUrl={item.deck.downloadUrl}
+                    filename={item.deck.filename}
+                    onUpdated={(next) => {
+                      setHistory((h) =>
+                        h.map((x, xi) =>
+                          xi === i && x.deck
+                            ? { ...x, deck: { ...x.deck, outline: next.outline, downloadUrl: next.downloadUrl, filename: next.filename } }
+                            : x,
+                        ),
+                      );
+                    }}
+                  />
+                ) : (
                   <Card className="mt-4 p-4 bg-background/50 border-primary/30">
                     <div className="flex items-start gap-3 mb-3">
                       <div
@@ -544,38 +559,13 @@ const PowerPointAgent: React.FC = () => {
                         <p className="text-xs text-muted-foreground truncate">{item.deck.subtitle}</p>
                       </div>
                     </div>
-
-                    <div className="flex gap-1.5 mb-3">
-                      {Object.entries(item.deck.palette).map(([key, hex]) => (
-                        <div
-                          key={key}
-                          className="flex-1 h-6 rounded"
-                          style={{ background: `#${hex}` }}
-                          title={`${key}: #${hex}`}
-                        />
-                      ))}
-                    </div>
-
-                    <div className="text-xs text-muted-foreground space-y-1 max-h-40 overflow-y-auto mb-3 pr-1">
-                      {item.deck.slides.map((s, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <span className="text-[10px] uppercase tracking-wider bg-muted px-1.5 py-0.5 rounded text-muted-foreground shrink-0 w-20 text-center">
-                            {s.layout}
-                          </span>
-                          <span className="truncate">
-                            {idx + 1}. {s.title}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
                     <Button asChild variant="default" size="sm" className="w-full">
                       <a href={item.deck.downloadUrl} download={item.deck.filename}>
                         <Download className="h-4 w-4" /> Download {item.deck.filename}
                       </a>
                     </Button>
                   </Card>
-                )}
+                ))}
               </div>
             </div>
           ))}
