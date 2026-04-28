@@ -89,6 +89,9 @@ const PowerPointAgent: React.FC = () => {
   const [selectedBrandId, setSelectedBrandId] = useState<string>("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
+  const [mode, setMode] = useState<Mode>("prompt");
+  const [pendingOutline, setPendingOutline] = useState<DeckOutline | null>(null);
+  const [pasteText, setPasteText] = useState("");
   const [searchParams] = useSearchParams();
 
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
