@@ -117,6 +117,8 @@ serve(async (req) => {
       chartCalloutNotes,              // free-form string — per-chart annotations and callouts
     } = await req.json();
 
+    const clampedSlideCount = Math.min(Math.max(parseInt(String(slideCount)) || 6, 1), 20);
+
     const briefSource = (content && content.trim()) || (topic && topic.trim());
     if (!briefSource) {
       return errorResponse("A topic or content brief is required", 400);
@@ -279,7 +281,7 @@ Rules:
         : "Analyze the content and decide the best slide breaks.";
 
     const userPrompt = content && content.trim()
-      ? `Create a ${slideCount}-slide presentation from the following content brief.
+      ? `Create a ${clampedSlideCount}-slide presentation from the following content brief.
 
 ${formatHint}
 
@@ -287,7 +289,7 @@ CONTENT BRIEF:
 ${content.trim()}
 
 ${topic ? `Additional context / title hint: ${topic.trim()}` : ""}`
-      : `Create a ${slideCount}-slide presentation about: ${topic.trim()}`;
+      : `Create a ${clampedSlideCount}-slide presentation about: ${topic.trim()}`;
 
     const systemPrompt = `You are an expert presentation designer and information designer.
 Given content, you ANALYZE it deeply, then design a deck with the right layout per slide.
@@ -315,7 +317,7 @@ Guidelines:
 - Close with section (Thank You / Questions)
 - Keep titles under 8 words
 - Use bullets (•) in body for content layouts
-- Generate exactly ${slideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}`;
+- Generate exactly ${clampedSlideCount} slides${brandInfo}${imageryInfo}${infographicsInfo}${statsInfo}${advancedInfographicsInfo}`;
 
     const tools = [
       {
@@ -466,7 +468,12 @@ Guidelines:
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.arguments) return errorResponse("AI did not return structured slide data", 500);
 
-    const parsed = JSON.parse(toolCall.function.arguments);
+    let parsed: { slides?: unknown[] };
+    try {
+      parsed = JSON.parse(toolCall.function.arguments);
+    } catch {
+      return errorResponse("AI returned malformed slide data — please try again", 500);
+    }
     const rawSlides = Array.isArray(parsed.slides) ? parsed.slides : [];
 
     // Server-side image matching against approved BrandHub assets

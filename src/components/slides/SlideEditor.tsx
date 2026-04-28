@@ -687,7 +687,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                       </Button>
                     </div>
                     <div className="space-y-2">
-                      {(activeSlide.stats || [{ value: '—', label: 'Metric' }]).map((stat, si) => (
+                      {!(activeSlide.stats?.length) && (
+                        <p className="text-xs text-muted-foreground text-center py-2">No stats yet — click Add above.</p>
+                      )}
+                      {(activeSlide.stats || []).map((stat, si) => (
                         <div key={si} className="flex gap-1.5 items-center">
                           <Input
                             className="h-7 text-xs font-bold flex-1"
@@ -709,19 +712,158 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                             }}
                             placeholder="Label"
                           />
-                          {(activeSlide.stats || []).length > 1 && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => {
+                              const updated = (activeSlide.stats || []).filter((_, i) => i !== si);
+                              updateSlide(activeIndex, { stats: updated.length > 0 ? updated : undefined });
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Timeline steps */}
+                {activeSlide.layout === 'timeline' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-muted-foreground">Timeline Steps</label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => {
+                          const current = activeSlide.timeline || [];
+                          if (current.length >= 8) return;
+                          updateSlide(activeIndex, { timeline: [...current, { title: 'Event' }] });
+                        }}
+                        disabled={(activeSlide.timeline || []).length >= 8}
+                      >
+                        <Plus className="h-3 w-3 mr-0.5" /> Add
+                      </Button>
+                    </div>
+                    {!(activeSlide.timeline?.length) && (
+                      <p className="text-xs text-muted-foreground text-center py-2">No steps yet — click Add above.</p>
+                    )}
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {(activeSlide.timeline || []).map((step, si) => (
+                        <div key={si} className="space-y-1 rounded-md border border-border p-2 bg-muted/30">
+                          <div className="flex items-center gap-1">
+                            <Input
+                              className="h-6 text-xs w-14 font-mono shrink-0"
+                              value={step.date || ''}
+                              onChange={(e) => {
+                                const updated = [...(activeSlide.timeline || [])];
+                                updated[si] = { ...updated[si], date: e.target.value || undefined };
+                                updateSlide(activeIndex, { timeline: updated });
+                              }}
+                              placeholder="Date"
+                            />
+                            <Input
+                              className="h-6 text-xs flex-1"
+                              value={step.title}
+                              onChange={(e) => {
+                                const updated = [...(activeSlide.timeline || [])];
+                                updated[si] = { ...updated[si], title: e.target.value };
+                                updateSlide(activeIndex, { timeline: updated });
+                              }}
+                              placeholder="Title"
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 shrink-0"
+                              className="h-6 w-6 shrink-0"
                               onClick={() => {
-                                const updated = (activeSlide.stats || []).filter((_, i) => i !== si);
-                                updateSlide(activeIndex, { stats: updated });
+                                const updated = (activeSlide.timeline || []).filter((_, i) => i !== si);
+                                updateSlide(activeIndex, { timeline: updated.length > 0 ? updated : undefined });
                               }}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
-                          )}
+                          </div>
+                          <Input
+                            className="h-6 text-xs"
+                            value={step.description || ''}
+                            onChange={(e) => {
+                              const updated = [...(activeSlide.timeline || [])];
+                              updated[si] = { ...updated[si], description: e.target.value || undefined };
+                              updateSlide(activeIndex, { timeline: updated });
+                            }}
+                            placeholder="Description (optional)"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Process steps */}
+                {activeSlide.layout === 'process' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-muted-foreground">Process Steps</label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => {
+                          const current = activeSlide.process || [];
+                          if (current.length >= 5) return;
+                          updateSlide(activeIndex, { process: [...current, { title: 'Step' }] });
+                        }}
+                        disabled={(activeSlide.process || []).length >= 5}
+                      >
+                        <Plus className="h-3 w-3 mr-0.5" /> Add
+                      </Button>
+                    </div>
+                    {!(activeSlide.process?.length) && (
+                      <p className="text-xs text-muted-foreground text-center py-2">No steps yet — click Add above.</p>
+                    )}
+                    <div className="space-y-2">
+                      {(activeSlide.process || []).map((step, si) => (
+                        <div key={si} className="space-y-1 rounded-md border border-border p-2 bg-muted/30">
+                          <div className="flex items-center gap-1.5">
+                            <div className="shrink-0 h-5 w-5 rounded-full bg-primary/15 flex items-center justify-center">
+                              <span className="text-[10px] font-bold text-primary">{si + 1}</span>
+                            </div>
+                            <Input
+                              className="h-6 text-xs flex-1"
+                              value={step.title}
+                              onChange={(e) => {
+                                const updated = [...(activeSlide.process || [])];
+                                updated[si] = { ...updated[si], title: e.target.value };
+                                updateSlide(activeIndex, { process: updated });
+                              }}
+                              placeholder="Step title"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 shrink-0"
+                              onClick={() => {
+                                const updated = (activeSlide.process || []).filter((_, i) => i !== si);
+                                updateSlide(activeIndex, { process: updated.length > 0 ? updated : undefined });
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <Input
+                            className="h-6 text-xs"
+                            value={step.description || ''}
+                            onChange={(e) => {
+                              const updated = [...(activeSlide.process || [])];
+                              updated[si] = { ...updated[si], description: e.target.value || undefined };
+                              updateSlide(activeIndex, { process: updated });
+                            }}
+                            placeholder="Description (optional)"
+                          />
                         </div>
                       ))}
                     </div>
