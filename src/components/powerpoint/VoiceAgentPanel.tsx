@@ -47,6 +47,8 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [outputVolume, setOutputVolume] = useState(0);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const fallbackGreetingTimerRef = useRef<number | null>(null);
+  const hasAgentSpokenRef = useRef(false);
 
   // Keep latest context + actions accessible inside stable callbacks
   const contextRef = useRef(context);
@@ -67,6 +69,11 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
     },
     onDisconnect: () => {
       setOutputVolume(0);
+      hasAgentSpokenRef.current = false;
+      if (fallbackGreetingTimerRef.current) {
+        window.clearTimeout(fallbackGreetingTimerRef.current);
+        fallbackGreetingTimerRef.current = null;
+      }
     },
     onError: (error: unknown) => {
       console.error("ElevenLabs error:", error);
@@ -75,6 +82,13 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
     },
     onMessage: (message: { source: "user" | "ai"; message: string }) => {
       if (!message?.message) return;
+      if (message.source === "ai") {
+        hasAgentSpokenRef.current = true;
+        if (fallbackGreetingTimerRef.current) {
+          window.clearTimeout(fallbackGreetingTimerRef.current);
+          fallbackGreetingTimerRef.current = null;
+        }
+      }
       pushEntry(message.source === "user" ? "user" : "agent", message.message);
     },
     clientTools: {
@@ -178,9 +192,17 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
 
   const startConversation = useCallback(async () => {
     setIsConnecting(true);
+    let permissionStream: MediaStream | null = null;
     try {
-      // Microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Unlock audio + request mic permission directly from the click gesture, then
+      // release this temporary stream so the ElevenLabs WebRTC session owns the mic.
+      const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const unlockContext = AudioContextCtor ? new AudioContextCtor() : null;
+      await unlockContext?.resume().catch(() => undefined);
+      await unlockContext?.close().catch(() => undefined);
+      permissionStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+      permissionStream.getTracks().forEach((track) => track.stop());
+      permissionStream = null;
 
       // Mint a server-side WebRTC token
       const { data, error } = await supabase.functions.invoke("elevenlabs-conversation-token");
@@ -196,6 +218,7 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       await conversation.startSession({
         conversationToken: data.token,
         connectionType: "webrtc",
+        volume: 1,
         overrides: {
           agent: {
             prompt: { prompt: buildDynamicPrompt() },
@@ -203,11 +226,19 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
           },
         },
       });
+      conversation.setMuted(false);
+      conversation.setVolume({ volume: 1 });
+      hasAgentSpokenRef.current = false;
+      fallbackGreetingTimerRef.current = window.setTimeout(() => {
+        if (hasAgentSpokenRef.current || conversation.status !== "connected") return;
+        conversation.sendUserMessage("Briefly greet me as the EventKIT PowerPoint assistant and ask what presentation we are building.");
+      }, 2500);
     } catch (e: unknown) {
       console.error(e);
       const msg = (e as Error)?.message || "Microphone access denied.";
       toast({ title: "Couldn't start voice", description: msg, variant: "destructive" });
     } finally {
+      permissionStream?.getTracks().forEach((track) => track.stop());
       setIsConnecting(false);
     }
   }, [conversation, buildDynamicPrompt, buildFirstMessage, toast]);
