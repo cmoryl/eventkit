@@ -121,18 +121,89 @@ const PowerPointAgent: React.FC = () => {
       }
     : undefined;
 
+  const fileToBase64 = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+  const handlePdfSelect = async (file: File | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast({ title: "PDF only", description: "Please upload a .pdf file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 20MB.", variant: "destructive" });
+      return;
+    }
+    setPdfFile(file);
+    setExtractedSource(null);
+    setExtracting(true);
+    try {
+      const fileBase64 = await fileToBase64(file);
+      const { data, error } = await supabase.functions.invoke("extract-pdf-source", {
+        body: {
+          fileBase64,
+          fileName: file.name,
+          includeText,
+          includeImagery,
+          includeLookAndFeel,
+          influence,
+        },
+      });
+      if (error) {
+        const status = (error as { context?: { status?: number } }).context?.status;
+        toast({
+          title: status === 402 ? "AI credits exhausted" : "Extraction failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setPdfFile(null);
+        return;
+      }
+      setExtractedSource({ ...data, _imageDescriptions: data.imageDescriptions });
+      toast({ title: "PDF extracted", description: `${data.extracted?.pageCount || "?"} pages parsed.` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Couldn't read PDF", variant: "destructive" });
+      setPdfFile(null);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const clearPdf = () => {
+    setPdfFile(null);
+    setExtractedSource(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const generate = async (overrideTopic?: string) => {
     const finalTopic = (overrideTopic ?? topic).trim();
     if (!finalTopic || isGenerating) return;
 
     const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
+    const sourceLabel = extractedSource ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence)` : '';
     const userMsg: ChatItem = {
       role: "user",
-      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}`,
+      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
     };
     setHistory((h) => [...h, userMsg]);
     setIsGenerating(true);
     setTopic("");
+
+    const sourcePayload = extractedSource
+      ? {
+          ...extractedSource.extracted,
+          imageDescriptions: extractedSource._imageDescriptions || [],
+          fileName: extractedSource.fileName,
+          influence,
+          scope: { text: includeText, imagery: includeImagery, lookAndFeel: includeLookAndFeel },
+        }
+      : undefined;
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
@@ -143,6 +214,7 @@ const PowerPointAgent: React.FC = () => {
           tone: tone || undefined,
           brand: brandPayload,
           themeOverride: themeOverride || undefined,
+          source: sourcePayload,
         },
       });
 
@@ -179,6 +251,7 @@ const PowerPointAgent: React.FC = () => {
     setTone("");
     setThemeOverride("");
     setSlideCount(10);
+    clearPdf();
   };
 
   return (
