@@ -283,6 +283,33 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
     }
   };
 
+  // Fallback placeholder content (used when AI returns sparse fields)
+  const ph = {
+    title: "Untitled slide",
+    subtitle: "Add a subtitle to introduce this section",
+    sectionLabel: "Section",
+    bullet: [
+      "Headline point — replace with your key message",
+      "Supporting detail — explain the context",
+      "Outcome or proof point — quantify the impact",
+      "Action — what the audience should take away",
+    ],
+    statValue: "00%",
+    statLabel: "Replace with your headline metric",
+    quote: "Add a memorable quote that anchors this slide.",
+    quoteAttribution: "Speaker · Title",
+    columnHeading: "Column heading",
+    closingTitle: "Thank you",
+    closingSubtitle: "Questions? Let's talk.",
+  };
+  const orPh = (v: string | undefined | null, fallback: string) =>
+    v && v.trim().length > 0 ? v : fallback;
+  const orPhBullets = (arr: string[] | undefined, count = 4): string[] => {
+    const list = (arr || []).filter((b) => b && b.trim().length > 0);
+    if (list.length >= 1) return list;
+    return ph.bullet.slice(0, count);
+  };
+
   outline.slides.forEach((s, idx) => {
     const slide = pptx.addSlide();
     const tplBg = bgFor(s.layout);
@@ -293,6 +320,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
     }
     if (s.notes) slide.addNotes(s.notes);
 
+    const slideTitle = orPh(s.title, ph.title);
 
     // Page number / footer (skip on title)
     if (idx > 0 && s.layout !== "title") {
@@ -300,7 +328,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
         x: W - 1.2, y: H - 0.4, w: 0.8, h: 0.3,
         fontSize: 9, color: TEXT, fontFace: bodyFont, align: "right",
       });
-      slide.addText(outline.title, {
+      slide.addText(outline.title || "Presentation", {
         x: PAD, y: H - 0.4, w: W - 2, h: 0.3,
         fontSize: 9, color: TEXT, fontFace: bodyFont, transparency: 40,
       });
@@ -311,16 +339,14 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
         if (!tplBg) slide.background = { color: PRIMARY };
         // Accent bar
         slide.addShape("rect", { x: 0, y: H / 2 + 1.5, w: 1.5, h: 0.08, fill: { color: ACCENT } });
-        slide.addText(s.title, {
+        slide.addText(slideTitle, {
           x: PAD, y: H / 2 - 1.5, w: W - PAD * 2, h: 2,
           fontSize: 60, bold: true, color: "FFFFFF", fontFace: headFont,
         });
-        if (s.subtitle) {
-          slide.addText(s.subtitle, {
-            x: PAD, y: H / 2 + 0.8, w: W - PAD * 2, h: 0.7,
-            fontSize: 22, color: "FFFFFF", fontFace: bodyFont, transparency: 20,
-          });
-        }
+        slide.addText(orPh(s.subtitle, ph.subtitle), {
+          x: PAD, y: H / 2 + 0.8, w: W - PAD * 2, h: 0.7,
+          fontSize: 22, color: "FFFFFF", fontFace: bodyFont, transparency: 20,
+        });
         break;
       }
 
@@ -329,30 +355,28 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
         slide.addText(`0${idx + 1}`.slice(-2), {
           x: PAD, y: PAD, w: 2, h: 1, fontSize: 56, bold: true, color: ACCENT, fontFace: headFont,
         });
-        slide.addText(s.title, {
+        slide.addText(slideTitle, {
           x: PAD, y: H / 2 - 0.8, w: W - PAD * 2, h: 1.6,
           fontSize: 48, bold: true, color: TEXT, fontFace: headFont,
         });
-        if (s.subtitle) {
-          slide.addText(s.subtitle, {
-            x: PAD, y: H / 2 + 0.9, w: W - PAD * 2, h: 0.6,
-            fontSize: 18, color: TEXT, fontFace: bodyFont, transparency: 30,
-          });
-        }
+        slide.addText(orPh(s.subtitle, ph.sectionLabel), {
+          x: PAD, y: H / 2 + 0.9, w: W - PAD * 2, h: 0.6,
+          fontSize: 18, color: TEXT, fontFace: bodyFont, transparency: 30,
+        });
         break;
       }
 
       case "stat": {
         slide.addShape("rect", { x: 0, y: 0, w: 0.15, h: H, fill: { color: ACCENT } });
-        slide.addText(s.title, {
+        slide.addText(slideTitle, {
           x: PAD, y: PAD, w: W - PAD * 2, h: 0.7,
           fontSize: 24, bold: true, color: TEXT, fontFace: headFont,
         });
-        slide.addText(s.stat?.value || "—", {
+        slide.addText(orPh(s.stat?.value, ph.statValue), {
           x: PAD, y: H / 2 - 1.5, w: W - PAD * 2, h: 2.5,
           fontSize: 130, bold: true, color: PRIMARY, fontFace: headFont, align: "center",
         });
-        slide.addText(s.stat?.label || "", {
+        slide.addText(orPh(s.stat?.label, ph.statLabel), {
           x: PAD, y: H / 2 + 1.4, w: W - PAD * 2, h: 0.6,
           fontSize: 20, color: TEXT, fontFace: bodyFont, align: "center", transparency: 20,
         });
@@ -364,21 +388,19 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
         slide.addText("\u201C", {
           x: PAD, y: PAD, w: 2, h: 2, fontSize: 180, color: ACCENT, fontFace: headFont, bold: true,
         });
-        slide.addText(s.quote?.text || s.title, {
+        slide.addText(orPh(s.quote?.text, orPh(s.title, ph.quote)), {
           x: PAD + 1, y: H / 2 - 1.5, w: W - PAD * 2 - 1, h: 2.5,
           fontSize: 32, italic: true, color: "FFFFFF", fontFace: headFont,
         });
-        if (s.quote?.attribution) {
-          slide.addText(`— ${s.quote.attribution}`, {
-            x: PAD + 1, y: H / 2 + 1.5, w: W - PAD * 2 - 1, h: 0.5,
-            fontSize: 16, color: ACCENT, fontFace: bodyFont,
-          });
-        }
+        slide.addText(`— ${orPh(s.quote?.attribution, ph.quoteAttribution)}`, {
+          x: PAD + 1, y: H / 2 + 1.5, w: W - PAD * 2 - 1, h: 0.5,
+          fontSize: 16, color: ACCENT, fontFace: bodyFont,
+        });
         break;
       }
 
       case "two_column": {
-        slide.addText(s.title, {
+        slide.addText(slideTitle, {
           x: PAD, y: PAD, w: W - PAD * 2, h: 0.8,
           fontSize: 32, bold: true, color: PRIMARY, fontFace: headFont,
         });
@@ -388,12 +410,12 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
 
         const renderCol = (x: number, heading: string, bullets: string[], headingColor: string) => {
           slide.addShape("rect", { x, y: colY, w: colW, h: 0.06, fill: { color: headingColor } });
-          slide.addText(heading, {
+          slide.addText(orPh(heading, ph.columnHeading), {
             x, y: colY + 0.15, w: colW, h: 0.5,
             fontSize: 18, bold: true, color: TEXT, fontFace: headFont,
           });
           slide.addText(
-            bullets.map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 6 } })),
+            orPhBullets(bullets, 3).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 6 } })),
             {
               x, y: colY + 0.8, w: colW, h: colH - 0.8,
               fontSize: 14, color: TEXT, fontFace: bodyFont, valign: "top",
@@ -408,35 +430,44 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
 
       case "closing": {
         if (!tplBg) slide.background = { color: PRIMARY };
-        slide.addText(s.title, {
+        slide.addText(orPh(s.title, ph.closingTitle), {
           x: PAD, y: H / 2 - 1, w: W - PAD * 2, h: 1.5,
           fontSize: 56, bold: true, color: "FFFFFF", fontFace: headFont, align: "center",
         });
-        if (s.subtitle) {
-          slide.addText(s.subtitle, {
-            x: PAD, y: H / 2 + 0.7, w: W - PAD * 2, h: 0.6,
-            fontSize: 20, color: "FFFFFF", fontFace: bodyFont, align: "center", transparency: 20,
-          });
-        }
+        slide.addText(orPh(s.subtitle, ph.closingSubtitle), {
+          x: PAD, y: H / 2 + 0.7, w: W - PAD * 2, h: 0.6,
+          fontSize: 20, color: "FFFFFF", fontFace: bodyFont, align: "center", transparency: 20,
+        });
         slide.addShape("rect", { x: W / 2 - 0.75, y: H / 2 + 1.5, w: 1.5, h: 0.08, fill: { color: ACCENT } });
         break;
       }
 
       case "bullets":
       default: {
+        // Optional template "feature image" panel on the right (content slides only)
+        const featureImg = templateImages.card || templateImages.heroSquare;
+        const hasFeature = !!featureImg && idx > 0 && idx % 3 === 0; // every 3rd content slide
+        const contentW = hasFeature ? W - PAD * 3 - 4.5 : W - PAD * 2;
+
         slide.addShape("rect", { x: PAD, y: PAD + 0.95, w: 0.6, h: 0.06, fill: { color: ACCENT } });
-        slide.addText(s.title, {
-          x: PAD, y: PAD, w: W - PAD * 2, h: 0.9,
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD, w: contentW, h: 0.9,
           fontSize: 32, bold: true, color: PRIMARY, fontFace: headFont,
         });
-        const bullets = s.bullets || [];
         slide.addText(
-          bullets.map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 10 } })),
+          orPhBullets(s.bullets, 4).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 10 } })),
           {
-            x: PAD, y: PAD + 1.4, w: W - PAD * 2, h: H - PAD * 2 - 1.4 - 0.4,
+            x: PAD, y: PAD + 1.4, w: contentW, h: H - PAD * 2 - 1.4 - 0.4,
             fontSize: 18, color: TEXT, fontFace: bodyFont, valign: "top",
           },
         );
+        if (hasFeature && featureImg) {
+          slide.addImage({
+            data: featureImg,
+            x: W - PAD - 4.5, y: PAD + 1.4, w: 4.5, h: H - PAD * 2 - 1.8,
+            sizing: { type: "cover", w: 4.5, h: H - PAD * 2 - 1.8 },
+          });
+        }
         break;
       }
     }
