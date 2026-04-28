@@ -61,10 +61,14 @@ interface SlideEditorProps {
   assetType: string;
   assetName: string;
   brand: Brand | null;
+  /** Pre-populate the editor with specific slides (e.g. from the template gallery landing page) */
+  initialSlides?: SlideData[];
 }
 
-export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: SlideEditorProps) {
-  const [slides, setSlides] = useState<SlideData[]>(() => [...DEFAULT_SLIDES]);
+export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides }: SlideEditorProps) {
+  const [slides, setSlides] = useState<SlideData[]>(() =>
+    initialSlides && initialSlides.length > 0 ? initialSlides : [...DEFAULT_SLIDES]
+  );
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoom, setZoom] = useState(100);
   const [isDarkCanvas, setIsDarkCanvas] = useState(false);

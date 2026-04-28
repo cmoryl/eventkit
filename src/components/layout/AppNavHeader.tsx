@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
+import {
   Sparkles, Home, Settings, ChevronDown, LogIn, LogOut,
   User, Shield, Palette, FolderOpen, Bell, HelpCircle,
   LayoutGrid, Layers, Save, Upload, Download, Cloud, Loader2,
-  Menu, X
+  Menu, X, Presentation
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -207,6 +207,17 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                     </div>
                   ))}
 
+                  <button
+                    onClick={() => navigate('/slides')}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mt-2",
+                      isActivePath('/slides') ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <Presentation className="w-4 h-4" />
+                    Slides
+                  </button>
+
                   {isAuthenticated && (
                     <button
                       onClick={() => navigate('/admin')}
@@ -342,6 +353,14 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                   )}
                 </AnimatePresence>
               </div>
+
+              <NavButton
+                onClick={() => navigate('/slides')}
+                isActive={isActivePath('/slides')}
+              >
+                <Presentation className="w-4 h-4 mr-1.5" />
+                Slides
+              </NavButton>
 
               {isAuthenticated && (
                 <NavButton
