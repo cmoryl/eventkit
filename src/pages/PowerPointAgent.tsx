@@ -67,6 +67,7 @@ const PowerPointAgent: React.FC = () => {
   const [themeOverride, setThemeOverride] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [history, setHistory] = useState<ChatItem[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>(FALLBACK_SUGGESTIONS);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Brand selection
