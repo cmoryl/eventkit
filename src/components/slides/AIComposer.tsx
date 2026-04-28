@@ -126,9 +126,13 @@ const outlineToSlides = (outline: DeckOutline): SlideData[] =>
         break;
       }
       case "quote": {
-        const text = s.quote?.text || s.title || "Insert a memorable quote here.";
-        base.title = text.startsWith('"') ? text : `"${text}"`;
-        base.quoteAuthor = s.quote?.attribution || s.subtitle;
+        const rawText = (s.quote?.text || s.title || "Insert a memorable quote here.").trim();
+        // Strip any existing leading/trailing straight or smart quotes, then re-wrap consistently.
+        const stripped = rawText.replace(/^["“”'']+|["“”'']+$/g, "").trim();
+        base.title = `"${stripped}"`;
+        // Prefer structured attribution; fall back to subtitle only when attribution is missing.
+        const attribution = (s.quote?.attribution ?? s.subtitle ?? "").trim();
+        base.quoteAuthor = attribution || undefined;
         base.subtitle = undefined;
         break;
       }
