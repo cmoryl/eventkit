@@ -2,6 +2,7 @@ import React from 'react';
 import { SlideData } from './slideTypes';
 import { SlideLayout } from './SlideLayout';
 import { renderLayoutVariation } from './SlideLayoutVariations';
+import { ParallaxRenderer } from './ParallaxRenderer';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -12,6 +13,10 @@ interface SlideRendererProps {
   brandColors?: { primary?: string; secondary?: string; accent?: string };
   brandFonts?: { heading?: string; body?: string };
   animated?: boolean;
+  /** How parallax slides should animate. Defaults to 'mouse' (editor). */
+  parallaxMotion?: 'mouse' | 'time' | 'dolly' | 'static';
+  /** 0-1 progress for dolly mode (used by MP4 export). */
+  parallaxProgress?: number;
 }
 
 function ImageGallery({ images }: { images: string[] }) {
