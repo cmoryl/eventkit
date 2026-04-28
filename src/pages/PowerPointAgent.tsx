@@ -187,6 +187,8 @@ const PowerPointAgent: React.FC = () => {
         return;
       }
       setExtractedSource({ ...data, _imageDescriptions: data.imageDescriptions });
+      const sectionCount = (data.extracted?.outline || []).length;
+      setSelectedSections(new Set(Array.from({ length: sectionCount }, (_, i) => i)));
       toast({ title: "PDF extracted", description: `${data.extracted?.pageCount || "?"} pages parsed.` });
     } catch (e) {
       console.error(e);
@@ -208,11 +210,25 @@ const PowerPointAgent: React.FC = () => {
   const selectAllPages = () => setSelectedPages(new Set(thumbnails.map((t) => t.page)));
   const clearPageSelection = () => setSelectedPages(new Set());
 
+  const toggleSection = (idx: number) => {
+    setSelectedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  };
+  const selectAllSections = () => {
+    const count = (extractedSource?.extracted?.outline || []).length;
+    setSelectedSections(new Set(Array.from({ length: count }, (_, i) => i)));
+  };
+  const clearSectionSelection = () => setSelectedSections(new Set());
+
   const clearPdf = () => {
     setPdfFile(null);
     setExtractedSource(null);
     setThumbnails([]);
     setSelectedPages(new Set());
+    setSelectedSections(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
