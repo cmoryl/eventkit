@@ -13,6 +13,11 @@ import { toast } from 'sonner';
 import { Brand } from '@/types/studio.types';
 import AssetSpecificFields from '@/components/AssetSpecificFields';
 import { useGoogleFonts } from '@/hooks/useGoogleFonts';
+import {
+  BriefBrandHubContext,
+  composeBrandHubBriefAddendum,
+  type BrandHubContextSelection,
+} from './BriefBrandHubContext';
 
 // Google Fonts configuration for high-quality typography
 export interface GoogleFontSelection {
@@ -243,6 +248,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loadingFonts, setLoadingFonts] = useState<Set<string>>(new Set());
+  const [brandHubContext, setBrandHubContext] = useState<BrandHubContextSelection | null>(null);
 
   // Preload all font pairing fonts when typography section is expanded
   useEffect(() => {
@@ -325,7 +331,16 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
   };
 
   const handleSubmit = () => {
-    onSubmit(brief);
+    const addendum = composeBrandHubBriefAddendum(brandHubContext);
+    const finalBrief: AssetBrief = addendum
+      ? {
+          ...brief,
+          additionalNotes: [brief.additionalNotes?.trim(), addendum]
+            .filter(Boolean)
+            .join(' '),
+        }
+      : brief;
+    onSubmit(finalBrief);
   };
 
   if (!isOpen) return null;
@@ -376,6 +391,12 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
                 <span className="text-xs text-muted-foreground">brand applied</span>
               </div>
             )}
+
+            {/* BrandHub product/event context */}
+            <BriefBrandHubContext
+              brandId={brand?.id}
+              onChange={setBrandHubContext}
+            />
           </div>
 
           {/* Scrollable Content */}
