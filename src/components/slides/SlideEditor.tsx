@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Brand } from '@/types/studio.types';
-import { SlideData, DEFAULT_SLIDES, SLIDE_TEMPLATES, SlideBgEffect, SlideBgEffectType, SlideBgEffectPresetName, BG_EFFECT_PRESETS } from './slideTypes';
+import { SlideData, DEFAULT_SLIDES, SLIDE_TEMPLATES, SlideBgEffect, SlideBgEffectType, SlideBgEffectPresetName, BG_EFFECT_PRESETS, LAYOUT_VARIATIONS } from './slideTypes';
 import { Slider } from '@/components/ui/slider';
 import { TemplateGalleryDialog } from './TemplateGalleryDialog';
 import type { InfographicTemplate } from './infographicTemplates';
@@ -690,6 +690,34 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Layout style — only when the active layout has alternate variations */}
+                {LAYOUT_VARIATIONS[activeSlide.layout] && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-muted-foreground">Layout Style</label>
+                    <div className="grid grid-cols-2 gap-1">
+                      {LAYOUT_VARIATIONS[activeSlide.layout]!.map(({ value, label }) => {
+                        const isFirst = LAYOUT_VARIATIONS[activeSlide.layout]![0].value === value;
+                        const isActive = (activeSlide.variation || (isFirst ? value : '')) === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => updateSlide(activeIndex, { variation: isFirst ? undefined : value })}
+                            className={cn(
+                              'text-[11px] px-2 py-1.5 rounded border transition-colors',
+                              isActive
+                                ? 'bg-primary/10 border-primary/40 text-foreground font-medium'
+                                : 'bg-background border-border text-muted-foreground hover:bg-muted hover:text-foreground',
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Background color override */}
                 <div className="space-y-2">

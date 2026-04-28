@@ -150,7 +150,46 @@ export interface SlideData {
   needsImage?: boolean;
   /** Animated background effect — in-app + presentation only, not exported to PPTX */
   bgEffect?: SlideBgEffect;
+  /** Visual variation of the active layout — see LAYOUT_VARIATIONS for valid values per layout */
+  variation?: string;
 }
+
+/** Per-layout visual variations — only layouts with shipped alternates are listed. */
+export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; label: string }[]>> = {
+  title: [
+    { value: 'centered',    label: 'Centered' },
+    { value: 'split',       label: 'Split Screen' },
+    { value: 'asymmetric',  label: 'Asymmetric' },
+  ],
+  stats: [
+    { value: 'row',         label: 'Row' },
+    { value: 'grid',        label: 'Grid' },
+    { value: 'ranked',      label: 'Ranked Bars' },
+    { value: 'cards',       label: 'Cards' },
+  ],
+  timeline: [
+    { value: 'rail',        label: 'Horizontal Rail' },
+    { value: 'vertical',    label: 'Vertical' },
+    { value: 'zigzag',      label: 'Zigzag' },
+    { value: 'cards',       label: 'Cards' },
+  ],
+  process: [
+    { value: 'arrows',      label: 'Arrows' },
+    { value: 'circular',    label: 'Circular Cycle' },
+    { value: 'stairs',      label: 'Stair-Step' },
+    { value: 'cards',       label: 'Numbered Cards' },
+  ],
+  'big-number': [
+    { value: 'centered',    label: 'Centered' },
+    { value: 'split',       label: 'Split Context' },
+    { value: 'gauge',       label: 'Gauge Ring' },
+  ],
+  quote: [
+    { value: 'centered',    label: 'Centered' },
+    { value: 'magazine',    label: 'Magazine' },
+    { value: 'punch',       label: 'Oversized Punch' },
+  ],
+};
 
 export const DEFAULT_SLIDES: SlideData[] = [
   {

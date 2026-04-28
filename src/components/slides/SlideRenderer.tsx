@@ -1,6 +1,7 @@
 import React from 'react';
 import { SlideData } from './slideTypes';
 import { SlideLayout } from './SlideLayout';
+import { renderLayoutVariation } from './SlideLayoutVariations';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -58,8 +59,13 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated }: Slid
   const bSize = slide.bodySize || 0;
   const align = slide.textAlign || 'left';
 
+  const variationNode = renderLayoutVariation({
+    slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize, align,
+  });
+
   return (
     <SlideLayout variant={slide.variant} accentColor={accentColor} bgColor={slide.bgColor} animated={animated} bgEffect={animated ? slide.bgEffect : undefined}>
+      {variationNode || <>
       {slide.layout === 'title' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
           <h1
@@ -548,6 +554,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated }: Slid
           )}
         </div>
       )}
+      </>}
     </SlideLayout>
   );
 }
