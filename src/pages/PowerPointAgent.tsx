@@ -220,7 +220,10 @@ const PowerPointAgent: React.FC = () => {
     if (!finalTopic || isGenerating) return;
 
     const brandLabel = useBrand && selectedBrand ? `  \nBrand: ${selectedBrand.name}${selectedBrand.isFromBrandHub ? ' (BrandHub)' : ''}` : '';
-    const sourceLabel = extractedSource ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence)` : '';
+    const pickedCount = selectedPages.size;
+    const sourceLabel = extractedSource
+      ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''})`
+      : '';
     const userMsg: ChatItem = {
       role: "user",
       content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
@@ -229,6 +232,10 @@ const PowerPointAgent: React.FC = () => {
     setIsGenerating(true);
     setTopic("");
 
+    const pickedImages = thumbnails
+      .filter((t) => selectedPages.has(t.page))
+      .map((t) => ({ page: t.page, dataUrl: t.dataUrl }));
+
     const sourcePayload = extractedSource
       ? {
           ...extractedSource.extracted,
@@ -236,6 +243,7 @@ const PowerPointAgent: React.FC = () => {
           fileName: extractedSource.fileName,
           influence,
           scope: { text: includeText, imagery: includeImagery, lookAndFeel: includeLookAndFeel },
+          selectedImages: pickedImages,
         }
       : undefined;
 
