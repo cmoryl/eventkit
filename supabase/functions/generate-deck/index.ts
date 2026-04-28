@@ -44,6 +44,7 @@ interface DeckRequest {
   brand?: BrandStyle;
   themeOverride?: string; // free-form override "use a dark navy and gold theme"
   source?: ExtractedSource; // PDF-derived material
+  prebuiltOutline?: DeckOutline; // skip AI planning and just build .pptx from this
 }
 
 interface SlideOutline {
