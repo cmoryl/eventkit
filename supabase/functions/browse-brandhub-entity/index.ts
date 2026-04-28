@@ -110,6 +110,14 @@ function toCard(row: Record<string, unknown>, entity: Entity) {
   };
 }
 
+// Schema differs per BrandHub table — brands have no parent_brand_id,
+// and only brands carry share_token. Pick exactly the columns that exist.
+const SELECT_FOR: Record<Entity, string> = {
+  brand: "id,name,slug,share_token,guide_data,updated_at",
+  event: "id,name,slug,parent_brand_id,guide_data,updated_at",
+  product: "id,name,slug,parent_brand_id,guide_data,updated_at",
+};
+
 async function browseEntity(
   entity: Entity,
   req: BrowseRequest,
@@ -121,7 +129,7 @@ async function browseEntity(
   const offset = Math.max(req.offset ?? 0, 0);
 
   const filters: string[] = [
-    "select=id,name,slug,share_token,parent_brand_id,guide_data,updated_at",
+    `select=${SELECT_FOR[entity]}`,
     `order=updated_at.desc`,
     `limit=${limit}`,
     `offset=${offset}`,
