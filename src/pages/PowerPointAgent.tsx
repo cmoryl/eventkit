@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus, Upload, X, FileUp, Check, ImageIcon } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus, Upload, X, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,8 @@ import { useActiveBrand } from "@/hooks/useActiveBrand";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
-import { renderPdfThumbnails, type PdfThumbnail } from "@/lib/pdfThumbnails";
+import { type PdfThumbnail } from "@/lib/pdfThumbnails";
+import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
 
 interface DeckResult {
   downloadUrl: string;
@@ -80,8 +81,8 @@ const PowerPointAgent: React.FC = () => {
   const [includeImagery, setIncludeImagery] = useState(true);
   const [includeLookAndFeel, setIncludeLookAndFeel] = useState(true);
   const [influence, setInfluence] = useState<number>(70);
-  const [thumbnails, setThumbnails] = useState<PdfThumbnail[]>([]);
-  const [renderingThumbs, setRenderingThumbs] = useState(false);
+  // Cache of rendered thumbnails (populated lazily by LazyPdfGallery as pages scroll into view)
+  const [thumbnails, setThumbnails] = useState<Map<number, PdfThumbnail>>(new Map());
   const [selectedPages, setSelectedPages] = useState<Set<number>>(new Set());
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
 
@@ -134,36 +135,10 @@ const PowerPointAgent: React.FC = () => {
       reader.readAsDataURL(file);
     });
 
-  const handlePdfSelect = async (file: File | null) => {
-    if (!file) return;
-    if (file.type !== "application/pdf") {
-      toast({ title: "PDF only", description: "Please upload a .pdf file.", variant: "destructive" });
-      return;
-    }
-    if (file.size > 20 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Max 20MB.", variant: "destructive" });
-      return;
-    }
-    setPdfFile(file);
+  const runExtraction = async (file: File) => {
     setExtractedSource(null);
-    setThumbnails([]);
-    setSelectedPages(new Set());
+    setSelectedSections(new Set());
     setExtracting(true);
-    setRenderingThumbs(true);
-
-    // Render thumbnails in parallel with AI extraction
-    renderPdfThumbnails(file, { maxWidth: 480, quality: 0.7, maxPages: 50 })
-      .then((thumbs) => {
-        setThumbnails(thumbs);
-        // Default-select first 3 pages so users get instant value
-        setSelectedPages(new Set(thumbs.slice(0, 3).map((t) => t.page)));
-      })
-      .catch((e) => {
-        console.error("Thumb render failed:", e);
-        toast({ title: "Thumbnails unavailable", description: "Couldn't preview pages.", variant: "destructive" });
-      })
-      .finally(() => setRenderingThumbs(false));
-
     try {
       const fileBase64 = await fileToBase64(file);
       const { data, error } = await supabase.functions.invoke("extract-pdf-source", {
@@ -183,20 +158,44 @@ const PowerPointAgent: React.FC = () => {
           description: error.message,
           variant: "destructive",
         });
-        setPdfFile(null);
-        return;
+        return false;
       }
       setExtractedSource({ ...data, _imageDescriptions: data.imageDescriptions });
       const sectionCount = (data.extracted?.outline || []).length;
       setSelectedSections(new Set(Array.from({ length: sectionCount }, (_, i) => i)));
       toast({ title: "PDF extracted", description: `${data.extracted?.pageCount || "?"} pages parsed.` });
+      return true;
     } catch (e) {
       console.error(e);
       toast({ title: "Couldn't read PDF", variant: "destructive" });
-      setPdfFile(null);
+      return false;
     } finally {
       setExtracting(false);
     }
+  };
+
+  const rerunExtraction = async () => {
+    if (!pdfFile || extracting || isGenerating) return;
+    await runExtraction(pdfFile);
+  };
+
+  const handlePdfSelect = async (file: File | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      toast({ title: "PDF only", description: "Please upload a .pdf file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 20MB.", variant: "destructive" });
+      return;
+    }
+    setPdfFile(file);
+    setThumbnails(new Map());
+    setSelectedPages(new Set());
+    // Gallery handles lazy thumbnail rendering on its own.
+
+    const ok = await runExtraction(file);
+    if (!ok) setPdfFile(null);
   };
 
   const togglePage = (page: number) => {
@@ -207,7 +206,6 @@ const PowerPointAgent: React.FC = () => {
     });
   };
 
-  const selectAllPages = () => setSelectedPages(new Set(thumbnails.map((t) => t.page)));
   const clearPageSelection = () => setSelectedPages(new Set());
 
   const toggleSection = (idx: number) => {
@@ -226,7 +224,7 @@ const PowerPointAgent: React.FC = () => {
   const clearPdf = () => {
     setPdfFile(null);
     setExtractedSource(null);
-    setThumbnails([]);
+    setThumbnails(new Map());
     setSelectedPages(new Set());
     setSelectedSections(new Set());
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -254,7 +252,7 @@ const PowerPointAgent: React.FC = () => {
     setIsGenerating(true);
     setTopic("");
 
-    const pickedImages = thumbnails
+    const pickedImages = Array.from(thumbnails.values())
       .filter((t) => selectedPages.has(t.page))
       .map((t) => ({ page: t.page, dataUrl: t.dataUrl }));
 
@@ -557,6 +555,22 @@ const PowerPointAgent: React.FC = () => {
                       {extractedSource.extracted?.pageCount || "?"} pages
                     </span>
                   )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs gap-1"
+                    onClick={rerunExtraction}
+                    disabled={isGenerating || extracting}
+                    title="Re-run extraction with current toggles & influence"
+                  >
+                    {extracting ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Re-run
+                  </Button>
                   <Button type="button" variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={clearPdf} disabled={isGenerating || extracting}>
                     <X className="h-4 w-4" />
                   </Button>
@@ -662,89 +676,26 @@ const PowerPointAgent: React.FC = () => {
                   </div>
                 )}
 
-                {/* Page thumbnail gallery */}
-                {(renderingThumbs || thumbnails.length > 0) && (
-                  <div className="space-y-2 pt-1">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs flex items-center gap-1.5">
-                        <ImageIcon className="h-3 w-3" />
-                        Page previews
-                        {thumbnails.length > 0 && (
-                          <span className="text-muted-foreground font-normal">
-                            · {selectedPages.size}/{thumbnails.length} picked
-                          </span>
-                        )}
-                      </Label>
-                      {thumbnails.length > 0 && (
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            onClick={selectAllPages}
-                            disabled={isGenerating}
-                            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            All
-                          </button>
-                          <span className="text-[10px] text-muted-foreground">·</span>
-                          <button
-                            type="button"
-                            onClick={clearPageSelection}
-                            disabled={isGenerating}
-                            className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                          >
-                            None
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                {/* Page thumbnail gallery (lazy + virtualized) */}
+                <LazyPdfGallery
+                  file={pdfFile}
+                  selectedPages={selectedPages}
+                  onTogglePage={togglePage}
+                  onSelectAll={(all) => setSelectedPages(new Set(all))}
+                  onClearSelection={clearPageSelection}
+                  onThumbnailRendered={(thumb) =>
+                    setThumbnails((prev) => {
+                      if (prev.has(thumb.page)) return prev;
+                      const next = new Map(prev);
+                      next.set(thumb.page, thumb);
+                      return next;
+                    })
+                  }
+                  disabled={isGenerating}
+                  maxPages={200}
+                  defaultPickFirstN={3}
+                />
 
-                    {renderingThumbs && thumbnails.length === 0 ? (
-                      <div className="flex items-center justify-center py-6 text-xs text-muted-foreground gap-2">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" /> Rendering page previews…
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-64 overflow-y-auto pr-1">
-                        {thumbnails.map((t) => {
-                          const picked = selectedPages.has(t.page);
-                          return (
-                            <button
-                              type="button"
-                              key={t.page}
-                              onClick={() => togglePage(t.page)}
-                              disabled={isGenerating}
-                              className={`group relative aspect-[3/4] rounded-md overflow-hidden border-2 transition-all ${
-                                picked
-                                  ? "border-primary ring-2 ring-primary/30"
-                                  : "border-border/50 hover:border-primary/50 opacity-70 hover:opacity-100"
-                              }`}
-                              title={`Page ${t.page}${picked ? " — selected" : ""}`}
-                            >
-                              <img src={t.dataUrl} alt={`Page ${t.page}`} className="w-full h-full object-cover bg-white" />
-                              <div className="absolute top-1 left-1 bg-background/80 backdrop-blur-sm text-[9px] font-medium px-1 py-0.5 rounded">
-                                {t.page}
-                              </div>
-                              {picked && (
-                                <div className="absolute top-1 right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                                </div>
-                              )}
-                            </button>
-                          );
-                        })}
-                        {renderingThumbs && (
-                          <div className="aspect-[3/4] rounded-md border border-dashed border-border/50 flex items-center justify-center">
-                            <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {thumbnails.length > 0 && (
-                      <p className="text-[10px] text-muted-foreground">
-                        Click pages to include them as visual references in your deck.
-                      </p>
-                    )}
-                  </div>
-                )}
               </>
             )}
           </div>
