@@ -40,7 +40,7 @@ interface Props {
   actions: VoiceAgentActions;
 }
 
-export const VoiceAgentPanel: React.FC<Props> = ({ context, actions }) => {
+const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
