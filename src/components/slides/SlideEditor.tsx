@@ -79,6 +79,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
     body: brand.styles.body_font,
   } : undefined;
 
+  const brandImagery = brand?.styles?.all_imagery?.byType;
+
   const updateSlide = useCallback((index: number, updates: Partial<SlideData>) => {
     setSlides(prev => prev.map((s, i) => i === index ? { ...s, ...updates } : s));
   }, []);
@@ -1006,7 +1008,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand }: Sl
       onSlidesGenerated={handleAISlidesGenerated}
       brandName={brand?.name}
       brandId={brand?.id}
-      brandImagery={brand?.styles?.all_imagery?.byType}
+      brandImagery={brandImagery}
     />
     </>
   );

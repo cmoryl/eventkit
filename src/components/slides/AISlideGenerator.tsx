@@ -17,8 +17,6 @@ const LOVABLE_MODELS = [
   { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
   { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
   { value: 'google/gemini-3-pro-preview', label: 'Gemini 3 Pro' },
-  { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini' },
-  { value: 'openai/gpt-5', label: 'GPT-5' },
 ];
 
 const GOOGLE_MODELS = [
