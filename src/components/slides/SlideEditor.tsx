@@ -433,7 +433,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         onExit={() => setIsPresentationMode(false)}
         transition={slideTransition}
       >
-        {(idx) => <SlideRenderer slide={slides[idx]} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} />}
+        {(idx) => <SlideRenderer slide={slides[idx]} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} parallaxMotion="time" />}
       </PresentationMode>
     );
   }
