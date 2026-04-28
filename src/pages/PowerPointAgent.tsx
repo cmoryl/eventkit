@@ -36,8 +36,23 @@ const SUGGESTIONS = [
   "Sales kickoff: 2026 strategy & territory plan",
 ];
 
+interface BrandOption {
+  id: string;
+  name: string;
+  logo_url?: string | null;
+  isFromBrandHub: boolean;
+  styles?: {
+    primary_color?: string | null;
+    secondary_color?: string | null;
+    accent_color?: string | null;
+    heading_font?: string | null;
+    body_font?: string | null;
+  } | null;
+}
+
 const PowerPointAgent: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { activeBrand } = useActiveBrand();
   const [topic, setTopic] = useState("");
   const [audience, setAudience] = useState("");
@@ -49,17 +64,49 @@ const PowerPointAgent: React.FC = () => {
   const [history, setHistory] = useState<ChatItem[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Brand selection
+  const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  const [showImportModal, setShowImportModal] = useState(false);
+
+  const loadBrands = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("brands")
+      .select("id, name, logo_url, brandhub_share_token, brand_styles(primary_color, secondary_color, accent_color, heading_font, body_font)")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+    if (error) return;
+    const mapped: BrandOption[] = (data || []).map((b: any) => ({
+      id: b.id,
+      name: b.name,
+      logo_url: b.logo_url,
+      isFromBrandHub: !!b.brandhub_share_token,
+      styles: Array.isArray(b.brand_styles) ? b.brand_styles[0] : b.brand_styles,
+    }));
+    setBrands(mapped);
+    // Default selection: active brand if present, else first
+    if (!selectedBrandId) {
+      setSelectedBrandId(activeBrand?.id || mapped[0]?.id || "");
+    }
+  }, [user, activeBrand?.id, selectedBrandId]);
+
+  useEffect(() => {
+    loadBrands();
+  }, [loadBrands]);
+
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [history, isGenerating]);
 
-  const brandPayload = useBrand && activeBrand?.styles
+  const selectedBrand = brands.find((b) => b.id === selectedBrandId);
+  const brandPayload = useBrand && selectedBrand?.styles
     ? {
-        primary: activeBrand.styles.primary_color,
-        secondary: activeBrand.styles.secondary_color,
-        accent: activeBrand.styles.accent_color,
-        headingFont: activeBrand.styles.heading_font,
-        bodyFont: activeBrand.styles.body_font,
+        primary: selectedBrand.styles.primary_color || undefined,
+        secondary: selectedBrand.styles.secondary_color || undefined,
+        accent: selectedBrand.styles.accent_color || undefined,
+        headingFont: selectedBrand.styles.heading_font || undefined,
+        bodyFont: selectedBrand.styles.body_font || undefined,
       }
     : undefined;
 
