@@ -686,23 +686,22 @@ export const CreationStudio: React.FC = () => {
       
       <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
         <Button
-          variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+          variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className={`h-8 w-8 ${viewMode === 'grid' ? 'bg-foreground/15 text-foreground' : 'text-foreground/70 hover:text-foreground hover:bg-foreground/10'}`}
           onClick={() => setViewMode('grid')}
         >
           <Grid className="h-4 w-4" />
         </Button>
         <Button
-          variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+          variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className={`h-8 w-8 ${viewMode === 'list' ? 'bg-foreground/15 text-foreground' : 'text-foreground/70 hover:text-foreground hover:bg-foreground/10'}`}
           onClick={() => setViewMode('list')}
         >
           <List className="h-4 w-4" />
         </Button>
       </div>
-      
       <Button
         variant="outline"
         size="sm"
@@ -714,10 +713,10 @@ export const CreationStudio: React.FC = () => {
       </Button>
 
       <Button
-        variant={showAccessibility ? 'secondary' : 'outline'}
+        variant="outline"
         size="sm"
         onClick={() => setShowAccessibility(!showAccessibility)}
-        className="hidden lg:flex"
+        className={`hidden lg:flex ${showAccessibility ? 'bg-foreground/15 text-foreground border-foreground/20' : 'text-foreground/90'}`}
         title="Accessibility Analysis"
       >
         <Accessibility className="h-4 w-4 mr-2" />
@@ -725,9 +724,9 @@ export const CreationStudio: React.FC = () => {
       </Button>
 
       <Button
-        variant={showBrandsPanel ? 'secondary' : 'outline'}
+        variant="outline"
         size="icon"
-        className="h-8 w-8 hidden md:flex"
+        className={`h-8 w-8 hidden md:flex ${showBrandsPanel ? 'bg-foreground/15 text-foreground border-foreground/20' : 'text-foreground/80 hover:text-foreground'}`}
         onClick={() => setShowBrandsPanel(!showBrandsPanel)}
         title={showBrandsPanel ? 'Hide Brands Panel' : 'Show Brands Panel'}
       >
