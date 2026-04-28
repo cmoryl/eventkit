@@ -214,7 +214,12 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
               className={`w-full text-left rounded-md border-2 transition-all overflow-hidden ${
                 i === activeIdx ? "border-primary shadow-sm" : "border-transparent hover:border-border"
               }`}
-              style={{ background: `#${outline.palette.background}` }}
+              style={{
+                backgroundColor: `#${outline.palette.background}`,
+                backgroundImage: templatePreviewImage(templateId, s.layout) ? `url(${templatePreviewImage(templateId, s.layout)})` : undefined,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
             >
               <div className="aspect-video p-2 relative">
                 <div className="text-[6px] font-bold leading-tight line-clamp-2" style={{ color: `#${outline.palette.text}` }}>
@@ -235,8 +240,16 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
         <div className="flex flex-col">
           {/* Canvas preview */}
           <div className="p-4 border-b" style={{ background: `#${outline.palette.background}` }}>
-            <div className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner" style={{ color: `#${outline.palette.text}`, fontFamily: outline.fonts?.body }}>
-              <SlideRenderer slide={active} palette={outline.palette} fonts={outline.fonts} />
+            <div
+              className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner bg-cover bg-center"
+              style={{
+                color: `#${outline.palette.text}`,
+                fontFamily: outline.fonts?.body,
+                backgroundColor: `#${outline.palette.background}`,
+                backgroundImage: templatePreviewImage(templateId, active.layout) ? `url(${templatePreviewImage(templateId, active.layout)})` : undefined,
+              }}
+            >
+              <SlideRenderer slide={active} palette={outline.palette} fonts={outline.fonts} templateId={templateId} />
             </div>
           </div>
 
