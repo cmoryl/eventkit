@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -14,8 +14,18 @@ import { VoiceAgentPanel } from "@/components/powerpoint/VoiceAgentPanel";
 import { BrandPopover } from "@/components/powerpoint/composer/BrandPopover";
 import { SourceSheet } from "@/components/powerpoint/composer/SourceSheet";
 import { RefinePopover } from "@/components/powerpoint/composer/RefinePopover";
+import { TemplateGallery, ALL_DECK_TEMPLATES, type DeckTemplate } from "@/components/powerpoint/composer/TemplateGallery";
 
 import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
+
+// Default 10-slide outline suggestions per template — populates topic area when picked
+const TEMPLATE_DEFAULT_TOPICS: Record<string, { topic: string; audience?: string; tone?: string }> = {
+  "transperfect-2026": {
+    topic: "TransPerfect 2026 — Global Language & AI Solutions overview. 10 slides covering: 1) Cover, 2) Who we are, 3) Mission & vision, 4) Global footprint, 5) Service portfolio, 6) AI platform (GlobalLink NEXT), 7) Industry expertise, 8) Case study highlight, 9) Why TransPerfect, 10) Contact / next steps.",
+    audience: "Enterprise prospects, marketing & localization leaders",
+    tone: "Authoritative, modern, human, transformative",
+  },
+};
 
 interface DeckResult {
   downloadUrl: string;
