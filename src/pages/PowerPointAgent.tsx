@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
 import { type PdfThumbnail } from "@/lib/pdfThumbnails";
 import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
+import { SelectedPagesOrder } from "@/components/powerpoint/SelectedPagesOrder";
 
 interface DeckResult {
   downloadUrl: string;
@@ -694,7 +695,14 @@ const PowerPointAgent: React.FC = () => {
                   file={pdfFile}
                   selectedPages={selectedPagesSet}
                   onTogglePage={togglePage}
-                  onSelectAll={(all) => setSelectedPages(all)}
+                  onSelectAll={(all) => {
+                    // Preserve existing order; append newly added pages at the end
+                    setSelectedPages((prev) => {
+                      const existing = prev.filter((p) => all.includes(p));
+                      const additions = all.filter((p) => !prev.includes(p));
+                      return [...existing, ...additions];
+                    });
+                  }}
                   onClearSelection={clearPageSelection}
                   onThumbnailRendered={(thumb) =>
                     setThumbnails((prev) => {
