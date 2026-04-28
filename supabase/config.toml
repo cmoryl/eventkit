@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.elevenlabs-conversation-token]
 verify_jwt = false
+
+[functions.proxy-brandhub-file]
+verify_jwt = false

@@ -26,93 +26,6 @@ export interface ProcessStep {
   description?: string;
 }
 
-export type SlideBgEffectType =
-  | 'none' | 'orbs' | 'particles' | 'mesh' | 'grid' | 'waves' | 'grain' | 'beam';
-
-export interface SlideBgEffect {
-  type: SlideBgEffectType;
-  /** Animation speed multiplier. 1.0 = default, 0.5 = half, 3.0 = triple. */
-  speed?: number;
-  /** Overall opacity, 0-1. */
-  intensity?: number;
-  /** Hex color override; falls back to brand accent. */
-  color?: string;
-  // ── per-effect params ─────────────────────────────────────────
-  /** orbs, particles */
-  count?: number;
-  /** orbs */
-  size?: number;
-  /** orbs, mesh */
-  blur?: number;
-  /** particles */
-  direction?: 'up' | 'down' | 'float';
-  /** mesh */
-  hueRotate?: number;
-  /** grid */
-  spacing?: number;
-  dotSize?: number;
-  pulseDepth?: number;
-  /** waves */
-  amplitude?: number;
-  layers?: number;
-  /** grain */
-  density?: number;
-  /** beam */
-  angle?: number;
-  width?: number;
-}
-
-export type SlideBgEffectPresetName = 'calm' | 'subtle' | 'active' | 'dramatic';
-
-/** Preset parameter overrides per effect — universal speed/intensity + sensible per-effect tweaks. */
-export const BG_EFFECT_PRESETS: Record<
-  Exclude<SlideBgEffectType, 'none'>,
-  Record<SlideBgEffectPresetName, Partial<SlideBgEffect>>
-> = {
-  orbs: {
-    calm:     { speed: 0.5, intensity: 0.45, count: 2, size: 60, blur: 100 },
-    subtle:   { speed: 0.8, intensity: 0.55, count: 3, size: 50, blur: 90 },
-    active:   { speed: 1.2, intensity: 0.7,  count: 3, size: 55, blur: 70 },
-    dramatic: { speed: 1.6, intensity: 0.85, count: 4, size: 65, blur: 50 },
-  },
-  particles: {
-    calm:     { speed: 0.6, intensity: 0.5,  count: 18, direction: 'float' },
-    subtle:   { speed: 1.0, intensity: 0.6,  count: 30, direction: 'up' },
-    active:   { speed: 1.5, intensity: 0.75, count: 45, direction: 'up' },
-    dramatic: { speed: 2.0, intensity: 0.9,  count: 60, direction: 'up' },
-  },
-  mesh: {
-    calm:     { speed: 0.4, intensity: 0.4,  blur: 80, hueRotate: 30 },
-    subtle:   { speed: 0.7, intensity: 0.55, blur: 70, hueRotate: 60 },
-    active:   { speed: 1.2, intensity: 0.7,  blur: 60, hueRotate: 90 },
-    dramatic: { speed: 1.8, intensity: 0.85, blur: 50, hueRotate: 180 },
-  },
-  grid: {
-    calm:     { speed: 0.6, intensity: 0.3,  spacing: 60, dotSize: 1.5, pulseDepth: 0.3 },
-    subtle:   { speed: 1.0, intensity: 0.45, spacing: 50, dotSize: 2,   pulseDepth: 0.5 },
-    active:   { speed: 1.5, intensity: 0.6,  spacing: 40, dotSize: 2.5, pulseDepth: 0.7 },
-    dramatic: { speed: 2.2, intensity: 0.8,  spacing: 35, dotSize: 3,   pulseDepth: 0.9 },
-  },
-  waves: {
-    calm:     { speed: 0.6, intensity: 0.5,  amplitude: 20, layers: 1 },
-    subtle:   { speed: 1.0, intensity: 0.6,  amplitude: 30, layers: 2 },
-    active:   { speed: 1.5, intensity: 0.75, amplitude: 45, layers: 3 },
-    dramatic: { speed: 2.0, intensity: 0.9,  amplitude: 60, layers: 3 },
-  },
-  grain: {
-    calm:     { speed: 0.6, intensity: 0.2,  density: 0.4 },
-    subtle:   { speed: 1.0, intensity: 0.35, density: 0.6 },
-    active:   { speed: 1.5, intensity: 0.55, density: 0.8 },
-    dramatic: { speed: 2.0, intensity: 0.75, density: 1.0 },
-  },
-  beam: {
-    calm:     { speed: 0.5, intensity: 0.35, angle: 25, width: 150 },
-    subtle:   { speed: 0.9, intensity: 0.5,  angle: 30, width: 180 },
-    active:   { speed: 1.4, intensity: 0.7,  angle: 35, width: 220 },
-    dramatic: { speed: 2.0, intensity: 0.9,  angle: 45, width: 280 },
-  },
-};
-
 export interface SlideData {
   id: string;
   layout: SlideLayout;
@@ -148,8 +61,6 @@ export interface SlideData {
   assetCategory?: string;
   /** True if AI flagged this slide to need manual image pick */
   needsImage?: boolean;
-  /** Animated background effect — in-app + presentation only, not exported to PPTX */
-  bgEffect?: SlideBgEffect;
 }
 
 export const DEFAULT_SLIDES: SlideData[] = [

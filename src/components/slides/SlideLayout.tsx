@@ -1,7 +1,5 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import type { SlideBgEffect } from './slideTypes';
-import { SlideBgEffectRenderer } from './SlideBgEffects';
 
 interface SlideLayoutProps {
   children: React.ReactNode;
@@ -10,7 +8,6 @@ interface SlideLayoutProps {
   accentColor?: string;
   bgColor?: string;
   animated?: boolean;
-  bgEffect?: SlideBgEffect;
 }
 
 function getAnimatedOverlayStyle(
@@ -48,10 +45,9 @@ function getAnimatedOverlayStyle(
   }
 }
 
-export function SlideLayout({ children, variant = 'default', className, accentColor, bgColor, animated, bgEffect }: SlideLayoutProps) {
+export function SlideLayout({ children, variant = 'default', className, accentColor, bgColor, animated }: SlideLayoutProps) {
   const baseStyles: React.CSSProperties = bgColor ? { backgroundColor: bgColor } : {};
   const overlayStyle = animated && !bgColor ? getAnimatedOverlayStyle(variant, accentColor) : null;
-  const showBgEffect = bgEffect && bgEffect.type !== 'none';
 
   return (
     <div
@@ -79,11 +75,6 @@ export function SlideLayout({ children, variant = 'default', className, accentCo
           className="absolute inset-0 pointer-events-none"
           style={{ ...overlayStyle, zIndex: 0, mixBlendMode: variant === 'bold' ? 'screen' : 'overlay' }}
         />
-      )}
-      {showBgEffect && (
-        <div aria-hidden className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
-          <SlideBgEffectRenderer effect={bgEffect!} accentColor={accentColor} />
-        </div>
       )}
       <div className="relative w-full h-full" style={{ zIndex: 1 }}>{children}</div>
       {variant !== 'minimal' && variant !== 'bold' && (

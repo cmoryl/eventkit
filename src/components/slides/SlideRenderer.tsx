@@ -59,7 +59,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated }: Slid
   const align = slide.textAlign || 'left';
 
   return (
-    <SlideLayout variant={slide.variant} accentColor={accentColor} bgColor={slide.bgColor} animated={animated} bgEffect={animated ? slide.bgEffect : undefined}>
+    <SlideLayout variant={slide.variant} accentColor={accentColor} bgColor={slide.bgColor} animated={animated}>
       {slide.layout === 'title' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
           <h1
