@@ -38,30 +38,103 @@ const LAYOUT_MAP: Record<SlideOutline["layout"], SlideLayout> = {
   closing: "section",
 };
 
+/** Default per-layout variation that looks great out of the box. */
+const VARIATION_MAP: Partial<Record<SlideOutline["layout"], string>> = {
+  title: "centered",
+  bullets: "bullets",
+  two_column: "equal",
+  stat: "centered",
+  quote: "centered",
+};
+
 const outlineToSlides = (outline: DeckOutline): SlideData[] =>
-  outline.slides.map((s) => {
+  outline.slides.map((s, idx) => {
+    const mappedLayout: SlideLayout = LAYOUT_MAP[s.layout] || "content";
     const base: SlideData = {
       id: uuidv4(),
-      layout: LAYOUT_MAP[s.layout] || "content",
-      title: s.title,
+      layout: mappedLayout,
+      title: s.title || "",
       subtitle: s.subtitle,
       notes: s.notes,
-      variant: s.layout === "title" || s.layout === "closing" ? "gradient" : "default",
+      variant:
+        s.layout === "title"
+          ? "gradient"
+          : s.layout === "closing"
+          ? "gradient"
+          : s.layout === "section"
+          ? "dark"
+          : s.layout === "stat"
+          ? "brand"
+          : s.layout === "quote"
+          ? "dark"
+          : "default",
+      variation: VARIATION_MAP[s.layout],
     };
-    if (s.bullets?.length) base.body = s.bullets.map((b) => `• ${b}`).join("\n");
-    if (s.quote) {
-      base.title = `"${s.quote.text}"`;
-      base.quoteAuthor = s.quote.attribution;
+
+    switch (s.layout) {
+      case "title": {
+        // Use first bullet as a tagline if no subtitle was provided
+        if (!base.subtitle && s.bullets?.length) base.subtitle = s.bullets[0];
+        break;
+      }
+      case "section":
+      case "closing": {
+        // Section/closing slides are subtitle-driven; promote first bullet if no subtitle
+        if (!base.subtitle && s.bullets?.length) base.subtitle = s.bullets[0];
+        // Default closing to "Thank You" feel if title is empty
+        if (s.layout === "closing" && !base.title) base.title = "Thank You";
+        break;
+      }
+      case "bullets": {
+        const bullets = s.bullets?.length ? s.bullets : ["Add your first point here"];
+        base.body = bullets.map((b) => `• ${b}`).join("\n");
+        break;
+      }
+      case "two_column": {
+        if (s.leftColumn || s.rightColumn) {
+          const left = s.leftColumn
+            ? [s.leftColumn.heading, ...(s.leftColumn.bullets || []).map((b) => `• ${b}`)]
+                .filter(Boolean)
+                .join("\n")
+            : "";
+          const right = s.rightColumn
+            ? [s.rightColumn.heading, ...(s.rightColumn.bullets || []).map((b) => `• ${b}`)]
+                .filter(Boolean)
+                .join("\n")
+            : "";
+          base.body = `${left}\n---\n${right}`;
+        } else if (s.bullets?.length) {
+          // Fallback: split bullets evenly into two columns
+          const mid = Math.ceil(s.bullets.length / 2);
+          const left = s.bullets.slice(0, mid).map((b) => `• ${b}`).join("\n");
+          const right = s.bullets.slice(mid).map((b) => `• ${b}`).join("\n");
+          base.body = `${left}\n---\n${right}`;
+        } else {
+          base.body = "• Left point one\n• Left point two\n---\n• Right point one\n• Right point two";
+        }
+        break;
+      }
+      case "stat": {
+        if (s.stat) {
+          base.title = s.stat.value;
+          base.subtitle = s.stat.label;
+        } else {
+          // Fallback when AI forgot the stat object
+          base.title = s.title || "100%";
+          base.subtitle = s.subtitle || "of the result that matters";
+        }
+        break;
+      }
+      case "quote": {
+        const text = s.quote?.text || s.title || "Insert a memorable quote here.";
+        base.title = text.startsWith('"') ? text : `"${text}"`;
+        base.quoteAuthor = s.quote?.attribution || s.subtitle;
+        base.subtitle = undefined;
+        break;
+      }
     }
-    if (s.stat) {
-      base.title = s.stat.value;
-      base.subtitle = s.stat.label;
-    }
-    if (s.layout === "two_column" && s.leftColumn && s.rightColumn) {
-      const left = [s.leftColumn.heading, ...s.leftColumn.bullets].join("\n");
-      const right = [s.rightColumn.heading, ...s.rightColumn.bullets].join("\n");
-      base.body = `${left}\n---\n${right}`;
-    }
+
+    void idx;
     return base;
   });
 
