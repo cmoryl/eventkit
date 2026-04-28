@@ -33,7 +33,8 @@ interface Props {
   outline: DeckOutline;
   downloadUrl: string;
   filename: string;
-  onUpdated?: (next: { outline: DeckOutline; downloadUrl: string; filename: string }) => void;
+  templateId?: string;
+  onUpdated?: (next: { outline: DeckOutline; downloadUrl: string; filename: string; templateId?: string }) => void;
 }
 
 const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
@@ -50,7 +51,7 @@ const LAYOUT_OPTIONS: SlideOutline["layout"][] = [
   "title", "section", "bullets", "two_column", "stat", "quote", "closing",
 ];
 
-export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: initialUrl, filename: initialFile, onUpdated }) => {
+export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: initialUrl, filename: initialFile, templateId, onUpdated }) => {
   const { toast } = useToast();
   const [outline, setOutline] = useState<DeckOutline>(initial);
   const [downloadUrl, setDownloadUrl] = useState(initialUrl);
@@ -115,7 +116,7 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
     setRebuilding(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
-        body: { topic: outline.title, slideCount: outline.slides.length, prebuiltOutline: outline },
+        body: { topic: outline.title, slideCount: outline.slides.length, prebuiltOutline: outline, templateId },
       });
       if (error) {
         toast({ title: "Rebuild failed", description: error.message, variant: "destructive" });
@@ -124,7 +125,7 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
       setDownloadUrl(data.downloadUrl);
       setFilename(data.filename);
       setDirty(false);
-      onUpdated?.({ outline, downloadUrl: data.downloadUrl, filename: data.filename });
+      onUpdated?.({ outline, downloadUrl: data.downloadUrl, filename: data.filename, templateId: data.templateId || templateId });
       toast({ title: "Updated .pptx ready", description: "Your edits are baked into a fresh download." });
     } catch (e) {
       toast({ title: "Rebuild failed", description: String(e), variant: "destructive" });
