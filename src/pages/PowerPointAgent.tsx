@@ -1,14 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, FileText, Library, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useActiveBrand } from "@/hooks/useActiveBrand";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { BrandHubImportModal } from "@/components/brand/BrandHubImportModal";
 
 interface DeckResult {
   downloadUrl: string;
