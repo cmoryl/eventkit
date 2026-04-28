@@ -182,6 +182,10 @@ export interface SlideData {
   bgEffect?: SlideBgEffect;
   /** Visual variation of the active layout — see LAYOUT_VARIATIONS for valid values per layout */
   variation?: string;
+  /** Depth layers for parallax slides (back→front order). */
+  parallaxLayers?: ParallaxLayer[];
+  /** Parallax camera intensity multiplier (0 = static, 1 = default, 2 = dramatic). */
+  parallaxIntensity?: number;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
