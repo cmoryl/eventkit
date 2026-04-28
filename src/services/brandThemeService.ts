@@ -124,17 +124,22 @@ export const applyBrandTheme = (colors: BrandThemeColors, notify = true): void =
   // Apply secondary color (or derive from primary)
   if (colors.secondary_color) {
     const secondaryHSL = hexToHSL(colors.secondary_color);
-    // For secondary, we adjust for a subtler background use
     const parts = secondaryHSL.split(' ');
     const h = parts[0];
-    // Reduce saturation and increase lightness for background use
-    const adjustedSecondary = `${h} 14% 96%`;
+    // Detect active theme so we don't force a near-white background in dark mode
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const adjustedSecondary = isDarkMode
+      ? `${h} 12% 14%`   // dark, low-sat surface for dark theme
+      : `${h} 14% 96%`;  // light surface for light theme
+    const secondaryForeground = isDarkMode ? '210 40% 95%' : '220 20% 20%';
     root.style.setProperty('--secondary', adjustedSecondary);
+    root.style.setProperty('--secondary-foreground', secondaryForeground);
     root.style.setProperty('--sidebar-accent', adjustedSecondary);
+    root.style.setProperty('--sidebar-accent-foreground', secondaryForeground);
     
-    console.log('Applied secondary color:', colors.secondary_color, '→', adjustedSecondary);
+    console.log('Applied secondary color:', colors.secondary_color, '→', adjustedSecondary, '(dark:', isDarkMode, ')');
   }
-  
+
   // Apply accent color
   if (colors.accent_color) {
     const accentHSL = hexToHSL(colors.accent_color);
