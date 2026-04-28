@@ -248,6 +248,7 @@ export const AssetBriefModal: React.FC<AssetBriefModalProps> = ({
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [loadingFonts, setLoadingFonts] = useState<Set<string>>(new Set());
+  const [brandHubContext, setBrandHubContext] = useState<BrandHubContextSelection | null>(null);
 
   // Preload all font pairing fonts when typography section is expanded
   useEffect(() => {
