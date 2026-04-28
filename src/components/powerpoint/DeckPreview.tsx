@@ -80,6 +80,7 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
   const [editingMeta, setEditingMeta] = useState(false);
   const [rebuilding, setRebuilding] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
 
   const active = outline.slides[activeIdx];
 
