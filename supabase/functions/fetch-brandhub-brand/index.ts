@@ -90,204 +90,7 @@ serve(async (req) => {
       });
     }
 
-    const brandData = data.brand || {};
-
-    console.log("Successfully fetched brand from BrandHub:", brandData.name);
-
-    // ── Map BrandHub's rich data into a normalized structure ──
-    // BrandHub returns: colors, fonts, logos, brandIcons, patterns, gradients,
-    // photography (approved/rejected), constraints, socialMedia, values,
-    // services, sponsorLogos, heroSettings, industry, tagline, voice, mission
-
-    const colors = Array.isArray(brandData.colors) ? brandData.colors : [];
-    const fonts = Array.isArray(brandData.fonts) ? brandData.fonts : [];
-    const logos = brandData.logos || {};
-    const brandIcons = Array.isArray(brandData.brandIcons) ? brandData.brandIcons : [];
-    const patterns = Array.isArray(brandData.patterns) ? brandData.patterns : [];
-    const gradients = Array.isArray(brandData.gradients) ? brandData.gradients : [];
-    const photography = brandData.photography || {};
-    const constraints = brandData.constraints || {};
-    const socialMedia = brandData.socialMedia || {};
-    const values = Array.isArray(brandData.values) ? brandData.values : [];
-    const services = Array.isArray(brandData.services) ? brandData.services : [];
-    const sponsorLogos = brandData.sponsorLogos || {};
-    const heroSettings = brandData.heroSettings || {};
-    const allImagery = brandData.allImagery || {};
-
-    // Map colors to our format
-    const colorPalette = colors.map((c: Record<string, unknown>) => ({
-      hex: c.hex,
-      name: c.name || '',
-      role: c.role || '',
-      usage: c.usage || '',
-    }));
-
-    // Map fonts
-    const headingFont = fonts.find((f: Record<string, unknown>) =>
-      f.role === 'heading' || f.role === 'display'
-    );
-    const bodyFont = fonts.find((f: Record<string, unknown>) =>
-      f.role === 'body' || f.role === 'paragraph'
-    );
-    const accentFont = fonts.find((f: Record<string, unknown>) =>
-      f.role === 'accent' || f.role === 'caption'
-    );
-
-    // Photography guidelines — enrich with AI analysis
-    const rawApproved = Array.isArray(photography.approved)
-      ? photography.approved.map((p: Record<string, unknown>) => ({
-          url: String(p.url || ''),
-          description: String(p.description || ''),
-        }))
-      : [];
-    const rawRejected = Array.isArray(photography.rejected)
-      ? photography.rejected.map((p: Record<string, unknown>) => ({
-          url: String(p.url || ''),
-          description: String(p.description || ''),
-        }))
-      : [];
-
-    // Deep-analyze approved photography with AI vision
-    const photographyApproved = await analyzePhotographyBatch(
-      rawApproved, brandData.name, 'approved'
-    );
-    const photographyRejected = await analyzePhotographyBatch(
-      rawRejected, brandData.name, 'rejected'
-    );
-
-    // Brand misuse / constraints
-    const brandMisuse = Array.isArray(constraints.brandMisuse)
-      ? constraints.brandMisuse.map((m: Record<string, unknown>) => ({
-          description: m.description,
-          exampleUrl: m.exampleUrl,
-        }))
-      : [];
-
-    // Social handles
-    const socialHandles: Record<string, string> = {};
-    if (Array.isArray(socialMedia.handles)) {
-      socialMedia.handles.forEach((h: Record<string, unknown>) => {
-        if (h.platform && h.handle) {
-          socialHandles[String(h.platform)] = String(h.handle);
-        }
-      });
-    }
-    const hashtags = Array.isArray(socialMedia.hashtags) ? socialMedia.hashtags : [];
-
-    // Sponsor logos
-    const sponsorsList = Array.isArray(sponsorLogos.all) ? sponsorLogos.all : [];
-
-    // All imagery organized by type
-    const imageryByType: Record<string, string[]> = {
-      logos: [],
-      brandIcons: [],
-      patterns: [],
-      photography: [],
-      heroImages: [],
-      sponsors: [],
-    };
-    if (Array.isArray(allImagery.all)) {
-      allImagery.all.forEach((img: { url: string; type: string }) => {
-        const url = img.url;
-        if (!url) return;
-        if (img.type === 'logo') imageryByType.logos.push(url);
-        else if (img.type === 'brand-icon') imageryByType.brandIcons.push(url);
-        else if (img.type === 'pattern') imageryByType.patterns.push(url);
-        else if (img.type === 'photography-approved') imageryByType.photography.push(url);
-        else if (img.type === 'hero' || img.type === 'hero-logo') imageryByType.heroImages.push(url);
-        else if (img.type === 'sponsor-logo') imageryByType.sponsors.push(url);
-      });
-    }
-
-    // Extract event details from BrandHub data
-    const eventData = extractEventDetails(brandData);
-
-    // Build the comprehensive normalized brand object
-    const normalizedBrand = {
-      // Identity
-      id: brandData.id,
-      name: brandData.name,
-      slug: brandData.slug,
-      tagline: brandData.tagline,
-      mission: brandData.mission,
-      industry: brandData.industry,
-      voice: Array.isArray(brandData.voice) ? brandData.voice : [],
-
-      // Colors
-      primary_color: colorPalette[0]?.hex,
-      secondary_color: colorPalette[1]?.hex,
-      accent_color: colorPalette[2]?.hex,
-      colors: colorPalette,
-
-      // Fonts
-      fonts,
-      heading_font: headingFont?.family || headingFont?.fontFamily,
-      body_font: bodyFont?.family || bodyFont?.fontFamily,
-      accent_font: accentFont?.family || accentFont?.fontFamily,
-
-      // Logos
-      logo_url: logos.primary || brandData.logo_url,
-      logo_monochrome_url: logos.monochrome,
-      logo_reversed_url: logos.reversed,
-      logo_icon_url: logos.icon,
-      logo_wordmark_url: logos.wordmark,
-      all_logos: Array.isArray(logos.all) ? logos.all : [],
-
-      // Visual assets
-      brandIcons,
-      patterns,
-      gradients,
-
-      // Photography guidelines
-      photography_approved: photographyApproved,
-      photography_rejected: photographyRejected,
-      photography_dos: photographyApproved.map((p: { description: string }) => p.description).filter(Boolean),
-      photography_donts: photographyRejected.map((p: { description: string }) => p.description).filter(Boolean),
-
-      // Brand constraints & misuse
-      brand_misuse: brandMisuse,
-      restricted_elements: brandMisuse.map((m: { description: string }) => m.description).filter(Boolean),
-
-      // Social
-      social_handles: socialHandles,
-      hashtags,
-
-      // Values & services
-      values: values.map((v: Record<string, unknown>) => v.text).filter(Boolean),
-      services: services.map((s: Record<string, unknown>) => ({ name: s.name, description: s.description })),
-
-      // Sponsors
-      sponsors: sponsorsList,
-
-      // Hero
-      heroSettings,
-
-      // All imagery organized
-      allImagery: {
-        all: Array.isArray(allImagery.all) ? allImagery.all.map((i: { url: string }) => i.url) : [],
-        byType: imageryByType,
-        totalCount: allImagery.totalCount || 0,
-      },
-
-      // Original guide_data for anything we missed
-      guide_data: brandData.guide_data || {},
-    };
-
-    const sectionCount = Object.keys(normalizedBrand).filter(
-      k => normalizedBrand[k as keyof typeof normalizedBrand] !== undefined &&
-           normalizedBrand[k as keyof typeof normalizedBrand] !== null
-    ).length;
-
-    console.log(`Normalized ${sectionCount} brand sections from BrandHub`);
-
-    return json(200, {
-      success: true,
-      brand: normalizedBrand,
-      event: eventData,
-      hasEventData: !!(eventData.name || eventData.date || eventData.venue),
-      sectionsImported: sectionCount,
-      resolvedToken: resolvedToken,
-    });
+    return await normalizeSharedBrandResponse(data, resolvedToken);
   } catch (error) {
     console.error("Error fetching BrandHub brand:", error);
     return json(200, {
@@ -296,6 +99,207 @@ serve(async (req) => {
     });
   }
 });
+
+async function normalizeSharedBrandResponse(data: Record<string, unknown>, resolvedToken: string) {
+  const brandData = (data.brand || {}) as Record<string, unknown>;
+
+  console.log("Successfully fetched brand from BrandHub:", brandData.name);
+
+  // ── Map BrandHub's rich data into a normalized structure ──
+  // BrandHub returns: colors, fonts, logos, brandIcons, patterns, gradients,
+  // photography (approved/rejected), constraints, socialMedia, values,
+  // services, sponsorLogos, heroSettings, industry, tagline, voice, mission
+
+  const colors = Array.isArray(brandData.colors) ? brandData.colors : [];
+  const fonts = Array.isArray(brandData.fonts) ? brandData.fonts : [];
+  const logos = brandData.logos || {};
+  const brandIcons = Array.isArray(brandData.brandIcons) ? brandData.brandIcons : [];
+  const patterns = Array.isArray(brandData.patterns) ? brandData.patterns : [];
+  const gradients = Array.isArray(brandData.gradients) ? brandData.gradients : [];
+  const photography = brandData.photography || {};
+  const constraints = brandData.constraints || {};
+  const socialMedia = brandData.socialMedia || {};
+  const values = Array.isArray(brandData.values) ? brandData.values : [];
+  const services = Array.isArray(brandData.services) ? brandData.services : [];
+  const sponsorLogos = brandData.sponsorLogos || {};
+  const heroSettings = brandData.heroSettings || {};
+  const allImagery = brandData.allImagery || {};
+
+  // Map colors to our format
+  const colorPalette = colors.map((c: Record<string, unknown>) => ({
+    hex: c.hex,
+    name: c.name || '',
+    role: c.role || '',
+    usage: c.usage || '',
+  }));
+
+  // Map fonts
+  const headingFont = fonts.find((f: Record<string, unknown>) =>
+    f.role === 'heading' || f.role === 'display'
+  );
+  const bodyFont = fonts.find((f: Record<string, unknown>) =>
+    f.role === 'body' || f.role === 'paragraph'
+  );
+  const accentFont = fonts.find((f: Record<string, unknown>) =>
+    f.role === 'accent' || f.role === 'caption'
+  );
+
+  // Photography guidelines — enrich with AI analysis
+  const rawApproved = Array.isArray(photography.approved)
+    ? photography.approved.map((p: Record<string, unknown>) => ({
+      url: String(p.url || ''),
+      description: String(p.description || ''),
+    }))
+    : [];
+  const rawRejected = Array.isArray(photography.rejected)
+    ? photography.rejected.map((p: Record<string, unknown>) => ({
+      url: String(p.url || ''),
+      description: String(p.description || ''),
+    }))
+    : [];
+
+  // Deep-analyze approved photography with AI vision
+  const photographyApproved = await analyzePhotographyBatch(
+    rawApproved, brandData.name, 'approved'
+  );
+  const photographyRejected = await analyzePhotographyBatch(
+    rawRejected, brandData.name, 'rejected'
+  );
+
+  // Brand misuse / constraints
+  const brandMisuse = Array.isArray(constraints.brandMisuse)
+    ? constraints.brandMisuse.map((m: Record<string, unknown>) => ({
+      description: m.description,
+      exampleUrl: m.exampleUrl,
+    }))
+    : [];
+
+  // Social handles
+  const socialHandles: Record<string, string> = {};
+  if (Array.isArray(socialMedia.handles)) {
+    socialMedia.handles.forEach((h: Record<string, unknown>) => {
+    if (h.platform && h.handle) {
+      socialHandles[String(h.platform)] = String(h.handle);
+    }
+    });
+  }
+  const hashtags = Array.isArray(socialMedia.hashtags) ? socialMedia.hashtags : [];
+
+  // Sponsor logos
+  const sponsorsList = Array.isArray(sponsorLogos.all) ? sponsorLogos.all : [];
+
+  // All imagery organized by type
+  const imageryByType: Record<string, string[]> = {
+    logos: [],
+    brandIcons: [],
+    patterns: [],
+    photography: [],
+    heroImages: [],
+    sponsors: [],
+  };
+  if (Array.isArray(allImagery.all)) {
+    allImagery.all.forEach((img: { url: string; type: string }) => {
+    const url = img.url;
+    if (!url) return;
+    if (img.type === 'logo') imageryByType.logos.push(url);
+    else if (img.type === 'brand-icon') imageryByType.brandIcons.push(url);
+    else if (img.type === 'pattern') imageryByType.patterns.push(url);
+    else if (img.type === 'photography-approved') imageryByType.photography.push(url);
+    else if (img.type === 'hero' || img.type === 'hero-logo') imageryByType.heroImages.push(url);
+    else if (img.type === 'sponsor-logo') imageryByType.sponsors.push(url);
+    });
+  }
+
+  // Extract event details from BrandHub data
+  const eventData = extractEventDetails(brandData);
+
+  // Build the comprehensive normalized brand object
+  const normalizedBrand = {
+    // Identity
+    id: brandData.id,
+    name: brandData.name,
+    slug: brandData.slug,
+    tagline: brandData.tagline,
+    mission: brandData.mission,
+    industry: brandData.industry,
+    voice: Array.isArray(brandData.voice) ? brandData.voice : [],
+
+    // Colors
+    primary_color: colorPalette[0]?.hex,
+    secondary_color: colorPalette[1]?.hex,
+    accent_color: colorPalette[2]?.hex,
+    colors: colorPalette,
+
+    // Fonts
+    fonts,
+    heading_font: headingFont?.family || headingFont?.fontFamily,
+    body_font: bodyFont?.family || bodyFont?.fontFamily,
+    accent_font: accentFont?.family || accentFont?.fontFamily,
+
+    // Logos
+    logo_url: logos.primary || brandData.logo_url,
+    logo_monochrome_url: logos.monochrome,
+    logo_reversed_url: logos.reversed,
+    logo_icon_url: logos.icon,
+    logo_wordmark_url: logos.wordmark,
+    all_logos: Array.isArray(logos.all) ? logos.all : [],
+
+    // Visual assets
+    brandIcons,
+    patterns,
+    gradients,
+
+    // Photography guidelines
+    photography_approved: photographyApproved,
+    photography_rejected: photographyRejected,
+    photography_dos: photographyApproved.map((p: { description: string }) => p.description).filter(Boolean),
+    photography_donts: photographyRejected.map((p: { description: string }) => p.description).filter(Boolean),
+
+    // Brand constraints & misuse
+    brand_misuse: brandMisuse,
+    restricted_elements: brandMisuse.map((m: { description: string }) => m.description).filter(Boolean),
+
+    // Social
+    social_handles: socialHandles,
+    hashtags,
+
+    // Values & services
+    values: values.map((v: Record<string, unknown>) => v.text).filter(Boolean),
+    services: services.map((s: Record<string, unknown>) => ({ name: s.name, description: s.description })),
+
+    // Sponsors
+    sponsors: sponsorsList,
+
+    // Hero
+    heroSettings,
+
+    // All imagery organized
+    allImagery: {
+    all: Array.isArray(allImagery.all) ? allImagery.all.map((i: { url: string }) => i.url) : [],
+    byType: imageryByType,
+    totalCount: allImagery.totalCount || 0,
+    },
+
+    // Original guide_data for anything we missed
+    guide_data: brandData.guide_data || {},
+  };
+
+  const sectionCount = Object.keys(normalizedBrand).filter(
+    k => normalizedBrand[k as keyof typeof normalizedBrand] !== undefined &&
+       normalizedBrand[k as keyof typeof normalizedBrand] !== null
+  ).length;
+
+  console.log(`Normalized ${sectionCount} brand sections from BrandHub`);
+
+  return json(200, {
+    success: true,
+    brand: normalizedBrand,
+    event: eventData,
+    hasEventData: !!(eventData.name || eventData.date || eventData.venue),
+    sectionsImported: sectionCount,
+    resolvedToken: resolvedToken,
+  });
+}
 
 function extractEventDetails(
   brandData: Record<string, unknown>
