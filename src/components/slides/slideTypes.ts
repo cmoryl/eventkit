@@ -3,7 +3,37 @@ export type SlideLayout =
   | 'title' | 'content' | 'image-left' | 'image-right' | 'blank'
   | 'section' | 'two-column' | 'quote' | 'stats' | 'full-image'
   | 'comparison' | 'timeline' | 'process' | 'chart'
-  | 'agenda' | 'big-number';
+  | 'agenda' | 'big-number' | 'parallax';
+
+/**
+ * One depth layer in a parallax slide.
+ * `depth` controls 3D Z-offset and parallax intensity:
+ *   -100 = far background (slowest, smallest motion, deepest blur)
+ *      0 = mid plane (no depth offset, sharp focus)
+ *   +100 = far foreground (largest motion, slight blur from camera DOF)
+ */
+export interface ParallaxLayer {
+  id: string;
+  kind: 'image' | 'text' | 'shape';
+  /** -100…+100 */
+  depth: number;
+  /** image src OR text content OR shape color */
+  content: string;
+  /** Position % of slide width/height (0-100). Default 50/50 = centered. */
+  x?: number;
+  y?: number;
+  /** Scale relative to natural size (1 = 100%). */
+  scale?: number;
+  /** Text-only styling */
+  fontSize?: number;
+  fontWeight?: number;
+  color?: string;
+  fontFamily?: string;
+  /** Image-only — apply blur in px when at extreme depth */
+  blur?: number;
+  /** Optional opacity 0-1 */
+  opacity?: number;
+}
 
 export interface ChartData {
   type: 'bar' | 'line' | 'pie' | 'doughnut';
