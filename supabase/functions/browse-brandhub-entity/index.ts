@@ -50,7 +50,8 @@ async function brandHubFetch(path: string): Promise<unknown[]> {
     },
   });
   if (!res.ok) {
-    console.warn(`BrandHub REST ${path} failed:`, res.status);
+    const body = await res.text().catch(() => "");
+    console.warn(`BrandHub REST ${path} failed: ${res.status} ${body}`);
     return [];
   }
   const rows = await res.json();
