@@ -534,11 +534,27 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 2) Build .pptx
+    // 2) If planOnly, return outline now — client will edit then re-call with prebuiltOutline
+    if (body.planOnly) {
+      return new Response(JSON.stringify({
+        success: true,
+        planOnly: true,
+        templateId: body.templateId,
+        title: outline.title,
+        subtitle: outline.subtitle,
+        slideCount: outline.slides.length,
+        palette: outline.palette,
+        fonts: outline.fonts,
+        slides: outline.slides.map((s) => ({ layout: s.layout, title: s.title })),
+        outline,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // 3) Build .pptx
     const templateImages = await loadTemplateImages(body.templateId);
     const pptxBuffer = await buildPptx(outline, templateImages);
 
-    // 3) Upload to storage
+    // 4) Upload to storage
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
     const safeName = outline.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 40) || "deck";
     const filename = `${crypto.randomUUID()}/${safeName}.pptx`;
@@ -563,7 +579,7 @@ Deno.serve(async (req: Request) => {
       palette: outline.palette,
       fonts: outline.fonts,
       slides: outline.slides.map((s) => ({ layout: s.layout, title: s.title })),
-      outline, // full editable outline for client-side preview/edit
+      outline,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
