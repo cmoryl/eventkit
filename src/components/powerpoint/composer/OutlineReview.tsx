@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { ArrowLeft, Sparkles, Plus, Trash2, GripVertical, Loader2, Check } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { ArrowLeft, Sparkles, Plus, Trash2, GripVertical, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import type { DeckOutline, SlideOutline } from "../DeckPreview";
+import { SlideDetailsPanel } from "./SlideDetailsPanel";
 
 interface Props {
   outline: DeckOutline;
@@ -24,13 +25,27 @@ const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
   closing: "Closing",
 };
 
-/**
- * Gamma-style outline review: edit titles, bullets, reorder, add/remove
- * BEFORE the .pptx is built. Massive trust-builder — the deck never gets
- * built around content the user disagrees with.
- */
 export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building }) => {
-  const [collapsedIdx, setCollapsedIdx] = useState<number | null>(null);
+  // Stable per-slide ids so storage paths stay consistent across edits within this session
+  const slideIds = useMemo(() => outline.slides.map(() => crypto.randomUUID()), [outline.slides.length]);
+  const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
+
+  const toggleDetails = (i: number) => {
+    setExpandedDetails((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  };
+
+  const detailsCount = (s: SlideOutline) => {
+    let n = 0;
+    if (s.designNotes?.trim()) n++;
+    if (s.visualIntent && s.visualIntent !== "auto") n++;
+    if (s.chart?.data?.length) n++;
+    if (s.references?.length) n += s.references.length;
+    return n;
+  };
 
   const updateSlide = (idx: number, patch: Partial<SlideOutline>) => {
     onChange({ ...outline, slides: outline.slides.map((s, i) => (i === idx ? { ...s, ...patch } : s)) });
@@ -85,9 +100,8 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
       {/* Slide list */}
       <div className="space-y-2">
         {outline.slides.map((s, i) => {
-          const collapsed = collapsedIdx === i ? false : collapsedIdx !== null && collapsedIdx !== i ? true : false;
-          // simpler: always expanded; collapse on click of the chevron later
-          void collapsed;
+          const open = expandedDetails.has(i);
+          const count = detailsCount(s);
           return (
             <Card
               key={i}
@@ -116,6 +130,22 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                       placeholder="Slide title"
                       className="font-semibold h-8 flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
+                    <button
+                      type="button"
+                      onClick={() => toggleDetails(i)}
+                      className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] border transition-colors ${
+                        open
+                          ? "bg-cyan-300/20 border-cyan-300/60 text-white"
+                          : count > 0
+                            ? "bg-white/10 border-white/20 text-white/90"
+                            : "bg-white/5 border-white/10 text-white/60 hover:text-white"
+                      }`}
+                      title={open ? "Hide details" : "Add notes, visual intent, chart, images"}
+                    >
+                      Details
+                      {count > 0 && <span className="rounded-full bg-cyan-300/30 px-1.5 text-[10px] leading-4">{count}</span>}
+                      {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </button>
                   </div>
                   {(s.layout === "bullets" || s.layout === "section" || s.layout === "title" || s.layout === "closing") && (
                     <Textarea
@@ -128,6 +158,13 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                       placeholder={s.layout === "bullets" ? "One bullet per line" : "Subtitle"}
                       rows={s.layout === "bullets" ? 3 : 1}
                       className="text-sm bg-white/5 border-white/10 text-white placeholder:text-white/40"
+                    />
+                  )}
+                  {open && (
+                    <SlideDetailsPanel
+                      slide={s}
+                      slideId={slideIds[i]}
+                      onChange={(patch) => updateSlide(i, patch)}
                     />
                   )}
                 </div>
@@ -144,7 +181,7 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
               <div className="flex justify-center -mb-1">
                 <button
                   onClick={() => addSlide(i)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] flex items-center gap-1 text-muted-foreground hover:text-primary mt-2"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] flex items-center gap-1 text-white/55 hover:text-cyan-300 mt-2"
                 >
                   <Plus className="h-3 w-3" /> Add slide here
                 </button>

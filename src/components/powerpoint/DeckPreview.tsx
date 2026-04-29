@@ -14,6 +14,23 @@ import transperfectSectionBg from "@/assets/templates/transperfect-section-bg.jp
 import transperfectLightPattern from "@/assets/templates/transperfect-light-pattern.jpg";
 import transperfectCard from "@/assets/templates/transperfect-card.jpg";
 
+export type VisualIntent = "auto" | "photo" | "infographic" | "chart" | "icon-grid" | "screenshot" | "none";
+export type ChartType = "bar" | "line" | "pie" | "donut" | "area" | "scatter";
+
+export interface SlideChartSpec {
+  type: ChartType;
+  title?: string;
+  /** Free-form data; either CSV-like rows or {label, value} pairs the AI will interpret. */
+  data: Array<{ label: string; value: number }>;
+  notes?: string;
+}
+
+export interface SlideReferenceImage {
+  url: string;            // public storage URL
+  caption?: string;       // user-provided context for the AI
+  treatment?: "style-match" | "as-is" | "inspiration"; // default style-match
+}
+
 export interface SlideOutline {
   layout: "title" | "section" | "bullets" | "two_column" | "stat" | "quote" | "closing";
   title: string;
@@ -24,6 +41,14 @@ export interface SlideOutline {
   stat?: { value: string; label: string };
   quote?: { text: string; attribution?: string };
   notes?: string;
+  /** Per-slide AI guidance — what this slide should communicate, mood, must-haves. */
+  designNotes?: string;
+  /** Hint to the AI about the dominant visual treatment to use. */
+  visualIntent?: VisualIntent;
+  /** Optional inline chart/data the AI should render. */
+  chart?: SlideChartSpec;
+  /** User-uploaded reference images for this slide. */
+  references?: SlideReferenceImage[];
 }
 
 export interface DeckOutline {
