@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { DeckOutline, SlideOutline } from "../DeckPreview";
 import { SlideDetailsPanel } from "./SlideDetailsPanel";
+import { ContentIntegrityReport } from "./ContentIntegrityReport";
 
 interface Props {
   outline: DeckOutline;
@@ -15,6 +16,8 @@ interface Props {
   onBack: () => void;
   onConfirm: () => void;
   building: boolean;
+  /** Original source text the user pasted/typed — used to flag missing content. */
+  sourceContent?: string;
 }
 
 const LAYOUT_LABELS: Partial<Record<SlideOutline["layout"], string>> = {
@@ -36,7 +39,7 @@ const LAYOUT_LABELS: Partial<Record<SlideOutline["layout"], string>> = {
   process: "Process",
 };
 
-export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building }) => {
+export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building, sourceContent }) => {
   const { toast } = useToast();
   // Stable per-slide ids so storage paths stay consistent across edits within this session
   const slideIds = useMemo(() => outline.slides.map(() => crypto.randomUUID()), [outline.slides.length]);
@@ -172,6 +175,9 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
           </Button>
         </div>
       </div>
+
+      {/* Content integrity — flags any source bullets/stats missing from the outline */}
+      {sourceContent && <ContentIntegrityReport source={sourceContent} outline={outline} />}
 
       {/* Slide list */}
       <div className="space-y-2">

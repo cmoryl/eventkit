@@ -218,6 +218,7 @@ export const AIComposer: React.FC<Props> = ({ onSlidesReady, brandPayload }) => 
           onBack={() => setPendingOutline(null)}
           onConfirm={confirmOutline}
           building={busy}
+          sourceContent={mode === "paste" ? pasteText : topic}
         />
       </Card>
     );
