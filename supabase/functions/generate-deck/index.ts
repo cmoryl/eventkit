@@ -668,7 +668,9 @@ Deno.serve(async (req: Request) => {
 
     // 3) Build .pptx
     const templateImages = await loadTemplateImages(body.templateId);
-    const pptxBuffer = await buildPptx(outline, templateImages);
+    // Generate per-slide imagery in parallel (user uploads + AI photos/infographics)
+    const slideImages = await resolveSlideImages(outline, LOVABLE_API_KEY);
+    const pptxBuffer = await buildPptx(outline, templateImages, slideImages);
 
     // 4) Upload to storage
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
