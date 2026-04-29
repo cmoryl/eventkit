@@ -977,7 +977,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { step: "02", title: "Design", body: "Explore solutions" },
           { step: "03", title: "Build", body: "Ship fast, learn faster" },
           { step: "04", title: "Scale", body: "Grow with confidence" },
-        ]).slice(0, 5);
+        ]).slice(0, 6); // up to 6 process steps
 
         const n = steps.length;
         const gap = 0.2;
@@ -1032,7 +1032,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { name: "Sam Patel", role: "Head of Eng", initials: "SP", focus: "Platform" },
           { name: "Jordan Kim", role: "PM", initials: "JK", focus: "Roadmap" },
           { name: "Taylor Reed", role: "Strategy", initials: "TR", focus: "Insights" },
-        ]).slice(0, 6);
+        ]).slice(0, 8); // up to 8 team members (4×2)
 
         const cols = members.length <= 3 ? members.length : Math.min(4, members.length);
         const rows = Math.ceil(members.length / cols);
