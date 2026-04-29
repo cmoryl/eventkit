@@ -1370,7 +1370,17 @@ export const SlideMock: React.FC<{
                               className="mt-1 h-1 w-1 rounded-full shrink-0"
                               style={{ background: t.palette.accent }}
                             />
-                            <span>{d}</span>
+                            <Editable
+                              ariaLabel={`Timeline ${i + 1} deliverable ${di + 1}`}
+                              editing={editing}
+                              value={d}
+                              onChange={(v) => update((c) => ({
+                                ...c,
+                                timeline: c.timeline.map((item, idx) => idx === i
+                                  ? { ...item, deliverables: (item.deliverables || []).map((dd, ddi) => (ddi === di ? v : dd)) }
+                                  : item),
+                              }))}
+                            />
                           </li>
                         ))}
                       </ul>
@@ -1380,7 +1390,13 @@ export const SlideMock: React.FC<{
                         className="mt-2 pt-2 border-t text-[9px] font-semibold uppercase tracking-wider"
                         style={{ color: muted, borderColor: subtleBorder }}
                       >
-                        {tl.owner}
+                        <Editable
+                          ariaLabel={`Timeline ${i + 1} owner`}
+                          editing={editing}
+                          value={tl.owner}
+                          onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, owner: v } : item)) }))}
+                          className="inline-block"
+                        />
                       </div>
                     )}
                   </div>
@@ -1400,12 +1416,25 @@ export const SlideMock: React.FC<{
               Comparison
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">{content.compare.heading}</h3>
+          <Editable
+            as="div"
+            ariaLabel="Comparison heading"
+            editing={editing}
+            value={content.compare.heading}
+            onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, heading: v } }))}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
             <div className="rounded-lg p-5 flex flex-col relative overflow-hidden" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
               <div className="flex items-center justify-between">
                 <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                  {content.compare.before.title}
+                  <Editable
+                    ariaLabel="Before comparison title"
+                    editing={editing}
+                    value={content.compare.before.title}
+                    onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, before: { ...c.compare.before, title: v } } }))}
+                  />
                 </div>
                 <RingGauge percent={32} accent={t.palette.secondary} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
               </div>
@@ -1416,7 +1445,13 @@ export const SlideMock: React.FC<{
                       className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
                       style={{ background: t.palette.secondary, opacity: 0.6 }}
                     />
-                    <span style={{ color: muted }}>{p}</span>
+                    <Editable
+                      ariaLabel={`Before comparison point ${i + 1}`}
+                      editing={editing}
+                      value={p}
+                      onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, before: { ...c.compare.before, points: c.compare.before.points.map((point, idx) => (idx === i ? v : point)) } } }))}
+                      style={{ color: muted }}
+                    />
                   </li>
                 ))}
               </ul>
