@@ -1186,6 +1186,10 @@ export function renderLayoutVariation(ctx: VariationContext): React.ReactNode | 
     case 'quote:punch':        return <QuotePunch {...ctx} />;
     case 'title:split':        return <TitleSplit {...ctx} />;
     case 'title:asymmetric':   return <TitleAsymmetric {...ctx} />;
+    case 'title:hero-image':    return <TitleHeroImage {...ctx} />;
+    case 'title:image-overlay': return <TitleImageOverlay {...ctx} />;
+    case 'title:split-image':   return <TitleSplitImage {...ctx} />;
+    case 'title:editorial':     return <TitleEditorial {...ctx} />;
     case 'content:columns':    return <ContentColumns {...ctx} />;
     case 'content:icons':      return <ContentIcons {...ctx} />;
     case 'content:cards':      return <ContentCards {...ctx} />;
