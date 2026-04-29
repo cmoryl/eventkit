@@ -27,6 +27,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { DeckTemplate } from "./TemplateGallery";
+import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
 
 /**
  * Per-template demo content. Keeps cards visually distinct & relevant —
@@ -569,6 +570,7 @@ export const TemplateDemoCard: React.FC<Props> = ({ template: t, selected, disab
   const muted = isLight ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.12)";
   const cardBg = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)";
+  const thumb = TEMPLATE_THUMBNAILS[t.id];
 
   return (
     <button
@@ -586,6 +588,23 @@ export const TemplateDemoCard: React.FC<Props> = ({ template: t, selected, disab
         className="aspect-[16/9] p-5 flex flex-col justify-between relative overflow-hidden"
         style={{ background: t.palette.bg, color: t.palette.text }}
       >
+        {thumb && (
+          <>
+            <img
+              src={thumb}
+              alt={`${t.name} cover`}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, ${t.palette.bg}F2 0%, ${t.palette.bg}B8 45%, ${t.palette.bg}55 100%)`,
+              }}
+            />
+          </>
+        )}
         <div
           className="absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-30 blur-2xl"
           style={{ background: t.palette.accent }}
