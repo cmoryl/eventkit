@@ -231,10 +231,11 @@ export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; lab
     { value: 'punch',       label: 'Oversized Punch' },
   ],
   chart: [
-    { value: 'plain',       label: 'Plain' },
-    { value: 'callout',     label: 'With Callout' },
-    { value: 'with-stat',   label: 'Chart + Stat' },
-    { value: 'takeaway',    label: 'With Takeaway' },
+    { value: 'plain',         label: 'Plain' },
+    { value: 'callout',       label: 'With Callout' },
+    { value: 'with-stat',     label: 'Chart + Stat' },
+    { value: 'takeaway',      label: 'With Takeaway' },
+    { value: 'growth-bars',   label: 'BrandHub Growth Bars' },
   ],
   comparison: [
     { value: 'vs',          label: 'VS Split' },
