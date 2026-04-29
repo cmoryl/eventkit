@@ -562,19 +562,25 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
             <div className="mt-[40px] w-[80px] h-[8px] rounded-full" style={{ backgroundColor: accentColor || '#6366f1' }} />
           </div>
           <div className="flex-1 flex flex-col justify-center gap-[24px]">
-            {(slide.body || '').split('\n').filter(Boolean).map((item, i) => (
-              <div key={i} className="flex items-center gap-[32px]">
-                <div
-                  className="rounded-full flex items-center justify-center font-bold text-white shrink-0"
-                  style={{ width: 64, height: 64, backgroundColor: accentColor || '#6366f1', fontFamily: headingFont, fontSize: 28 }}
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <span className="font-medium" style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}>
-                  {item}
-                </span>
-              </div>
-            ))}
+            {(() => {
+              const allLines = (slide.body || '').split('\n');
+              return allLines
+                .map((item, originalIdx) => ({ item, originalIdx }))
+                .filter(({ item }) => Boolean(item))
+                .map(({ item, originalIdx }, i) => (
+                  <div key={originalIdx} className="flex items-center gap-[32px]">
+                    <div
+                      className="rounded-full flex items-center justify-center font-bold text-white shrink-0"
+                      style={{ width: 64, height: 64, backgroundColor: accentColor || '#6366f1', fontFamily: headingFont, fontSize: 28 }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </div>
+                    <span data-slide-field={`agenda.${originalIdx}`} className="font-medium" style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}>
+                      {item}
+                    </span>
+                  </div>
+                ));
+            })()}
             {!(slide.body?.trim()) && (
               <p className="opacity-30 text-[32px]">Add agenda items in the editor</p>
             )}
