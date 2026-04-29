@@ -65,9 +65,15 @@ interface SlideEditorProps {
   brand: Brand | null;
   /** Pre-populate the editor with specific slides (e.g. from the template gallery landing page) */
   initialSlides?: SlideData[];
+  /**
+   * When true, render the editor inline as a full-viewport panel instead of a modal Dialog.
+   * Used by /agent/powerpoint so the editor takes over the page after generation rather
+   * than appearing in a windowed overlay.
+   */
+  inline?: boolean;
 }
 
-export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides }: SlideEditorProps) {
+export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline }: SlideEditorProps) {
   const [slides, setSlides] = useState<SlideData[]>(() =>
     initialSlides && initialSlides.length > 0 ? initialSlides : [...DEFAULT_SLIDES]
   );
@@ -440,14 +446,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     );
   }
 
-  return (
-    <>
-    <Dialog open={isOpen} onOpenChange={() => onClose()}>
-      <DialogContent
-        className="max-w-[100vw] w-[100vw] h-[100vh] p-0 overflow-hidden rounded-none border-none"
-        hideClose
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+  const editorBody = (
         <div className="flex flex-col h-full">
           {/* Toolbar */}
           <div className="flex items-center justify-between px-4 py-2 border-b bg-card shrink-0">
@@ -1382,8 +1381,27 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+  );
+
+  return (
+    <>
+    {inline ? (
+      isOpen ? (
+        <div className="fixed inset-0 z-40 bg-background">
+          {editorBody}
+        </div>
+      ) : null
+    ) : (
+      <Dialog open={isOpen} onOpenChange={() => onClose()}>
+        <DialogContent
+          className="max-w-[100vw] w-[100vw] h-[100vh] p-0 overflow-hidden rounded-none border-none"
+          hideClose
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          {editorBody}
+        </DialogContent>
+      </Dialog>
+    )}
 
     <AISlideGenerator
       isOpen={isAIGeneratorOpen}

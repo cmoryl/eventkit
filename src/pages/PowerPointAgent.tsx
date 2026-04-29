@@ -1139,8 +1139,9 @@ const PowerPointAgent: React.FC = () => {
         </footer>
       )}
 
-      {/* Editor tab — full slide editor, prefilled with the most recent agent-generated outline */}
+      {/* Editor tab — full-page (inline) slide editor, prefilled with the most recent agent-generated outline */}
       <SlideEditor
+        inline
         isOpen={activeTab === "editor"}
         onClose={() => setActiveTab("agent")}
         assetType="presentation"

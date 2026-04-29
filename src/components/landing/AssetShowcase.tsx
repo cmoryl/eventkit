@@ -220,7 +220,8 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
   
   const handleStudioClick = (studioId: StudioType) => {
     if (studioId === 'presentations') {
-      navigate('/agent/powerpoint');
+      // Slides goes straight to the Presentation Studio (full-page editor view).
+      navigate('/agent/powerpoint?tab=editor');
       return;
     }
     navigate(`/studio/${studioId}`);
