@@ -212,24 +212,33 @@ const PowerPointAgent: React.FC = () => {
 
   // Keep the GLOBAL active brand in sync with the Agent's local selection so the
   // Editor tab, theming, and downstream components all see the same brand.
+  // Guarded by a ref so we only apply the theme once per brand id (prevents the
+  // applyBrandToUI -> activeBrand change -> effect re-run -> re-apply loop).
+  const lastAppliedBrandIdRef = useRef<string>("");
   useEffect(() => {
     if (!selectedBrandId) return;
-    if (activeBrand?.id === selectedBrandId) return;
+    if (lastAppliedBrandIdRef.current === selectedBrandId) return;
     const match = globalBrands.find((b) => b.id === selectedBrandId);
-    if (match) {
+    if (!match) return;
+    lastAppliedBrandIdRef.current = selectedBrandId;
+    if (activeBrand?.id !== selectedBrandId) {
       setActiveBrand(match);
-      // Apply brand theme to UI without persisting to profile (session-only sync)
-      applyBrandToUI(match, false).catch(() => undefined);
     }
-  }, [selectedBrandId, activeBrand?.id, globalBrands, setActiveBrand, applyBrandToUI]);
+    // Apply brand theme to UI without persisting to profile (session-only sync)
+    applyBrandToUI(match, false).catch(() => undefined);
+    // Intentionally exclude activeBrand?.id and applyBrandToUI from deps to
+    // avoid re-firing when their identities change as a result of our update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBrandId, globalBrands]);
 
-  // And the inverse: if the global active brand changes elsewhere (e.g. header
-  // brand switcher), reflect it in the Agent's selection.
+  // Inverse: if the global active brand changes elsewhere (e.g. header brand
+  // switcher), reflect it in the Agent's local selection.
   useEffect(() => {
     if (activeBrand?.id && activeBrand.id !== selectedBrandId && brands.some((b) => b.id === activeBrand.id)) {
       setSelectedBrandId(activeBrand.id);
     }
-  }, [activeBrand?.id, brands, selectedBrandId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBrand?.id, brands]);
 
   // Load suggestion chips from agent_prompt_presets so admins can edit them
   // without redeploys. Falls back to the hardcoded list on any failure.
