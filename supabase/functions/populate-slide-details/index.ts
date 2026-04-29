@@ -23,26 +23,37 @@ All slide titles (for context):
 ${(deck?.slides || []).map((s: any, i: number) => `  ${i + 1}. [${s.layout}] ${s.title}`).join("\n")}`;
 
     const slideSummary = `Slide #${(slideIndex ?? 0) + 1}
-Layout: ${slide?.layout}
-Title: ${slide?.title}
-Existing subtitle: ${slide?.subtitle || "(none)"}
-Existing bullets: ${(slide?.bullets || []).join(" | ") || "(none)"}
-Existing notes: ${slide?.designNotes || "(none)"}`;
+Full slide JSON (PRESERVE every field that already has a value):
+${JSON.stringify(slide, null, 2)}`;
 
-    const systemPrompt = `You are a senior presentation designer. Given the full deck context and a single slide, you ENRICH that slide with concrete content and visual guidance so a downstream AI can render a polished slide.
+    // Track which fields the user has already filled so the model can't clobber them.
+    const has = (v: unknown) =>
+      v !== undefined && v !== null &&
+      !(Array.isArray(v) && v.length === 0) &&
+      !(typeof v === "string" && v.trim() === "") &&
+      !(typeof v === "object" && !Array.isArray(v) && Object.keys(v as object).length === 0);
+    const lockedFields = [
+      "subtitle", "bullets", "leftColumn", "rightColumn", "stat", "quote",
+      "kpis", "metrics", "comparison", "timeline", "agenda", "process", "chart",
+    ].filter((k) => has((slide as any)?.[k]));
 
-Rules:
-- Stay strictly on the deck's topic and tone.
-- Be specific and concrete — no fluff like "discuss things" or "key points".
-- For 'bullets' layout: write 3-5 punchy bullets (max ~12 words each).
-- For 'two_column' layout: write headings + 2-3 bullets per side.
-- For 'stat' layout: pick a single bold value + short label.
-- For 'quote' layout: write a tight quote (<= 25 words) + attribution.
-- For 'section' / 'title' / 'closing': write a tight subtitle (<= 12 words).
-- 'designNotes' should be 1-3 sentences guiding tone, must-haves, and visual mood.
-- 'visualIntent' must be one of: auto, photo, infographic, chart, icon-grid, screenshot, none.
-- Include 'chart' ONLY if visualIntent === "chart" — give realistic illustrative data with 3-7 points.
-- NEVER fabricate company-specific stats unless the deck context implies them; if unsure, make it directional ("Q1", "Q2"...).`;
+    const systemPrompt = `You are a senior presentation designer. Given a single slide, you ADD missing details (visual guidance, design notes, supporting bullets) WITHOUT rewriting or replacing what the user already wrote.
+
+ABSOLUTE RULES — content fidelity:
+- The user's existing slide content is the source of truth. NEVER replace, rewrite, summarize, condense, or drop any field they have already filled in.
+- These fields are LOCKED and must be omitted from your response: ${lockedFields.length ? lockedFields.join(", ") : "(none)"}.
+- Only return fields that are currently empty. If everything is filled, return ONLY 'designNotes' and 'visualIntent'.
+- Never invent stats, percentages, dollar amounts, or company-specific facts. If a stat is needed but not in the slide, leave it blank.
+
+Style guidance for empty fields only:
+- 'bullets': 3-5 punchy bullets (max ~12 words each).
+- 'leftColumn'/'rightColumn': heading + 2-3 bullets per side.
+- 'stat': single bold value + short label.
+- 'quote': <= 25 words + attribution.
+- 'subtitle' (for section/title/closing): <= 12 words.
+- 'designNotes' (always required): 1-3 sentences on tone, must-haves, visual mood — but DO NOT instruct the AI to "use the KPI grid to visualize…" if kpis are already present; instead describe how the existing content should look.
+- 'visualIntent' (always required): auto, photo, infographic, chart, icon-grid, screenshot, none.
+- Include 'chart' ONLY if visualIntent === "chart" AND no chart already exists. Use numbers from the slide content if present, never fabricate.`;
 
     const tool = {
       type: "function",
@@ -162,6 +173,9 @@ Rules:
 
     // Strip chart unless explicitly chart intent
     if (patch.visualIntent !== "chart") delete (patch as any).chart;
+
+    // Hard guardrail: NEVER let the model overwrite user-filled fields, even if it ignored the prompt.
+    for (const k of lockedFields) delete (patch as any)[k];
 
     return new Response(JSON.stringify({ patch }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

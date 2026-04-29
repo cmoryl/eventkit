@@ -40,7 +40,10 @@ export interface SlideReferenceImage {
 }
 
 export interface SlideOutline {
-  layout: "title" | "section" | "bullets" | "two_column" | "stat" | "quote" | "closing";
+  layout:
+    | "title" | "section" | "bullets" | "two_column" | "stat" | "quote" | "closing"
+    // Rich layouts the server may emit — keep on the client type so the UI can render them.
+    | "kpi_grid" | "agenda" | "timeline" | "comparison" | "metrics" | "team" | "image_hero" | "chart" | "process";
   title: string;
   subtitle?: string;
   bullets?: string[];
@@ -57,6 +60,14 @@ export interface SlideOutline {
   chart?: SlideChartSpec;
   /** User-uploaded reference images for this slide. */
   references?: SlideReferenceImage[];
+  // ---- rich layout fields ----
+  kpis?: Array<{ value: string; label: string; sublabel?: string; trend?: string }>;
+  agenda?: Array<{ step: string; title: string; body?: string; duration?: string; owner?: string }>;
+  timeline?: Array<{ when: string; title: string; body?: string; deliverables?: string[] }>;
+  comparison?: { heading?: string; before: { title: string; points: string[] }; after: { title: string; points: string[] } };
+  metrics?: Array<{ value: string; label: string; sublabel?: string }>;
+  team?: Array<{ name: string; role: string; initials: string; location?: string; focus?: string }>;
+  process?: Array<{ step: string; title: string; body?: string }>;
 }
 
 export interface DeckOutline {
@@ -75,7 +86,7 @@ interface Props {
   onUpdated?: (next: { outline: DeckOutline; downloadUrl: string; filename: string; templateId?: string }) => void;
 }
 
-const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
+const LAYOUT_LABELS: Partial<Record<SlideOutline["layout"], string>> = {
   title: "Title",
   section: "Section",
   bullets: "Bullets",
@@ -83,13 +94,22 @@ const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
   stat: "Stat",
   quote: "Quote",
   closing: "Closing",
+  kpi_grid: "KPI Grid",
+  agenda: "Agenda",
+  timeline: "Timeline",
+  comparison: "Comparison",
+  metrics: "Metrics",
+  team: "Team",
+  image_hero: "Image Hero",
+  chart: "Chart",
+  process: "Process",
 };
 
 const LAYOUT_OPTIONS: SlideOutline["layout"][] = [
   "title", "section", "bullets", "two_column", "stat", "quote", "closing",
 ];
 
-const TEMPLATE_PREVIEW_IMAGES: Record<string, Record<SlideOutline["layout"], string>> = {
+const TEMPLATE_PREVIEW_IMAGES: Record<string, Partial<Record<SlideOutline["layout"], string>>> = {
   "transperfect-2026": {
     title: transperfectHero,
     closing: transperfectHero,
