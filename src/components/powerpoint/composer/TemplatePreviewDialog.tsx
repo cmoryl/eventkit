@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, X, BarChart3, Quote as QuoteIcon, Layers } from "lucide-react";
+import { Sparkles, X, BarChart3, Quote as QuoteIcon, Layers, Pencil, RotateCcw } from "lucide-react";
 import type { DeckTemplate } from "./TemplateGallery";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO, isLightColor } from "./TemplateDemoCard";
 import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
@@ -15,19 +15,93 @@ interface Props {
   disabled?: boolean;
 }
 
+/** Editable content shape mirroring DEMO_BY_TEMPLATE entries. */
+interface EditableContent {
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  cards: Array<{ title: string; body: string }>;
+  stat: { value: string; label: string };
+  quote: { text: string; by: string };
+}
+
+const buildInitialContent = (t: DeckTemplate): EditableContent => {
+  const d = DEMO_BY_TEMPLATE[t.id] || FALLBACK_DEMO;
+  return {
+    eyebrow: d.eyebrow,
+    title: d.title,
+    subtitle: d.subtitle,
+    cards: d.cards.map((c) => ({ title: c.title, body: c.body })),
+    stat: { value: d.stat.value, label: d.stat.label },
+    quote: { text: d.quote.text, by: d.quote.by },
+  };
+};
+
+/**
+ * Inline contentEditable span. We keep React's value as the source of truth via
+ * `key` re-mounts when `editing` toggles, then read DOM text on blur to commit.
+ */
+const Editable: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+  editing: boolean;
+  multiline?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  ariaLabel: string;
+  as?: "span" | "div";
+}> = ({ value, onChange, editing, multiline, className, style, ariaLabel, as = "span" }) => {
+  const Tag = as as any;
+  if (!editing) {
+    return (
+      <Tag className={className} style={style}>
+        {value}
+      </Tag>
+    );
+  }
+  return (
+    <Tag
+      role="textbox"
+      aria-label={ariaLabel}
+      contentEditable
+      suppressContentEditableWarning
+      spellCheck
+      onBlur={(e: React.FocusEvent<HTMLElement>) => {
+        const text = (e.currentTarget.innerText || "").replace(/\s+\n/g, "\n").trimEnd();
+        if (text !== value) onChange(text);
+      }}
+      onKeyDown={(e: React.KeyboardEvent<HTMLElement>) => {
+        if (!multiline && e.key === "Enter") {
+          e.preventDefault();
+          (e.currentTarget as HTMLElement).blur();
+        }
+      }}
+      className={`${className || ""} outline-none rounded-sm ring-1 ring-dashed ring-current/30 focus:ring-2 focus:ring-current/60 px-0.5 -mx-0.5 cursor-text`}
+      style={style}
+    >
+      {value}
+    </Tag>
+  );
+};
+
 /** A single large 16:9 slide mockup. */
 const SlideMock: React.FC<{
   template: DeckTemplate;
+  content: EditableContent;
+  setContent: React.SetStateAction<any>;
+  editing: boolean;
   kind: "title" | "section" | "cards" | "stat" | "quote";
   index: number;
   total: number;
-}> = ({ template: t, kind, index, total }) => {
-  const demo = DEMO_BY_TEMPLATE[t.id] || FALLBACK_DEMO;
+}> = ({ template: t, content, setContent, editing, kind, index, total }) => {
   const isLight = isLightColor(t.palette.bg);
   const muted = isLight ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.7)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.14)";
   const cardBg = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)";
   const thumb = TEMPLATE_THUMBNAILS[t.id];
+
+  const update = (fn: (c: EditableContent) => EditableContent) =>
+    setContent((prev: EditableContent) => fn(prev));
 
   return (
     <div
@@ -56,24 +130,34 @@ const SlideMock: React.FC<{
         <div className="relative h-full grid" style={{ gridTemplateColumns: thumb ? "1.1fr 1fr" : "1fr" }}>
           <div className="relative p-10 flex flex-col justify-between z-10">
             <div>
-              <div
-                className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+              <Editable
+                ariaLabel="Eyebrow"
+                editing={editing}
+                value={content.eyebrow}
+                onChange={(v) => update((c) => ({ ...c, eyebrow: v }))}
+                className="text-[11px] font-semibold uppercase tracking-[0.22em] inline-block"
                 style={{ color: t.palette.accent }}
-              >
-                {demo.eyebrow}
-              </div>
-              <h2
+              />
+              <Editable
+                as="div"
+                ariaLabel="Title"
+                editing={editing}
+                value={content.title}
+                onChange={(v) => update((c) => ({ ...c, title: v }))}
+                multiline
                 className="mt-4 text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight"
                 style={{ color: t.palette.text }}
-              >
-                {demo.title}
-              </h2>
-              <p
+              />
+              <Editable
+                as="div"
+                ariaLabel="Subtitle"
+                editing={editing}
+                value={content.subtitle}
+                onChange={(v) => update((c) => ({ ...c, subtitle: v }))}
+                multiline
                 className="mt-4 text-base sm:text-lg leading-snug"
                 style={{ color: muted }}
-              >
-                {demo.subtitle}
-              </p>
+              />
             </div>
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-14 rounded-full" style={{ background: t.palette.accent }} />
@@ -89,7 +173,6 @@ const SlideMock: React.FC<{
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              {/* Soft inner gradient so text side blends into image */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -127,15 +210,35 @@ const SlideMock: React.FC<{
             >
               Section · {String(index + 1).padStart(2, "0")}
             </div>
-            <h2
+            <Editable
+              as="div"
+              ariaLabel="Section title"
+              editing={editing}
+              value={content.cards[0]?.title || "Chapter"}
+              onChange={(v) =>
+                update((c) => ({
+                  ...c,
+                  cards: c.cards.map((card, i) => (i === 0 ? { ...card, title: v } : card)),
+                }))
+              }
               className="mt-3 text-5xl sm:text-6xl font-extrabold leading-[1] tracking-tight"
               style={{ color: t.palette.text }}
-            >
-              {demo.cards[0]?.title || "Chapter"}
-            </h2>
-            <p className="mt-4 text-sm max-w-[60%]" style={{ color: muted }}>
-              {demo.cards[0]?.body || "An opening chapter that frames the story."}
-            </p>
+            />
+            <Editable
+              as="div"
+              ariaLabel="Section description"
+              editing={editing}
+              value={content.cards[0]?.body || "An opening chapter that frames the story."}
+              multiline
+              onChange={(v) =>
+                update((c) => ({
+                  ...c,
+                  cards: c.cards.map((card, i) => (i === 0 ? { ...card, body: v } : card)),
+                }))
+              }
+              className="mt-4 text-sm max-w-[60%]"
+              style={{ color: muted }}
+            />
           </div>
         </div>
       )}
@@ -155,7 +258,7 @@ const SlideMock: React.FC<{
             What you get
           </h3>
           <div className="grid grid-cols-3 gap-3 mt-5 flex-1">
-            {demo.cards.map((c, i) => (
+            {content.cards.map((c, i) => (
               <div
                 key={i}
                 className="rounded-lg overflow-hidden flex flex-col"
@@ -178,12 +281,39 @@ const SlideMock: React.FC<{
                     className="h-1 w-6 rounded-full"
                     style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
                   />
-                  <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                    {c.title}
-                  </div>
-                  <div className="text-[11px] leading-snug" style={{ color: muted }}>
-                    {c.body}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Card ${i + 1} title`}
+                    editing={editing}
+                    value={c.title}
+                    onChange={(v) =>
+                      update((cc) => ({
+                        ...cc,
+                        cards: cc.cards.map((card, idx) =>
+                          idx === i ? { ...card, title: v } : card,
+                        ),
+                      }))
+                    }
+                    className="text-sm font-bold leading-tight"
+                    style={{ color: t.palette.text }}
+                  />
+                  <Editable
+                    as="div"
+                    ariaLabel={`Card ${i + 1} body`}
+                    editing={editing}
+                    value={c.body}
+                    multiline
+                    onChange={(v) =>
+                      update((cc) => ({
+                        ...cc,
+                        cards: cc.cards.map((card, idx) =>
+                          idx === i ? { ...card, body: v } : card,
+                        ),
+                      }))
+                    }
+                    className="text-[11px] leading-snug"
+                    style={{ color: muted }}
+                  />
                 </div>
               </div>
             ))}
@@ -200,15 +330,25 @@ const SlideMock: React.FC<{
                 Headline stat
               </span>
             </div>
-            <div
+            <Editable
+              as="div"
+              ariaLabel="Stat value"
+              editing={editing}
+              value={content.stat.value}
+              onChange={(v) => update((c) => ({ ...c, stat: { ...c.stat, value: v } }))}
               className="text-7xl sm:text-8xl font-extrabold leading-none tracking-tight"
               style={{ color: t.palette.accent }}
-            >
-              {demo.stat.value}
-            </div>
-            <div className="mt-3 text-sm font-medium" style={{ color: t.palette.text }}>
-              {demo.stat.label}
-            </div>
+            />
+            <Editable
+              as="div"
+              ariaLabel="Stat label"
+              editing={editing}
+              value={content.stat.label}
+              multiline
+              onChange={(v) => update((c) => ({ ...c, stat: { ...c.stat, label: v } }))}
+              className="mt-3 text-sm font-medium"
+              style={{ color: t.palette.text }}
+            />
           </div>
           {thumb ? (
             <div
@@ -234,7 +374,7 @@ const SlideMock: React.FC<{
             </div>
           ) : (
             <div className="space-y-3">
-              {demo.cards.slice(0, 3).map((c, i) => (
+              {content.cards.slice(0, 3).map((c, i) => (
                 <div
                   key={i}
                   className="rounded-lg p-3"
@@ -280,17 +420,26 @@ const SlideMock: React.FC<{
           )}
           <div className="relative h-full p-12 flex flex-col justify-center z-10">
             <QuoteIcon className="h-8 w-8" style={{ color: t.palette.accent }} />
-            <p
+            <Editable
+              as="div"
+              ariaLabel="Quote text"
+              editing={editing}
+              value={content.quote.text}
+              multiline
+              onChange={(v) => update((c) => ({ ...c, quote: { ...c.quote, text: v } }))}
               className="mt-4 text-2xl sm:text-3xl font-semibold italic leading-snug max-w-[85%]"
               style={{ color: t.palette.text }}
-            >
-              "{demo.quote.text}"
-            </p>
+            />
             <div className="mt-6 flex items-center gap-3">
               <div className="h-px w-10" style={{ background: t.palette.accent }} />
-              <div className="text-xs uppercase tracking-wider" style={{ color: muted }}>
-                {demo.quote.by}
-              </div>
+              <Editable
+                ariaLabel="Quote attribution"
+                editing={editing}
+                value={content.quote.by}
+                onChange={(v) => update((c) => ({ ...c, quote: { ...c.quote, by: v } }))}
+                className="text-xs uppercase tracking-wider inline-block"
+                style={{ color: muted }}
+              />
             </div>
           </div>
         </div>
@@ -300,7 +449,19 @@ const SlideMock: React.FC<{
 };
 
 export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, disabled }) => {
-  if (!template) return null;
+  const [editing, setEditing] = useState(false);
+  const initial = useMemo(() => (template ? buildInitialContent(template) : null), [template?.id]);
+  const [content, setContent] = useState<EditableContent | null>(initial);
+
+  // Reset content whenever the template changes or dialog re-opens
+  useEffect(() => {
+    if (template) {
+      setContent(buildInitialContent(template));
+      setEditing(false);
+    }
+  }, [template?.id, open]);
+
+  if (!template || !content) return null;
   const t = template;
   const slides: Array<"title" | "section" | "cards" | "stat" | "quote"> = [
     "title",
@@ -328,11 +489,33 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
             <div className="min-w-0">
               <h2 className="text-base font-semibold truncate">{t.name}</h2>
               <p className="text-xs text-muted-foreground truncate">
-                {t.description || "Look & feel preview"}
+                {editing
+                  ? "Click any text on the slides to edit it"
+                  : t.description || "Look & feel preview"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant={editing ? "secondary" : "outline"}
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setEditing((v) => !v)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              {editing ? "Done editing" : "Edit content"}
+            </Button>
+            {editing && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setContent(buildInitialContent(t))}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reset
+              </Button>
+            )}
             <Button
               size="sm"
               disabled={disabled}
@@ -355,7 +538,16 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
         <ScrollArea className="flex-1">
           <div className="p-5 space-y-5">
             {slides.map((kind, i) => (
-              <SlideMock key={kind} template={t} kind={kind} index={i} total={slides.length} />
+              <SlideMock
+                key={kind}
+                template={t}
+                content={content}
+                setContent={setContent}
+                editing={editing}
+                kind={kind}
+                index={i}
+                total={slides.length}
+              />
             ))}
 
             {/* Palette strip */}
