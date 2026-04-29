@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check, Layers, Bot, LayoutTemplate } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check, Bot, LayoutTemplate } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 
