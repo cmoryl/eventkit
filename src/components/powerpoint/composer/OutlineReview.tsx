@@ -176,6 +176,9 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
         </div>
       </div>
 
+      {/* Content integrity — flags any source bullets/stats missing from the outline */}
+      {sourceContent && <ContentIntegrityReport source={sourceContent} outline={outline} />}
+
       {/* Slide list */}
       <div className="space-y-2">
         {outline.slides.map((s, i) => {
