@@ -90,7 +90,15 @@ const PowerPointAgent: React.FC = () => {
 
   // Brand selection
   const [brands, setBrands] = useState<BrandOption[]>([]);
-  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  // Initialize from sessionStorage so the user's brand pick survives refresh + tab switches
+  const [selectedBrandId, setSelectedBrandId] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return sessionStorage.getItem("active-brand-id") || "";
+  });
+  // Persist every change to sessionStorage (shared key with useActiveBrand)
+  useEffect(() => {
+    if (selectedBrandId) sessionStorage.setItem("active-brand-id", selectedBrandId);
+  }, [selectedBrandId]);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [mode, setMode] = useState<Mode>("prompt");
