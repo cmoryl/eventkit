@@ -186,6 +186,12 @@ export interface SlideData {
   parallaxLayers?: ParallaxLayer[];
   /** Parallax camera intensity multiplier (0 = static, 1 = default, 2 = dramatic). */
   parallaxIntensity?: number;
+  /** Demo-mock layout: render the exact preview slide for a template. */
+  demoKind?: string;
+  /** Demo-mock content payload (DemoContent shape). */
+  demoContent?: any;
+  /** Demo-mock template palette + id (DeckTemplate shape, lite). */
+  demoTemplate?: any;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
