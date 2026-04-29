@@ -65,9 +65,15 @@ interface SlideEditorProps {
   brand: Brand | null;
   /** Pre-populate the editor with specific slides (e.g. from the template gallery landing page) */
   initialSlides?: SlideData[];
+  /**
+   * When true, render the editor inline as a full-viewport panel instead of a modal Dialog.
+   * Used by /agent/powerpoint so the editor takes over the page after generation rather
+   * than appearing in a windowed overlay.
+   */
+  inline?: boolean;
 }
 
-export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides }: SlideEditorProps) {
+export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline }: SlideEditorProps) {
   const [slides, setSlides] = useState<SlideData[]>(() =>
     initialSlides && initialSlides.length > 0 ? initialSlides : [...DEFAULT_SLIDES]
   );
