@@ -144,17 +144,23 @@ NARRATIVE & LAYOUT RULES
   agenda, kpi_grid, metrics, timeline, comparison, process, chart, team, image_hero, quote, section, two_column, bullets, stat
 - Never use the same layout 3 times in a row. Avoid using "bullets" more than ~25% of the time.
 - Insert "section" dividers every 4-6 slides to break up the deck.
-- Always include speaker notes (1-3 sentences per slide).
+- Always include speaker notes (1-3 sentences per slide) in the 'notes' field — this is REQUIRED, never omit it.
 
-CONTENT QUALITY
-- Concise text. Max 5 bullets/slide, max 12 words/bullet.
+CONTENT FIDELITY (MOST IMPORTANT)
+- When the user provides source material, an outline, or pre-structured slides, PRESERVE EVERY bullet, stat, percentage, dollar amount, and heading they wrote — do not summarize, paraphrase, condense, drop, or merge items.
+- If a slide has 8 bullets in the source, return all 8 bullets — never trim to "fit" a layout.
+- If the user wrote "Cost ↓ 20–40%, CSAT ↑ 10–25%, AHT ↓ 15–30%, FCR ↑ 15–25%, 3–5x scalability" that is FIVE distinct kpis/metrics — return all five.
+- Headings inside a slide ("Business Impact", "Quantified Outcomes", "RESULTING GAP") must be preserved as section subheadings, two_column headings, or KPI sub-labels — never discarded.
+- For exploratory or topic-only requests (no source content), keep bullets concise: aim for 3-5 bullets at ~12 words each, but go longer if the topic demands it.
+
+OTHER QUALITY RULES
 - KPIs and stats should feel real (numbers + units + sublabels), not "00%".
 - Agenda items must have a step number, a short title, and ideally a duration.
 - Timelines: 4-6 milestones, each with a date/quarter and a deliverable line.
-- Comparisons: 3-4 contrast points per side, parallel phrasing.
+- Comparisons: 3-6 contrast points per side, parallel phrasing.
 - Process: 3-5 steps with verbs as titles.
 - Team: 3-6 plausible roles with initials and 1-line focus.
-- For "chart" slides, return a chart spec with 4-7 data points.
+- For "chart" slides, return a chart spec with 4-7 data points using REAL numbers from the source if present.
 
 Match the requested template's palette, fonts, and visual mood. The renderer will style every slide using the deck palette + fonts you return.`;
 
@@ -175,13 +181,14 @@ Plan a deck that fully exploits this template's visual system (rich layouts, var
 }
 
 /**
- * Detect when the user pasted pre-structured slide content (e.g. "Slide 1: ...", "Slide 2: ...").
- * When detected we tell the model to render those slides VERBATIM and override slideCount.
+ * Detect when the user pasted pre-structured slide content.
+ * Accepts a wide range of variants: "Slide 1:", "**Slide 1**", "## Slide 1 —",
+ * "Slide 1.", "Slide 1 -", with optional markdown bold/heading prefixes.
  */
 function detectPrestructuredSlides(topic: string): { count: number; blocks: string[] } | null {
   if (!topic) return null;
-  // Match "Slide 1:", "Slide 1 -", "Slide 1." etc. at start of a line
-  const re = /^\s*Slide\s+(\d+)\s*[:\-–.]/gim;
+  // Strip leading markdown markers (#, *, -, >) so "## **Slide 1:**" still matches.
+  const re = /^[\s>#*\-_]*\**\s*Slide\s+(\d+)\s*\**\s*[:\-–.)]/gim;
   const matches: { idx: number; num: number }[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(topic)) !== null) {
@@ -249,7 +256,11 @@ Return HEX colors WITHOUT the # prefix. Use the locked template palette/fonts ab
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      // Pro model handles long, faithful content reproduction far better than flash.
+      // Flash silently summarizes when input/output is large.
+      model: prestructured ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview",
+      // Generous token budget so the model never has to truncate user content to fit.
+      max_tokens: 16000,
       messages: [
         { role: "system", content: SYSTEM },
         {
@@ -412,9 +423,26 @@ Return HEX colors WITHOUT the # prefix. Use the locked template palette/fonts ab
   }
 
   const data = await response.json();
-  const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  const choice = data.choices?.[0];
+  // If the AI hit max_tokens its tool-call JSON is incomplete and JSON.parse will throw.
+  // Surface this clearly instead of failing with a vague "Unexpected end of JSON input".
+  const finish = choice?.finish_reason;
+  if (finish === "length" || finish === "max_tokens") {
+    console.warn("[generate-deck] AI response truncated (finish_reason=", finish, ")");
+  }
+  const args = choice?.message?.tool_calls?.[0]?.function?.arguments;
   if (!args) throw new Error("No outline returned by AI");
-  const outline = JSON.parse(args) as DeckOutline;
+  let outline: DeckOutline;
+  try {
+    outline = JSON.parse(args) as DeckOutline;
+  } catch (e) {
+    console.error("[generate-deck] Failed to parse outline JSON. finish_reason=", finish, "len=", args.length);
+    throw new Error(
+      finish === "length" || finish === "max_tokens"
+        ? "AI response was too long and got cut off — try reducing slide count or splitting your content."
+        : "AI returned malformed outline. Please retry.",
+    );
+  }
 
   // Lock palette/fonts to template if provided (AI sometimes drifts)
   if (req.template) {
@@ -681,39 +709,47 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { value: "12k", label: "Active users", sublabel: "monthly" },
           { value: "4.8★", label: "CSAT", sublabel: "n=1,200" },
           { value: "$2.4M", label: "ARR", sublabel: "trailing 12mo" },
-        ]).slice(0, 4);
+        ]).slice(0, 8); // up to 8 KPIs (will wrap to a 2nd row when >4)
 
-        const n = kpis.length;
+        const total = kpis.length;
+        const cols = total <= 4 ? total : Math.ceil(total / 2);
+        const rows = total <= 4 ? 1 : 2;
         const gap = 0.25;
-        const tileW = (W - PAD * 2 - gap * (n - 1)) / n;
-        const tileY = 2.0;
-        const tileH = H - tileY - PAD - 0.4;
+        const tileW = (W - PAD * 2 - gap * (cols - 1)) / cols;
+        const gridY = 2.0;
+        const gridH = H - gridY - PAD - 0.4;
+        const tileH = (gridH - gap * (rows - 1)) / rows;
 
         kpis.forEach((k, i) => {
-          const x = PAD + i * (tileW + gap);
+          const c = i % cols, r = Math.floor(i / cols);
+          const x = PAD + c * (tileW + gap);
+          const y = gridY + r * (tileH + gap);
           slide.addShape("roundRect", {
-            x, y: tileY, w: tileW, h: tileH,
+            x, y, w: tileW, h: tileH,
             fill: { color: SURFACE }, line: { color: ACCENT, width: 0, type: "solid" },
             rectRadius: 0.15,
           });
-          slide.addShape("rect", { x: x + 0.3, y: tileY + 0.3, w: 0.5, h: 0.06, fill: { color: ACCENT } });
+          slide.addShape("rect", { x: x + 0.3, y: y + 0.3, w: 0.5, h: 0.06, fill: { color: ACCENT } });
+          // Auto-shrink the headline value when many tiles.
+          const valueFs = rows === 1 ? 56 : 38;
+          const labelFs = rows === 1 ? 14 : 12;
           slide.addText(k.value || "—", {
-            x: x + 0.25, y: tileY + 0.7, w: tileW - 0.5, h: 1.6,
-            fontSize: 56, bold: true, color: ON_BG, fontFace: headFont,
+            x: x + 0.25, y: y + 0.6, w: tileW - 0.5, h: tileH * 0.45,
+            fontSize: valueFs, bold: true, color: ON_BG, fontFace: headFont,
           });
           slide.addText(k.label || "Metric", {
-            x: x + 0.25, y: tileY + 2.4, w: tileW - 0.5, h: 0.4,
-            fontSize: 14, bold: true, color: ON_BG, fontFace: bodyFont,
+            x: x + 0.25, y: y + tileH * 0.55, w: tileW - 0.5, h: 0.4,
+            fontSize: labelFs, bold: true, color: ON_BG, fontFace: bodyFont,
           });
           if (k.sublabel) {
             slide.addText(k.sublabel, {
-              x: x + 0.25, y: tileY + 2.85, w: tileW - 0.5, h: 0.4,
+              x: x + 0.25, y: y + tileH * 0.7, w: tileW - 0.5, h: 0.4,
               fontSize: 11, color: MUTED, fontFace: bodyFont,
             });
           }
           if (k.trend) {
             slide.addText(k.trend, {
-              x: x + 0.25, y: tileY + tileH - 0.5, w: tileW - 0.5, h: 0.35,
+              x: x + 0.25, y: y + tileH - 0.5, w: tileW - 0.5, h: 0.35,
               fontSize: 10, bold: true, color: ACCENT, fontFace: bodyFont,
             });
           }
@@ -721,7 +757,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
         break;
       }
 
-      // ────────────────────────── METRICS GRID (smaller, 6-up) ──────────────────────────
+      // ────────────────────────── METRICS GRID (smaller, up to 9-up) ──────────────────────────
       case "metrics": {
         addEyebrow(slide, orPh(s.subtitle, "By the numbers"), PAD, PAD, W - PAD * 2);
         slide.addText(slideTitle, {
@@ -736,7 +772,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { value: "+38%", label: "Adoption" },
           { value: "12k", label: "Users" },
           { value: "0", label: "Critical bugs" },
-        ]).slice(0, 6);
+        ]).slice(0, 9); // 3×3 grid max
 
         const cols = 3, rows = Math.ceil(metrics.length / cols);
         const gap = 0.2;
@@ -784,7 +820,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { step: "02", title: "Strategy & approach", duration: "15 min" },
           { step: "03", title: "Roadmap & milestones", duration: "20 min" },
           { step: "04", title: "Investment & next steps", duration: "10 min" },
-        ]).slice(0, 6);
+        ]).slice(0, 10); // up to 10 agenda items
 
         const startY = 2.0;
         const rowH = (H - startY - PAD - 0.4) / Math.max(items.length, 1);
@@ -833,7 +869,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { when: "Q2", title: "Design", body: "Concept & validate", deliverables: ["Wireframes"] },
           { when: "Q3", title: "Build", body: "Engineering sprint", deliverables: ["MVP launch"] },
           { when: "Q4", title: "Scale", body: "Rollout & optimize", deliverables: ["GA release"] },
-        ]).slice(0, 5);
+        ]).slice(0, 7); // up to 7 timeline milestones
 
         const trackY = 3.6;
         slide.addShape("line", {
@@ -867,7 +903,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
             });
           }
           if (it.deliverables?.length) {
-            slide.addText(it.deliverables.slice(0, 3).map((d) => `• ${d}`).join("\n"), {
+            slide.addText(it.deliverables.map((d) => `• ${d}`).join("\n"), {
               x: cx - colW / 2 + 0.1, y: trackY + 1.0, w: colW - 0.2, h: 1.4,
               fontSize: 11, color: ON_BG, fontFace: bodyFont, align: "center",
             });
@@ -904,7 +940,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
             x: x + 0.4, y: colY + 0.6, w: colW - 0.8, h: 0.5,
             fontSize: 22, bold: true, color: ON_BG, fontFace: headFont,
           });
-          const pts = (side.points || []).slice(0, 5);
+          const pts = side.points || [];
           slide.addText(
             pts.map((pt) => ({ text: pt, options: { bullet: { code: isAfter ? "25CF" : "2014" }, paraSpaceAfter: 8 } })),
             {
@@ -941,7 +977,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { step: "02", title: "Design", body: "Explore solutions" },
           { step: "03", title: "Build", body: "Ship fast, learn faster" },
           { step: "04", title: "Scale", body: "Grow with confidence" },
-        ]).slice(0, 5);
+        ]).slice(0, 6); // up to 6 process steps
 
         const n = steps.length;
         const gap = 0.2;
@@ -996,7 +1032,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { name: "Sam Patel", role: "Head of Eng", initials: "SP", focus: "Platform" },
           { name: "Jordan Kim", role: "PM", initials: "JK", focus: "Roadmap" },
           { name: "Taylor Reed", role: "Strategy", initials: "TR", focus: "Insights" },
-        ]).slice(0, 6);
+        ]).slice(0, 8); // up to 8 team members (4×2)
 
         const cols = members.length <= 3 ? members.length : Math.min(4, members.length);
         const rows = Math.ceil(members.length / cols);
@@ -1058,9 +1094,10 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           fontSize: 44, bold: true, color: "FFFFFF", fontFace: headFont,
         });
         if (s.bullets?.length) {
-          slide.addText(orPhBullets(s.bullets, 2).slice(0, 2).join(" · "), {
-            x: PAD, y: H - 1.0, w: W - PAD * 2, h: 0.5,
-            fontSize: 16, color: "FFFFFF", fontFace: bodyFont, transparency: 15,
+          // Render ALL bullets, not just the first two — previously we silently dropped the rest.
+          slide.addText(s.bullets.join(" · "), {
+            x: PAD, y: H - 1.2, w: W - PAD * 2, h: 0.7,
+            fontSize: 14, color: "FFFFFF", fontFace: bodyFont, transparency: 15,
           });
         }
         break;
@@ -1219,11 +1256,19 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           fontSize: 32, bold: true, color: ON_BG, fontFace: headFont,
         });
         slide.addShape("rect", { x: PAD, y: PAD + 1.35, w: 0.5, h: 0.06, fill: { color: ACCENT } });
+        // Auto-shrink font + spacing when the user has many bullets so we never
+        // have to drop content to fit the slide.
+        const bulletList = orPhBullets(s.bullets, 5);
+        const bulletFs =
+          bulletList.length <= 5 ? 18 :
+          bulletList.length <= 8 ? 15 :
+          bulletList.length <= 12 ? 12 : 10;
+        const bulletGap = bulletList.length <= 5 ? 12 : bulletList.length <= 8 ? 8 : 4;
         slide.addText(
-          orPhBullets(s.bullets, 5).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 12 } })),
+          bulletList.map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: bulletGap } })),
           {
             x: PAD, y: PAD + 1.55, w: contentW, h: H - PAD * 2 - 1.55 - 0.4,
-            fontSize: 18, color: ON_BG, fontFace: bodyFont, valign: "top",
+            fontSize: bulletFs, color: ON_BG, fontFace: bodyFont, valign: "top",
           },
         );
         if (hasFeature && featureImg) {
