@@ -21,7 +21,9 @@ import {
   Crown,
   Image as ImageIcon,
   Check as CheckIcon,
+  Bookmark,
 } from "lucide-react";
+import { SaveAsTemplateDialog } from "@/components/templates/SaveAsTemplateDialog";
 import type { DeckTemplate } from "./TemplateGallery";
 import {
   DEMO_BY_TEMPLATE,
