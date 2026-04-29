@@ -48,12 +48,22 @@ const buildInitialContent = (t: DeckTemplate): DemoContent => {
     title: d.title,
     subtitle: d.subtitle,
     imagery: d.imagery ? [...d.imagery] : undefined,
-    cards: d.cards.map((c) => ({ title: c.title, body: c.body, icon: c.icon })),
+    cards: d.cards.map((c) => ({
+      title: c.title,
+      body: c.body,
+      icon: c.icon,
+      tag: c.tag,
+      subPoints: c.subPoints ? [...c.subPoints] : undefined,
+      footnote: c.footnote,
+    })),
     stat: { ...d.stat },
     quote: { ...d.quote },
     agenda: d.agenda.map((a) => ({ ...a })),
     metrics: d.metrics.map((m) => ({ ...m })),
-    timeline: d.timeline.map((tl) => ({ ...tl })),
+    timeline: d.timeline.map((tl) => ({
+      ...tl,
+      deliverables: tl.deliverables ? [...tl.deliverables] : undefined,
+    })),
     compare: {
       heading: d.compare.heading,
       before: { title: d.compare.before.title, points: [...d.compare.before.points] },
@@ -316,19 +326,71 @@ const SlideMock: React.FC<{
     >
       {/* Decorative orbs */}
       <div
-        className="absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-25 blur-3xl"
+        className="absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-25 blur-3xl pointer-events-none"
         style={{ background: t.palette.accent }}
       />
       <div
-        className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full opacity-20 blur-3xl"
+        className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full opacity-20 blur-3xl pointer-events-none"
         style={{ background: t.palette.secondary }}
       />
 
+      {/* Decorative dotted grid (very low opacity) */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none opacity-[0.06]"
+        style={{
+          backgroundImage: `radial-gradient(${t.palette.text} 1px, transparent 1px)`,
+          backgroundSize: "18px 18px",
+        }}
+      />
+
+      {/* Decorative corner brackets */}
+      <svg
+        aria-hidden
+        className="absolute top-2.5 left-2.5 h-4 w-4 pointer-events-none opacity-60"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path d="M1 6 V1 H6" stroke={t.palette.accent} strokeWidth="1.4" />
+      </svg>
+      <svg
+        aria-hidden
+        className="absolute bottom-2.5 right-2.5 h-4 w-4 pointer-events-none opacity-60"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path d="M15 10 V15 H10" stroke={t.palette.accent} strokeWidth="1.4" />
+      </svg>
+
+      {/* Watermark eyebrow (very subtle, top-left) */}
+      <div
+        className="absolute top-3 left-6 text-[9px] font-mono tracking-[0.25em] uppercase z-20 pointer-events-none"
+        style={{ color: muted, opacity: 0.7 }}
+      >
+        {content.eyebrow}
+      </div>
+
+      {/* Slide counter (top-right) */}
       <div
         className="absolute top-3 right-4 text-[10px] font-mono tracking-wider z-20"
         style={{ color: muted }}
       >
         {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+      </div>
+
+      {/* Footer brand bar */}
+      <div
+        className="absolute bottom-2 left-6 right-6 z-20 flex items-center justify-between text-[9px] font-mono tracking-[0.18em] uppercase pointer-events-none"
+        style={{ color: muted }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ background: t.palette.accent }}
+          />
+          <span>{t.name}</span>
+        </div>
+        <div className="opacity-70">{kind.replace(/-/g, " ")}</div>
       </div>
 
       {/* TITLE */}
@@ -415,11 +477,30 @@ const SlideMock: React.FC<{
                 >
                   {a.step}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-bold leading-tight">{a.title}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-bold leading-tight">{a.title}</div>
+                    {a.duration && (
+                      <span
+                        className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                        style={{ background: `${t.palette.accent}22`, color: t.palette.accent }}
+                      >
+                        {a.duration}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
                     {a.body}
                   </div>
+                  {a.owner && (
+                    <div className="mt-2 flex items-center gap-1.5 text-[10px]" style={{ color: muted }}>
+                      <span
+                        className="inline-block h-1 w-1 rounded-full"
+                        style={{ background: t.palette.accent }}
+                      />
+                      <span className="truncate">Led by {a.owner}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -525,14 +606,28 @@ const SlideMock: React.FC<{
                     </div>
                   )}
                   <div className="p-3 flex flex-col gap-1 flex-1">
-                    {!cardImg && Ic && (
-                      <div
-                        className="h-7 w-7 rounded-md flex items-center justify-center mb-1"
-                        style={{ background: `${t.palette.accent}22` }}
-                      >
-                        <Ic className="h-4 w-4" style={{ color: t.palette.accent }} />
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {!cardImg && Ic && (
+                        <div
+                          className="h-7 w-7 rounded-md flex items-center justify-center"
+                          style={{ background: `${t.palette.accent}22` }}
+                        >
+                          <Ic className="h-4 w-4" style={{ color: t.palette.accent }} />
+                        </div>
+                      )}
+                      {c.tag && (
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                          style={{
+                            background: `${t.palette.accent}1F`,
+                            color: t.palette.accent,
+                            border: `1px solid ${t.palette.accent}55`,
+                          }}
+                        >
+                          {c.tag}
+                        </span>
+                      )}
+                    </div>
                     <Editable
                       as="div"
                       ariaLabel={`Card ${i + 1} title`}
@@ -562,6 +657,31 @@ const SlideMock: React.FC<{
                       className="text-[11px] leading-snug"
                       style={{ color: muted }}
                     />
+                    {c.subPoints && c.subPoints.length > 0 && (
+                      <ul className="mt-1.5 space-y-1">
+                        {c.subPoints.map((sp, si) => (
+                          <li
+                            key={si}
+                            className="flex items-start gap-1.5 text-[10px] leading-snug"
+                            style={{ color: t.palette.text }}
+                          >
+                            <CheckIcon
+                              className="h-2.5 w-2.5 mt-0.5 shrink-0"
+                              style={{ color: t.palette.accent }}
+                            />
+                            <span>{sp}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {c.footnote && (
+                      <div
+                        className="mt-auto pt-2 text-[9px] italic border-t"
+                        style={{ color: muted, borderColor: subtleBorder }}
+                      >
+                        {c.footnote}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -600,9 +720,12 @@ const SlideMock: React.FC<{
                     )}
                     {m.trend && (
                       <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                        className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded"
                         style={{ background: `${t.palette.secondary}33`, color: t.palette.text }}
                       >
+                        {m.direction === "up" && <span style={{ color: t.palette.accent }}>▲</span>}
+                        {m.direction === "down" && <span style={{ color: t.palette.accent }}>▼</span>}
+                        {m.direction === "flat" && <span style={{ color: muted }}>—</span>}
                         {m.trend}
                       </span>
                     )}
@@ -614,8 +737,26 @@ const SlideMock: React.FC<{
                     >
                       {m.value}
                     </div>
-                    <div className="text-[11px] mt-1" style={{ color: muted }}>
+                    <div className="text-[11px] mt-1 font-semibold" style={{ color: t.palette.text }}>
                       {m.label}
+                    </div>
+                    {m.sublabel && (
+                      <div className="text-[9px] mt-0.5 leading-snug" style={{ color: muted }}>
+                        {m.sublabel}
+                      </div>
+                    )}
+                    {/* Mini sparkbar */}
+                    <div className="mt-2 flex items-end gap-0.5 h-3">
+                      {[0.4, 0.6, 0.5, 0.7, 0.85, 1].map((h, hi) => (
+                        <span
+                          key={hi}
+                          className="flex-1 rounded-sm"
+                          style={{
+                            height: `${h * 100}%`,
+                            background: hi === 5 ? t.palette.accent : `${t.palette.secondary}88`,
+                          }}
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -737,6 +878,31 @@ const SlideMock: React.FC<{
                     <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
                       {tl.body}
                     </div>
+                    {tl.deliverables && tl.deliverables.length > 0 && (
+                      <ul className="mt-2 space-y-0.5">
+                        {tl.deliverables.map((d, di) => (
+                          <li
+                            key={di}
+                            className="flex items-start gap-1 text-[9px] leading-snug"
+                            style={{ color: t.palette.text }}
+                          >
+                            <span
+                              className="mt-1 h-1 w-1 rounded-full shrink-0"
+                              style={{ background: t.palette.accent }}
+                            />
+                            <span>{d}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {tl.owner && (
+                      <div
+                        className="mt-2 pt-2 border-t text-[9px] font-semibold uppercase tracking-wider"
+                        style={{ color: muted, borderColor: subtleBorder }}
+                      >
+                        {tl.owner}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1194,7 +1360,7 @@ const SlideMock: React.FC<{
                     )}
                   </div>
                   <div
-                    className="rounded-lg p-3 flex-1"
+                    className="rounded-lg p-3 flex-1 flex flex-col"
                     style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                   >
                     {Ic && <Ic className="h-4 w-4 mb-1.5" style={{ color: t.palette.accent }} />}
@@ -1203,6 +1369,34 @@ const SlideMock: React.FC<{
                     </div>
                     <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
                       {p.body}
+                    </div>
+                    <div className="mt-auto pt-2 space-y-1">
+                      {p.output && (
+                        <div className="flex items-center gap-1.5 text-[9px]" style={{ color: t.palette.text }}>
+                          <span
+                            className="font-bold uppercase tracking-wider"
+                            style={{ color: t.palette.accent }}
+                          >
+                            Output
+                          </span>
+                          <span className="truncate" style={{ color: muted }}>
+                            {p.output}
+                          </span>
+                        </div>
+                      )}
+                      {p.duration && (
+                        <div className="flex items-center gap-1.5 text-[9px]" style={{ color: t.palette.text }}>
+                          <span
+                            className="font-bold uppercase tracking-wider"
+                            style={{ color: t.palette.accent }}
+                          >
+                            Time
+                          </span>
+                          <span className="truncate" style={{ color: muted }}>
+                            {p.duration}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1226,11 +1420,17 @@ const SlideMock: React.FC<{
             {content.team.map((m, i) => (
               <div
                 key={i}
-                className="rounded-xl p-4 flex flex-col items-start"
+                className="relative rounded-xl p-4 flex flex-col items-start overflow-hidden"
                 style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
               >
+                {/* Decorative corner accent */}
                 <div
-                  className="h-14 w-14 rounded-full flex items-center justify-center text-base font-extrabold mb-3"
+                  aria-hidden
+                  className="absolute -top-6 -right-6 h-12 w-12 rounded-full opacity-30 blur-xl"
+                  style={{ background: t.palette.accent }}
+                />
+                <div
+                  className="relative h-14 w-14 rounded-full flex items-center justify-center text-base font-extrabold mb-3"
                   style={{
                     background: `linear-gradient(135deg, ${t.palette.accent}, ${t.palette.secondary})`,
                     color: t.palette.bg,
@@ -1238,12 +1438,29 @@ const SlideMock: React.FC<{
                 >
                   {m.initials}
                 </div>
-                <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
+                <div className="relative text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
                   {m.name}
                 </div>
-                <div className="text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
+                <div className="relative text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
                   {m.role}
                 </div>
+                {m.location && (
+                  <div
+                    className="relative mt-2 inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider"
+                    style={{ color: t.palette.accent }}
+                  >
+                    <span className="inline-block h-1 w-1 rounded-full" style={{ background: t.palette.accent }} />
+                    {m.location}
+                  </div>
+                )}
+                {m.focus && (
+                  <div
+                    className="relative mt-2 pt-2 text-[10px] italic leading-snug border-t"
+                    style={{ color: muted, borderColor: subtleBorder }}
+                  >
+                    "{m.focus}"
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1292,10 +1509,15 @@ const SlideMock: React.FC<{
                     {p.cadence}
                   </span>
                 </div>
+                {p.limit && (
+                  <div className="text-[9px] mt-1 font-mono" style={{ color: muted }}>
+                    {p.limit}
+                  </div>
+                )}
                 <div className="text-[11px] mt-1 italic" style={{ color: muted }}>
                   {p.tagline}
                 </div>
-                <ul className="mt-4 space-y-1.5">
+                <ul className="mt-4 space-y-1.5 flex-1">
                   {p.features.map((f, fi) => (
                     <li key={fi} className="flex gap-2 items-start text-[11px]">
                       <CheckIcon
@@ -1306,6 +1528,18 @@ const SlideMock: React.FC<{
                     </li>
                   ))}
                 </ul>
+                {p.cta && (
+                  <div
+                    className="mt-3 text-center text-[10px] font-bold uppercase tracking-wider rounded-md py-1.5"
+                    style={{
+                      background: p.highlighted ? t.palette.accent : "transparent",
+                      color: p.highlighted ? t.palette.bg : t.palette.accent,
+                      border: `1px solid ${t.palette.accent}`,
+                    }}
+                  >
+                    {p.cta}
+                  </div>
+                )}
               </div>
             ))}
           </div>

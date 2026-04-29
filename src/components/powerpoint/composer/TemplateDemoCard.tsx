@@ -39,6 +39,12 @@ export interface DemoCard {
   title: string;
   body: string;
   icon?: LucideIcon;
+  /** Short tag rendered as a pill badge */
+  tag?: string;
+  /** Optional bullet sub-points shown beneath the body */
+  subPoints?: string[];
+  /** Optional footnote / source line */
+  footnote?: string;
 }
 
 export interface DemoMetric {
@@ -46,18 +52,30 @@ export interface DemoMetric {
   label: string;
   trend?: string;
   icon?: LucideIcon;
+  /** Smaller secondary label, e.g. "vs prior period" */
+  sublabel?: string;
+  /** Direction marker, "up" | "down" | "flat" */
+  direction?: "up" | "down" | "flat";
 }
 
 export interface DemoAgendaItem {
   step: string;
   title: string;
   body: string;
+  /** Estimated time on this section */
+  duration?: string;
+  /** Person leading this section */
+  owner?: string;
 }
 
 export interface DemoTimelineItem {
   when: string;
   title: string;
   body: string;
+  /** Concrete deliverables shipped at this milestone */
+  deliverables?: string[];
+  /** Who owns this milestone */
+  owner?: string;
 }
 
 export interface DemoCompare {
@@ -77,6 +95,10 @@ export interface DemoTeamMember {
   name: string;
   role: string;
   initials: string;
+  /** City / region label */
+  location?: string;
+  /** Short pull-quote or focus area */
+  focus?: string;
 }
 
 export interface DemoPricingTier {
@@ -86,6 +108,10 @@ export interface DemoPricingTier {
   tagline: string;
   features: string[];
   highlighted?: boolean;
+  /** Limits / fine-print line shown under price */
+  limit?: string;
+  /** Call-to-action label shown at bottom of tier */
+  cta?: string;
 }
 
 export interface DemoProcessStep {
@@ -93,6 +119,10 @@ export interface DemoProcessStep {
   title: string;
   body: string;
   icon?: LucideIcon;
+  /** Deliverable produced by this step */
+  output?: string;
+  /** How long the step typically takes */
+  duration?: string;
 }
 
 export interface DemoBentoTile {
@@ -190,29 +220,29 @@ export const DEMO_BY_TEMPLATE: Record<string, DemoContent> = {
     subtitle: "Language & AI for the world's biggest brands.",
     imagery: IMAGERY_BY_TEMPLATE["transperfect-2026"],
     cards: [
-      { title: "GlobalLink NEXT", body: "AI translation platform unifying every content workflow.", icon: Cpu },
-      { title: "200+ languages", body: "Native expert network across 140 countries.", icon: Globe2 },
-      { title: "24/7 delivery", body: "Always-on localization with global handoff coverage.", icon: Zap },
+      { title: "GlobalLink NEXT", body: "AI translation platform unifying every content workflow.", icon: Cpu, tag: "Platform", subPoints: ["Connect any CMS", "Translate in-context", "Auto-publish to locales"], footnote: "Generally available · Q1 2026" },
+      { title: "200+ languages", body: "Native expert network across 140 countries.", icon: Globe2, tag: "Network", subPoints: ["10k+ vetted linguists", "Cultural QA in-region", "ISO 17100 compliant"], footnote: "Source · TransPerfect Network Audit 2025" },
+      { title: "24/7 delivery", body: "Always-on localization with global handoff coverage.", icon: Zap, tag: "Operations", subPoints: ["Sun-up handoff in 3 hubs", "48hr SLA on rush", "Weekend coverage"], footnote: "Avg first-token latency · 12 min" },
     ],
     stat: { value: "5B+", label: "words translated yearly" },
     quote: { text: "From content to commerce — in any language.", by: "TransPerfect" },
     agenda: [
-      { step: "01", title: "The opportunity", body: "Why global content matters now" },
-      { step: "02", title: "Our platform", body: "GlobalLink NEXT in action" },
-      { step: "03", title: "Proof points", body: "Customers, scale, results" },
-      { step: "04", title: "What's next", body: "Roadmap & partnership" },
+      { step: "01", title: "The opportunity", body: "Why global content matters now", duration: "5 min", owner: "Phil Shawe" },
+      { step: "02", title: "Our platform", body: "GlobalLink NEXT in action", duration: "12 min", owner: "Jin Park" },
+      { step: "03", title: "Proof points", body: "Customers, scale, results", duration: "8 min", owner: "Sara Okafor" },
+      { step: "04", title: "What's next", body: "Roadmap & partnership", duration: "5 min", owner: "Liz Elting" },
     ],
     metrics: [
-      { value: "200+", label: "Languages", icon: Globe2, trend: "+12 YoY" },
-      { value: "5B", label: "Words / yr", icon: Activity, trend: "+34%" },
-      { value: "98%", label: "On-time", icon: Shield, trend: "SLA" },
-      { value: "10k+", label: "Linguists", icon: Users, trend: "Vetted" },
+      { value: "200+", label: "Languages", icon: Globe2, trend: "+12 YoY", direction: "up", sublabel: "Across 140 countries" },
+      { value: "5B", label: "Words / yr", icon: Activity, trend: "+34%", direction: "up", sublabel: "Up from 3.8B in 2024" },
+      { value: "98%", label: "On-time", icon: Shield, trend: "SLA", direction: "flat", sublabel: "Enterprise SLA met" },
+      { value: "10k+", label: "Linguists", icon: Users, trend: "Vetted", direction: "up", sublabel: "ISO 17100 certified" },
     ],
     timeline: [
-      { when: "Q1", title: "Pilot", body: "3 markets, 5 content types" },
-      { when: "Q2", title: "Scale", body: "12 markets live" },
-      { when: "Q3", title: "Automate", body: "AI workflow rollout" },
-      { when: "Q4", title: "Optimize", body: "Outcome-based pricing" },
+      { when: "Q1", title: "Pilot", body: "3 markets, 5 content types", deliverables: ["Discovery workshop", "Connector setup", "Pilot scorecard"], owner: "Solutions team" },
+      { when: "Q2", title: "Scale", body: "12 markets live", deliverables: ["Glossary v1", "Brand voice training", "Reviewer onboarding"], owner: "Program lead" },
+      { when: "Q3", title: "Automate", body: "AI workflow rollout", deliverables: ["AI router live", "QA automation", "Cost dashboards"], owner: "AI ops" },
+      { when: "Q4", title: "Optimize", body: "Outcome-based pricing", deliverables: ["Outcome contract", "QBR cadence", "Renewal plan"], owner: "Account team" },
     ],
     compare: {
       heading: "Manual vs. GlobalLink NEXT",
@@ -232,22 +262,22 @@ export const DEMO_BY_TEMPLATE: Record<string, DemoContent> = {
       trendline: [2.1, 3.0, 3.8, 4.6, 5.4],
     },
     team: [
-      { name: "Phil Shawe", role: "Co-Founder & CEO", initials: "PS" },
-      { name: "Liz Elting", role: "Founding Partner", initials: "LE" },
-      { name: "Jin Park", role: "Chief AI Officer", initials: "JP" },
-      { name: "Sara Okafor", role: "President, EMEA", initials: "SO" },
+      { name: "Phil Shawe", role: "Co-Founder & CEO", initials: "PS", location: "New York, NY", focus: "Steers global vision and M&A strategy." },
+      { name: "Liz Elting", role: "Founding Partner", initials: "LE", location: "New York, NY", focus: "Champions language access at scale." },
+      { name: "Jin Park", role: "Chief AI Officer", initials: "JP", location: "Seoul, KR", focus: "Leads GlobalLink NEXT model program." },
+      { name: "Sara Okafor", role: "President, EMEA", initials: "SO", location: "London, UK", focus: "Operating leader for 14 EMEA markets." },
     ],
     pricing: [
-      { name: "Connect", price: "Custom", cadence: "per project", tagline: "Single-market pilots", features: ["1 language pair", "Standard SLA", "Email support", "Self-serve portal"] },
-      { name: "Scale", price: "$0.08", cadence: "per word", tagline: "Multi-market growth", features: ["10+ language pairs", "48hr SLA", "Dedicated PM", "GlobalLink TMS", "Brand glossary"], highlighted: true },
-      { name: "Enterprise", price: "Outcome", cadence: "based pricing", tagline: "Always-on global", features: ["Unlimited locales", "24/7 SLA", "On-site team", "Custom AI models", "SOC 2 + HIPAA"] },
+      { name: "Connect", price: "Custom", cadence: "per project", tagline: "Single-market pilots", features: ["1 language pair", "Standard SLA", "Email support", "Self-serve portal"], limit: "Up to 250k words / yr", cta: "Start a pilot" },
+      { name: "Scale", price: "$0.08", cadence: "per word", tagline: "Multi-market growth", features: ["10+ language pairs", "48hr SLA", "Dedicated PM", "GlobalLink TMS", "Brand glossary"], highlighted: true, limit: "Volume tiers from 1M words", cta: "Talk to sales" },
+      { name: "Enterprise", price: "Outcome", cadence: "based pricing", tagline: "Always-on global", features: ["Unlimited locales", "24/7 SLA", "On-site team", "Custom AI models", "SOC 2 + HIPAA"], limit: "Multi-year, region-priced", cta: "Request proposal" },
     ],
     process: [
-      { step: "01", title: "Source", body: "Connect CMS, code, or design tool", icon: Compass },
-      { step: "02", title: "Translate", body: "AI + linguist hybrid pipeline", icon: Cpu },
-      { step: "03", title: "Review", body: "In-context preview with brand QA", icon: Shield },
-      { step: "04", title: "Publish", body: "Auto-deploy to every locale", icon: Globe2 },
-      { step: "05", title: "Optimize", body: "Measure & retrain on outcomes", icon: TrendingUp },
+      { step: "01", title: "Source", body: "Connect CMS, code, or design tool", icon: Compass, output: "Connected source", duration: "1 day" },
+      { step: "02", title: "Translate", body: "AI + linguist hybrid pipeline", icon: Cpu, output: "Draft translations", duration: "Hours" },
+      { step: "03", title: "Review", body: "In-context preview with brand QA", icon: Shield, output: "QA-passed copy", duration: "1–2 days" },
+      { step: "04", title: "Publish", body: "Auto-deploy to every locale", icon: Globe2, output: "Live in market", duration: "Minutes" },
+      { step: "05", title: "Optimize", body: "Measure & retrain on outcomes", icon: TrendingUp, output: "Tuned model", duration: "Continuous" },
     ],
     bento: [
       { size: "lg", title: "200+ languages, one workflow", body: "From Pashto to Portuguese — managed end-to-end.", imageIndex: 0, icon: Globe2 },
