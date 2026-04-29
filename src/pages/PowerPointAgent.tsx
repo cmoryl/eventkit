@@ -144,6 +144,7 @@ const PowerPointAgent: React.FC = () => {
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
     setSelectedTemplateId(tpl.id);
     setThemeOverride(tpl.themePrompt);
+    setShowTemplateGallery(false);
     const defaults = TEMPLATE_DEFAULT_TOPICS[tpl.id];
     if (defaults) {
       // Only prefill empty fields so we never overwrite the user's typing
