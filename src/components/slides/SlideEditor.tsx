@@ -233,6 +233,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       const dataUrl = reader.result as string;
       setSlides(prev => prev.map((s, i) => {
         if (i !== slideIndex) return s;
+        if (s.layout === 'demo-mock' && s.demoContent) {
+          const nextContent = {
+            ...s.demoContent,
+            imagery: [dataUrl, ...(s.demoContent.imagery ?? []).slice(1)],
+          };
+          return {
+            ...s,
+            demoContent: nextContent,
+            imageUrl: dataUrl,
+            images: nextContent.imagery,
+          };
+        }
         const needsImageLayout = !['image-left', 'image-right', 'full-image'].includes(s.layout);
         return {
           ...s,
@@ -341,6 +353,47 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setSlides(newSlides);
     setActiveIndex(0);
   }, []);
+
+  const updateDemoDeckContent = useCallback((nextOrUpdater: any) => {
+    setSlides(prev => {
+      const target = prev[activeIndex];
+      if (!target?.demoContent) return prev;
+      const nextContent = typeof nextOrUpdater === 'function'
+        ? nextOrUpdater(target.demoContent)
+        : nextOrUpdater;
+      const templateId = target.demoTemplate?.id;
+      const imagery = nextContent?.imagery ?? [];
+      return prev.map(s => {
+        const sameDemoDeck = s.layout === 'demo-mock' && (!templateId || s.demoTemplate?.id === templateId);
+        return sameDemoDeck
+          ? {
+              ...s,
+              demoContent: nextContent,
+              title: nextContent?.title || s.title,
+              imageUrl: imagery[0] || s.imageUrl,
+              images: imagery.length > 0 ? imagery : s.images,
+            }
+          : s;
+      });
+    });
+  }, [activeIndex]);
+
+  const updateDemoDeckTemplate = useCallback((nextOrUpdater: any) => {
+    setSlides(prev => {
+      const target = prev[activeIndex];
+      if (!target?.demoTemplate) return prev;
+      const nextTemplate = typeof nextOrUpdater === 'function'
+        ? nextOrUpdater(target.demoTemplate)
+        : nextOrUpdater;
+      const templateId = target.demoTemplate?.id;
+      return prev.map(s => {
+        const sameDemoDeck = s.layout === 'demo-mock' && (!templateId || s.demoTemplate?.id === templateId);
+        return sameDemoDeck
+          ? { ...s, demoTemplate: nextTemplate, bgColor: nextTemplate?.palette?.bg || s.bgColor }
+          : s;
+      });
+    });
+  }, [activeIndex]);
 
   const handleTemplateSelected = useCallback((template: InfographicTemplate) => {
     const newSlide: SlideData = { ...template.slide, id: uuidv4() };
