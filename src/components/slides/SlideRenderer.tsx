@@ -77,6 +77,10 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
   // Demo-mock slides render the exact template preview component (pixel-identical to gallery preview).
   if (slide.layout === 'demo-mock' && slide.demoContent && slide.demoTemplate && slide.demoKind) {
+    const setContentShim = (updater: any) => {
+      const next = typeof updater === 'function' ? updater(slide.demoContent) : updater;
+      if (next && onDemoContentChange) onDemoContentChange(next);
+    };
     return (
       <div
         className="absolute inset-0 flex items-center justify-center p-[40px]"
@@ -86,8 +90,8 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
           <SlideMock
             template={slide.demoTemplate}
             content={slide.demoContent}
-            setContent={() => {}}
-            editing={false}
+            setContent={setContentShim}
+            editing={!!editable}
             kind={slide.demoKind as any}
             index={0}
             total={1}
