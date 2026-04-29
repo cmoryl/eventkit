@@ -35,6 +35,7 @@ import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
+import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -839,7 +840,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                     brandFonts={brandFonts}
                     animated={animatedBackgrounds}
                     editable={activeSlide.layout === 'demo-mock'}
-                    onDemoContentChange={(next) => updateSlide(activeIndex, { demoContent: next })}
+                    onDemoContentChange={updateDemoDeckContent}
                   />
                 </CenteredScaledSlide>
 
@@ -883,6 +884,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             <div className="w-[300px] border-l bg-card overflow-y-auto shrink-0 h-full min-h-0 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="p-4 pb-12 space-y-5">
                 <h3 className="font-semibold text-sm">Slide Properties</h3>
+
+                {activeSlide.layout === 'demo-mock' && activeSlide.demoContent && activeSlide.demoTemplate && (
+                  <DemoSlidePropertyEditor
+                    slide={activeSlide}
+                    onContentChange={updateDemoDeckContent}
+                    onTemplateChange={updateDemoDeckTemplate}
+                  />
+                )}
 
                 {/* Layout selector */}
                 <div className="space-y-2">
