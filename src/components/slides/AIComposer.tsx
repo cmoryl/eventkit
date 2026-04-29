@@ -29,7 +29,7 @@ interface Props {
  * Map a deck-outline layout to the SlideEditor's SlideLayout.
  * The two systems use slightly different layout names.
  */
-const LAYOUT_MAP: Record<SlideOutline["layout"], SlideLayout> = {
+const LAYOUT_MAP: Partial<Record<SlideOutline["layout"], SlideLayout>> = {
   title: "title",
   section: "section",
   bullets: "content",
@@ -37,6 +37,16 @@ const LAYOUT_MAP: Record<SlideOutline["layout"], SlideLayout> = {
   stat: "big-number",
   quote: "quote",
   closing: "section",
+  // Rich layouts gracefully degrade to the closest SlideEditor layout.
+  kpi_grid: "big-number",
+  metrics: "big-number",
+  agenda: "content",
+  timeline: "content",
+  comparison: "two-column",
+  team: "content",
+  image_hero: "title",
+  chart: "content",
+  process: "content",
 };
 
 /** Default per-layout variation that looks great out of the box. */
