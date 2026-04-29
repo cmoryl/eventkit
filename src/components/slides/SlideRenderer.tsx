@@ -203,7 +203,21 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
         </div>
       )}
 
-      {slide.layout === 'stats' && (
+      {slide.layout === 'stats' && slide.variation === 'brandhub-tiles' && (
+        <BrandHubKpiTiles
+          slide={slide}
+          accentColor={accentColor}
+          brandColors={brandColors}
+          headingFont={headingFont}
+          bodyFont={bodyFont}
+          headingColor={headingColor}
+          hSize={hSize}
+          bSize={bSize}
+          isDark={isDark}
+        />
+      )}
+
+      {slide.layout === 'stats' && slide.variation !== 'brandhub-tiles' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
           <h2
             className="font-bold mb-[80px] text-center"
