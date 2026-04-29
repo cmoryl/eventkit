@@ -4,6 +4,7 @@ import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
+import { parsePptxFile } from "@/components/slides/importPptx";
 import { type SlideData } from "@/components/slides/slideTypes";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
 import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
@@ -184,6 +185,31 @@ const PowerPointAgent: React.FC = () => {
     });
   }, [buildStarterSlidesForTemplate, setActiveTab, toast]);
 
+  // Direct .pptx → editor import (bypasses AI). Loads parsed slides as the
+  // starter deck and jumps to the Editor tab so the user can edit immediately.
+  const importPptxAsDeckRef = useRef<HTMLInputElement>(null);
+  const handleImportPptxAsDeck = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!file.name.toLowerCase().endsWith(".pptx")) {
+      toast({ title: "PPTX only", description: "Please upload a .pptx file.", variant: "destructive" });
+      return;
+    }
+    try {
+      const imported = await parsePptxFile(file);
+      if (!imported.length) {
+        toast({ title: "No slides found", description: "We couldn't read any slides from that file.", variant: "destructive" });
+        return;
+      }
+      setTemplateStarterSlides(imported);
+      setActiveTab("editor");
+      toast({ title: "Deck imported", description: `${imported.length} slides loaded — edit anything you like.` });
+    } catch (err) {
+      console.error("PPTX import error:", err);
+      toast({ title: "Import failed", description: err instanceof Error ? err.message : "Could not read .pptx", variant: "destructive" });
+    }
+  }, [setActiveTab, toast]);
 
   // Apply ?template= from URL once brands etc. are ready
   useEffect(() => {
@@ -982,6 +1008,25 @@ const PowerPointAgent: React.FC = () => {
                       rerunPptxExtraction={rerunPptxExtraction}
                       disabled={isGenerating}
                     />
+                    <input
+                      ref={importPptxAsDeckRef}
+                      type="file"
+                      accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                      className="hidden"
+                      onChange={handleImportPptxAsDeck}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full gap-1.5"
+                      onClick={() => importPptxAsDeckRef.current?.click()}
+                      disabled={isGenerating}
+                      title="Import a .pptx file straight into the editor — fully editable, no AI"
+                    >
+                      <Presentation className="h-3.5 w-3.5" />
+                      Import .pptx
+                    </Button>
                     <RefinePopover
                       audience={audience}
                       setAudience={setAudience}
@@ -1252,6 +1297,18 @@ const PowerPointAgent: React.FC = () => {
                 rerunPptxExtraction={rerunPptxExtraction}
                 disabled={isGenerating}
               />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="rounded-full gap-1.5"
+                onClick={() => importPptxAsDeckRef.current?.click()}
+                disabled={isGenerating}
+                title="Import a .pptx file straight into the editor — fully editable, no AI"
+              >
+                <Presentation className="h-3.5 w-3.5" />
+                Import .pptx
+              </Button>
               <RefinePopover
                 audience={audience}
                 setAudience={setAudience}
