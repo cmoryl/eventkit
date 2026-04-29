@@ -409,11 +409,11 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
                   <div className="font-bold mb-[12px]" style={{ fontSize: 56, color: accentColor || '#6366f1', fontFamily: headingFont }}>
                     {String(i + 1).padStart(2, '0')}
                   </div>
-                  <div className="font-semibold mb-[8px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: 30 }}>
+                  <div data-slide-field={`process.${i}.title`} className="font-semibold mb-[8px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: 30 }}>
                     {step.title}
                   </div>
                   {step.description && (
-                    <div className="opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 22 }}>
+                    <div data-slide-field={`process.${i}.description`} data-slide-multiline="true" className="opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 22 }}>
                       {step.description}
                     </div>
                   )}
