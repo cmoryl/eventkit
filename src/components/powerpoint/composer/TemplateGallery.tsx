@@ -152,16 +152,78 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
   const [browseOpen, setBrowseOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<DeckTemplate | null>(null);
+  const [savedTemplates, setSavedTemplates] = useState<
+    Array<{ id: string; user_id: string; name: string; description: string | null; palette: any; theme_prompt: string | null; is_shared: boolean }>
+  >([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
+  // Load saved deck templates (own + shared)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setSavedTemplates([]);
+      return;
+    }
+    let active = true;
+    setLoadingSaved(true);
+    supabase
+      .from("deck_templates")
+      .select("id,user_id,name,description,palette,theme_prompt,is_shared")
+      .eq("source_kind", "preview")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!active) return;
+        setLoadingSaved(false);
+        if (error) {
+          console.warn("[TemplateGallery] failed to load saved templates", error);
+          return;
+        }
+        setSavedTemplates(data || []);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const savedAsDeckTemplates: DeckTemplate[] = useMemo(
+    () =>
+      savedTemplates.map((s) => ({
+        id: `saved:${s.id}`,
+        name: s.name,
+        description: s.description || (s.is_shared ? "Shared template" : "My template"),
+        themePrompt: s.theme_prompt || "",
+        palette: {
+          bg: s.palette?.bg || "#0F172A",
+          text: s.palette?.text || "#FFFFFF",
+          accent: s.palette?.accent || "#3B82F6",
+          secondary: s.palette?.secondary || "#64748B",
+        },
+      })),
+    [savedTemplates],
+  );
+
+  const handleDeleteSaved = async (savedId: string, name: string) => {
+    if (!confirm(`Delete saved template "${name}"?`)) return;
+    const { error } = await supabase.from("deck_templates").delete().eq("id", savedId);
+    if (error) {
+      toast({ title: "Couldn't delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setSavedTemplates((prev) => prev.filter((s) => s.id !== savedId));
+    toast({ title: "Template deleted" });
+  };
 
   const filtered = useMemo(() => {
+    const all = [...savedAsDeckTemplates, ...ALL_DECK_TEMPLATES];
     const q = search.trim().toLowerCase();
-    if (!q) return ALL_DECK_TEMPLATES;
-    return ALL_DECK_TEMPLATES.filter(
+    if (!q) return all;
+    return all.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
         (t.description || "").toLowerCase().includes(q),
     );
-  }, [search]);
+  }, [search, savedAsDeckTemplates]);
 
   const isShowcase = variant === "showcase";
 
