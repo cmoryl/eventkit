@@ -147,9 +147,21 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
             className="text-sm text-muted-foreground border-0 px-0 h-auto focus-visible:ring-0 shadow-none"
           />
         </div>
-        <Button size="lg" onClick={onConfirm} disabled={building}>
-          {building ? (<><Loader2 className="h-4 w-4 animate-spin" /> Building deck…</>) : (<><Check className="h-4 w-4" /> Generate {outline.slides.length} slides</>)}
-        </Button>
+        <div className="flex flex-col gap-2 items-end">
+          <Button size="lg" onClick={onConfirm} disabled={building || populatingAll}>
+            {building ? (<><Loader2 className="h-4 w-4 animate-spin" /> Building deck…</>) : (<><Check className="h-4 w-4" /> Generate {outline.slides.length} slides</>)}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handlePopulateAll}
+            disabled={building || populatingAll}
+            title="Use AI to fill in details (notes, visuals, data) for every slide"
+          >
+            {populatingAll ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" /> Populating all…</>) : (<><Wand2 className="h-3.5 w-3.5" /> AI populate all</>)}
+          </Button>
+        </div>
       </div>
 
       {/* Slide list */}
