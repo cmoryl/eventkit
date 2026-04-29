@@ -2418,7 +2418,15 @@ export const SlideMock: React.FC<{
               Visual language
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A mood, not a moodboard</h3>
+          <Editable
+            as="div"
+            ariaLabel="Gallery heading"
+            editing={editing}
+            value={headingFor("gallery", "A mood, not a moodboard")}
+            onChange={(v) => updateHeading("gallery", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-5 grid grid-cols-4 grid-rows-2 gap-2 flex-1">
             {[0, 1, 2, 3].map((i) => {
               const img = imageAt(i);
