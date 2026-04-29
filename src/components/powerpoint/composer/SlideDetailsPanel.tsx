@@ -22,6 +22,8 @@ interface Props {
   slide: SlideOutline;
   slideId: string;            // stable id for storage path; pass a generated key
   onChange: (patch: Partial<SlideOutline>) => void;
+  /** Deck palette for chart color defaults + AI image restyling. */
+  palette?: DeckOutline["palette"];
 }
 
 const VISUAL_INTENTS: { value: VisualIntent; label: string; hint: string }[] = [
