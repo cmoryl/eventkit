@@ -484,6 +484,51 @@ export type Database = {
         }
         Relationships: []
       }
+      deck_templates: {
+        Row: {
+          content: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_shared: boolean
+          name: string
+          palette: Json
+          source_kind: string
+          theme_prompt: string | null
+          thumbnail: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          name: string
+          palette?: Json
+          source_kind: string
+          theme_prompt?: string | null
+          thumbnail?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          name?: string
+          palette?: Json
+          source_kind?: string
+          theme_prompt?: string | null
+          thumbnail?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       editable_templates: {
         Row: {
           asset_type: string

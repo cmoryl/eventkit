@@ -5,7 +5,7 @@ import {
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
   ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download, Upload,
   Replace, ImagePlus, Quote, BarChart3, Maximize2, GitCompare,
-  AlignLeft, AlignCenter, AlignRight, Palette, LayoutTemplate, Grid3X3
+  AlignLeft, AlignCenter, AlignRight, Palette, LayoutTemplate, Grid3X3, Bookmark
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
+import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -91,6 +92,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [animatedBackgrounds, setAnimatedBackgrounds] = useState(true);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isAssetsLibraryOpen, setIsAssetsLibraryOpen] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
   const [canvasFileOver, setCanvasFileOver] = useState(false);
   const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
@@ -559,6 +561,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
               <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName, { transition: slideTransition })}>
                 <Download className="h-3.5 w-3.5 mr-1.5" />
                 Export
+              </Button>
+
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSaveTemplateOpen(true)}
+                title="Save the current deck as a reusable template"
+              >
+                <Bookmark className="h-3.5 w-3.5 mr-1.5" />
+                Save as Template
               </Button>
 
               <Select value={slideTransition} onValueChange={(v) => setSlideTransition(v as SlideTransition)}>
@@ -1429,6 +1441,23 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       onSelect={handleTemplateSelected}
       brandColors={brandColors}
       brandFonts={brandFonts}
+    />
+
+    <SaveAsTemplateDialog
+      open={saveTemplateOpen}
+      onOpenChange={setSaveTemplateOpen}
+      defaults={{
+        source_kind: 'deck',
+        name: assetName ? `${assetName} template` : 'My deck template',
+        description: null,
+        palette: {
+          bg: brandColors?.primary || '#0F172A',
+          text: '#FFFFFF',
+          accent: brandColors?.accent || '#3B82F6',
+          secondary: brandColors?.secondary || '#64748B',
+        },
+        content: { slides, slideTransition },
+      }}
     />
     </>
   );

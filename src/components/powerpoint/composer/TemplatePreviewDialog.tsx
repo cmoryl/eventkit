@@ -21,7 +21,9 @@ import {
   Crown,
   Image as ImageIcon,
   Check as CheckIcon,
+  Bookmark,
 } from "lucide-react";
+import { SaveAsTemplateDialog } from "@/components/templates/SaveAsTemplateDialog";
 import type { DeckTemplate } from "./TemplateGallery";
 import {
   DEMO_BY_TEMPLATE,
@@ -2102,6 +2104,7 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
   const [editing, setEditing] = useState(false);
   const initial = useMemo(() => (template ? buildInitialContent(template) : null), [template?.id]);
   const [content, setContent] = useState<DemoContent | null>(initial);
+  const [saveOpen, setSaveOpen] = useState(false);
 
   useEffect(() => {
     if (template) {
@@ -2158,6 +2161,16 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
                 Reset
               </Button>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setSaveOpen(true)}
+              title="Save your edited content as a reusable template"
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+              Save as template
+            </Button>
             <Button
               size="sm"
               disabled={disabled}
@@ -2219,6 +2232,19 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
           </div>
         </ScrollArea>
       </DialogContent>
+
+      <SaveAsTemplateDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        defaults={{
+          source_kind: "preview",
+          name: `${t.name} (custom)`,
+          description: t.description,
+          palette: t.palette,
+          theme_prompt: t.themePrompt,
+          content: content as unknown,
+        }}
+      />
     </Dialog>
   );
 };

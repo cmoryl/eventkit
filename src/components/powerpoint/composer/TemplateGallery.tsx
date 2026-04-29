@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Check, LayoutGrid, Search, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Check, LayoutGrid, Search, X, Bookmark, Globe2, Loader2, Trash2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALL_PRESENTATION_TEMPLATES } from "@/config/editableTemplates/presentationTemplates";
 import { TemplateDemoCard } from "./TemplateDemoCard";
 import { TemplatePreviewDialog } from "./TemplatePreviewDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export interface DeckTemplate {
   id: string;
@@ -149,16 +152,78 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
   const [browseOpen, setBrowseOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<DeckTemplate | null>(null);
+  const [savedTemplates, setSavedTemplates] = useState<
+    Array<{ id: string; user_id: string; name: string; description: string | null; palette: any; theme_prompt: string | null; is_shared: boolean }>
+  >([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+
+  // Load saved deck templates (own + shared)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setSavedTemplates([]);
+      return;
+    }
+    let active = true;
+    setLoadingSaved(true);
+    supabase
+      .from("deck_templates")
+      .select("id,user_id,name,description,palette,theme_prompt,is_shared")
+      .eq("source_kind", "preview")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (!active) return;
+        setLoadingSaved(false);
+        if (error) {
+          console.warn("[TemplateGallery] failed to load saved templates", error);
+          return;
+        }
+        setSavedTemplates(data || []);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const savedAsDeckTemplates: DeckTemplate[] = useMemo(
+    () =>
+      savedTemplates.map((s) => ({
+        id: `saved:${s.id}`,
+        name: s.name,
+        description: s.description || (s.is_shared ? "Shared template" : "My template"),
+        themePrompt: s.theme_prompt || "",
+        palette: {
+          bg: s.palette?.bg || "#0F172A",
+          text: s.palette?.text || "#FFFFFF",
+          accent: s.palette?.accent || "#3B82F6",
+          secondary: s.palette?.secondary || "#64748B",
+        },
+      })),
+    [savedTemplates],
+  );
+
+  const handleDeleteSaved = async (savedId: string, name: string) => {
+    if (!confirm(`Delete saved template "${name}"?`)) return;
+    const { error } = await supabase.from("deck_templates").delete().eq("id", savedId);
+    if (error) {
+      toast({ title: "Couldn't delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setSavedTemplates((prev) => prev.filter((s) => s.id !== savedId));
+    toast({ title: "Template deleted" });
+  };
 
   const filtered = useMemo(() => {
+    const all = [...savedAsDeckTemplates, ...ALL_DECK_TEMPLATES];
     const q = search.trim().toLowerCase();
-    if (!q) return ALL_DECK_TEMPLATES;
-    return ALL_DECK_TEMPLATES.filter(
+    if (!q) return all;
+    return all.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
         (t.description || "").toLowerCase().includes(q),
     );
-  }, [search]);
+  }, [search, savedAsDeckTemplates]);
 
   const isShowcase = variant === "showcase";
 
@@ -238,6 +303,52 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
           </div>
           <ScrollArea className="flex-1">
             <div className="p-5 space-y-6">
+              {!search.trim() && savedAsDeckTemplates.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <Bookmark className="h-3 w-3" />
+                    My Templates
+                    {loadingSaved && <Loader2 className="h-3 w-3 animate-spin" />}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {savedAsDeckTemplates.map((t) => {
+                      const savedId = t.id.replace(/^saved:/, "");
+                      const saved = savedTemplates.find((s) => s.id === savedId);
+                      const ownedByMe = saved?.user_id === user?.id;
+                      return (
+                        <div key={t.id} className="relative group">
+                          <TemplateCard
+                            template={t}
+                            selected={selectedId === t.id}
+                            disabled={disabled}
+                            onClick={() => setPreviewTemplate(t)}
+                          />
+                          {saved?.is_shared && (
+                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground text-[9px] font-bold flex items-center gap-1">
+                              <Globe2 className="h-2.5 w-2.5" />
+                              Shared
+                            </div>
+                          )}
+                          {ownedByMe && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSaved(savedId, t.name);
+                              }}
+                              className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-background/90 border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground"
+                              title="Delete saved template"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {!search.trim() && (
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
