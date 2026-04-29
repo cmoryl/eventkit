@@ -869,7 +869,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { when: "Q2", title: "Design", body: "Concept & validate", deliverables: ["Wireframes"] },
           { when: "Q3", title: "Build", body: "Engineering sprint", deliverables: ["MVP launch"] },
           { when: "Q4", title: "Scale", body: "Rollout & optimize", deliverables: ["GA release"] },
-        ]).slice(0, 5);
+        ]).slice(0, 7); // up to 7 timeline milestones
 
         const trackY = 3.6;
         slide.addShape("line", {
@@ -903,7 +903,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
             });
           }
           if (it.deliverables?.length) {
-            slide.addText(it.deliverables.slice(0, 3).map((d) => `• ${d}`).join("\n"), {
+            slide.addText(it.deliverables.map((d) => `• ${d}`).join("\n"), {
               x: cx - colW / 2 + 0.1, y: trackY + 1.0, w: colW - 0.2, h: 1.4,
               fontSize: 11, color: ON_BG, fontFace: bodyFont, align: "center",
             });
@@ -940,7 +940,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
             x: x + 0.4, y: colY + 0.6, w: colW - 0.8, h: 0.5,
             fontSize: 22, bold: true, color: ON_BG, fontFace: headFont,
           });
-          const pts = (side.points || []).slice(0, 5);
+          const pts = side.points || [];
           slide.addText(
             pts.map((pt) => ({ text: pt, options: { bullet: { code: isAfter ? "25CF" : "2014" }, paraSpaceAfter: 8 } })),
             {
