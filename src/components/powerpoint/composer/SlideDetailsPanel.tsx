@@ -249,17 +249,30 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange, p
         {(slide.references && slide.references.length > 0) ? (
           <div className="grid grid-cols-3 gap-2">
             {slide.references.map((r, i) => (
-              <div key={r.url + i} className="relative rounded-md overflow-hidden border border-white/10 bg-white/5">
+              <div
+                key={r.url + i}
+                className="relative rounded-md overflow-hidden border border-white/10 bg-white/5 cursor-pointer hover:border-cyan-300/40 transition-colors"
+                onDoubleClick={() => setEditTarget({ kind: "image", image: r, index: i })}
+                title="Double-click to edit (replace, restyle, caption, treatment)"
+              >
                 <img src={r.url} alt={r.caption || `ref ${i + 1}`} className="w-full h-20 object-cover" />
                 <button
                   type="button"
-                  onClick={() => removeRef(i)}
+                  onClick={(e) => { e.stopPropagation(); setEditTarget({ kind: "image", image: r, index: i }); }}
+                  className="absolute top-1 left-1 rounded-full bg-cyan-500/80 hover:bg-cyan-400 text-[#0A0838] p-0.5"
+                  title="Edit"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeRef(i); }}
                   className="absolute top-1 right-1 rounded-full bg-black/60 hover:bg-black/80 text-white p-0.5"
                   title="Remove"
                 >
                   <X className="h-3 w-3" />
                 </button>
-                <div className="p-1.5 space-y-1">
+                <div className="p-1.5 space-y-1" onClick={(e) => e.stopPropagation()}>
                   <Input
                     value={r.caption || ""}
                     onChange={(e) => setRefCaption(i, e.target.value)}
@@ -293,6 +306,26 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange, p
           </button>
         )}
       </div>
+
+      <AssetEditDialog
+        open={editTarget !== null}
+        onOpenChange={(v) => { if (!v) setEditTarget(null); }}
+        target={editTarget}
+        slideId={slideId}
+        palette={palette}
+        onChartChange={(chart) => {
+          onChange({ chart });
+          setChartCsv(csvFromChart(chart));
+        }}
+        onImageChange={(idx, img) => {
+          const next = (slide.references || []).map((r, i) => (i === idx ? img : r));
+          onChange({ references: next });
+        }}
+        onImageRemove={(idx) => {
+          const next = (slide.references || []).filter((_, i) => i !== idx);
+          onChange({ references: next });
+        }}
+      />
     </div>
   );
 };
