@@ -55,6 +55,13 @@ interface Props {
   brandHubSource: BrandHubSourcePick | null;
   setBrandHubSource: (s: BrandHubSourcePick | null) => void;
 
+  // PPTX source
+  pptxFile?: File | null;
+  pptxInputRef?: React.RefObject<HTMLInputElement>;
+  handlePptxSelect?: (file: File | null) => void;
+  clearPptx?: () => void;
+  rerunPptxExtraction?: () => void;
+
   disabled?: boolean;
 }
 
