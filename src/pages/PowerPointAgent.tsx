@@ -650,7 +650,7 @@ const PowerPointAgent: React.FC = () => {
             outline: deck.outline as any,
             download_url: deck.downloadUrl,
             filename: deck.filename,
-            source_kind: extractedSource ? "pdf" : brandHubSource ? "brandhub" : "prompt",
+            source_kind: pptxFile ? "pptx" : extractedSource ? "pdf" : brandHubSource ? "brandhub" : "prompt",
             brand_id: useBrand && selectedBrand ? selectedBrand.id : null,
           })
           .then(({ error: archiveErr }) => {
