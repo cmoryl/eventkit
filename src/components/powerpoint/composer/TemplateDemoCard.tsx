@@ -103,7 +103,7 @@ export const DEMO_BY_TEMPLATE: Record<
   },
 };
 
-const FALLBACK_DEMO = {
+export const FALLBACK_DEMO = {
   eyebrow: "Sample Deck",
   title: "Tell your story.",
   subtitle: "A flexible template for any narrative.",
@@ -286,7 +286,7 @@ export const TemplateDemoCard: React.FC<Props> = ({ template: t, selected, disab
   );
 };
 
-function isLightColor(input: string): boolean {
+export function isLightColor(input: string): boolean {
   // Handle gradients / non-hex by treating as dark (safer default for white text)
   if (!input || !input.startsWith("#")) return false;
   const hex = input.replace("#", "");
