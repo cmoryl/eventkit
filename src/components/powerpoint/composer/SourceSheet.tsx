@@ -14,6 +14,7 @@ import {
   FileText,
   Paperclip,
   Library,
+  Presentation,
 } from "lucide-react";
 import { LazyPdfGallery } from "@/components/powerpoint/LazyPdfGallery";
 import { SelectedPagesOrder } from "@/components/powerpoint/SelectedPagesOrder";
