@@ -1442,6 +1442,23 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       brandColors={brandColors}
       brandFonts={brandFonts}
     />
+
+    <SaveAsTemplateDialog
+      open={saveTemplateOpen}
+      onOpenChange={setSaveTemplateOpen}
+      defaults={{
+        source_kind: 'deck',
+        name: assetName ? `${assetName} template` : 'My deck template',
+        description: null,
+        palette: {
+          bg: brandColors?.primary || '#0F172A',
+          text: '#FFFFFF',
+          accent: brandColors?.accent || '#3B82F6',
+          secondary: brandColors?.secondary || '#64748B',
+        },
+        content: { slides, slideTransition },
+      }}
+    />
     </>
   );
 }
