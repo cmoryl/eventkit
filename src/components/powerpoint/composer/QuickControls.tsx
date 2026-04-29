@@ -85,5 +85,27 @@ export const QuickControls: React.FC<Props> = ({
         ))}
       </div>
     </div>
+
+    {/* 3D Parallax / MP4 video deck toggle */}
+    {setParallaxMode && (
+      <div className="flex items-center gap-4 pt-1 border-t border-border/40">
+        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground w-20 shrink-0 flex items-center gap-1">
+          <Layers className="h-3 w-3" /> 3D
+        </div>
+        <div className="flex-1 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-medium">Parallax video deck</div>
+            <div className="text-[11px] text-muted-foreground">
+              Layered depth on every slide · exports as MP4 alongside .pptx
+            </div>
+          </div>
+          <Switch
+            checked={!!parallaxMode}
+            onCheckedChange={setParallaxMode}
+            disabled={disabled}
+          />
+        </div>
+      </div>
+    )}
   </div>
 );
