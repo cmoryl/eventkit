@@ -684,3 +684,15 @@
   80%  { opacity: 1; }
   100% { transform: translateX(150%) rotate(var(--b-angle, 30deg)); opacity: 0; }
 }
+
+/* Demo-mock slides in the editor: stretch SlideMock to fill the slide canvas
+   (its native aspect-[16/9] is overridden so the rich background — orbs,
+   dotted grid, corner brackets — covers the whole frame). */
+.demo-mock-fill > div {
+  width: 100% !important;
+  height: 100% !important;
+  aspect-ratio: auto !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
