@@ -503,9 +503,14 @@ const PowerPointAgent: React.FC = () => {
     const sourceLabel = extractedSource
       ? `  \n📎 Source: ${extractedSource.fileName} (${influence}% influence${pickedCount ? `, ${pickedCount} page${pickedCount === 1 ? '' : 's'} picked` : ''}${sectionLabel})`
       : '';
+    // Detect pre-structured "Slide N:" content the user pasted — show effective slide count.
+    const slideMarkers = (finalTopic.match(/^\s*Slide\s+\d+\s*[:\-–.]/gim) || []).length;
+    const verbatim = slideMarkers >= 2;
+    const effectiveCount = verbatim ? slideMarkers : slideCount;
+    const verbatimLabel = verbatim ? `  \n📝 Verbatim mode: ${slideMarkers} slides detected — content will be preserved as written.` : "";
     const userMsg: ChatItem = {
       role: "user",
-      content: `**${finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${slideCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}`,
+      content: `**${finalTopic.length > 200 ? finalTopic.slice(0, 200) + "…" : finalTopic}**${audience ? `  \nAudience: ${audience}` : ""}  \nSlides: ${effectiveCount}${tone ? `  \nTone: ${tone}` : ""}${themeOverride ? `  \nTheme: ${themeOverride}` : brandLabel}${sourceLabel}${verbatimLabel}`,
     };
     setHistory((h) => [...h, userMsg]);
     setIsGenerating(true);
