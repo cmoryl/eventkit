@@ -1219,7 +1219,15 @@ export const SlideMock: React.FC<{
                 Trend
               </span>
             </div>
-            <div className="text-sm font-bold mt-1">{content.chart.title}</div>
+            <Editable
+              as="div"
+              ariaLabel="Chart title"
+              editing={editing}
+              value={content.chart.title}
+              onChange={(v) => update((c) => ({ ...c, chart: { ...c.chart, title: v } }))}
+              className="text-sm font-bold mt-1"
+              style={{ color: t.palette.text }}
+            />
             <div className="flex-1 mt-2 min-h-0">
               <BarLineChart
                 series={content.chart.series}
@@ -1281,7 +1289,15 @@ export const SlideMock: React.FC<{
               Roadmap
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A sequence that compounds</h3>
+          <Editable
+            as="div"
+            ariaLabel="Timeline heading"
+            editing={editing}
+            value={headingFor("timeline", "A sequence that compounds")}
+            onChange={(v) => updateHeading("timeline", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
 
           <div className="relative mt-8 flex-1">
             {/* spine */}
@@ -1310,17 +1326,38 @@ export const SlideMock: React.FC<{
                       className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
                       style={{ color: t.palette.accent }}
                     >
-                      {tl.when}
+                      <Editable
+                        ariaLabel={`Timeline ${i + 1} date`}
+                        editing={editing}
+                        value={tl.when}
+                        onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, when: v } : item)) }))}
+                        className="inline-block"
+                      />
                     </span>
                   </div>
                   <div
                     className="rounded-lg p-3"
                     style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                   >
-                    <div className="text-sm font-bold leading-tight">{tl.title}</div>
-                    <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
-                      {tl.body}
-                    </div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Timeline ${i + 1} title`}
+                      editing={editing}
+                      value={tl.title}
+                      onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, title: v } : item)) }))}
+                      className="text-sm font-bold leading-tight"
+                      style={{ color: t.palette.text }}
+                    />
+                    <Editable
+                      as="div"
+                      ariaLabel={`Timeline ${i + 1} body`}
+                      editing={editing}
+                      value={tl.body}
+                      multiline
+                      onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, body: v } : item)) }))}
+                      className="text-[11px] mt-1 leading-snug"
+                      style={{ color: muted }}
+                    />
                     {tl.deliverables && tl.deliverables.length > 0 && (
                       <ul className="mt-2 space-y-0.5">
                         {tl.deliverables.map((d, di) => (
