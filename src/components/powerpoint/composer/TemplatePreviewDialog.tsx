@@ -498,21 +498,21 @@ const SlideMock: React.FC<{
           <div className="grid grid-cols-3 gap-3 mt-5 flex-1">
             {content.cards.map((c, i) => {
               const Ic = c.icon;
+              const cardImg = imageAt(i);
               return (
                 <div
                   key={i}
                   className="rounded-lg overflow-hidden flex flex-col"
                   style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                 >
-                  {thumb && (
+                  {cardImg && (
                     <div className="relative aspect-[16/9] overflow-hidden">
                       <img
-                        src={thumb}
+                        src={cardImg}
                         alt=""
                         loading="lazy"
                         aria-hidden
                         className="absolute inset-0 h-full w-full object-cover"
-                        style={{ filter: `hue-rotate(${i * 25}deg) saturate(${1 + i * 0.1})` }}
                       />
                       {Ic && (
                         <div
@@ -525,7 +525,7 @@ const SlideMock: React.FC<{
                     </div>
                   )}
                   <div className="p-3 flex flex-col gap-1 flex-1">
-                    {!thumb && Ic && (
+                    {!cardImg && Ic && (
                       <div
                         className="h-7 w-7 rounded-md flex items-center justify-center mb-1"
                         style={{ background: `${t.palette.accent}22` }}
