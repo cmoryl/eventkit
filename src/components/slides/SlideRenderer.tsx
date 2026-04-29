@@ -19,6 +19,10 @@ interface SlideRendererProps {
   parallaxMotion?: 'mouse' | 'time' | 'dolly' | 'static';
   /** 0-1 progress for dolly mode (used by MP4 export). */
   parallaxProgress?: number;
+  /** When true, demo-mock slides become inline-editable (contentEditable). */
+  editable?: boolean;
+  /** Called when a demo-mock slide's content is edited inline. */
+  onDemoContentChange?: (next: any) => void;
 }
 
 function ImageGallery({ images }: { images: string[] }) {
