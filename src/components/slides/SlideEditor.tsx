@@ -35,6 +35,7 @@ import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
+import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -233,6 +234,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       const dataUrl = reader.result as string;
       setSlides(prev => prev.map((s, i) => {
         if (i !== slideIndex) return s;
+        if (s.layout === 'demo-mock' && s.demoContent) {
+          const nextContent = {
+            ...s.demoContent,
+            imagery: [dataUrl, ...(s.demoContent.imagery ?? []).slice(1)],
+          };
+          return {
+            ...s,
+            demoContent: nextContent,
+            imageUrl: dataUrl,
+            images: nextContent.imagery,
+          };
+        }
         const needsImageLayout = !['image-left', 'image-right', 'full-image'].includes(s.layout);
         return {
           ...s,
@@ -342,6 +355,49 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setActiveIndex(0);
   }, []);
 
+  const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
+    setSlides(prev => {
+      const target = prev[activeIndex];
+      if (!target?.demoContent) return prev;
+      const nextContent = typeof nextOrUpdater === 'function'
+        ? (nextOrUpdater as (current: SlideData['demoContent']) => SlideData['demoContent'])(target.demoContent)
+        : nextOrUpdater;
+      const templateId = target.demoTemplate?.id;
+      const nextDemoContent = nextContent as SlideData['demoContent'];
+      const imagery = nextDemoContent?.imagery ?? [];
+      return prev.map(s => {
+        const sameDemoDeck = s.layout === 'demo-mock' && (!templateId || s.demoTemplate?.id === templateId);
+        return sameDemoDeck
+          ? {
+              ...s,
+              demoContent: nextDemoContent,
+              title: nextDemoContent?.title || s.title,
+              imageUrl: imagery[0] || s.imageUrl,
+              images: imagery.length > 0 ? imagery : s.images,
+            }
+          : s;
+      });
+    });
+  }, [activeIndex]);
+
+  const updateDemoDeckTemplate = useCallback((nextOrUpdater: unknown) => {
+    setSlides(prev => {
+      const target = prev[activeIndex];
+      if (!target?.demoTemplate) return prev;
+      const nextTemplate = typeof nextOrUpdater === 'function'
+        ? (nextOrUpdater as (current: SlideData['demoTemplate']) => SlideData['demoTemplate'])(target.demoTemplate)
+        : nextOrUpdater;
+      const nextDemoTemplate = nextTemplate as SlideData['demoTemplate'];
+      const templateId = target.demoTemplate?.id;
+      return prev.map(s => {
+        const sameDemoDeck = s.layout === 'demo-mock' && (!templateId || s.demoTemplate?.id === templateId);
+        return sameDemoDeck
+          ? { ...s, demoTemplate: nextDemoTemplate, bgColor: nextDemoTemplate?.palette?.bg || s.bgColor }
+          : s;
+      });
+    });
+  }, [activeIndex]);
+
   const handleTemplateSelected = useCallback((template: InfographicTemplate) => {
     const newSlide: SlideData = { ...template.slide, id: uuidv4() };
     setSlides(prev => {
@@ -363,9 +419,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setSlides(imported);
       setActiveIndex(0);
       toast.success(`Imported ${imported.length} slides from ${file.name}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('PPTX import error:', err);
-      toast.error(err.message || 'Failed to import PPTX file');
+      toast.error(err instanceof Error ? err.message : 'Failed to import PPTX file');
     }
   }, []);
 
@@ -398,7 +454,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     };
 
     const fetchViaProxy = async (): Promise<Blob> => {
-      const base = (import.meta as any).env?.VITE_SUPABASE_URL;
+      const base = import.meta.env?.VITE_SUPABASE_URL;
       if (!base) throw new Error('Proxy unavailable');
       const proxyUrl = `${base}/functions/v1/proxy-brandhub-file?url=${encodeURIComponent(file.url)}`;
       const res = await fetch(proxyUrl);
@@ -786,7 +842,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                     brandFonts={brandFonts}
                     animated={animatedBackgrounds}
                     editable={activeSlide.layout === 'demo-mock'}
-                    onDemoContentChange={(next) => updateSlide(activeIndex, { demoContent: next })}
+                    onDemoContentChange={updateDemoDeckContent}
                   />
                 </CenteredScaledSlide>
 
@@ -830,6 +886,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             <div className="w-[300px] border-l bg-card overflow-y-auto shrink-0 h-full min-h-0 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
               <div className="p-4 pb-12 space-y-5">
                 <h3 className="font-semibold text-sm">Slide Properties</h3>
+
+                {activeSlide.layout === 'demo-mock' && activeSlide.demoContent && activeSlide.demoTemplate && (
+                  <DemoSlidePropertyEditor
+                    slide={activeSlide}
+                    onContentChange={updateDemoDeckContent}
+                    onTemplateChange={updateDemoDeckTemplate}
+                  />
+                )}
+
+                {activeSlide.layout !== 'demo-mock' && (
+                <>
 
                 {/* Layout selector */}
                 <div className="space-y-2">
@@ -1393,6 +1460,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                       </Button>
                     </label>
                   </div>
+                )}
+
+                </>
                 )}
 
                 {/* Speaker notes */}
