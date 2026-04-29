@@ -92,6 +92,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [animatedBackgrounds, setAnimatedBackgrounds] = useState(true);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isAssetsLibraryOpen, setIsAssetsLibraryOpen] = useState(false);
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
   const [canvasFileOver, setCanvasFileOver] = useState(false);
   const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
