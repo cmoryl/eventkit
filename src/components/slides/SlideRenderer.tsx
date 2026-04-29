@@ -4,6 +4,7 @@ import { SlideLayout } from './SlideLayout';
 import { renderLayoutVariation } from './SlideLayoutVariations';
 import { ParallaxRenderer } from './ParallaxRenderer';
 import { BrandHubGrowthChart, BrandHubKpiTiles } from './BrandHubVisualizations';
+import { SlideMock } from '@/components/powerpoint/composer/TemplatePreviewDialog';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -68,6 +69,28 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
   // Parallax slides own their own background + composition — bypass SlideLayout.
   if (slide.layout === 'parallax') {
     return <ParallaxRenderer slide={slide} motion={parallaxMotion} progress={parallaxProgress} />;
+  }
+
+  // Demo-mock slides render the exact template preview component (pixel-identical to gallery preview).
+  if (slide.layout === 'demo-mock' && slide.demoContent && slide.demoTemplate && slide.demoKind) {
+    return (
+      <div
+        className="absolute inset-0 flex items-center justify-center p-[40px]"
+        style={{ background: slide.demoTemplate.palette?.bg || '#0b1024' }}
+      >
+        <div className="w-full h-full">
+          <SlideMock
+            template={slide.demoTemplate}
+            content={slide.demoContent}
+            setContent={() => {}}
+            editing={false}
+            kind={slide.demoKind as any}
+            index={0}
+            total={1}
+          />
+        </div>
+      </div>
+    );
   }
 
   const variationNode = renderLayoutVariation({
