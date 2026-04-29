@@ -284,6 +284,17 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
           </ScrollArea>
         </DialogContent>
       </Dialog>
+
+      <TemplatePreviewDialog
+        template={previewTemplate}
+        open={!!previewTemplate}
+        onOpenChange={(o) => !o && setPreviewTemplate(null)}
+        onUse={(t) => {
+          onSelect(t);
+          setBrowseOpen(false);
+        }}
+        disabled={disabled}
+      />
     </div>
   );
 };
