@@ -423,6 +423,19 @@ const PowerPointAgent: React.FC = () => {
     const sourcePayload =
       pdfSource || brandHubPayload ? { ...(pdfSource || {}), brandHub: brandHubPayload } : undefined;
 
+    const selectedTpl = selectedTemplateId
+      ? ALL_DECK_TEMPLATES.find((t) => t.id === selectedTemplateId)
+      : undefined;
+    const templatePayload = selectedTpl
+      ? {
+          id: selectedTpl.id,
+          name: selectedTpl.name,
+          description: selectedTpl.description,
+          themePrompt: selectedTpl.themePrompt,
+          palette: selectedTpl.palette,
+        }
+      : undefined;
+
     return {
       topic: finalTopic,
       audience: audience || undefined,
@@ -436,6 +449,7 @@ const PowerPointAgent: React.FC = () => {
           : null,
       ].filter(Boolean).join(" — ") || undefined,
       templateId: selectedTemplateId || undefined,
+      template: templatePayload,
       source: sourcePayload,
       planOnly: opts.planOnly || undefined,
       prebuiltOutline: opts.prebuiltOutline,
