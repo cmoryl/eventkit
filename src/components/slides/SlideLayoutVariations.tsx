@@ -539,7 +539,141 @@ function TitleAsymmetric({ slide, headingFont, bodyFont, accentColor, headingCol
   );
 }
 
-// ── CONTENT ──────────────────────────────────────────────────────
+// ── TITLE — premium variants used by the demo theme packs ───────────
+function TitleHeroImage({ slide, headingFont, bodyFont, accentColor, headingColor, isDark, hSize, bSize }: VariationContext) {
+  const accent = accentColor || '#A1F9F9';
+  const img = slide.imageUrl || slide.images?.[0];
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      {img && (
+        <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      )}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: img
+            ? `linear-gradient(180deg, ${slide.bgColor || '#000'}cc 0%, ${slide.bgColor || '#000'}66 45%, ${slide.bgColor || '#000'}f0 100%)`
+            : `linear-gradient(135deg, ${slide.bgColor || '#000'}, ${accent}40)`,
+        }}
+      />
+      <div className="relative z-10 flex flex-col justify-end h-full px-[140px] py-[120px]">
+        <div className="flex items-center gap-[24px] mb-[40px]">
+          <div className="h-[6px] w-[80px] rounded-full" style={{ backgroundColor: accent }} />
+          {slide.subtitle && (
+            <span className="uppercase tracking-[0.3em] opacity-80 font-medium" style={{ fontFamily: bodyFont, fontSize: 24, color: '#fff' }}>
+              {slide.subtitle}
+            </span>
+          )}
+        </div>
+        <h1
+          className="font-bold leading-[0.95] max-w-[85%]"
+          style={{ fontFamily: headingFont, color: '#fff', fontSize: hSize || 132, letterSpacing: '-0.02em' }}
+        >
+          {slide.title}
+        </h1>
+      </div>
+    </div>
+  );
+}
+
+function TitleImageOverlay({ slide, headingFont, bodyFont, accentColor, hSize, bSize }: VariationContext) {
+  const accent = accentColor || '#A1F9F9';
+  const img = slide.imageUrl || slide.images?.[0];
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      {img && <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(ellipse at center, ${slide.bgColor || '#000'}80 0%, ${slide.bgColor || '#000'}f0 70%)`,
+        }}
+      />
+      <div className="relative z-10 flex flex-col items-center justify-center text-center h-full px-[200px]">
+        {slide.subtitle && (
+          <div className="uppercase tracking-[0.4em] mb-[40px] font-medium" style={{ fontFamily: bodyFont, fontSize: 22, color: accent }}>
+            {slide.subtitle}
+          </div>
+        )}
+        <h1
+          className="font-bold leading-[0.95] mb-[32px]"
+          style={{ fontFamily: headingFont, color: '#fff', fontSize: hSize || 140, letterSpacing: '-0.03em' }}
+        >
+          {slide.title}
+        </h1>
+        <div className="h-[4px] w-[120px] rounded-full mt-[20px]" style={{ backgroundColor: accent }} />
+      </div>
+    </div>
+  );
+}
+
+function TitleSplitImage({ slide, headingFont, bodyFont, accentColor, headingColor, hSize, bSize }: VariationContext) {
+  const accent = accentColor || '#A1F9F9';
+  const img = slide.imageUrl || slide.images?.[0];
+  return (
+    <div className="flex h-full">
+      <div className="flex-1 flex flex-col justify-center px-[100px] py-[100px]">
+        {slide.subtitle && (
+          <div className="uppercase tracking-[0.3em] mb-[36px] font-medium" style={{ fontFamily: bodyFont, fontSize: 22, color: accent }}>
+            {slide.subtitle}
+          </div>
+        )}
+        <h1
+          className="font-bold leading-[0.95] mb-[40px]"
+          style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 104, letterSpacing: '-0.02em' }}
+        >
+          {slide.title}
+        </h1>
+        <div className="h-[6px] w-[80px] rounded-full" style={{ backgroundColor: accent }} />
+      </div>
+      <div className="w-[50%] relative overflow-hidden">
+        {img ? (
+          <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${accent}, ${accent}55)` }} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TitleEditorial({ slide, headingFont, bodyFont, accentColor, headingColor, hSize, bSize }: VariationContext) {
+  const accent = accentColor || '#A1F9F9';
+  return (
+    <div className="flex flex-col justify-between h-full px-[160px] py-[120px]">
+      <div className="flex items-center gap-[24px]">
+        <div className="font-mono uppercase tracking-[0.4em] opacity-50" style={{ fontFamily: bodyFont, fontSize: 22, color: headingColor }}>
+          01 / Section
+        </div>
+        <div className="flex-1 h-[1px]" style={{ backgroundColor: `${headingColor}33` }} />
+        <div className="font-mono uppercase tracking-[0.4em] opacity-50" style={{ fontFamily: bodyFont, fontSize: 22, color: headingColor }}>
+          {new Date().getFullYear()}
+        </div>
+      </div>
+      <div>
+        <div className="h-[8px] w-[120px] rounded-full mb-[60px]" style={{ backgroundColor: accent }} />
+        <h1
+          className="font-bold leading-[0.92] mb-[48px]"
+          style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 156, letterSpacing: '-0.03em', maxWidth: '95%' }}
+        >
+          {slide.title}
+        </h1>
+        {slide.subtitle && (
+          <p className="opacity-70 max-w-[70%] leading-snug" style={{ fontFamily: bodyFont, fontSize: bSize || 36, color: headingColor }}>
+            {slide.subtitle}
+          </p>
+        )}
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="uppercase tracking-[0.3em] opacity-50" style={{ fontFamily: bodyFont, fontSize: 20, color: headingColor }}>
+          Presented by
+        </div>
+        <div className="uppercase tracking-[0.3em] opacity-50" style={{ fontFamily: bodyFont, fontSize: 20, color: headingColor }}>
+          {slide.subtitle ? '' : 'Begin'}
+        </div>
+      </div>
+    </div>
+  );
+}
 function ContentColumns({ slide, headingFont, bodyFont, headingColor, hSize, bSize, align }: VariationContext) {
   const lines = (slide.body || '').split('\n').filter(Boolean);
   const half = Math.ceil(lines.length / 2);
