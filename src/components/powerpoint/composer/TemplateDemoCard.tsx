@@ -39,6 +39,12 @@ export interface DemoCard {
   title: string;
   body: string;
   icon?: LucideIcon;
+  /** Short tag rendered as a pill badge */
+  tag?: string;
+  /** Optional bullet sub-points shown beneath the body */
+  subPoints?: string[];
+  /** Optional footnote / source line */
+  footnote?: string;
 }
 
 export interface DemoMetric {
@@ -46,18 +52,30 @@ export interface DemoMetric {
   label: string;
   trend?: string;
   icon?: LucideIcon;
+  /** Smaller secondary label, e.g. "vs prior period" */
+  sublabel?: string;
+  /** Direction marker, "up" | "down" | "flat" */
+  direction?: "up" | "down" | "flat";
 }
 
 export interface DemoAgendaItem {
   step: string;
   title: string;
   body: string;
+  /** Estimated time on this section */
+  duration?: string;
+  /** Person leading this section */
+  owner?: string;
 }
 
 export interface DemoTimelineItem {
   when: string;
   title: string;
   body: string;
+  /** Concrete deliverables shipped at this milestone */
+  deliverables?: string[];
+  /** Who owns this milestone */
+  owner?: string;
 }
 
 export interface DemoCompare {
@@ -77,6 +95,10 @@ export interface DemoTeamMember {
   name: string;
   role: string;
   initials: string;
+  /** City / region label */
+  location?: string;
+  /** Short pull-quote or focus area */
+  focus?: string;
 }
 
 export interface DemoPricingTier {
@@ -86,6 +108,10 @@ export interface DemoPricingTier {
   tagline: string;
   features: string[];
   highlighted?: boolean;
+  /** Limits / fine-print line shown under price */
+  limit?: string;
+  /** Call-to-action label shown at bottom of tier */
+  cta?: string;
 }
 
 export interface DemoProcessStep {
@@ -93,6 +119,10 @@ export interface DemoProcessStep {
   title: string;
   body: string;
   icon?: LucideIcon;
+  /** Deliverable produced by this step */
+  output?: string;
+  /** How long the step typically takes */
+  duration?: string;
 }
 
 export interface DemoBentoTile {
