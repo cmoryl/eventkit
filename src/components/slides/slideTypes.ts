@@ -191,9 +191,13 @@ export interface SlideData {
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
 export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; label: string }[]>> = {
   title: [
-    { value: 'centered',    label: 'Centered' },
-    { value: 'split',       label: 'Split Screen' },
-    { value: 'asymmetric',  label: 'Asymmetric' },
+    { value: 'centered',       label: 'Centered' },
+    { value: 'split',          label: 'Split Screen' },
+    { value: 'asymmetric',     label: 'Asymmetric' },
+    { value: 'hero-image',     label: 'Full-bleed Hero' },
+    { value: 'image-overlay',  label: 'Image + Overlay' },
+    { value: 'split-image',    label: 'Split + Image' },
+    { value: 'editorial',      label: 'Editorial Eyebrow' },
   ],
   content: [
     { value: 'bullets',     label: 'Bullets' },
