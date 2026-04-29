@@ -166,27 +166,44 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange, p
 
       {/* Chart data — show when intent is chart, or always allow opting in */}
       {(slide.visualIntent === "chart" || slide.chart) && (
-        <div className="space-y-1.5 rounded-md border border-white/10 bg-white/[0.04] p-2.5">
+        <div
+          className="space-y-1.5 rounded-md border border-white/10 bg-white/[0.04] p-2.5 cursor-pointer hover:border-cyan-300/40 transition-colors"
+          onDoubleClick={() => setEditTarget({ kind: "chart", chart: slide.chart })}
+          title="Double-click to open full chart editor"
+        >
           <div className="flex items-center justify-between gap-2">
             <Label className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/70">
               <BarChart3 className="h-3 w-3" /> Chart data
             </Label>
-            <Select value={slide.chart?.type || "bar"} onValueChange={(v) => setChartType(v as ChartType)}>
-              <SelectTrigger className="h-7 w-28 text-xs bg-white/5 border-white/10 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHART_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={(e) => { e.stopPropagation(); setEditTarget({ kind: "chart", chart: slide.chart }); }}
+                className="h-7 px-2 text-[11px] text-cyan-300 hover:text-cyan-200 hover:bg-white/5"
+                title="Open full editor (colors, axes, legend)"
+              >
+                <Pencil className="h-3 w-3" /> Edit
+              </Button>
+              <Select value={slide.chart?.type || "bar"} onValueChange={(v) => setChartType(v as ChartType)}>
+                <SelectTrigger className="h-7 w-24 text-xs bg-white/5 border-white/10 text-white" onClick={(e) => e.stopPropagation()}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHART_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <Input
             value={slide.chart?.title || ""}
             onChange={(e) => onChange({
               chart: { ...(slide.chart || { type: "bar", data: [] }), title: e.target.value },
             })}
+            onClick={(e) => e.stopPropagation()}
             placeholder="Chart title (optional)"
             className="h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
@@ -194,11 +211,12 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange, p
             value={chartCsv}
             onChange={(e) => setChartCsv(e.target.value)}
             onBlur={commitChartData}
+            onClick={(e) => e.stopPropagation()}
             placeholder={"label, value\nQ1, 12\nQ2, 18\nQ3, 27"}
             rows={4}
             className="text-xs font-mono bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
-          <p className="text-[10px] text-white/45">One row per data point. The AI will style this to match the deck.</p>
+          <p className="text-[10px] text-white/45">Quick-edit here, or double-click the card to fine-tune colors, axes, and legend.</p>
         </div>
       )}
 
