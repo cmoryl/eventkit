@@ -90,7 +90,15 @@ const PowerPointAgent: React.FC = () => {
 
   // Brand selection
   const [brands, setBrands] = useState<BrandOption[]>([]);
-  const [selectedBrandId, setSelectedBrandId] = useState<string>("");
+  // Initialize from sessionStorage so the user's brand pick survives refresh + tab switches
+  const [selectedBrandId, setSelectedBrandId] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return sessionStorage.getItem("active-brand-id") || "";
+  });
+  // Persist every change to sessionStorage (shared key with useActiveBrand)
+  useEffect(() => {
+    if (selectedBrandId) sessionStorage.setItem("active-brand-id", selectedBrandId);
+  }, [selectedBrandId]);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [mode, setMode] = useState<Mode>("prompt");
@@ -190,9 +198,11 @@ const PowerPointAgent: React.FC = () => {
       styles: Array.isArray(b.brand_styles) ? b.brand_styles[0] : b.brand_styles,
     }));
     setBrands(mapped);
-    // Default selection: active brand if present, else first
-    if (!selectedBrandId) {
-      setSelectedBrandId(activeBrand?.id || mapped[0]?.id || "");
+    // Default selection priority: existing local pick > sessionStorage > active brand > first
+    const stored = typeof window !== "undefined" ? sessionStorage.getItem("active-brand-id") : null;
+    const validStored = stored && mapped.some((m) => m.id === stored) ? stored : "";
+    if (!selectedBrandId || !mapped.some((m) => m.id === selectedBrandId)) {
+      setSelectedBrandId(validStored || activeBrand?.id || mapped[0]?.id || "");
     }
   }, [user, activeBrand?.id, selectedBrandId]);
 
