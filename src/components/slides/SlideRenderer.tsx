@@ -27,12 +27,12 @@ interface SlideRendererProps {
 
 function ImageGallery({ images }: { images: string[] }) {
   if (images.length === 1) {
-    return <img src={images[0]} alt="" className="w-full h-full object-contain" />;
+    return <img src={images[0]} alt="" data-slide-image="images.0" className="w-full h-full object-contain" />;
   }
   return (
     <div className="grid grid-cols-2 gap-[16px] w-full h-full p-[16px]">
       {images.slice(0, 4).map((src, i) => (
-        <img key={i} src={src} alt="" className="w-full h-full object-contain rounded-[8px]" />
+        <img key={i} src={src} alt="" data-slide-image={`images.${i}`} className="w-full h-full object-contain rounded-[8px]" />
       ))}
     </div>
   );
@@ -47,6 +47,7 @@ function SlideImages({ images, variant }: { images: string[]; variant: SlideData
           key={i}
           src={src}
           alt=""
+          data-slide-image={`images.${i}`}
           className="max-h-[500px] object-contain rounded-[12px]"
           style={{
             boxShadow: variant === 'default' || variant === 'minimal'
@@ -110,14 +111,14 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {variationNode || <>
       {slide.layout === 'title' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
-          <h1
+          <h1 data-slide-field="title"
             className="font-bold leading-tight mb-[40px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 96, textAlign: 'center' }}
           >
             {slide.title}
           </h1>
           {slide.subtitle && (
-            <p className="opacity-70" style={{ fontFamily: bodyFont, fontSize: bSize || 48 }}>
+            <p data-slide-field="subtitle" className="opacity-70" style={{ fontFamily: bodyFont, fontSize: bSize || 48 }}>
               {slide.subtitle}
             </p>
           )}
@@ -129,14 +130,14 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'content' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[60px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 72 }}
           >
             {slide.title}
           </h2>
           <div className="flex-1 flex gap-[80px]">
-            <div className="flex-1">
+            <div className="flex-1" data-slide-field="body" data-slide-multiline="true">
               {slide.body && slide.body.split('\n').map((line, i) => (
                 <p key={i} className="leading-relaxed mb-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 40 }}>
                   {line}
@@ -155,14 +156,14 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {(slide.layout === 'image-left' || slide.layout === 'image-right') && (
         <div className={`flex h-full ${slide.layout === 'image-right' ? 'flex-row' : 'flex-row-reverse'}`}>
           <div className="flex-1 flex flex-col justify-center px-[100px] py-[80px]" style={{ textAlign: align }}>
-            <h2
+            <h2 data-slide-field="title"
               className="font-bold mb-[40px]"
               style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}
             >
               {slide.title}
             </h2>
             {slide.body && (
-              <div>
+              <div data-slide-field="body" data-slide-multiline="true">
                 {slide.body.split('\n').map((line, i) => (
                   <p key={i} className="leading-relaxed mb-[16px]" style={{ fontFamily: bodyFont, fontSize: bSize || 36 }}>
                     {line}
@@ -173,7 +174,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
           </div>
           <div className="w-[45%] bg-black/5 flex items-center justify-center overflow-hidden">
             {slide.imageUrl ? (
-              <img src={slide.imageUrl} alt="" className="w-full h-full object-cover" />
+              <img src={slide.imageUrl} alt="" data-slide-image="hero" className="w-full h-full object-cover" />
             ) : slide.images && slide.images.length > 0 ? (
               <ImageGallery images={slide.images} />
             ) : (
@@ -185,7 +186,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'two-column' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[60px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}
           >
@@ -220,14 +221,14 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {slide.layout === 'quote' && (
         <div className="flex flex-col items-center justify-center h-full px-[240px] text-center">
           <div className="mb-[40px] opacity-20" style={{ fontSize: 160, lineHeight: '1', fontFamily: 'Georgia, serif' }}>"</div>
-          <h2
+          <h2 data-slide-field="title"
             className="font-medium italic leading-snug mb-[60px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, marginTop: -100 }}
           >
             {slide.title}
           </h2>
           {slide.quoteAuthor && (
-            <p className="opacity-60 tracking-wide uppercase" style={{ fontFamily: bodyFont, fontSize: bSize || 32 }}>
+            <p data-slide-field="quoteAuthor" className="opacity-60 tracking-wide uppercase" style={{ fontFamily: bodyFont, fontSize: bSize || 32 }}>
               — {slide.quoteAuthor}
             </p>
           )}
@@ -250,7 +251,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'stats' && slide.variation !== 'brandhub-tiles' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[80px] text-center"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 72 }}
           >
@@ -264,12 +265,13 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               {(slide.stats || []).map((stat, i) => (
                 <div key={i} className="text-center">
                   <div
+                    data-slide-field={`stats.${i}.value`}
                     className="font-bold mb-[16px]"
                     style={{ fontSize: 96, color: accentColor || (isDark ? '#a78bfa' : '#6366f1'), fontFamily: headingFont }}
                   >
                     {stat.value}
                   </div>
-                  <div className="opacity-60 uppercase tracking-widest" style={{ fontSize: bSize || 28, fontFamily: bodyFont }}>
+                  <div data-slide-field={`stats.${i}.label`} className="opacity-60 uppercase tracking-widest" style={{ fontSize: bSize || 28, fontFamily: bodyFont }}>
                     {stat.label}
                   </div>
                 </div>
@@ -286,15 +288,16 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               <img
                 src={slide.imageUrl || slide.images![0]}
                 alt=""
+                data-slide-image={slide.imageUrl ? 'hero' : 'images.0'}
                 className="w-full h-full object-cover"
               />
               {slide.title && (
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-[120px] bg-gradient-to-t from-black/70 via-transparent to-transparent">
-                  <h2 className="font-bold text-white text-center px-[120px]" style={{ fontFamily: headingFont, fontSize: hSize || 72 }}>
+                  <h2 data-slide-field="title" className="font-bold text-white text-center px-[120px]" style={{ fontFamily: headingFont, fontSize: hSize || 72 }}>
                     {slide.title}
                   </h2>
                   {slide.subtitle && (
-                    <p className="text-white/70 mt-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 36 }}>
+                    <p data-slide-field="subtitle" className="text-white/70 mt-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 36 }}>
                       {slide.subtitle}
                     </p>
                   )}
@@ -311,7 +314,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'comparison' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[60px] text-center"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}
           >
@@ -346,7 +349,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'timeline' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[80px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
           >
@@ -365,15 +368,15 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
                     {i + 1}
                   </div>
                   {step.date && (
-                    <div className="mt-[24px] uppercase tracking-widest opacity-60" style={{ fontFamily: bodyFont, fontSize: 24 }}>
+                    <div data-slide-field={`timeline.${i}.date`} className="mt-[24px] uppercase tracking-widest opacity-60" style={{ fontFamily: bodyFont, fontSize: 24 }}>
                       {step.date}
                     </div>
                   )}
-                  <div className="mt-[12px] font-semibold" style={{ fontFamily: headingFont, color: headingColor, fontSize: 36 }}>
+                  <div data-slide-field={`timeline.${i}.title`} className="mt-[12px] font-semibold" style={{ fontFamily: headingFont, color: headingColor, fontSize: 36 }}>
                     {step.title}
                   </div>
                   {step.description && (
-                    <div className="mt-[16px] opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 26 }}>
+                    <div data-slide-field={`timeline.${i}.description`} data-slide-multiline="true" className="mt-[16px] opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 26 }}>
                       {step.description}
                     </div>
                   )}
@@ -386,7 +389,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'process' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[80px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
           >
@@ -406,11 +409,11 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
                   <div className="font-bold mb-[12px]" style={{ fontSize: 56, color: accentColor || '#6366f1', fontFamily: headingFont }}>
                     {String(i + 1).padStart(2, '0')}
                   </div>
-                  <div className="font-semibold mb-[8px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: 30 }}>
+                  <div data-slide-field={`process.${i}.title`} className="font-semibold mb-[8px]" style={{ fontFamily: headingFont, color: headingColor, fontSize: 30 }}>
                     {step.title}
                   </div>
                   {step.description && (
-                    <div className="opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 22 }}>
+                    <div data-slide-field={`process.${i}.description`} data-slide-multiline="true" className="opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 22 }}>
                       {step.description}
                     </div>
                   )}
@@ -440,7 +443,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'chart' && slide.variation !== 'growth-bars' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[40px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
           >
@@ -532,7 +535,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'section' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[30px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 88 }}
           >
@@ -550,7 +553,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {slide.layout === 'agenda' && (
         <div className="flex h-full px-[120px] py-[100px] gap-[120px]">
           <div className="flex flex-col justify-center" style={{ minWidth: 320 }}>
-            <h2
+            <h2 data-slide-field="title"
               className="font-bold leading-tight"
               style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 80 }}
             >
@@ -559,19 +562,25 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
             <div className="mt-[40px] w-[80px] h-[8px] rounded-full" style={{ backgroundColor: accentColor || '#6366f1' }} />
           </div>
           <div className="flex-1 flex flex-col justify-center gap-[24px]">
-            {(slide.body || '').split('\n').filter(Boolean).map((item, i) => (
-              <div key={i} className="flex items-center gap-[32px]">
-                <div
-                  className="rounded-full flex items-center justify-center font-bold text-white shrink-0"
-                  style={{ width: 64, height: 64, backgroundColor: accentColor || '#6366f1', fontFamily: headingFont, fontSize: 28 }}
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <span className="font-medium" style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}>
-                  {item}
-                </span>
-              </div>
-            ))}
+            {(() => {
+              const allLines = (slide.body || '').split('\n');
+              return allLines
+                .map((item, originalIdx) => ({ item, originalIdx }))
+                .filter(({ item }) => Boolean(item))
+                .map(({ item, originalIdx }, i) => (
+                  <div key={originalIdx} className="flex items-center gap-[32px]">
+                    <div
+                      className="rounded-full flex items-center justify-center font-bold text-white shrink-0"
+                      style={{ width: 64, height: 64, backgroundColor: accentColor || '#6366f1', fontFamily: headingFont, fontSize: 28 }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </div>
+                    <span data-slide-field={`agenda.${originalIdx}`} className="font-medium" style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}>
+                      {item}
+                    </span>
+                  </div>
+                ));
+            })()}
             {!(slide.body?.trim()) && (
               <p className="opacity-30 text-[32px]">Add agenda items in the editor</p>
             )}
@@ -582,7 +591,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {slide.layout === 'big-number' && (
         <div className="flex flex-col items-center justify-center h-full px-[160px] text-center gap-[32px]">
           {slide.title && (
-            <h2
+            <h2 data-slide-field="title"
               className="font-semibold opacity-70 uppercase tracking-widest"
               style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize ? hSize * 0.45 : 36 }}
             >
@@ -592,12 +601,14 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
           {slide.stats?.[0] ? (
             <>
               <div
+                data-slide-field="stats.0.value"
                 className="font-bold leading-none"
                 style={{ fontSize: 200, color: accentColor || (isDark ? '#a78bfa' : '#6366f1'), fontFamily: headingFont }}
               >
                 {slide.stats[0].value}
               </div>
               <div
+                data-slide-field="stats.0.label"
                 className="font-medium opacity-80"
                 style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}
               >
@@ -608,7 +619,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
             <p className="opacity-30 text-[40px]">Add a stat in the editor</p>
           )}
           {slide.subtitle && (
-            <p className="opacity-50 mt-[8px]" style={{ fontFamily: bodyFont, fontSize: bSize ? bSize * 0.7 : 28 }}>
+            <p data-slide-field="subtitle" className="opacity-50 mt-[8px]" style={{ fontFamily: bodyFont, fontSize: bSize ? bSize * 0.7 : 28 }}>
               {slide.subtitle}
             </p>
           )}
