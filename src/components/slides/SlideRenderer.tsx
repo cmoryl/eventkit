@@ -73,7 +73,6 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
   // Demo-mock slides render the exact template preview component (pixel-identical to gallery preview).
   if (slide.layout === 'demo-mock' && slide.demoContent && slide.demoTemplate && slide.demoKind) {
-    const { SlideMock } = require('@/components/powerpoint/composer/TemplatePreviewDialog');
     return (
       <div
         className="absolute inset-0 flex items-center justify-center p-[40px]"
