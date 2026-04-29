@@ -137,7 +137,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
             {slide.title}
           </h2>
           <div className="flex-1 flex gap-[80px]">
-            <div className="flex-1">
+            <div className="flex-1" data-slide-field="body" data-slide-multiline="true">
               {slide.body && slide.body.split('\n').map((line, i) => (
                 <p key={i} className="leading-relaxed mb-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 40 }}>
                   {line}
