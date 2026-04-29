@@ -1023,7 +1023,17 @@ const PowerPointAgent: React.FC = () => {
         </footer>
       )}
 
-      <BrandHubImportModal
+      {/* Editor tab — full slide editor, prefilled with the most recent agent-generated outline */}
+      <SlideEditor
+        isOpen={activeTab === "editor"}
+        onClose={() => setActiveTab("agent")}
+        assetType="presentation"
+        assetName={history.find((h) => h.deck)?.deck?.title || "New Presentation"}
+        brand={(activeBrand as any) || null}
+        initialSlides={editorInitialSlides}
+      />
+
+
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onBrandImported={() => { setShowImportModal(false); loadBrands(); }}
