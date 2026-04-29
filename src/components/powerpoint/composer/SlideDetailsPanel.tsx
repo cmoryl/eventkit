@@ -39,12 +39,13 @@ const VISUAL_INTENTS: { value: VisualIntent; label: string; hint: string }[] = [
 const CHART_TYPES: ChartType[] = ["bar", "line", "pie", "donut", "area", "scatter"];
 
 /** Compact, dark-glass per-slide details editor: notes, visual intent, chart data, image refs. */
-export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange }) => {
+export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange, palette }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [chartCsv, setChartCsv] = useState<string>(() => csvFromChart(slide.chart));
   const fileRef = useRef<HTMLInputElement>(null);
+  const [editTarget, setEditTarget] = useState<AssetEditTarget | null>(null);
 
   const setIntent = (v: VisualIntent) => onChange({ visualIntent: v });
 
