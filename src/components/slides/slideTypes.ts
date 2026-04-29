@@ -199,6 +199,15 @@ export interface SlideData {
    *   { "orb-tl": { color: "#ff0", hidden: false } }
    */
   demoOverrides?: Record<string, { color?: string; hidden?: boolean }>;
+  /**
+   * Per-section overrides for demo-mock slides — keyed by `data-slide-section` id.
+   * Lets users move (translate %), hide, or duplicate entire sections like stat
+   * tiles, agenda cards, KPI blocks. dx/dy are in % of slide dims.
+   */
+  demoSectionOverrides?: Record<
+    string,
+    { dx?: number; dy?: number; hidden?: boolean; duplicated?: number }
+  >;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
