@@ -664,7 +664,7 @@ const PowerPointAgent: React.FC = () => {
         }
       `}</style>
       {/* Header */}
-      <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-10">
+      <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-20 relative">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
             <Button asChild variant="ghost" size="sm">
@@ -695,7 +695,7 @@ const PowerPointAgent: React.FC = () => {
         </div>
       </header>
 
-      <main ref={scrollRef} className={`flex-1 overflow-y-auto ${activeTab === "editor" ? "hidden" : ""}`}>
+      <main ref={scrollRef} className={`flex-1 overflow-y-auto relative z-10 ${activeTab === "editor" ? "hidden" : ""}`}>
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
           {/* Outline review step (Gamma-style) */}
           {pendingOutline && (
@@ -990,7 +990,7 @@ const PowerPointAgent: React.FC = () => {
 
       {/* Sticky footer composer — only shown after the first deck */}
       {history.length > 0 && activeTab === "agent" && (
-        <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0">
+        <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0 z-20 relative">
           <div className="max-w-6xl mx-auto px-6 py-3 space-y-2">
             <form
               onSubmit={(e) => {
