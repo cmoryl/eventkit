@@ -192,12 +192,10 @@ export function TemplateGalleryDialog({
 function themedTemplate(template: InfographicTemplate): InfographicTemplate {
   if (!template.theme) return template;
   const [themed] = applyDemoTheme([template.slide], template.theme);
-  // Preserve any explicit bgEffect already on the slide (template-specific motion).
-  const merged: Omit<SlideData, 'id'> = {
-    ...themed,
-    bgEffect: template.slide.bgEffect ?? themed.bgEffect,
-  };
-  return { ...template, slide: merged };
+  // The demo theme's bgEffect (TransPerfect orbs, Modern Dark mesh, etc.) is the
+  // whole point of the style — always let it win over the template's stock effect
+  // so gallery cards visually match the demo decks.
+  return { ...template, slide: themed };
 }
 
 function CategoryButton({
