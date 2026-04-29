@@ -2332,20 +2332,43 @@ export const SlideMock: React.FC<{
                     className="text-3xl font-extrabold tracking-tight"
                     style={{ color: t.palette.text }}
                   >
-                    {p.price}
+                    <Editable
+                      ariaLabel={`Pricing ${i + 1} price`}
+                      editing={editing}
+                      value={p.price}
+                      onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, price: v } : tier)) }))}
+                      className="inline-block"
+                    />
                   </span>
-                  <span className="text-[10px]" style={{ color: muted }}>
-                    {p.cadence}
-                  </span>
+                  <Editable
+                    ariaLabel={`Pricing ${i + 1} cadence`}
+                    editing={editing}
+                    value={p.cadence}
+                    onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, cadence: v } : tier)) }))}
+                    className="text-[10px]"
+                    style={{ color: muted }}
+                  />
                 </div>
                 {p.limit && (
                   <div className="text-[9px] mt-1 font-mono" style={{ color: muted }}>
-                    {p.limit}
+                    <Editable
+                      ariaLabel={`Pricing ${i + 1} limit`}
+                      editing={editing}
+                      value={p.limit}
+                      onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, limit: v } : tier)) }))}
+                    />
                   </div>
                 )}
-                <div className="text-[11px] mt-1 italic" style={{ color: muted }}>
-                  {p.tagline}
-                </div>
+                <Editable
+                  as="div"
+                  ariaLabel={`Pricing ${i + 1} tagline`}
+                  editing={editing}
+                  value={p.tagline}
+                  multiline
+                  onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, tagline: v } : tier)) }))}
+                  className="text-[11px] mt-1 italic"
+                  style={{ color: muted }}
+                />
                 <ul className="mt-4 space-y-1.5 flex-1">
                   {p.features.map((f, fi) => (
                     <li key={fi} className="flex gap-2 items-start text-[11px]">
@@ -2353,7 +2376,13 @@ export const SlideMock: React.FC<{
                         className="h-3 w-3 mt-0.5 shrink-0"
                         style={{ color: p.highlighted ? t.palette.accent : muted }}
                       />
-                      <span style={{ color: t.palette.text }}>{f}</span>
+                      <Editable
+                        ariaLabel={`Pricing ${i + 1} feature ${fi + 1}`}
+                        editing={editing}
+                        value={f}
+                        onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => idx === i ? { ...tier, features: tier.features.map((feature, fidx) => (fidx === fi ? v : feature)) } : tier) }))}
+                        style={{ color: t.palette.text }}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -2366,7 +2395,12 @@ export const SlideMock: React.FC<{
                       border: `1px solid ${t.palette.accent}`,
                     }}
                   >
-                    {p.cta}
+                    <Editable
+                      ariaLabel={`Pricing ${i + 1} CTA`}
+                      editing={editing}
+                      value={p.cta}
+                      onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, cta: v } : tier)) }))}
+                    />
                   </div>
                 )}
               </div>
