@@ -4,6 +4,12 @@ import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
+import {
+  SLIDE_TEMPLATES,
+  DECK_TEMPLATE_TO_DEMO_THEME,
+  resolveDemoThemeId,
+  type SlideData,
+} from "@/components/slides/slideTypes";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -115,11 +121,19 @@ const PowerPointAgent: React.FC = () => {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
+  // Holds a starter deck loaded directly from a template (bypasses AI outline).
+  // When set, takes priority over the AI-derived editorInitialSlides.
+  const [templateStarterSlides, setTemplateStarterSlides] = useState<SlideData[] | null>(null);
+
   // Convert the most recent built deck's outline into SlideData[] for the inline SlideEditor.
   // Uses the shared outlineToThemedSlides converter so AI-generated decks inherit the same
   // demo theme look-and-feel (TransPerfect orbs, Modern Dark mesh, etc.) as the gallery templates,
   // and so rich layouts (kpi_grid, comparison, agenda, timeline, process, chart) survive intact.
   const editorInitialSlides = useMemo(() => {
+    // Template starter deck takes priority — user explicitly chose "Open in Editor".
+    if (templateStarterSlides && templateStarterSlides.length > 0) {
+      return templateStarterSlides;
+    }
     const lastDeck = [...history].reverse().find((h) => h.deck?.outline)?.deck;
     if (!lastDeck?.outline) return undefined;
     if (parallaxMode) {
@@ -135,7 +149,7 @@ const PowerPointAgent: React.FC = () => {
       }));
     }
     return outlineToThemedSlides(lastDeck.outline, { templateId: selectedTemplateId || undefined });
-  }, [history, parallaxMode, selectedTemplateId]);
+  }, [history, parallaxMode, selectedTemplateId, templateStarterSlides]);
 
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
     setSelectedTemplateId(tpl.id);
@@ -151,6 +165,31 @@ const PowerPointAgent: React.FC = () => {
     }
     toast({ title: `${tpl.name} template applied`, description: "Look & feel locked in. Edit the topic and hit Generate." });
   }, [toast]);
+
+  // Pick the best matching starter deck for a given DeckTemplate.
+  // Strategy: match the template's demo theme (TransPerfect / Modern Dark / Editorial Light, etc.)
+  // and grab the first SLIDE_TEMPLATES entry that targets the same theme. Falls back to "Keynote".
+  const buildStarterSlidesForTemplate = useCallback((tpl: DeckTemplate): SlideData[] => {
+    const themeId = DECK_TEMPLATE_TO_DEMO_THEME[tpl.id] || resolveDemoThemeId(tpl.id, tpl.palette);
+    const candidates = SLIDE_TEMPLATES.filter((t) => t.theme === themeId);
+    const pick = candidates[0] || SLIDE_TEMPLATES[0];
+    return pick.slides.map((s) => ({ ...s, id: crypto.randomUUID() } as SlideData));
+  }, []);
+
+  const openTemplateInEditor = useCallback((tpl: DeckTemplate) => {
+    setSelectedTemplateId(tpl.id);
+    setThemeOverride(tpl.themePrompt);
+    setShowTemplateGallery(false);
+    const starter = buildStarterSlidesForTemplate(tpl);
+    setTemplateStarterSlides(starter);
+    // Jump straight into the editor tab — bypass outline review entirely.
+    setActiveTab("editor");
+    toast({
+      title: `${tpl.name} loaded into editor`,
+      description: `${starter.length} starter slides ready — edit anything, then Save as Template to keep your version.`,
+    });
+  }, [buildStarterSlidesForTemplate, setActiveTab, toast]);
+
 
   // Apply ?template= from URL once brands etc. are ready
   useEffect(() => {
@@ -784,6 +823,7 @@ const PowerPointAgent: React.FC = () => {
                     <TemplateGallery
                       selectedId={selectedTemplateId}
                       onSelect={applyTemplate}
+                      onOpenInEditor={openTemplateInEditor}
                       disabled={isGenerating}
                       variant="showcase"
                     />
@@ -989,6 +1029,7 @@ const PowerPointAgent: React.FC = () => {
                         <TemplateGallery
                           selectedId={selectedTemplateId}
                           onSelect={applyTemplate}
+                          onOpenInEditor={openTemplateInEditor}
                           disabled={isGenerating}
                         />
                       </div>
