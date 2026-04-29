@@ -1041,10 +1041,9 @@ const SlideMock: React.FC<{
           <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
-              // Pseudo-percent derived from value to drive visualizations
               const numeric = parseFloat(String(m.value).replace(/[^0-9.]/g, "")) || (i + 1) * 17;
               const pct = Math.min(98, Math.max(12, (numeric % 100) + 8));
-              const useRing = i % 2 === 0;
+              const variant = pickVariant(t.id, `metric-${i}`, index + i);
               return (
                 <div
                   key={i}
@@ -1079,43 +1078,18 @@ const SlideMock: React.FC<{
                     )}
                   </div>
 
-                  {/* Visualization fills the empty middle */}
+                  {/* Visualization fills the empty middle — rotates per template + per card */}
                   <div className="flex-1 min-h-[60px] flex items-center justify-center">
-                    {useRing ? (
-                      <div className="flex items-center gap-3 w-full">
-                        <RingGauge
-                          percent={pct}
-                          accent={t.palette.accent}
-                          track={t.palette.text}
-                          size={68}
-                          thickness={9}
-                          label="vs goal"
-                          text={t.palette.text}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <HBars
-                            values={[
-                              { label: "Q1", v: Math.round(pct * 0.6) },
-                              { label: "Q2", v: Math.round(pct * 0.78) },
-                              { label: "Q3", v: Math.round(pct) },
-                            ]}
-                            accent={t.palette.accent}
-                            secondary={t.palette.secondary}
-                            text={t.palette.text}
-                            muted={muted}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-full h-16">
-                        <Sparkline
-                          accent={t.palette.accent}
-                          secondary={t.palette.secondary}
-                          muted={muted}
-                          seed={i + 2}
-                        />
-                      </div>
-                    )}
+                    <VisualVariant
+                      variant={variant}
+                      accent={t.palette.accent}
+                      secondary={t.palette.secondary}
+                      text={t.palette.text}
+                      muted={muted}
+                      seed={i + 2}
+                      percent={pct}
+                      size="md"
+                    />
                   </div>
 
                   <div>
