@@ -1420,11 +1420,17 @@ const SlideMock: React.FC<{
             {content.team.map((m, i) => (
               <div
                 key={i}
-                className="rounded-xl p-4 flex flex-col items-start"
+                className="relative rounded-xl p-4 flex flex-col items-start overflow-hidden"
                 style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
               >
+                {/* Decorative corner accent */}
                 <div
-                  className="h-14 w-14 rounded-full flex items-center justify-center text-base font-extrabold mb-3"
+                  aria-hidden
+                  className="absolute -top-6 -right-6 h-12 w-12 rounded-full opacity-30 blur-xl"
+                  style={{ background: t.palette.accent }}
+                />
+                <div
+                  className="relative h-14 w-14 rounded-full flex items-center justify-center text-base font-extrabold mb-3"
                   style={{
                     background: `linear-gradient(135deg, ${t.palette.accent}, ${t.palette.secondary})`,
                     color: t.palette.bg,
@@ -1432,12 +1438,29 @@ const SlideMock: React.FC<{
                 >
                   {m.initials}
                 </div>
-                <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
+                <div className="relative text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
                   {m.name}
                 </div>
-                <div className="text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
+                <div className="relative text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
                   {m.role}
                 </div>
+                {m.location && (
+                  <div
+                    className="relative mt-2 inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider"
+                    style={{ color: t.palette.accent }}
+                  >
+                    <span className="inline-block h-1 w-1 rounded-full" style={{ background: t.palette.accent }} />
+                    {m.location}
+                  </div>
+                )}
+                {m.focus && (
+                  <div
+                    className="relative mt-2 pt-2 text-[10px] italic leading-snug border-t"
+                    style={{ color: muted, borderColor: subtleBorder }}
+                  >
+                    "{m.focus}"
+                  </div>
+                )}
               </div>
             ))}
           </div>
