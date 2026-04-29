@@ -1490,7 +1490,12 @@ export const SlideMock: React.FC<{
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: t.palette.accent }}>
-                  {content.compare.after.title}
+                  <Editable
+                    ariaLabel="After comparison title"
+                    editing={editing}
+                    value={content.compare.after.title}
+                    onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, after: { ...c.compare.after, title: v } } }))}
+                  />
                 </div>
                 <RingGauge percent={91} accent={t.palette.accent} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
               </div>
@@ -1501,7 +1506,12 @@ export const SlideMock: React.FC<{
                       className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
                       style={{ background: t.palette.accent }}
                     />
-                    <span>{p}</span>
+                    <Editable
+                      ariaLabel={`After comparison point ${i + 1}`}
+                      editing={editing}
+                      value={p}
+                      onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, after: { ...c.compare.after, points: c.compare.after.points.map((point, idx) => (idx === i ? v : point)) } } }))}
+                    />
                   </li>
                 ))}
               </ul>
@@ -1563,11 +1573,23 @@ export const SlideMock: React.FC<{
                   style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                 >
                   <div className="text-sm font-extrabold" style={{ color: t.palette.text }}>
-                    {m.value}
+                    <Editable
+                      ariaLabel={`Stat supporting metric ${i + 1} value`}
+                      editing={editing}
+                      value={m.value}
+                      onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, value: v } : metric)) }))}
+                      className="inline-block"
+                    />
                   </div>
-                  <div className="text-[10px] truncate" style={{ color: muted }}>
-                    {m.label}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Stat supporting metric ${i + 1} label`}
+                    editing={editing}
+                    value={m.label}
+                    onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, label: v } : metric)) }))}
+                    className="text-[10px] truncate"
+                    style={{ color: muted }}
+                  />
                 </div>
               ))}
             </div>
