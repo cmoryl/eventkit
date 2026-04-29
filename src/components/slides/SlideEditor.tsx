@@ -631,14 +631,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 onClick={async () => {
                   try {
                     await exportSlidesToPptx(slides, assetName, { transition: slideTransition });
-                    toast({ title: 'Export started', description: `Downloading ${slides.length} slides as .pptx` });
+                    toast.success(`Downloading ${slides.length} slides as .pptx`);
                   } catch (err) {
                     console.error('PPTX export error:', err);
-                    toast({
-                      title: 'Export failed',
-                      description: err instanceof Error ? err.message : 'Could not export deck',
-                      variant: 'destructive',
-                    });
+                    toast.error(err instanceof Error ? err.message : 'Could not export deck');
                   }
                 }}
                 title="Download the edited deck as a PowerPoint (.pptx) file"
