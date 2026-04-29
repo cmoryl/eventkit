@@ -456,6 +456,105 @@ const Donut: React.FC<{ percent: number; accent: string; track: string; label: s
   );
 };
 
+/* ------------------------------ Visual variants ------------------------------ */
+// One unified rotation surface for all the SVG visuals so each slide / card / tile
+// pulls a different style. Drives variation across templates AND across slides.
+export type VisualVariantId = "spark" | "ring" | "bars" | "wave" | "iso" | "blob" | "grid" | "donut";
+
+const VARIANT_ROTATIONS: Record<string, VisualVariantId[]> = {
+  // Per-template ordering — first variant becomes the "signature" look.
+  "transperfect-2026": ["ring", "spark", "bars", "iso", "wave", "blob", "grid", "donut"],
+  "modern-dark":       ["spark", "wave", "ring", "iso", "grid", "blob", "bars", "donut"],
+  "editorial-light":   ["bars", "grid", "spark", "donut", "wave", "ring", "iso", "blob"],
+  "corporate-navy":    ["donut", "ring", "bars", "spark", "iso", "grid", "wave", "blob"],
+  "vibrant-startup":   ["wave", "blob", "spark", "ring", "iso", "bars", "donut", "grid"],
+  "warm-terracotta":   ["blob", "iso", "wave", "grid", "spark", "ring", "bars", "donut"],
+  "mono-brutalist":    ["grid", "bars", "iso", "spark", "ring", "donut", "wave", "blob"],
+};
+const DEFAULT_ROTATION: VisualVariantId[] = ["spark", "ring", "bars", "wave", "iso", "blob", "grid", "donut"];
+
+/** Pick a visual variant deterministically from template id + per-slide channel + index. */
+export function pickVariant(templateId: string, channel: string, index: number): VisualVariantId {
+  const rot = VARIANT_ROTATIONS[templateId] || DEFAULT_ROTATION;
+  // Mix the channel into the offset so different sections of one slide read different variants.
+  let h = 0;
+  for (let i = 0; i < channel.length; i++) h = (h * 31 + channel.charCodeAt(i)) >>> 0;
+  return rot[(index + h) % rot.length];
+}
+
+interface VVProps {
+  variant: VisualVariantId;
+  accent: string;
+  secondary: string;
+  text: string;
+  muted: string;
+  /** Used as render seed and pseudo-percent input for ring/donut. */
+  seed?: number;
+  /** Optional explicit percent for ring/donut (0–100). Falls back to seed-derived. */
+  percent?: number;
+  /** Optional bar series; if absent, generated from seed. */
+  bars?: { label: string; v: number }[];
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+/** Universal renderer — drop into any empty space to fill it with a brand-tinted visual. */
+export const VisualVariant: React.FC<VVProps> = ({
+  variant,
+  accent,
+  secondary,
+  text,
+  muted,
+  seed = 1,
+  percent,
+  bars,
+  size = "md",
+  className,
+}) => {
+  const pct = typeof percent === "number" ? percent : Math.min(96, Math.max(18, ((seed * 37) % 80) + 16));
+  const ringSize = size === "sm" ? 44 : size === "lg" ? 84 : 64;
+  const ringThick = size === "sm" ? 6 : size === "lg" ? 10 : 8;
+  const fallbackBars = bars || [
+    { label: "wk1", v: Math.round(pct * 0.45) },
+    { label: "wk2", v: Math.round(pct * 0.62) },
+    { label: "wk3", v: Math.round(pct * 0.81) },
+    { label: "wk4", v: Math.round(pct) },
+  ];
+
+  return (
+    <div className={`w-full h-full flex items-center justify-center ${className || ""}`}>
+      {variant === "spark" && (
+        <Sparkline accent={accent} secondary={secondary} muted={muted} seed={seed} />
+      )}
+      {variant === "ring" && (
+        <RingGauge percent={pct} accent={accent} track={text} size={ringSize} thickness={ringThick} text={text} label="vs goal" />
+      )}
+      {variant === "bars" && (
+        <div className="w-full px-1">
+          <HBars values={fallbackBars} accent={accent} secondary={secondary} text={text} muted={muted} />
+        </div>
+      )}
+      {variant === "wave" && (
+        <WavePattern accent={accent} secondary={secondary} />
+      )}
+      {variant === "iso" && (
+        <div className="w-[85%] h-[85%]">
+          <IsoStack accent={accent} secondary={secondary} text={text} />
+        </div>
+      )}
+      {variant === "blob" && (
+        <RadialBlob accent={accent} secondary={secondary} seed={seed} />
+      )}
+      {variant === "grid" && (
+        <GridDecor accent={accent} secondary={secondary} text={text} />
+      )}
+      {variant === "donut" && (
+        <Donut percent={pct} accent={accent} track={text} label="Share" sub="of total" text={text} muted={muted} />
+      )}
+    </div>
+  );
+};
+
 /* ------------------------------ Slide kinds ------------------------------ */
 type SlideKind =
   | "title"
@@ -786,8 +885,16 @@ const SlideMock: React.FC<{
               <RadialBlob accent={t.palette.accent} secondary={t.palette.secondary} seed={index + 5} />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-[70%] h-[55%]">
-                <IsoStack accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />
+              <div className="w-[72%] h-[62%]">
+                <VisualVariant
+                  variant={pickVariant(t.id, "section-hero", index)}
+                  accent={t.palette.accent}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                  seed={index + 7}
+                  size="lg"
+                />
               </div>
             </div>
             <div
@@ -942,10 +1049,9 @@ const SlideMock: React.FC<{
           <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
-              // Pseudo-percent derived from value to drive visualizations
               const numeric = parseFloat(String(m.value).replace(/[^0-9.]/g, "")) || (i + 1) * 17;
               const pct = Math.min(98, Math.max(12, (numeric % 100) + 8));
-              const useRing = i % 2 === 0;
+              const variant = pickVariant(t.id, `metric-${i}`, index + i);
               return (
                 <div
                   key={i}
@@ -980,43 +1086,18 @@ const SlideMock: React.FC<{
                     )}
                   </div>
 
-                  {/* Visualization fills the empty middle */}
+                  {/* Visualization fills the empty middle — rotates per template + per card */}
                   <div className="flex-1 min-h-[60px] flex items-center justify-center">
-                    {useRing ? (
-                      <div className="flex items-center gap-3 w-full">
-                        <RingGauge
-                          percent={pct}
-                          accent={t.palette.accent}
-                          track={t.palette.text}
-                          size={68}
-                          thickness={9}
-                          label="vs goal"
-                          text={t.palette.text}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <HBars
-                            values={[
-                              { label: "Q1", v: Math.round(pct * 0.6) },
-                              { label: "Q2", v: Math.round(pct * 0.78) },
-                              { label: "Q3", v: Math.round(pct) },
-                            ]}
-                            accent={t.palette.accent}
-                            secondary={t.palette.secondary}
-                            text={t.palette.text}
-                            muted={muted}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="w-full h-16">
-                        <Sparkline
-                          accent={t.palette.accent}
-                          secondary={t.palette.secondary}
-                          muted={muted}
-                          seed={i + 2}
-                        />
-                      </div>
-                    )}
+                    <VisualVariant
+                      variant={variant}
+                      accent={t.palette.accent}
+                      secondary={t.palette.secondary}
+                      text={t.palette.text}
+                      muted={muted}
+                      seed={i + 2}
+                      percent={pct}
+                      size="md"
+                    />
                   </div>
 
                   <div>
@@ -1472,8 +1553,7 @@ const SlideMock: React.FC<{
             {content.kpi.supporting.map((s, i) => {
               const numeric = parseFloat(String(s.value).replace(/[^0-9.]/g, "")) || (i + 1) * 21;
               const pct = Math.min(96, Math.max(20, (numeric % 100) + 14));
-              const variants = ["spark", "ring", "bars", "wave"] as const;
-              const variant = variants[i % variants.length];
+              const variant = pickVariant(t.id, `kpi-${i}`, index + i);
               return (
                 <div
                   key={i}
@@ -1492,33 +1572,16 @@ const SlideMock: React.FC<{
                     {s.label}
                   </div>
                   <div className="flex-1 min-h-0">
-                    {variant === "spark" && (
-                      <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={i + 9} />
-                    )}
-                    {variant === "ring" && (
-                      <div className="h-full flex items-center justify-center">
-                        <RingGauge percent={pct} accent={t.palette.accent} track={t.palette.text} size={56} thickness={7} text={t.palette.text} />
-                      </div>
-                    )}
-                    {variant === "bars" && (
-                      <div className="h-full flex items-center">
-                        <HBars
-                          values={[
-                            { label: "wk1", v: Math.round(pct * 0.55) },
-                            { label: "wk2", v: Math.round(pct * 0.72) },
-                            { label: "wk3", v: Math.round(pct * 0.86) },
-                            { label: "wk4", v: Math.round(pct) },
-                          ]}
-                          accent={t.palette.accent}
-                          secondary={t.palette.secondary}
-                          text={t.palette.text}
-                          muted={muted}
-                        />
-                      </div>
-                    )}
-                    {variant === "wave" && (
-                      <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
-                    )}
+                    <VisualVariant
+                      variant={variant}
+                      accent={t.palette.accent}
+                      secondary={t.palette.secondary}
+                      text={t.palette.text}
+                      muted={muted}
+                      seed={i + 9}
+                      percent={pct}
+                      size="sm"
+                    />
                   </div>
                   <div
                     className="text-xl font-extrabold tracking-tight leading-none"
@@ -1580,28 +1643,18 @@ const SlideMock: React.FC<{
                       />
                     </>
                   )}
-                  {/* Non-image tile: inject a visual filler so it doesn't feel empty */}
+                  {/* Non-image tile: inject a brand-tinted visual so it doesn't feel empty */}
                   {!tileImg && (
                     <div className="absolute inset-0 pointer-events-none opacity-80">
-                      {(() => {
-                        const variants = ["wave", "blob", "grid", "iso", "spark"] as const;
-                        const v = variants[i % variants.length];
-                        if (v === "wave") return <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />;
-                        if (v === "blob") return <RadialBlob accent={t.palette.accent} secondary={t.palette.secondary} seed={i + 3} />;
-                        if (v === "grid") return <GridDecor accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />;
-                        if (v === "iso") return (
-                          <div className="absolute inset-0 flex items-end justify-end p-1 opacity-90">
-                            <div className="w-3/4 h-3/4">
-                              <IsoStack accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />
-                            </div>
-                          </div>
-                        );
-                        return (
-                          <div className="absolute inset-0 flex items-center p-2">
-                            <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={i + 4} />
-                          </div>
-                        );
-                      })()}
+                      <VisualVariant
+                        variant={pickVariant(t.id, `bento-${i}`, index + i)}
+                        accent={t.palette.accent}
+                        secondary={t.palette.secondary}
+                        text={t.palette.text}
+                        muted={muted}
+                        seed={i + 4}
+                        size="md"
+                      />
                       <div
                         className="absolute inset-0"
                         style={{
@@ -1661,7 +1714,15 @@ const SlideMock: React.FC<{
               />
             ) : (
               <div className="absolute inset-0">
-                <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
+                <VisualVariant
+                  variant={pickVariant(t.id, "feature-split-bg", index)}
+                  accent={t.palette.accent}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                  seed={index + 17}
+                  size="lg"
+                />
               </div>
             )}
             {/* Bottom gradient for legibility */}
