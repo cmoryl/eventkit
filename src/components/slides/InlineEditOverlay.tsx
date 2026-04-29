@@ -438,10 +438,14 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     root.addEventListener('click', onClick);
     root.addEventListener('dblclick', onDoubleClick);
     root.addEventListener('mouseover', onMouseOver);
+    root.addEventListener('mousedown', onMouseDown);
     return () => {
       root.removeEventListener('click', onClick);
       root.removeEventListener('dblclick', onDoubleClick);
       root.removeEventListener('mouseover', onMouseOver);
+      root.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onDragMove);
+      window.removeEventListener('mouseup', onDragEnd);
     };
   }, [enabled, onUpdate]);
 
