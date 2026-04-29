@@ -478,6 +478,21 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     onUpdate({ demoOverrides: next });
   };
 
+  const updateSection = (id: string, patch: { dx?: number; dy?: number; hidden?: boolean }) => {
+    const next = { ...(slideRef.current.demoSectionOverrides || {}) };
+    next[id] = { ...next[id], ...patch };
+    onUpdate({ demoSectionOverrides: next });
+  };
+  const resetSection = (id: string) => {
+    const next = { ...(slideRef.current.demoSectionOverrides || {}) };
+    delete next[id];
+    onUpdate({ demoSectionOverrides: next });
+  };
+  const nudge = (id: string, dx: number, dy: number) => {
+    const cur = slideRef.current.demoSectionOverrides?.[id] || {};
+    updateSection(id, { dx: (cur.dx || 0) + dx, dy: (cur.dy || 0) + dy });
+  };
+
   return (
     <div className="relative w-full h-full">
       <div ref={wrapperRef} className="contents">
