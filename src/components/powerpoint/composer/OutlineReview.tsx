@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { ArrowLeft, Sparkles, Plus, Trash2, GripVertical, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus, Trash2, GripVertical, Loader2, Check, ChevronDown, ChevronUp, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import type { DeckOutline, SlideOutline } from "../DeckPreview";
 import { SlideDetailsPanel } from "./SlideDetailsPanel";
 
@@ -26,9 +28,12 @@ const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
 };
 
 export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building }) => {
+  const { toast } = useToast();
   // Stable per-slide ids so storage paths stay consistent across edits within this session
   const slideIds = useMemo(() => outline.slides.map(() => crypto.randomUUID()), [outline.slides.length]);
   const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
+  const [populatingIdx, setPopulatingIdx] = useState<Set<number>>(new Set());
+  const [populatingAll, setPopulatingAll] = useState(false);
 
   const toggleDetails = (i: number) => {
     setExpandedDetails((prev) => {
@@ -36,6 +41,56 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
       if (next.has(i)) next.delete(i); else next.add(i);
       return next;
     });
+  };
+
+  // Calls edge fn to enrich a single slide; returns the patched slide.
+  const populateOne = async (idx: number, slide: SlideOutline, deckSnapshot: DeckOutline): Promise<SlideOutline | null> => {
+    const { data, error } = await supabase.functions.invoke("populate-slide-details", {
+      body: { deck: deckSnapshot, slide, slideIndex: idx },
+    });
+    if (error || (data && (data as any).error)) {
+      const msg = (data as any)?.error || error?.message || "AI populate failed";
+      toast({ title: "Couldn't populate", description: msg, variant: "destructive" });
+      return null;
+    }
+    const patch = (data as any)?.patch || {};
+    return { ...slide, ...patch } as SlideOutline;
+  };
+
+  const handlePopulateOne = async (idx: number) => {
+    setPopulatingIdx((p) => new Set(p).add(idx));
+    try {
+      const next = await populateOne(idx, outline.slides[idx], outline);
+      if (next) {
+        onChange({ ...outline, slides: outline.slides.map((s, i) => (i === idx ? next : s)) });
+        // auto-expand so user sees the new details
+        setExpandedDetails((prev) => new Set(prev).add(idx));
+        toast({ title: "Slide enriched", description: "AI added details for this slide." });
+      }
+    } finally {
+      setPopulatingIdx((p) => { const n = new Set(p); n.delete(idx); return n; });
+    }
+  };
+
+  const handlePopulateAll = async () => {
+    setPopulatingAll(true);
+    try {
+      // Sequential to be friendly to rate limits; deck snapshot stays consistent.
+      const deckSnapshot = outline;
+      const updated = [...outline.slides];
+      for (let i = 0; i < updated.length; i++) {
+        setPopulatingIdx((p) => new Set(p).add(i));
+        const next = await populateOne(i, updated[i], { ...deckSnapshot, slides: updated });
+        setPopulatingIdx((p) => { const n = new Set(p); n.delete(i); return n; });
+        if (next) {
+          updated[i] = next;
+          onChange({ ...outline, slides: [...updated] });
+        }
+      }
+      toast({ title: "All slides enriched", description: "Review and tweak before generating." });
+    } finally {
+      setPopulatingAll(false);
+    }
   };
 
   const detailsCount = (s: SlideOutline) => {
@@ -92,9 +147,21 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
             className="text-sm text-muted-foreground border-0 px-0 h-auto focus-visible:ring-0 shadow-none"
           />
         </div>
-        <Button size="lg" onClick={onConfirm} disabled={building}>
-          {building ? (<><Loader2 className="h-4 w-4 animate-spin" /> Building deck…</>) : (<><Check className="h-4 w-4" /> Generate {outline.slides.length} slides</>)}
-        </Button>
+        <div className="flex flex-col gap-2 items-end">
+          <Button size="lg" onClick={onConfirm} disabled={building || populatingAll}>
+            {building ? (<><Loader2 className="h-4 w-4 animate-spin" /> Building deck…</>) : (<><Check className="h-4 w-4" /> Generate {outline.slides.length} slides</>)}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handlePopulateAll}
+            disabled={building || populatingAll}
+            title="Use AI to fill in details (notes, visuals, data) for every slide"
+          >
+            {populatingAll ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" /> Populating all…</>) : (<><Wand2 className="h-3.5 w-3.5" /> AI populate all</>)}
+          </Button>
+        </div>
       </div>
 
       {/* Slide list */}
@@ -130,6 +197,16 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                       placeholder="Slide title"
                       className="font-semibold h-8 flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
+                    <button
+                      type="button"
+                      onClick={() => handlePopulateOne(i)}
+                      disabled={populatingIdx.has(i) || populatingAll}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] border bg-violet-400/15 border-violet-300/50 text-violet-100 hover:bg-violet-400/25 transition-colors disabled:opacity-60"
+                      title="Use AI to write details, bullets, and visual guidance for this slide"
+                    >
+                      {populatingIdx.has(i) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                      AI fill
+                    </button>
                     <button
                       type="button"
                       onClick={() => toggleDetails(i)}
