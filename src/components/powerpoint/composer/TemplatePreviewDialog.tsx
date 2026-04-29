@@ -47,6 +47,7 @@ const buildInitialContent = (t: DeckTemplate): DemoContent => {
     eyebrow: d.eyebrow,
     title: d.title,
     subtitle: d.subtitle,
+    imagery: d.imagery ? [...d.imagery] : undefined,
     cards: d.cards.map((c) => ({ title: c.title, body: c.body, icon: c.icon })),
     stat: { ...d.stat },
     quote: { ...d.quote },
@@ -63,6 +64,16 @@ const buildInitialContent = (t: DeckTemplate): DemoContent => {
       unit: d.chart.unit,
       series: d.chart.series.map((s) => ({ ...s })),
       trendline: d.chart.trendline ? [...d.chart.trendline] : undefined,
+    },
+    team: d.team.map((m) => ({ ...m })),
+    pricing: d.pricing.map((p) => ({ ...p, features: [...p.features] })),
+    process: d.process.map((p) => ({ ...p })),
+    bento: d.bento.map((b) => ({ ...b })),
+    kpi: {
+      headline: d.kpi.headline,
+      big: d.kpi.big,
+      bigLabel: d.kpi.bigLabel,
+      supporting: d.kpi.supporting.map((s) => ({ ...s })),
     },
   };
 };
