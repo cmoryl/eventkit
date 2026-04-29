@@ -121,11 +121,19 @@ const PowerPointAgent: React.FC = () => {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
+  // Holds a starter deck loaded directly from a template (bypasses AI outline).
+  // When set, takes priority over the AI-derived editorInitialSlides.
+  const [templateStarterSlides, setTemplateStarterSlides] = useState<SlideData[] | null>(null);
+
   // Convert the most recent built deck's outline into SlideData[] for the inline SlideEditor.
   // Uses the shared outlineToThemedSlides converter so AI-generated decks inherit the same
   // demo theme look-and-feel (TransPerfect orbs, Modern Dark mesh, etc.) as the gallery templates,
   // and so rich layouts (kpi_grid, comparison, agenda, timeline, process, chart) survive intact.
   const editorInitialSlides = useMemo(() => {
+    // Template starter deck takes priority — user explicitly chose "Open in Editor".
+    if (templateStarterSlides && templateStarterSlides.length > 0) {
+      return templateStarterSlides;
+    }
     const lastDeck = [...history].reverse().find((h) => h.deck?.outline)?.deck;
     if (!lastDeck?.outline) return undefined;
     if (parallaxMode) {
@@ -141,7 +149,7 @@ const PowerPointAgent: React.FC = () => {
       }));
     }
     return outlineToThemedSlides(lastDeck.outline, { templateId: selectedTemplateId || undefined });
-  }, [history, parallaxMode, selectedTemplateId]);
+  }, [history, parallaxMode, selectedTemplateId, templateStarterSlides]);
 
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
     setSelectedTemplateId(tpl.id);
