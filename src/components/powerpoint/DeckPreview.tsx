@@ -109,7 +109,7 @@ const LAYOUT_OPTIONS: SlideOutline["layout"][] = [
   "title", "section", "bullets", "two_column", "stat", "quote", "closing",
 ];
 
-const TEMPLATE_PREVIEW_IMAGES: Record<string, Record<SlideOutline["layout"], string>> = {
+const TEMPLATE_PREVIEW_IMAGES: Record<string, Partial<Record<SlideOutline["layout"], string>>> = {
   "transperfect-2026": {
     title: transperfectHero,
     closing: transperfectHero,
