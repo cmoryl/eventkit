@@ -17,7 +17,7 @@ interface Props {
   building: boolean;
 }
 
-const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
+const LAYOUT_LABELS: Partial<Record<SlideOutline["layout"], string>> = {
   title: "Title",
   section: "Section",
   bullets: "Bullets",
@@ -25,6 +25,15 @@ const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
   stat: "Stat",
   quote: "Quote",
   closing: "Closing",
+  kpi_grid: "KPI Grid",
+  agenda: "Agenda",
+  timeline: "Timeline",
+  comparison: "Comparison",
+  metrics: "Metrics",
+  team: "Team",
+  image_hero: "Image Hero",
+  chart: "Chart",
+  process: "Process",
 };
 
 export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building }) => {
