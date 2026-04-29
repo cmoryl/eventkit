@@ -248,23 +248,37 @@ type SlideKind =
   | "title"
   | "agenda"
   | "section"
+  | "kpi-hero"
   | "cards"
+  | "bento"
+  | "feature-split"
   | "metrics"
   | "chart"
+  | "process"
   | "timeline"
   | "compare"
+  | "team"
+  | "pricing"
+  | "gallery"
   | "stat"
   | "quote";
 
 const SLIDES: SlideKind[] = [
   "title",
   "agenda",
+  "kpi-hero",
   "section",
   "cards",
+  "bento",
+  "feature-split",
   "metrics",
   "chart",
+  "process",
   "timeline",
   "compare",
+  "team",
+  "pricing",
+  "gallery",
   "stat",
   "quote",
 ];
