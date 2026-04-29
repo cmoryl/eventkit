@@ -906,12 +906,22 @@ const SlideMock: React.FC<{
           <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
+              // Pseudo-percent derived from value to drive visualizations
+              const numeric = parseFloat(String(m.value).replace(/[^0-9.]/g, "")) || (i + 1) * 17;
+              const pct = Math.min(98, Math.max(12, (numeric % 100) + 8));
+              const useRing = i % 2 === 0;
               return (
                 <div
                   key={i}
-                  className="rounded-lg p-4 flex flex-col justify-between"
+                  className="rounded-lg p-4 flex flex-col gap-3 relative overflow-hidden"
                   style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                 >
+                  {/* corner accent stripe */}
+                  <div
+                    aria-hidden
+                    className="absolute top-0 left-0 h-1 w-12 rounded-br-md"
+                    style={{ background: t.palette.accent }}
+                  />
                   <div className="flex items-center justify-between">
                     {Ic && (
                       <div
@@ -933,6 +943,46 @@ const SlideMock: React.FC<{
                       </span>
                     )}
                   </div>
+
+                  {/* Visualization fills the empty middle */}
+                  <div className="flex-1 min-h-[60px] flex items-center justify-center">
+                    {useRing ? (
+                      <div className="flex items-center gap-3 w-full">
+                        <RingGauge
+                          percent={pct}
+                          accent={t.palette.accent}
+                          track={t.palette.text}
+                          size={68}
+                          thickness={9}
+                          label="vs goal"
+                          text={t.palette.text}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <HBars
+                            values={[
+                              { label: "Q1", v: Math.round(pct * 0.6) },
+                              { label: "Q2", v: Math.round(pct * 0.78) },
+                              { label: "Q3", v: Math.round(pct) },
+                            ]}
+                            accent={t.palette.accent}
+                            secondary={t.palette.secondary}
+                            text={t.palette.text}
+                            muted={muted}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-16">
+                        <Sparkline
+                          accent={t.palette.accent}
+                          secondary={t.palette.secondary}
+                          muted={muted}
+                          seed={i + 2}
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <div
                       className="text-3xl font-extrabold leading-none tracking-tight"
@@ -948,19 +998,6 @@ const SlideMock: React.FC<{
                         {m.sublabel}
                       </div>
                     )}
-                    {/* Mini sparkbar */}
-                    <div className="mt-2 flex items-end gap-0.5 h-3">
-                      {[0.4, 0.6, 0.5, 0.7, 0.85, 1].map((h, hi) => (
-                        <span
-                          key={hi}
-                          className="flex-1 rounded-sm"
-                          style={{
-                            height: `${h * 100}%`,
-                            background: hi === 5 ? t.palette.accent : `${t.palette.secondary}88`,
-                          }}
-                        />
-                      ))}
-                    </div>
                   </div>
                 </div>
               );
