@@ -366,6 +366,181 @@ export const SourceSheet: React.FC<Props> = (props) => {
             )}
           </TabsContent>
 
+          {/* PPTX TAB */}
+          <TabsContent value="pptx" className="mt-3 space-y-3">
+            <input
+              ref={pptxInputRef}
+              type="file"
+              accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+              className="hidden"
+              onChange={(e) => handlePptxSelect?.(e.target.files?.[0] || null)}
+            />
+            {!pptxFile ? (
+              <button
+                type="button"
+                onClick={() => pptxInputRef?.current?.click()}
+                disabled={disabled}
+                className="w-full flex items-center justify-center gap-2 py-6 rounded-md border border-dashed border-border hover:border-primary/50 hover:bg-accent/30 transition-colors text-sm text-muted-foreground"
+              >
+                <Upload className="h-4 w-4" />
+                Upload a .pptx — extract slides, imagery & tone
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 text-sm">
+                  <Presentation className="h-4 w-4 text-primary shrink-0" />
+                  <span className="truncate flex-1">{pptxFile.name}</span>
+                  {extracting && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  {extractedSource && !extracting && (
+                    <span className="text-xs text-muted-foreground">
+                      {extractedSource.extracted?.pageCount || "?"} slides
+                    </span>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs gap-1"
+                    onClick={() => rerunPptxExtraction?.()}
+                    disabled={disabled || extracting}
+                    title="Re-parse with current toggles"
+                  >
+                    {extracting ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Re-run
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={() => clearPptx?.()}
+                    disabled={disabled || extracting}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeText} onCheckedChange={setIncludeText} disabled={disabled} />
+                    Text & info
+                  </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeImagery} onCheckedChange={setIncludeImagery} disabled={disabled} />
+                    Imagery
+                  </label>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Switch checked={includeLookAndFeel} onCheckedChange={setIncludeLookAndFeel} disabled={disabled} />
+                    Look & feel
+                  </label>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <Label className="text-xs">How much to use from this deck</Label>
+                    <span className="text-muted-foreground">{influence}%</span>
+                  </div>
+                  <Slider
+                    value={[influence]}
+                    onValueChange={(v) => setInfluence(v[0])}
+                    min={10}
+                    max={100}
+                    step={10}
+                    disabled={disabled}
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    {influence >= 70
+                      ? "Stay close to source structure & tone"
+                      : influence >= 40
+                        ? "Use as primary inspiration"
+                        : "Light reference only"}
+                  </p>
+                </div>
+
+                {extractedSource?.extracted?.outline?.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <FileText className="h-3 w-3" />
+                        Slides
+                        <span className="text-muted-foreground font-normal">
+                          · {selectedSections.size}/{extractedSource.extracted.outline.length} included
+                        </span>
+                      </Label>
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={selectAllSections}
+                          disabled={disabled}
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          All
+                        </button>
+                        <span className="text-[10px] text-muted-foreground">·</span>
+                        <button
+                          type="button"
+                          onClick={clearSectionSelection}
+                          disabled={disabled}
+                          className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          None
+                        </button>
+                      </div>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto rounded-md border bg-background/50 divide-y divide-border/50">
+                      {extractedSource.extracted.outline.map(
+                        (section: { heading: string; bullets: string[] }, i: number) => {
+                          const checked = selectedSections.has(i);
+                          return (
+                            <label
+                              key={i}
+                              className={`flex items-start gap-2.5 p-2.5 cursor-pointer hover:bg-accent/30 transition-colors ${checked ? "" : "opacity-60"}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={() => toggleSection(i)}
+                                disabled={disabled}
+                                className="mt-1 h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="text-xs font-medium truncate">
+                                  {i + 1}. {section.heading}
+                                </div>
+                                {section.bullets?.length > 0 && (
+                                  <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                                    {section.bullets.slice(0, 3).join(" · ")}
+                                    {section.bullets.length > 3 && ` · +${section.bullets.length - 3} more`}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        },
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {extractedSource?.extracted?.imageUrls?.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <Label className="text-xs">Extracted imagery</Label>
+                    <div className="grid grid-cols-4 gap-1.5 max-h-40 overflow-y-auto">
+                      {extractedSource.extracted.imageUrls.slice(0, 16).map((url: string, i: number) => (
+                        <img
+                          key={i}
+                          src={url}
+                          alt=""
+                          className="aspect-square w-full object-cover rounded border border-border/50"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </TabsContent>
+
           {/* BRANDHUB TAB */}
           <TabsContent value="brandhub" className="mt-3 space-y-3">
             <BrandHubSourcePicker
