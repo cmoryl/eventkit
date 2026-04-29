@@ -1,6 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check, Layers, Bot, LayoutTemplate } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SlideEditor } from "@/components/slides/SlideEditor";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
