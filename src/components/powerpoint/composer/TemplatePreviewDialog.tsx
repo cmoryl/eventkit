@@ -1422,26 +1422,66 @@ const SlideMock: React.FC<{
             />
           </div>
           <div className="col-span-2 grid grid-cols-2 gap-3">
-            {content.kpi.supporting.map((s, i) => (
-              <div
-                key={i}
-                className="rounded-xl p-4 flex flex-col justify-between min-h-[7rem]"
-                style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
-              >
+            {content.kpi.supporting.map((s, i) => {
+              const numeric = parseFloat(String(s.value).replace(/[^0-9.]/g, "")) || (i + 1) * 21;
+              const pct = Math.min(96, Math.max(20, (numeric % 100) + 14));
+              const variants = ["spark", "ring", "bars", "wave"] as const;
+              const variant = variants[i % variants.length];
+              return (
                 <div
-                  className="text-[10px] uppercase tracking-wider font-semibold"
-                  style={{ color: muted }}
+                  key={i}
+                  className="rounded-xl p-3 flex flex-col gap-2 min-h-[7rem] relative overflow-hidden"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                 >
-                  {s.label}
+                  <div
+                    aria-hidden
+                    className="absolute top-0 right-0 h-1 w-10 rounded-bl-md"
+                    style={{ background: t.palette.accent }}
+                  />
+                  <div
+                    className="text-[10px] uppercase tracking-wider font-semibold"
+                    style={{ color: muted }}
+                  >
+                    {s.label}
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    {variant === "spark" && (
+                      <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={i + 9} />
+                    )}
+                    {variant === "ring" && (
+                      <div className="h-full flex items-center justify-center">
+                        <RingGauge percent={pct} accent={t.palette.accent} track={t.palette.text} size={56} thickness={7} text={t.palette.text} />
+                      </div>
+                    )}
+                    {variant === "bars" && (
+                      <div className="h-full flex items-center">
+                        <HBars
+                          values={[
+                            { label: "wk1", v: Math.round(pct * 0.55) },
+                            { label: "wk2", v: Math.round(pct * 0.72) },
+                            { label: "wk3", v: Math.round(pct * 0.86) },
+                            { label: "wk4", v: Math.round(pct) },
+                          ]}
+                          accent={t.palette.accent}
+                          secondary={t.palette.secondary}
+                          text={t.palette.text}
+                          muted={muted}
+                        />
+                      </div>
+                    )}
+                    {variant === "wave" && (
+                      <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
+                    )}
+                  </div>
+                  <div
+                    className="text-xl font-extrabold tracking-tight leading-none"
+                    style={{ color: t.palette.text }}
+                  >
+                    {s.value}
+                  </div>
                 </div>
-                <div
-                  className="text-2xl font-extrabold tracking-tight"
-                  style={{ color: t.palette.text }}
-                >
-                  {s.value}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
