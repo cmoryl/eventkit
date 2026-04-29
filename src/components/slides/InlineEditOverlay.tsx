@@ -385,7 +385,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           </button>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
