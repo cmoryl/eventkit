@@ -59,7 +59,7 @@ function SlideImages({ images, variant }: { images: string[]; variant: SlideData
   );
 }
 
-export function SlideRenderer({ slide, brandColors, brandFonts, animated, parallaxMotion = 'mouse', parallaxProgress }: SlideRendererProps) {
+export function SlideRenderer({ slide, brandColors, brandFonts, animated, parallaxMotion = 'mouse', parallaxProgress, editable, onDemoContentChange }: SlideRendererProps) {
   const headingFont = brandFonts?.heading || 'inherit';
   const bodyFont = brandFonts?.body || 'inherit';
   const accentColor = brandColors?.primary;
