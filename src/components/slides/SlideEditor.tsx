@@ -780,7 +780,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 onDrop={handleCanvasDrop}
               >
                 <CenteredScaledSlide zoom={zoom}>
-                  <SlideRenderer slide={activeSlide} brandColors={brandColors} brandFonts={brandFonts} animated={animatedBackgrounds} />
+                  <SlideRenderer
+                    slide={activeSlide}
+                    brandColors={brandColors}
+                    brandFonts={brandFonts}
+                    animated={animatedBackgrounds}
+                    editable={activeSlide.layout === 'demo-mock'}
+                    onDemoContentChange={(next) => updateSlide(activeIndex, { demoContent: next })}
+                  />
                 </CenteredScaledSlide>
 
                 {/* Drop overlay */}
