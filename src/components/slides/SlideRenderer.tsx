@@ -368,15 +368,15 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
                     {i + 1}
                   </div>
                   {step.date && (
-                    <div className="mt-[24px] uppercase tracking-widest opacity-60" style={{ fontFamily: bodyFont, fontSize: 24 }}>
+                    <div data-slide-field={`timeline.${i}.date`} className="mt-[24px] uppercase tracking-widest opacity-60" style={{ fontFamily: bodyFont, fontSize: 24 }}>
                       {step.date}
                     </div>
                   )}
-                  <div className="mt-[12px] font-semibold" style={{ fontFamily: headingFont, color: headingColor, fontSize: 36 }}>
+                  <div data-slide-field={`timeline.${i}.title`} className="mt-[12px] font-semibold" style={{ fontFamily: headingFont, color: headingColor, fontSize: 36 }}>
                     {step.title}
                   </div>
                   {step.description && (
-                    <div className="mt-[16px] opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 26 }}>
+                    <div data-slide-field={`timeline.${i}.description`} data-slide-multiline="true" className="mt-[16px] opacity-70 leading-snug" style={{ fontFamily: bodyFont, fontSize: 26 }}>
                       {step.description}
                     </div>
                   )}
