@@ -2015,9 +2015,16 @@ export const SlideMock: React.FC<{
             >
               {content.cards[0]?.title || "Feature"}
             </div>
-            <h3 className="mt-2 text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
-              {content.kpi.headline}
-            </h3>
+            <Editable
+              as="div"
+              ariaLabel="Feature split headline"
+              editing={editing}
+              value={content.kpi.headline}
+              multiline
+              onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, headline: v } }))}
+              className="mt-2 text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+              style={{ color: t.palette.text }}
+            />
             <ul className="mt-5 space-y-3">
               {content.cards.map((c, i) => {
                 const Ic = c.icon;
@@ -2035,11 +2042,23 @@ export const SlideMock: React.FC<{
                     </div>
                     <div className="min-w-0">
                       <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                        {c.title}
+                        <Editable
+                          ariaLabel={`Feature ${i + 1} title`}
+                          editing={editing}
+                          value={c.title}
+                          onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, title: v } : card)) }))}
+                        />
                       </div>
-                      <div className="text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
-                        {c.body}
-                      </div>
+                      <Editable
+                        as="div"
+                        ariaLabel={`Feature ${i + 1} body`}
+                        editing={editing}
+                        value={c.body}
+                        multiline
+                        onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, body: v } : card)) }))}
+                        className="text-[11px] mt-0.5 leading-snug"
+                        style={{ color: muted }}
+                      />
                     </div>
                   </li>
                 );
