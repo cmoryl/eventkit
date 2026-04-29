@@ -405,6 +405,7 @@ function applyDemoTheme(
 const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<SlideData, 'id'>[] }[] = [
   {
     name: 'Keynote',
+    theme: 'modern-dark',
     slides: [
       { layout: 'title', title: 'Keynote Title', subtitle: 'Speaker Name • Date', variant: 'gradient' },
       { layout: 'content', title: 'Agenda', body: '• Introduction\n• Key Topics\n• Demo\n• Q&A', variant: 'default' },
@@ -434,6 +435,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Pitch Deck',
+    theme: 'vibrant-startup',
     slides: [
       { layout: 'title', title: 'Company Name', subtitle: 'Tagline that captures your vision', variant: 'bold' },
       { layout: 'content', title: 'The Problem', body: '• Pain point one\n• Pain point two\n• Pain point three', variant: 'default' },
@@ -474,6 +476,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Workshop',
+    theme: 'editorial-light',
     slides: [
       { layout: 'title', title: 'Workshop Title', subtitle: 'Hands-on learning session', variant: 'brand' },
       { layout: 'content', title: 'What You\'ll Learn', body: '• Skill one\n• Skill two\n• Skill three\n• Skill four', variant: 'default' },
@@ -507,6 +510,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Report',
+    theme: 'corporate-navy',
     slides: [
       { layout: 'title', title: 'Q4 Report', subtitle: 'Performance Overview', variant: 'minimal' },
       { layout: 'stats', title: 'Key Metrics', variant: 'default', stats: [
@@ -549,6 +553,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Data Story',
+    theme: 'modern-dark',
     slides: [
       { layout: 'title', title: 'The State of Our Market', subtitle: 'A data-driven narrative', variant: 'gradient' },
       { layout: 'stats', title: 'Headline Numbers', variant: 'brand', stats: [
@@ -588,6 +593,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Infographic',
+    theme: 'vibrant-startup',
     slides: [
       { layout: 'title', title: 'Year in Review', subtitle: 'Visualized', variant: 'bold' },
       { layout: 'stats', title: 'At a Glance', variant: 'brand', stats: [
@@ -627,6 +633,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Board Deck',
+    theme: 'corporate-navy',
     slides: [
       { layout: 'title', title: 'Board Meeting', subtitle: 'Q4 Update • [Date]', variant: 'brand' },
       { layout: 'agenda', title: 'Today\'s Agenda', body: 'Financial Highlights\nStrategic Priorities\nProduct & Engineering Update\nCustomer & Market\nOperational Health\nQ&A', variant: 'default' },
@@ -655,6 +662,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Sales Proposal',
+    theme: 'corporate-navy',
     slides: [
       { layout: 'title', title: 'Proposal for [Company]', subtitle: 'Prepared by [Your Company] • [Date]', variant: 'bold' },
       { layout: 'content', title: 'What We Heard From You', body: '• Growing pains slowing your team down\n• Manual processes eating 15+ hours/week\n• Lack of visibility across projects\n• Hard to scale without adding headcount', variant: 'default' },
@@ -678,6 +686,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Product Launch',
+    theme: 'vibrant-startup',
     slides: [
       { layout: 'title', title: 'Introducing [Product]', subtitle: 'The better way to [core benefit]', variant: 'gradient' },
       { layout: 'content', title: 'The Problem We\'re Solving', body: '• Teams waste hours on [pain point]\n• Existing tools are fragmented and slow\n• No single solution does all three things well', variant: 'default' },
@@ -708,6 +717,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Go-To-Market',
+    theme: 'transperfect',
     slides: [
       { layout: 'title', title: 'Go-To-Market Strategy', subtitle: '[Product] • [Year]', variant: 'brand' },
       { layout: 'agenda', title: 'Agenda', body: 'Market Opportunity\nTarget Segments\nGTM Motion\nChannels & Messaging\nLaunch Timeline\nSuccess Metrics', variant: 'default' },
@@ -741,6 +751,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Case Study',
+    theme: 'editorial-light',
     slides: [
       { layout: 'title', title: '[Customer] Success Story', subtitle: 'How [outcome] was achieved in [timeframe]', variant: 'dark' },
       { layout: 'content', title: 'The Challenge', body: '• [Customer] was struggling with [pain point]\n• Manual processes created [problem]\n• Teams spent [X] hours/week on [task]\n• Previous solution couldn\'t scale past [limit]', variant: 'default' },
@@ -761,6 +772,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'OKR Review',
+    theme: 'modern-dark',
     slides: [
       { layout: 'title', title: 'Q[N] OKR Review', subtitle: '[Company] • [Year]', variant: 'minimal' },
       { layout: 'stats', title: 'Quarter at a Glance', variant: 'brand', stats: [
@@ -794,6 +806,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Competitive Analysis',
+    theme: 'mono-brutalist',
     slides: [
       { layout: 'title', title: 'Competitive Landscape', subtitle: '[Market] • [Year] Analysis', variant: 'gradient' },
       { layout: 'content', title: 'Who We\'re Up Against', body: '• Competitor A — market leader, expensive, slow\n• Competitor B — cheap, missing enterprise features\n• Competitor C — good UX, weak data layer\n• Legacy players — dominant but losing ground', variant: 'default' },
@@ -824,6 +837,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Project Status',
+    theme: 'editorial-light',
     slides: [
       { layout: 'title', title: '[Project Name] Status Update', subtitle: 'Week [N] • [Date]', variant: 'minimal' },
       { layout: 'stats', title: 'Status Overview', variant: 'default', stats: [
@@ -858,6 +872,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Team Introduction',
+    theme: 'warm-terracotta',
     slides: [
       { layout: 'title', title: 'Meet the [Team Name] Team', subtitle: '[Company] • [Department]', variant: 'brand' },
       { layout: 'content', title: 'Who We Are', body: '• [N] people across [X] time zones\n• Building [product/service] since [year]\n• Mix of [roles/backgrounds]\n• United by [mission/value]', variant: 'default' },
@@ -880,6 +895,7 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
   },
   {
     name: 'Annual Review',
+    theme: 'transperfect',
     slides: [
       { layout: 'title', title: '[Company] Annual Review', subtitle: 'Year in Review • [Year]', variant: 'gradient' },
       { layout: 'big-number', title: 'Biggest Win of the Year', variant: 'brand', stats: [{ value: '$20M', label: 'ARR crossed — 2× year over year' }], subtitle: 'the milestone we set out to hit on day one' },
