@@ -51,6 +51,7 @@ const buildInitialContent = (t: DeckTemplate): DemoContent => {
     eyebrow: d.eyebrow,
     title: d.title,
     subtitle: d.subtitle,
+      slideHeadings: d.slideHeadings ? { ...d.slideHeadings } : undefined,
     imagery: d.imagery ? [...d.imagery] : undefined,
     cards: d.cards.map((c) => ({
       title: c.title,
@@ -626,6 +627,9 @@ export const SlideMock: React.FC<{
 
   const update = (fn: (c: DemoContent) => DemoContent) =>
     setContent((prev) => (prev ? fn(prev) : prev));
+  const headingFor = (key: string, fallback: string) => content.slideHeadings?.[key] || fallback;
+  const updateHeading = (key: string, value: string) =>
+    update((c) => ({ ...c, slideHeadings: { ...(c.slideHeadings || {}), [key]: value } }));
 
   return (
     <div
