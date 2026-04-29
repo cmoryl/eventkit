@@ -98,24 +98,33 @@ export const SourceSheet: React.FC<Props> = (props) => {
     clearPdf,
     brandHubSource,
     setBrandHubSource,
+    pptxFile,
+    pptxInputRef,
+    handlePptxSelect,
+    clearPptx,
+    rerunPptxExtraction,
     disabled,
   } = props;
 
-  // Default tab: whichever source is active, falling back to PDF.
-  const initialTab = brandHubSource ? "brandhub" : "pdf";
-  const [tab, setTab] = React.useState<string>(initialTab);
-  React.useEffect(() => {
-    setTab(brandHubSource && !pdfFile ? "brandhub" : "pdf");
-    // Only when entering a new "active source" state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!brandHubSource, !!pdfFile]);
-
+  const hasPptx = !!pptxFile;
   const hasPdf = !!pdfFile;
   const hasBrandHub = !!brandHubSource;
-  const active = hasPdf || hasBrandHub;
+  const active = hasPdf || hasBrandHub || hasPptx;
+
+  // Default tab: whichever source is active, falling back to PDF.
+  const initialTab = hasPptx ? "pptx" : hasBrandHub ? "brandhub" : "pdf";
+  const [tab, setTab] = React.useState<string>(initialTab);
+  React.useEffect(() => {
+    setTab(hasPptx ? "pptx" : hasBrandHub && !hasPdf ? "brandhub" : "pdf");
+    // Only when entering a new "active source" state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPptx, hasBrandHub, hasPdf]);
 
   let chipLabel = "Add source";
-  if (hasPdf) {
+  if (hasPptx) {
+    const slides = extractedSource?.extracted?.pageCount;
+    chipLabel = `${pptxFile!.name}${slides ? ` · ${slides} slides` : ""}`;
+  } else if (hasPdf) {
     const pages = extractedSource?.extracted?.pageCount;
     chipLabel = `${pdfFile!.name}${pages ? ` · ${pages}p` : ""}${selectedPages.length ? ` · ${selectedPages.length} picked` : ""}`;
   } else if (hasBrandHub) {
