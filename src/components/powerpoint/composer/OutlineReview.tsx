@@ -28,9 +28,12 @@ const LAYOUT_LABELS: Record<SlideOutline["layout"], string> = {
 };
 
 export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building }) => {
+  const { toast } = useToast();
   // Stable per-slide ids so storage paths stay consistent across edits within this session
   const slideIds = useMemo(() => outline.slides.map(() => crypto.randomUUID()), [outline.slides.length]);
   const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set());
+  const [populatingIdx, setPopulatingIdx] = useState<Set<number>>(new Set());
+  const [populatingAll, setPopulatingAll] = useState(false);
 
   const toggleDetails = (i: number) => {
     setExpandedDetails((prev) => {
@@ -38,6 +41,56 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
       if (next.has(i)) next.delete(i); else next.add(i);
       return next;
     });
+  };
+
+  // Calls edge fn to enrich a single slide; returns the patched slide.
+  const populateOne = async (idx: number, slide: SlideOutline, deckSnapshot: DeckOutline): Promise<SlideOutline | null> => {
+    const { data, error } = await supabase.functions.invoke("populate-slide-details", {
+      body: { deck: deckSnapshot, slide, slideIndex: idx },
+    });
+    if (error || (data && (data as any).error)) {
+      const msg = (data as any)?.error || error?.message || "AI populate failed";
+      toast({ title: "Couldn't populate", description: msg, variant: "destructive" });
+      return null;
+    }
+    const patch = (data as any)?.patch || {};
+    return { ...slide, ...patch } as SlideOutline;
+  };
+
+  const handlePopulateOne = async (idx: number) => {
+    setPopulatingIdx((p) => new Set(p).add(idx));
+    try {
+      const next = await populateOne(idx, outline.slides[idx], outline);
+      if (next) {
+        onChange({ ...outline, slides: outline.slides.map((s, i) => (i === idx ? next : s)) });
+        // auto-expand so user sees the new details
+        setExpandedDetails((prev) => new Set(prev).add(idx));
+        toast({ title: "Slide enriched", description: "AI added details for this slide." });
+      }
+    } finally {
+      setPopulatingIdx((p) => { const n = new Set(p); n.delete(idx); return n; });
+    }
+  };
+
+  const handlePopulateAll = async () => {
+    setPopulatingAll(true);
+    try {
+      // Sequential to be friendly to rate limits; deck snapshot stays consistent.
+      const deckSnapshot = outline;
+      const updated = [...outline.slides];
+      for (let i = 0; i < updated.length; i++) {
+        setPopulatingIdx((p) => new Set(p).add(i));
+        const next = await populateOne(i, updated[i], { ...deckSnapshot, slides: updated });
+        setPopulatingIdx((p) => { const n = new Set(p); n.delete(i); return n; });
+        if (next) {
+          updated[i] = next;
+          onChange({ ...outline, slides: [...updated] });
+        }
+      }
+      toast({ title: "All slides enriched", description: "Review and tweak before generating." });
+    } finally {
+      setPopulatingAll(false);
+    }
   };
 
   const detailsCount = (s: SlideOutline) => {
