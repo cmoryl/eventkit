@@ -36,6 +36,7 @@ import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
+import { InlineEditOverlay } from './InlineEditOverlay';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
