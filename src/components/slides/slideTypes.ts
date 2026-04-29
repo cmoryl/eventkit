@@ -287,9 +287,125 @@ export const DEFAULT_SLIDES: SlideData[] = [
   },
 ];
 
-export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[] = [
+/* ------------------------------------------------------------------ */
+/* Demo themes — mirror the composer's DECK_TEMPLATES so editor       */
+/* templates inherit the same gorgeous look-and-feel as the gallery   */
+/* demos (TransPerfect orbs, Modern Dark mesh, Editorial Light, etc.) */
+/* ------------------------------------------------------------------ */
+
+export type DemoThemeId =
+  | 'transperfect'
+  | 'modern-dark'
+  | 'editorial-light'
+  | 'corporate-navy'
+  | 'vibrant-startup'
+  | 'warm-terracotta'
+  | 'mono-brutalist';
+
+interface DemoTheme {
+  /** Strong "hero" colour used for title / section / quote / closing slides. */
+  heroBg: string;
+  /** Lighter "content" colour used for cards, stats, charts, comparison etc. */
+  contentBg: string;
+  /** Default variant token applied to every slide so SlideRenderer picks
+   *  the right text colour & layout treatment. */
+  variant: SlideData['variant'];
+  /** Animated background effect applied across the deck (subtle). */
+  bgEffect?: SlideBgEffect;
+  /** Alternative effect used on hero/section slides (more dramatic). */
+  heroBgEffect?: SlideBgEffect;
+  /** Layouts that should always use the hero bg + variant 'gradient'/'dark'. */
+  heroLayouts?: SlideLayout[];
+}
+
+const DEMO_THEMES: Record<DemoThemeId, DemoTheme> = {
+  // TransPerfect — deep navy + glowing orb gradients (turquoise / lavender)
+  transperfect: {
+    heroBg: '#03002C',
+    contentBg: '#0A0A3D',
+    variant: 'brand',
+    bgEffect: { type: 'orbs', speed: 0.6, intensity: 0.5, count: 3, size: 60, blur: 90, color: '#A1F9F9' },
+    heroBgEffect: { type: 'orbs', speed: 1.0, intensity: 0.85, count: 4, size: 75, blur: 60, color: '#C2A3FF' },
+  },
+  // Modern Dark — near-black + electric cyan mesh
+  'modern-dark': {
+    heroBg: '#0B0F19',
+    contentBg: '#111726',
+    variant: 'dark',
+    bgEffect: { type: 'mesh', speed: 0.7, intensity: 0.4, blur: 80, hueRotate: 30, color: '#22D3EE' },
+    heroBgEffect: { type: 'mesh', speed: 1.2, intensity: 0.7, blur: 60, hueRotate: 60, color: '#22D3EE' },
+  },
+  // Editorial Light — warm off-white + grain texture, charcoal text
+  'editorial-light': {
+    heroBg: '#1A1A1A',
+    contentBg: '#F7F5F1',
+    variant: 'minimal',
+    bgEffect: { type: 'grain', speed: 0.6, intensity: 0.3, density: 0.6, color: '#C4654A' },
+    heroBgEffect: { type: 'beam', speed: 0.8, intensity: 0.5, angle: 30, width: 200, color: '#C4654A' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+  // Corporate Navy — deep navy + gold beam accents
+  'corporate-navy': {
+    heroBg: '#0F1B3D',
+    contentBg: '#152854',
+    variant: 'brand',
+    bgEffect: { type: 'grid', speed: 0.6, intensity: 0.3, spacing: 60, dotSize: 1.5, color: '#C9A84C' },
+    heroBgEffect: { type: 'beam', speed: 0.9, intensity: 0.6, angle: 35, width: 220, color: '#C9A84C' },
+  },
+  // Vibrant Startup — white + coral/indigo waves
+  'vibrant-startup': {
+    heroBg: '#1E1B4B',
+    contentBg: '#FFFFFF',
+    variant: 'minimal',
+    bgEffect: { type: 'waves', speed: 1.0, intensity: 0.5, amplitude: 30, layers: 2, color: '#F96167' },
+    heroBgEffect: { type: 'orbs', speed: 1.4, intensity: 0.85, count: 3, size: 65, blur: 70, color: '#F96167' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+  // Warm Terracotta — sand + terracotta + sage
+  'warm-terracotta': {
+    heroBg: '#B85042',
+    contentBg: '#E7E8D1',
+    variant: 'minimal',
+    bgEffect: { type: 'grain', speed: 0.7, intensity: 0.35, density: 0.7, color: '#A7BEAE' },
+    heroBgEffect: { type: 'orbs', speed: 0.9, intensity: 0.7, count: 3, size: 60, blur: 80, color: '#A7BEAE' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+  // Mono Brutalist — pure white / pure black + yellow accent
+  'mono-brutalist': {
+    heroBg: '#000000',
+    contentBg: '#FFFFFF',
+    variant: 'minimal',
+    bgEffect: { type: 'grid', speed: 0.8, intensity: 0.45, spacing: 50, dotSize: 2, color: '#FFEB3B' },
+    heroBgEffect: { type: 'beam', speed: 1.5, intensity: 0.75, angle: 45, width: 250, color: '#FFEB3B' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+};
+
+const DEFAULT_HERO_LAYOUTS: SlideLayout[] = ['title', 'section', 'quote'];
+
+/** Apply a demo theme uniformly to a list of slides — sets bgColor, variant, bgEffect. */
+function applyDemoTheme(
+  slides: Omit<SlideData, 'id'>[],
+  themeId: DemoThemeId,
+): Omit<SlideData, 'id'>[] {
+  const theme = DEMO_THEMES[themeId];
+  const heroLayouts = theme.heroLayouts ?? DEFAULT_HERO_LAYOUTS;
+  return slides.map((s) => {
+    const isHero = heroLayouts.includes(s.layout);
+    return {
+      ...s,
+      bgColor: isHero ? theme.heroBg : theme.contentBg,
+      variant: isHero ? 'gradient' : theme.variant,
+      bgEffect: isHero ? theme.heroBgEffect ?? theme.bgEffect : theme.bgEffect,
+    };
+  });
+}
+
+/** Raw template definitions — content only. Themed at export time below. */
+const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<SlideData, 'id'>[] }[] = [
   {
     name: 'Keynote',
+    theme: 'modern-dark',
     slides: [
       { layout: 'title', title: 'Keynote Title', subtitle: 'Speaker Name • Date', variant: 'gradient' },
       { layout: 'content', title: 'Agenda', body: '• Introduction\n• Key Topics\n• Demo\n• Q&A', variant: 'default' },
@@ -319,6 +435,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Pitch Deck',
+    theme: 'vibrant-startup',
     slides: [
       { layout: 'title', title: 'Company Name', subtitle: 'Tagline that captures your vision', variant: 'bold' },
       { layout: 'content', title: 'The Problem', body: '• Pain point one\n• Pain point two\n• Pain point three', variant: 'default' },
@@ -359,6 +476,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Workshop',
+    theme: 'editorial-light',
     slides: [
       { layout: 'title', title: 'Workshop Title', subtitle: 'Hands-on learning session', variant: 'brand' },
       { layout: 'content', title: 'What You\'ll Learn', body: '• Skill one\n• Skill two\n• Skill three\n• Skill four', variant: 'default' },
@@ -392,6 +510,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Report',
+    theme: 'corporate-navy',
     slides: [
       { layout: 'title', title: 'Q4 Report', subtitle: 'Performance Overview', variant: 'minimal' },
       { layout: 'stats', title: 'Key Metrics', variant: 'default', stats: [
@@ -434,6 +553,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Data Story',
+    theme: 'modern-dark',
     slides: [
       { layout: 'title', title: 'The State of Our Market', subtitle: 'A data-driven narrative', variant: 'gradient' },
       { layout: 'stats', title: 'Headline Numbers', variant: 'brand', stats: [
@@ -473,6 +593,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Infographic',
+    theme: 'vibrant-startup',
     slides: [
       { layout: 'title', title: 'Year in Review', subtitle: 'Visualized', variant: 'bold' },
       { layout: 'stats', title: 'At a Glance', variant: 'brand', stats: [
@@ -512,6 +633,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Board Deck',
+    theme: 'corporate-navy',
     slides: [
       { layout: 'title', title: 'Board Meeting', subtitle: 'Q4 Update • [Date]', variant: 'brand' },
       { layout: 'agenda', title: 'Today\'s Agenda', body: 'Financial Highlights\nStrategic Priorities\nProduct & Engineering Update\nCustomer & Market\nOperational Health\nQ&A', variant: 'default' },
@@ -540,6 +662,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Sales Proposal',
+    theme: 'corporate-navy',
     slides: [
       { layout: 'title', title: 'Proposal for [Company]', subtitle: 'Prepared by [Your Company] • [Date]', variant: 'bold' },
       { layout: 'content', title: 'What We Heard From You', body: '• Growing pains slowing your team down\n• Manual processes eating 15+ hours/week\n• Lack of visibility across projects\n• Hard to scale without adding headcount', variant: 'default' },
@@ -563,6 +686,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Product Launch',
+    theme: 'vibrant-startup',
     slides: [
       { layout: 'title', title: 'Introducing [Product]', subtitle: 'The better way to [core benefit]', variant: 'gradient' },
       { layout: 'content', title: 'The Problem We\'re Solving', body: '• Teams waste hours on [pain point]\n• Existing tools are fragmented and slow\n• No single solution does all three things well', variant: 'default' },
@@ -593,6 +717,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Go-To-Market',
+    theme: 'transperfect',
     slides: [
       { layout: 'title', title: 'Go-To-Market Strategy', subtitle: '[Product] • [Year]', variant: 'brand' },
       { layout: 'agenda', title: 'Agenda', body: 'Market Opportunity\nTarget Segments\nGTM Motion\nChannels & Messaging\nLaunch Timeline\nSuccess Metrics', variant: 'default' },
@@ -626,6 +751,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Case Study',
+    theme: 'editorial-light',
     slides: [
       { layout: 'title', title: '[Customer] Success Story', subtitle: 'How [outcome] was achieved in [timeframe]', variant: 'dark' },
       { layout: 'content', title: 'The Challenge', body: '• [Customer] was struggling with [pain point]\n• Manual processes created [problem]\n• Teams spent [X] hours/week on [task]\n• Previous solution couldn\'t scale past [limit]', variant: 'default' },
@@ -646,6 +772,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'OKR Review',
+    theme: 'modern-dark',
     slides: [
       { layout: 'title', title: 'Q[N] OKR Review', subtitle: '[Company] • [Year]', variant: 'minimal' },
       { layout: 'stats', title: 'Quarter at a Glance', variant: 'brand', stats: [
@@ -679,6 +806,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Competitive Analysis',
+    theme: 'mono-brutalist',
     slides: [
       { layout: 'title', title: 'Competitive Landscape', subtitle: '[Market] • [Year] Analysis', variant: 'gradient' },
       { layout: 'content', title: 'Who We\'re Up Against', body: '• Competitor A — market leader, expensive, slow\n• Competitor B — cheap, missing enterprise features\n• Competitor C — good UX, weak data layer\n• Legacy players — dominant but losing ground', variant: 'default' },
@@ -709,6 +837,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Project Status',
+    theme: 'editorial-light',
     slides: [
       { layout: 'title', title: '[Project Name] Status Update', subtitle: 'Week [N] • [Date]', variant: 'minimal' },
       { layout: 'stats', title: 'Status Overview', variant: 'default', stats: [
@@ -743,6 +872,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Team Introduction',
+    theme: 'warm-terracotta',
     slides: [
       { layout: 'title', title: 'Meet the [Team Name] Team', subtitle: '[Company] • [Department]', variant: 'brand' },
       { layout: 'content', title: 'Who We Are', body: '• [N] people across [X] time zones\n• Building [product/service] since [year]\n• Mix of [roles/backgrounds]\n• United by [mission/value]', variant: 'default' },
@@ -765,6 +895,7 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
   },
   {
     name: 'Annual Review',
+    theme: 'transperfect',
     slides: [
       { layout: 'title', title: '[Company] Annual Review', subtitle: 'Year in Review • [Year]', variant: 'gradient' },
       { layout: 'big-number', title: 'Biggest Win of the Year', variant: 'brand', stats: [{ value: '$20M', label: 'ARR crossed — 2× year over year' }], subtitle: 'the milestone we set out to hit on day one' },
@@ -800,3 +931,16 @@ export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[
     ],
   },
 ];
+
+/**
+ * Public template catalog — content + matching demo theme baked in so every
+ * template renders with the same look-and-feel as the composer's gallery
+ * previews (TransPerfect orbs, Modern Dark mesh, Editorial Light grain, etc.).
+ */
+export const SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<SlideData, 'id'>[] }[] =
+  RAW_SLIDE_TEMPLATES.map((t) => ({
+    name: t.name,
+    theme: t.theme,
+    slides: applyDemoTheme(t.slides, t.theme),
+  }));
+
