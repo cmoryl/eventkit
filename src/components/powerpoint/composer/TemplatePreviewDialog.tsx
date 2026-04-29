@@ -912,9 +912,15 @@ export const SlideMock: React.FC<{
                   <div className="text-[8px] font-mono" style={{ color: t.palette.accent }}>
                     {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div className="text-[10px] font-bold leading-tight truncate" style={{ color: t.palette.text }}>
-                    {c.title}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Section chapter card ${i + 1}`}
+                    editing={editing}
+                    value={c.title}
+                    onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, title: v } : card)) }))}
+                    className="text-[10px] font-bold leading-tight truncate"
+                    style={{ color: t.palette.text }}
+                  />
                 </div>
               ))}
             </div>
@@ -2013,7 +2019,12 @@ export const SlideMock: React.FC<{
               className="text-[11px] font-semibold uppercase tracking-[0.22em]"
               style={{ color: t.palette.accent }}
             >
-              {content.cards[0]?.title || "Feature"}
+              <Editable
+                ariaLabel="Feature eyebrow"
+                editing={editing}
+                value={content.cards[0]?.title || "Feature"}
+                onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === 0 ? { ...card, title: v } : card)) }))}
+              />
             </div>
             <Editable
               as="div"
