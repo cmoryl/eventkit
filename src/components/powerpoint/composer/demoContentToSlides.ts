@@ -14,14 +14,13 @@ import { PREVIEW_SLIDE_KINDS } from "./TemplatePreviewDialog";
 import type { SlideData } from "@/components/slides/slideTypes";
 
 /** Lite copy of the template — only the fields SlideMock reads (palette, id, name, accent, etc.). */
-function liteTemplate(t: DeckTemplate): any {
+function liteTemplate(t: DeckTemplate): DeckTemplate {
   return {
     id: t.id,
     name: t.name,
+    description: t.description,
+    themePrompt: t.themePrompt,
     palette: { ...t.palette },
-    // Keep any extra fields SlideMock may rely on; spread is safe because
-    // SlideMock only reads palette + id and we already cloned palette.
-    ...(t as any),
   };
 }
 
