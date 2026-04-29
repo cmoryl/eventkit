@@ -102,6 +102,8 @@ export const ALL_DECK_TEMPLATES: DeckTemplate[] = [...DECK_TEMPLATES, ...LIBRARY
 interface Props {
   selectedId: string | null;
   onSelect: (template: DeckTemplate) => void;
+  /** Optional: open the template's starter deck directly in the Slide Editor. */
+  onOpenInEditor?: (template: DeckTemplate) => void;
   disabled?: boolean;
   /** "compact" = small cards (legacy). "showcase" = rich demo cards at top of blank mode. */
   variant?: "compact" | "showcase";
@@ -148,7 +150,7 @@ const TemplateCard: React.FC<{
   </button>
 );
 
-export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disabled, variant = "compact" }) => {
+export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenInEditor, disabled, variant = "compact" }) => {
   const [browseOpen, setBrowseOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [previewTemplate, setPreviewTemplate] = useState<DeckTemplate | null>(null);
@@ -404,6 +406,14 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
           onSelect(t);
           setBrowseOpen(false);
         }}
+        onOpenInEditor={
+          onOpenInEditor
+            ? (t) => {
+                onOpenInEditor(t);
+                setBrowseOpen(false);
+              }
+            : undefined
+        }
         disabled={disabled}
       />
     </div>
