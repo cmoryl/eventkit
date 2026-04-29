@@ -625,9 +625,26 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 </Button>
               )}
 
-              <Button size="sm" variant="outline" onClick={() => exportSlidesToPptx(slides, assetName, { transition: slideTransition })}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    await exportSlidesToPptx(slides, assetName, { transition: slideTransition });
+                    toast({ title: 'Export started', description: `Downloading ${slides.length} slides as .pptx` });
+                  } catch (err) {
+                    console.error('PPTX export error:', err);
+                    toast({
+                      title: 'Export failed',
+                      description: err instanceof Error ? err.message : 'Could not export deck',
+                      variant: 'destructive',
+                    });
+                  }
+                }}
+                title="Download the edited deck as a PowerPoint (.pptx) file"
+              >
                 <Download className="h-3.5 w-3.5 mr-1.5" />
-                Export
+                Export to .pptx
               </Button>
 
               <Button
