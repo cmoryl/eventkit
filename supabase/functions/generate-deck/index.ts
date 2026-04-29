@@ -486,18 +486,28 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
 
       case "stat": {
         slide.addShape("rect", { x: 0, y: 0, w: 0.15, h: H, fill: { color: ACCENT } });
+        // Optional right-side feature image (user upload or AI)
+        const statImgW = slideImg ? 4.0 : 0;
+        const statContentW = W - PAD * 2 - statImgW - (slideImg ? PAD : 0);
         slide.addText(slideTitle, {
-          x: PAD, y: PAD, w: W - PAD * 2, h: 0.7,
+          x: PAD, y: PAD, w: statContentW, h: 0.7,
           fontSize: 24, bold: true, color: TEXT, fontFace: headFont,
         });
         slide.addText(orPh(s.stat?.value, ph.statValue), {
-          x: PAD, y: H / 2 - 1.5, w: W - PAD * 2, h: 2.5,
+          x: PAD, y: H / 2 - 1.5, w: statContentW, h: 2.5,
           fontSize: 130, bold: true, color: PRIMARY, fontFace: headFont, align: "center",
         });
         slide.addText(orPh(s.stat?.label, ph.statLabel), {
-          x: PAD, y: H / 2 + 1.4, w: W - PAD * 2, h: 0.6,
+          x: PAD, y: H / 2 + 1.4, w: statContentW, h: 0.6,
           fontSize: 20, color: TEXT, fontFace: bodyFont, align: "center", transparency: 20,
         });
+        if (slideImg) {
+          slide.addImage({
+            data: slideImg,
+            x: W - PAD - statImgW, y: PAD + 0.3, w: statImgW, h: H - PAD * 2 - 0.6,
+            sizing: { type: "cover", w: statImgW, h: H - PAD * 2 - 0.6 },
+          });
+        }
         break;
       }
 
