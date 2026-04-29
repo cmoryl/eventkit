@@ -477,11 +477,30 @@ const SlideMock: React.FC<{
                 >
                   {a.step}
                 </div>
-                <div className="min-w-0">
-                  <div className="text-sm font-bold leading-tight">{a.title}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-bold leading-tight">{a.title}</div>
+                    {a.duration && (
+                      <span
+                        className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+                        style={{ background: `${t.palette.accent}22`, color: t.palette.accent }}
+                      >
+                        {a.duration}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
                     {a.body}
                   </div>
+                  {a.owner && (
+                    <div className="mt-2 flex items-center gap-1.5 text-[10px]" style={{ color: muted }}>
+                      <span
+                        className="inline-block h-1 w-1 rounded-full"
+                        style={{ background: t.palette.accent }}
+                      />
+                      <span className="truncate">Led by {a.owner}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
