@@ -289,7 +289,77 @@ async function loadTemplateImages(templateId?: string): Promise<Record<string, s
   return out;
 }
 
-function buildPptx(outline: DeckOutline, templateImages: Record<string, string> = {}): Promise<ArrayBuffer> {
+/**
+ * Generate or fetch one feature image per slide.
+ * Priority:
+ *  1. First user-uploaded reference (s.references[0]) — fetched & embedded as-is
+ *  2. AI-generated image via Gemini Flash Image when visualIntent indicates imagery
+ *  3. undefined → renderer falls back to template feature image
+ */
+async function resolveSlideImages(
+  outline: DeckOutline,
+  apiKey: string,
+): Promise<Array<string | undefined>> {
+  const palette = outline.palette;
+  const moodDesc = `Brand palette: primary ${palette.primary}, secondary ${palette.secondary}, accent ${palette.accent}. Background ${palette.background}. Cohesive, on-brand, premium editorial style.`;
+
+  return Promise.all(
+    outline.slides.map(async (s) => {
+      try {
+        // 1) User-provided reference
+        const userRef = s.references?.[0]?.url;
+        if (userRef) {
+          const data = await fetchAsDataUrl(userRef);
+          if (data) return data;
+        }
+
+        // 2) AI-generated when intent calls for imagery
+        const intent = s.visualIntent || "auto";
+        if (intent === "none" || intent === "chart") return undefined;
+        // Only generate for layouts that have room for a feature image
+        const layoutWantsImage =
+          s.layout === "bullets" ||
+          s.layout === "stat" ||
+          s.layout === "section" ||
+          s.layout === "title" ||
+          s.layout === "closing" ||
+          s.layout === "two_column";
+        if (!layoutWantsImage) return undefined;
+
+        const styleHint =
+          intent === "photo" ? "photorealistic editorial photograph, natural light, no text, no logos"
+          : intent === "infographic" ? "minimal flat infographic illustration, geometric shapes, no text, no logos"
+          : intent === "icon-grid" ? "set of minimal line icons in a clean grid, no text, no logos"
+          : intent === "screenshot" ? "abstract product UI screenshot, soft glassmorphism, no readable text"
+          : "clean abstract editorial illustration, no text, no logos";
+
+        const prompt = `${styleHint}. Subject: "${s.title}". ${s.designNotes ? `Context: ${s.designNotes}.` : ""} ${moodDesc} Aspect 4:3. ABSOLUTELY NO TEXT, NO WORDS, NO LETTERS, NO LOGOS in the image.`;
+
+        const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash-image",
+            messages: [{ role: "user", content: prompt }],
+            modalities: ["image", "text"],
+          }),
+        });
+        if (!r.ok) {
+          console.warn(`[slide-image] gen failed (${r.status}) for "${s.title}"`);
+          return undefined;
+        }
+        const j = await r.json();
+        const url: string | undefined = j?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        return url;
+      } catch (e) {
+        console.warn("[slide-image] error:", e instanceof Error ? e.message : e);
+        return undefined;
+      }
+    }),
+  );
+}
+
+function buildPptx(outline: DeckOutline, templateImages: Record<string, string> = {}, slideImages: Array<string | undefined> = []): Promise<ArrayBuffer> {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE"; // 13.33 x 7.5
   pptx.title = outline.title;
@@ -366,6 +436,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
     const tplBg = bgFor(s.layout);
     paintTemplateBackground(slide, tplBg);
     if (s.notes) slide.addNotes(s.notes);
+    const slideImg = slideImages[idx]; // user upload OR AI-generated feature image
 
     const slideTitle = orPh(s.title, ph.title);
 
@@ -415,18 +486,28 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
 
       case "stat": {
         slide.addShape("rect", { x: 0, y: 0, w: 0.15, h: H, fill: { color: ACCENT } });
+        // Optional right-side feature image (user upload or AI)
+        const statImgW = slideImg ? 4.0 : 0;
+        const statContentW = W - PAD * 2 - statImgW - (slideImg ? PAD : 0);
         slide.addText(slideTitle, {
-          x: PAD, y: PAD, w: W - PAD * 2, h: 0.7,
+          x: PAD, y: PAD, w: statContentW, h: 0.7,
           fontSize: 24, bold: true, color: TEXT, fontFace: headFont,
         });
         slide.addText(orPh(s.stat?.value, ph.statValue), {
-          x: PAD, y: H / 2 - 1.5, w: W - PAD * 2, h: 2.5,
+          x: PAD, y: H / 2 - 1.5, w: statContentW, h: 2.5,
           fontSize: 130, bold: true, color: PRIMARY, fontFace: headFont, align: "center",
         });
         slide.addText(orPh(s.stat?.label, ph.statLabel), {
-          x: PAD, y: H / 2 + 1.4, w: W - PAD * 2, h: 0.6,
+          x: PAD, y: H / 2 + 1.4, w: statContentW, h: 0.6,
           fontSize: 20, color: TEXT, fontFace: bodyFont, align: "center", transparency: 20,
         });
+        if (slideImg) {
+          slide.addImage({
+            data: slideImg,
+            x: W - PAD - statImgW, y: PAD + 0.3, w: statImgW, h: H - PAD * 2 - 0.6,
+            sizing: { type: "cover", w: statImgW, h: H - PAD * 2 - 0.6 },
+          });
+        }
         break;
       }
 
@@ -491,9 +572,10 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
 
       case "bullets":
       default: {
-        // Optional template "feature image" panel on the right (content slides only)
-        const featureImg = templateImages.card || templateImages.heroSquare;
-        const hasFeature = !!featureImg && idx > 0 && idx % 3 === 0; // every 3rd content slide
+        // Feature image: prefer per-slide image (user upload or AI), else template fallback
+        const tplFeature = templateImages.card || templateImages.heroSquare;
+        const featureImg = slideImg || (idx > 0 && idx % 3 === 0 ? tplFeature : undefined);
+        const hasFeature = !!featureImg;
         const contentW = hasFeature ? W - PAD * 3 - 4.5 : W - PAD * 2;
 
         slide.addShape("rect", { x: PAD, y: PAD + 0.95, w: 0.6, h: 0.06, fill: { color: ACCENT } });
@@ -586,7 +668,9 @@ Deno.serve(async (req: Request) => {
 
     // 3) Build .pptx
     const templateImages = await loadTemplateImages(body.templateId);
-    const pptxBuffer = await buildPptx(outline, templateImages);
+    // Generate per-slide imagery in parallel (user uploads + AI photos/infographics)
+    const slideImages = await resolveSlideImages(outline, LOVABLE_API_KEY);
+    const pptxBuffer = await buildPptx(outline, templateImages, slideImages);
 
     // 4) Upload to storage
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
