@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALL_PRESENTATION_TEMPLATES } from "@/config/editableTemplates/presentationTemplates";
 import { TemplateDemoCard } from "./TemplateDemoCard";
+import { TemplatePreviewDialog } from "./TemplatePreviewDialog";
 
 export interface DeckTemplate {
   id: string;
@@ -147,6 +148,7 @@ const TemplateCard: React.FC<{
 export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disabled, variant = "compact" }) => {
   const [browseOpen, setBrowseOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [previewTemplate, setPreviewTemplate] = useState<DeckTemplate | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -191,7 +193,7 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
               template={t}
               selected={selectedId === t.id}
               disabled={disabled}
-              onClick={() => onSelect(t)}
+              onClick={() => setPreviewTemplate(t)}
             />
           ))}
         </div>
@@ -203,7 +205,7 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
               template={t}
               selected={selectedId === t.id}
               disabled={disabled}
-              onClick={() => onSelect(t)}
+              onClick={() => setPreviewTemplate(t)}
             />
           ))}
         </div>
@@ -248,10 +250,7 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
                         template={t}
                         selected={selectedId === t.id}
                         disabled={disabled}
-                        onClick={() => {
-                          onSelect(t);
-                          setBrowseOpen(false);
-                        }}
+                        onClick={() => setPreviewTemplate(t)}
                       />
                     ))}
                   </div>
@@ -271,10 +270,7 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
                       template={t}
                       selected={selectedId === t.id}
                       disabled={disabled}
-                      onClick={() => {
-                        onSelect(t);
-                        setBrowseOpen(false);
-                      }}
+                      onClick={() => setPreviewTemplate(t)}
                     />
                   ))}
                   {filtered.length === 0 && (
