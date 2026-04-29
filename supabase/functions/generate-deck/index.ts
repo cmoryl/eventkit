@@ -709,39 +709,47 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { value: "12k", label: "Active users", sublabel: "monthly" },
           { value: "4.8★", label: "CSAT", sublabel: "n=1,200" },
           { value: "$2.4M", label: "ARR", sublabel: "trailing 12mo" },
-        ]).slice(0, 4);
+        ]).slice(0, 8); // up to 8 KPIs (will wrap to a 2nd row when >4)
 
-        const n = kpis.length;
+        const total = kpis.length;
+        const cols = total <= 4 ? total : Math.ceil(total / 2);
+        const rows = total <= 4 ? 1 : 2;
         const gap = 0.25;
-        const tileW = (W - PAD * 2 - gap * (n - 1)) / n;
-        const tileY = 2.0;
-        const tileH = H - tileY - PAD - 0.4;
+        const tileW = (W - PAD * 2 - gap * (cols - 1)) / cols;
+        const gridY = 2.0;
+        const gridH = H - gridY - PAD - 0.4;
+        const tileH = (gridH - gap * (rows - 1)) / rows;
 
         kpis.forEach((k, i) => {
-          const x = PAD + i * (tileW + gap);
+          const c = i % cols, r = Math.floor(i / cols);
+          const x = PAD + c * (tileW + gap);
+          const y = gridY + r * (tileH + gap);
           slide.addShape("roundRect", {
-            x, y: tileY, w: tileW, h: tileH,
+            x, y, w: tileW, h: tileH,
             fill: { color: SURFACE }, line: { color: ACCENT, width: 0, type: "solid" },
             rectRadius: 0.15,
           });
-          slide.addShape("rect", { x: x + 0.3, y: tileY + 0.3, w: 0.5, h: 0.06, fill: { color: ACCENT } });
+          slide.addShape("rect", { x: x + 0.3, y: y + 0.3, w: 0.5, h: 0.06, fill: { color: ACCENT } });
+          // Auto-shrink the headline value when many tiles.
+          const valueFs = rows === 1 ? 56 : 38;
+          const labelFs = rows === 1 ? 14 : 12;
           slide.addText(k.value || "—", {
-            x: x + 0.25, y: tileY + 0.7, w: tileW - 0.5, h: 1.6,
-            fontSize: 56, bold: true, color: ON_BG, fontFace: headFont,
+            x: x + 0.25, y: y + 0.6, w: tileW - 0.5, h: tileH * 0.45,
+            fontSize: valueFs, bold: true, color: ON_BG, fontFace: headFont,
           });
           slide.addText(k.label || "Metric", {
-            x: x + 0.25, y: tileY + 2.4, w: tileW - 0.5, h: 0.4,
-            fontSize: 14, bold: true, color: ON_BG, fontFace: bodyFont,
+            x: x + 0.25, y: y + tileH * 0.55, w: tileW - 0.5, h: 0.4,
+            fontSize: labelFs, bold: true, color: ON_BG, fontFace: bodyFont,
           });
           if (k.sublabel) {
             slide.addText(k.sublabel, {
-              x: x + 0.25, y: tileY + 2.85, w: tileW - 0.5, h: 0.4,
+              x: x + 0.25, y: y + tileH * 0.7, w: tileW - 0.5, h: 0.4,
               fontSize: 11, color: MUTED, fontFace: bodyFont,
             });
           }
           if (k.trend) {
             slide.addText(k.trend, {
-              x: x + 0.25, y: tileY + tileH - 0.5, w: tileW - 0.5, h: 0.35,
+              x: x + 0.25, y: y + tileH - 0.5, w: tileW - 0.5, h: 0.35,
               fontSize: 10, bold: true, color: ACCENT, fontFace: bodyFont,
             });
           }
@@ -749,7 +757,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
         break;
       }
 
-      // ────────────────────────── METRICS GRID (smaller, 6-up) ──────────────────────────
+      // ────────────────────────── METRICS GRID (smaller, up to 9-up) ──────────────────────────
       case "metrics": {
         addEyebrow(slide, orPh(s.subtitle, "By the numbers"), PAD, PAD, W - PAD * 2);
         slide.addText(slideTitle, {
@@ -764,7 +772,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { value: "+38%", label: "Adoption" },
           { value: "12k", label: "Users" },
           { value: "0", label: "Critical bugs" },
-        ]).slice(0, 6);
+        ]).slice(0, 9); // 3×3 grid max
 
         const cols = 3, rows = Math.ceil(metrics.length / cols);
         const gap = 0.2;
