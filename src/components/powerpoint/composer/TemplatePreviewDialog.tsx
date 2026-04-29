@@ -1661,28 +1661,18 @@ const SlideMock: React.FC<{
                       />
                     </>
                   )}
-                  {/* Non-image tile: inject a visual filler so it doesn't feel empty */}
+                  {/* Non-image tile: inject a brand-tinted visual so it doesn't feel empty */}
                   {!tileImg && (
                     <div className="absolute inset-0 pointer-events-none opacity-80">
-                      {(() => {
-                        const variants = ["wave", "blob", "grid", "iso", "spark"] as const;
-                        const v = variants[i % variants.length];
-                        if (v === "wave") return <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />;
-                        if (v === "blob") return <RadialBlob accent={t.palette.accent} secondary={t.palette.secondary} seed={i + 3} />;
-                        if (v === "grid") return <GridDecor accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />;
-                        if (v === "iso") return (
-                          <div className="absolute inset-0 flex items-end justify-end p-1 opacity-90">
-                            <div className="w-3/4 h-3/4">
-                              <IsoStack accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />
-                            </div>
-                          </div>
-                        );
-                        return (
-                          <div className="absolute inset-0 flex items-center p-2">
-                            <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={i + 4} />
-                          </div>
-                        );
-                      })()}
+                      <VisualVariant
+                        variant={pickVariant(t.id, `bento-${i}`, index + i)}
+                        accent={t.palette.accent}
+                        secondary={t.palette.secondary}
+                        text={t.palette.text}
+                        muted={muted}
+                        seed={i + 4}
+                        size="md"
+                      />
                       <div
                         className="absolute inset-0"
                         style={{
