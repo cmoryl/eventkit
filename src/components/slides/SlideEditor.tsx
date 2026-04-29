@@ -5,7 +5,7 @@ import {
   Type, Layout, Image, Columns, SplitSquareHorizontal, Square,
   ZoomIn, ZoomOut, Maximize, Monitor, ChevronDown, Sparkles, Download, Upload,
   Replace, ImagePlus, Quote, BarChart3, Maximize2, GitCompare,
-  AlignLeft, AlignCenter, AlignRight, Palette, LayoutTemplate, Grid3X3
+  AlignLeft, AlignCenter, AlignRight, Palette, LayoutTemplate, Grid3X3, Bookmark
 } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
