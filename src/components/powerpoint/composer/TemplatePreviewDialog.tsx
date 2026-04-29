@@ -53,52 +53,90 @@ const SlideMock: React.FC<{
       </div>
 
       {kind === "title" && (
-        <div className="relative h-full p-10 flex flex-col justify-between">
-          <div>
-            <div
-              className="text-[11px] font-semibold uppercase tracking-[0.22em]"
-              style={{ color: t.palette.accent }}
-            >
-              {demo.eyebrow}
+        <div className="relative h-full grid" style={{ gridTemplateColumns: thumb ? "1.1fr 1fr" : "1fr" }}>
+          <div className="relative p-10 flex flex-col justify-between z-10">
+            <div>
+              <div
+                className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+                style={{ color: t.palette.accent }}
+              >
+                {demo.eyebrow}
+              </div>
+              <h2
+                className="mt-4 text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight"
+                style={{ color: t.palette.text }}
+              >
+                {demo.title}
+              </h2>
+              <p
+                className="mt-4 text-base sm:text-lg leading-snug"
+                style={{ color: muted }}
+              >
+                {demo.subtitle}
+              </p>
             </div>
-            <h2
-              className="mt-4 text-4xl sm:text-5xl font-bold leading-[1.05] tracking-tight max-w-[80%]"
-              style={{ color: t.palette.text }}
-            >
-              {demo.title}
-            </h2>
-            <p
-              className="mt-4 text-base sm:text-lg leading-snug max-w-[70%]"
-              style={{ color: muted }}
-            >
-              {demo.subtitle}
-            </p>
+            <div className="flex items-center gap-2">
+              <div className="h-1.5 w-14 rounded-full" style={{ background: t.palette.accent }} />
+              <div className="h-1.5 w-7 rounded-full opacity-60" style={{ background: t.palette.secondary }} />
+              <div className="h-1.5 w-3 rounded-full opacity-30" style={{ background: t.palette.text }} />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 w-14 rounded-full" style={{ background: t.palette.accent }} />
-            <div className="h-1.5 w-7 rounded-full opacity-60" style={{ background: t.palette.secondary }} />
-            <div className="h-1.5 w-3 rounded-full opacity-30" style={{ background: t.palette.text }} />
-          </div>
+          {thumb && (
+            <div className="relative overflow-hidden">
+              <img
+                src={thumb}
+                alt={`${t.name} title visual`}
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              {/* Soft inner gradient so text side blends into image */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(90deg, ${t.palette.bg} 0%, transparent 35%)`,
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 
       {kind === "section" && (
-        <div className="relative h-full p-10 flex flex-col justify-center">
-          <div
-            className="text-[11px] font-semibold uppercase tracking-[0.22em]"
-            style={{ color: t.palette.accent }}
-          >
-            Section · {String(index + 1).padStart(2, "0")}
+        <div className="relative h-full">
+          {thumb && (
+            <>
+              <img
+                src={thumb}
+                alt=""
+                loading="lazy"
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover opacity-25"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(180deg, ${t.palette.bg}EE 0%, ${t.palette.bg}AA 100%)`,
+                }}
+              />
+            </>
+          )}
+          <div className="relative h-full p-10 flex flex-col justify-center z-10">
+            <div
+              className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+              style={{ color: t.palette.accent }}
+            >
+              Section · {String(index + 1).padStart(2, "0")}
+            </div>
+            <h2
+              className="mt-3 text-5xl sm:text-6xl font-extrabold leading-[1] tracking-tight"
+              style={{ color: t.palette.text }}
+            >
+              {demo.cards[0]?.title || "Chapter"}
+            </h2>
+            <p className="mt-4 text-sm max-w-[60%]" style={{ color: muted }}>
+              {demo.cards[0]?.body || "An opening chapter that frames the story."}
+            </p>
           </div>
-          <h2
-            className="mt-3 text-5xl sm:text-6xl font-extrabold leading-[1] tracking-tight"
-            style={{ color: t.palette.text }}
-          >
-            {demo.cards[0]?.title || "Chapter"}
-          </h2>
-          <p className="mt-4 text-sm max-w-[60%]" style={{ color: muted }}>
-            {demo.cards[0]?.body || "An opening chapter that frames the story."}
-          </p>
         </div>
       )}
 
@@ -120,18 +158,32 @@ const SlideMock: React.FC<{
             {demo.cards.map((c, i) => (
               <div
                 key={i}
-                className="rounded-lg p-3 flex flex-col"
+                className="rounded-lg overflow-hidden flex flex-col"
                 style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
               >
-                <div
-                  className="h-1 w-6 rounded-full mb-3"
-                  style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
-                />
-                <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                  {c.title}
-                </div>
-                <div className="text-[11px] leading-snug mt-1" style={{ color: muted }}>
-                  {c.body}
+                {thumb && (
+                  <div className="relative aspect-[16/9] overflow-hidden">
+                    <img
+                      src={thumb}
+                      alt=""
+                      loading="lazy"
+                      aria-hidden
+                      className="absolute inset-0 h-full w-full object-cover"
+                      style={{ filter: `hue-rotate(${i * 25}deg) saturate(${1 + i * 0.1})` }}
+                    />
+                  </div>
+                )}
+                <div className="p-3 flex flex-col gap-1 flex-1">
+                  <div
+                    className="h-1 w-6 rounded-full"
+                    style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
+                  />
+                  <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
+                    {c.title}
+                  </div>
+                  <div className="text-[11px] leading-snug" style={{ color: muted }}>
+                    {c.body}
+                  </div>
                 </div>
               </div>
             ))}
@@ -158,44 +210,87 @@ const SlideMock: React.FC<{
               {demo.stat.label}
             </div>
           </div>
-          <div className="space-y-3">
-            {demo.cards.slice(0, 3).map((c, i) => (
+          {thumb ? (
+            <div
+              className="relative aspect-[4/3] rounded-xl overflow-hidden"
+              style={{ border: `1px solid ${subtleBorder}` }}
+            >
+              <img
+                src={thumb}
+                alt=""
+                loading="lazy"
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover"
+              />
               <div
-                key={i}
-                className="rounded-lg p-3"
-                style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                className="absolute bottom-0 left-0 right-0 px-3 py-2 text-[11px] font-medium"
+                style={{
+                  background: `linear-gradient(0deg, ${t.palette.bg}E6, transparent)`,
+                  color: t.palette.text,
+                }}
               >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="h-2 w-2 rounded-full"
-                    style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
-                  />
-                  <div className="text-xs font-semibold" style={{ color: t.palette.text }}>
-                    {c.title}
+                Featured visual
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {demo.cards.slice(0, 3).map((c, i) => (
+                <div
+                  key={i}
+                  className="rounded-lg p-3"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-2 w-2 rounded-full"
+                      style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
+                    />
+                    <div className="text-xs font-semibold" style={{ color: t.palette.text }}>
+                      {c.title}
+                    </div>
+                  </div>
+                  <div className="text-[11px] mt-1" style={{ color: muted }}>
+                    {c.body}
                   </div>
                 </div>
-                <div className="text-[11px] mt-1" style={{ color: muted }}>
-                  {c.body}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {kind === "quote" && (
-        <div className="relative h-full p-12 flex flex-col justify-center">
-          <QuoteIcon className="h-8 w-8" style={{ color: t.palette.accent }} />
-          <p
-            className="mt-4 text-2xl sm:text-3xl font-semibold italic leading-snug max-w-[85%]"
-            style={{ color: t.palette.text }}
-          >
-            "{demo.quote.text}"
-          </p>
-          <div className="mt-6 flex items-center gap-3">
-            <div className="h-px w-10" style={{ background: t.palette.accent }} />
-            <div className="text-xs uppercase tracking-wider" style={{ color: muted }}>
-              {demo.quote.by}
+        <div className="relative h-full">
+          {thumb && (
+            <>
+              <img
+                src={thumb}
+                alt=""
+                loading="lazy"
+                aria-hidden
+                className="absolute inset-0 h-full w-full object-cover opacity-30"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `radial-gradient(ellipse at center, ${t.palette.bg}99 0%, ${t.palette.bg}F2 80%)`,
+                }}
+              />
+            </>
+          )}
+          <div className="relative h-full p-12 flex flex-col justify-center z-10">
+            <QuoteIcon className="h-8 w-8" style={{ color: t.palette.accent }} />
+            <p
+              className="mt-4 text-2xl sm:text-3xl font-semibold italic leading-snug max-w-[85%]"
+              style={{ color: t.palette.text }}
+            >
+              "{demo.quote.text}"
+            </p>
+            <div className="mt-6 flex items-center gap-3">
+              <div className="h-px w-10" style={{ background: t.palette.accent }} />
+              <div className="text-xs uppercase tracking-wider" style={{ color: muted }}>
+                {demo.quote.by}
+              </div>
             </div>
           </div>
         </div>
