@@ -423,9 +423,26 @@ Return HEX colors WITHOUT the # prefix. Use the locked template palette/fonts ab
   }
 
   const data = await response.json();
-  const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  const choice = data.choices?.[0];
+  // If the AI hit max_tokens its tool-call JSON is incomplete and JSON.parse will throw.
+  // Surface this clearly instead of failing with a vague "Unexpected end of JSON input".
+  const finish = choice?.finish_reason;
+  if (finish === "length" || finish === "max_tokens") {
+    console.warn("[generate-deck] AI response truncated (finish_reason=", finish, ")");
+  }
+  const args = choice?.message?.tool_calls?.[0]?.function?.arguments;
   if (!args) throw new Error("No outline returned by AI");
-  const outline = JSON.parse(args) as DeckOutline;
+  let outline: DeckOutline;
+  try {
+    outline = JSON.parse(args) as DeckOutline;
+  } catch (e) {
+    console.error("[generate-deck] Failed to parse outline JSON. finish_reason=", finish, "len=", args.length);
+    throw new Error(
+      finish === "length" || finish === "max_tokens"
+        ? "AI response was too long and got cut off — try reducing slide count or splitting your content."
+        : "AI returned malformed outline. Please retry.",
+    );
+  }
 
   // Lock palette/fonts to template if provided (AI sometimes drifts)
   if (req.template) {
