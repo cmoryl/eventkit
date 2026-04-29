@@ -166,6 +166,8 @@ function convertOne(s: SlideOutline & {
     case "chart": {
       if (s.chart) {
         base.chart = { type: s.chart.type, title: s.chart.title, data: s.chart.data };
+        // Bar charts pick up the BrandHub gradient/dotted-grid Revenue Growth treatment.
+        if (s.chart.type === "bar") base.variation = "growth-bars";
       }
       break;
     }
