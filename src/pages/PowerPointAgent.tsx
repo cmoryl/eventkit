@@ -538,6 +538,38 @@ const PowerPointAgent: React.FC = () => {
         .ppt-agent-page textarea::placeholder {
           color: rgba(228, 232, 245, 0.55) !important;
         }
+        /* Buttons — ensure readable text regardless of variant.
+           Light/white-surfaced buttons (outline, secondary, ghost-on-light) need dark ink;
+           filled primary buttons keep white ink. */
+        .ppt-agent-page button,
+        .ppt-agent-page [role="button"] {
+          text-shadow: none;
+        }
+        /* Default outline/secondary/white pill buttons -> dark navy text */
+        .ppt-agent-page button.bg-background,
+        .ppt-agent-page button.bg-secondary,
+        .ppt-agent-page button.bg-white,
+        .ppt-agent-page button[data-variant="outline"],
+        .ppt-agent-page button[data-variant="secondary"] {
+          color: #03002C !important;
+          background-color: rgba(255, 255, 255, 0.92) !important;
+          border-color: rgba(3, 0, 44, 0.18) !important;
+        }
+        .ppt-agent-page button.bg-background:hover,
+        .ppt-agent-page button.bg-secondary:hover,
+        .ppt-agent-page button.bg-white:hover {
+          background-color: #FFFFFF !important;
+          color: #03002C !important;
+        }
+        /* Selected/active pill state stays primary blue with white text */
+        .ppt-agent-page button.bg-primary,
+        .ppt-agent-page button[data-state="active"].bg-primary {
+          color: #FFFFFF !important;
+        }
+        /* Ghost buttons sitting over the navy background keep light ink */
+        .ppt-agent-page button.hover\\:bg-accent:not(.bg-background):not(.bg-secondary):not(.bg-primary) {
+          color: #F4F7FF !important;
+        }
       `}</style>
       {/* Header */}
       <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-10">
