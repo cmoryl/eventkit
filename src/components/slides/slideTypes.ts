@@ -192,6 +192,13 @@ export interface SlideData {
   demoContent?: any;
   /** Demo-mock template palette + id (DeckTemplate shape, lite). */
   demoTemplate?: any;
+  /**
+   * Per-shape overrides for demo-mock slides — keyed by `data-slide-shape` id.
+   * Lets users recolor/hide individual decorative elements (orbs, grid, brackets,
+   * accent bars, cards, badges) without leaving the editor.
+   *   { "orb-tl": { color: "#ff0", hidden: false } }
+   */
+  demoOverrides?: Record<string, { color?: string; hidden?: boolean }>;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
