@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
+import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
