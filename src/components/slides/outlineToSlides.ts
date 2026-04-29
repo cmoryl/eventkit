@@ -108,6 +108,10 @@ function convertOne(s: SlideOutline & {
       } else if (s.bullets?.length) {
         base.stats = s.bullets.slice(0, 6).map((b) => ({ value: "•", label: b }));
       }
+      // 4-up KPI rows render with the BrandHub graduated tile style.
+      if (base.stats && base.stats.length >= 3 && base.stats.length <= 4) {
+        base.variation = "brandhub-tiles";
+      }
       break;
     }
     case "agenda": {
@@ -162,6 +166,8 @@ function convertOne(s: SlideOutline & {
     case "chart": {
       if (s.chart) {
         base.chart = { type: s.chart.type, title: s.chart.title, data: s.chart.data };
+        // Bar charts pick up the BrandHub gradient/dotted-grid Revenue Growth treatment.
+        if (s.chart.type === "bar") base.variation = "growth-bars";
       }
       break;
     }

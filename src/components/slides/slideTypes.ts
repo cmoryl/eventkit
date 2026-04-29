@@ -206,6 +206,7 @@ export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; lab
     { value: 'grid',        label: 'Grid' },
     { value: 'ranked',      label: 'Ranked Bars' },
     { value: 'cards',       label: 'Cards' },
+    { value: 'brandhub-tiles', label: 'BrandHub Tiles' },
   ],
   timeline: [
     { value: 'rail',        label: 'Horizontal Rail' },
@@ -230,10 +231,11 @@ export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; lab
     { value: 'punch',       label: 'Oversized Punch' },
   ],
   chart: [
-    { value: 'plain',       label: 'Plain' },
-    { value: 'callout',     label: 'With Callout' },
-    { value: 'with-stat',   label: 'Chart + Stat' },
-    { value: 'takeaway',    label: 'With Takeaway' },
+    { value: 'plain',         label: 'Plain' },
+    { value: 'callout',       label: 'With Callout' },
+    { value: 'with-stat',     label: 'Chart + Stat' },
+    { value: 'takeaway',      label: 'With Takeaway' },
+    { value: 'growth-bars',   label: 'BrandHub Growth Bars' },
   ],
   comparison: [
     { value: 'vs',          label: 'VS Split' },
