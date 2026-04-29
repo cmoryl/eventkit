@@ -27,12 +27,12 @@ interface SlideRendererProps {
 
 function ImageGallery({ images }: { images: string[] }) {
   if (images.length === 1) {
-    return <img src={images[0]} alt="" className="w-full h-full object-contain" />;
+    return <img src={images[0]} alt="" data-slide-image="images.0" className="w-full h-full object-contain" />;
   }
   return (
     <div className="grid grid-cols-2 gap-[16px] w-full h-full p-[16px]">
       {images.slice(0, 4).map((src, i) => (
-        <img key={i} src={src} alt="" className="w-full h-full object-contain rounded-[8px]" />
+        <img key={i} src={src} alt="" data-slide-image={`images.${i}`} className="w-full h-full object-contain rounded-[8px]" />
       ))}
     </div>
   );
