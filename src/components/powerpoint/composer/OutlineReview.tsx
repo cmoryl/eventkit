@@ -39,7 +39,7 @@ const LAYOUT_LABELS: Partial<Record<SlideOutline["layout"], string>> = {
   process: "Process",
 };
 
-export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building }) => {
+export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onConfirm, building, sourceContent }) => {
   const { toast } = useToast();
   // Stable per-slide ids so storage paths stay consistent across edits within this session
   const slideIds = useMemo(() => outline.slides.map(() => crypto.randomUUID()), [outline.slides.length]);
