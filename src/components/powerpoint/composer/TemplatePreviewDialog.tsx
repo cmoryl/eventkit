@@ -456,6 +456,105 @@ const Donut: React.FC<{ percent: number; accent: string; track: string; label: s
   );
 };
 
+/* ------------------------------ Visual variants ------------------------------ */
+// One unified rotation surface for all the SVG visuals so each slide / card / tile
+// pulls a different style. Drives variation across templates AND across slides.
+export type VisualVariantId = "spark" | "ring" | "bars" | "wave" | "iso" | "blob" | "grid" | "donut";
+
+const VARIANT_ROTATIONS: Record<string, VisualVariantId[]> = {
+  // Per-template ordering — first variant becomes the "signature" look.
+  "transperfect-2026": ["ring", "spark", "bars", "iso", "wave", "blob", "grid", "donut"],
+  "modern-dark":       ["spark", "wave", "ring", "iso", "grid", "blob", "bars", "donut"],
+  "editorial-light":   ["bars", "grid", "spark", "donut", "wave", "ring", "iso", "blob"],
+  "corporate-navy":    ["donut", "ring", "bars", "spark", "iso", "grid", "wave", "blob"],
+  "vibrant-startup":   ["wave", "blob", "spark", "ring", "iso", "bars", "donut", "grid"],
+  "warm-terracotta":   ["blob", "iso", "wave", "grid", "spark", "ring", "bars", "donut"],
+  "mono-brutalist":    ["grid", "bars", "iso", "spark", "ring", "donut", "wave", "blob"],
+};
+const DEFAULT_ROTATION: VisualVariantId[] = ["spark", "ring", "bars", "wave", "iso", "blob", "grid", "donut"];
+
+/** Pick a visual variant deterministically from template id + per-slide channel + index. */
+export function pickVariant(templateId: string, channel: string, index: number): VisualVariantId {
+  const rot = VARIANT_ROTATIONS[templateId] || DEFAULT_ROTATION;
+  // Mix the channel into the offset so different sections of one slide read different variants.
+  let h = 0;
+  for (let i = 0; i < channel.length; i++) h = (h * 31 + channel.charCodeAt(i)) >>> 0;
+  return rot[(index + h) % rot.length];
+}
+
+interface VVProps {
+  variant: VisualVariantId;
+  accent: string;
+  secondary: string;
+  text: string;
+  muted: string;
+  /** Used as render seed and pseudo-percent input for ring/donut. */
+  seed?: number;
+  /** Optional explicit percent for ring/donut (0–100). Falls back to seed-derived. */
+  percent?: number;
+  /** Optional bar series; if absent, generated from seed. */
+  bars?: { label: string; v: number }[];
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}
+
+/** Universal renderer — drop into any empty space to fill it with a brand-tinted visual. */
+export const VisualVariant: React.FC<VVProps> = ({
+  variant,
+  accent,
+  secondary,
+  text,
+  muted,
+  seed = 1,
+  percent,
+  bars,
+  size = "md",
+  className,
+}) => {
+  const pct = typeof percent === "number" ? percent : Math.min(96, Math.max(18, ((seed * 37) % 80) + 16));
+  const ringSize = size === "sm" ? 44 : size === "lg" ? 84 : 64;
+  const ringThick = size === "sm" ? 6 : size === "lg" ? 10 : 8;
+  const fallbackBars = bars || [
+    { label: "wk1", v: Math.round(pct * 0.45) },
+    { label: "wk2", v: Math.round(pct * 0.62) },
+    { label: "wk3", v: Math.round(pct * 0.81) },
+    { label: "wk4", v: Math.round(pct) },
+  ];
+
+  return (
+    <div className={`w-full h-full flex items-center justify-center ${className || ""}`}>
+      {variant === "spark" && (
+        <Sparkline accent={accent} secondary={secondary} muted={muted} seed={seed} />
+      )}
+      {variant === "ring" && (
+        <RingGauge percent={pct} accent={accent} track={text} size={ringSize} thickness={ringThick} text={text} label="vs goal" />
+      )}
+      {variant === "bars" && (
+        <div className="w-full px-1">
+          <HBars values={fallbackBars} accent={accent} secondary={secondary} text={text} muted={muted} />
+        </div>
+      )}
+      {variant === "wave" && (
+        <WavePattern accent={accent} secondary={secondary} />
+      )}
+      {variant === "iso" && (
+        <div className="w-[85%] h-[85%]">
+          <IsoStack accent={accent} secondary={secondary} text={text} />
+        </div>
+      )}
+      {variant === "blob" && (
+        <RadialBlob accent={accent} secondary={secondary} seed={seed} />
+      )}
+      {variant === "grid" && (
+        <GridDecor accent={accent} secondary={secondary} text={text} />
+      )}
+      {variant === "donut" && (
+        <Donut percent={pct} accent={accent} track={text} label="Share" sub="of total" text={text} muted={muted} />
+      )}
+    </div>
+  );
+};
+
 /* ------------------------------ Slide kinds ------------------------------ */
 type SlideKind =
   | "title"
