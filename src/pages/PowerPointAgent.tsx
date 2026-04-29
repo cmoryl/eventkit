@@ -726,63 +726,7 @@ const PowerPointAgent: React.FC = () => {
               {/* Step 1 — choose mode */}
               <ModeCards active={mode} onChange={setMode} disabled={isGenerating} />
 
-              {/* Active template banner */}
-              {selectedTemplateId && (() => {
-                const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === selectedTemplateId);
-                if (!tpl) return null;
-                return (
-                  <div className="max-w-3xl mx-auto flex items-center gap-3 rounded-xl border bg-card/60 backdrop-blur-sm p-3 text-left">
-                    <div
-                      className="h-10 w-14 rounded-md border shrink-0"
-                      style={{ background: tpl.palette.bg }}
-                    >
-                      <div className="flex gap-1 p-1.5">
-                        <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.accent }} />
-                        <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.secondary }} />
-                      </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold flex items-center gap-1.5">
-                        <Check className="h-3.5 w-3.5 text-primary" />
-                        {tpl.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">{tpl.description || "Look & feel applied to your deck"}</p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => { setSelectedTemplateId(""); setThemeOverride(""); }}
-                    >
-                      Change
-                    </Button>
-                  </div>
-                );
-              })()}
-
-              {/* Template gallery — only matters in 'blank' mode but shown anywhere a template isn't picked */}
-              {!selectedTemplateId && (
-                <TemplateGallery
-                  selectedId={selectedTemplateId}
-                  onSelect={applyTemplate}
-                  disabled={isGenerating}
-                />
-              )}
-
-              {/* Step 2 — quick controls always visible */}
-              <QuickControls
-                slideCount={slideCount}
-                setSlideCount={setSlideCount}
-                tone={tone}
-                setTone={setTone}
-                audience={audience}
-                setAudience={setAudience}
-                parallaxMode={parallaxMode}
-                setParallaxMode={setParallaxMode}
-                disabled={isGenerating}
-              />
-
-              {/* Step 3 — composer (changes by mode) */}
+              {/* Step 2 — composer (user input) */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -898,7 +842,20 @@ const PowerPointAgent: React.FC = () => {
                 </div>
               </form>
 
-              {/* Suggestion chips — only relevant in prompt mode */}
+              {/* Step 3 — slides, tone, audience */}
+              <QuickControls
+                slideCount={slideCount}
+                setSlideCount={setSlideCount}
+                tone={tone}
+                setTone={setTone}
+                audience={audience}
+                setAudience={setAudience}
+                parallaxMode={parallaxMode}
+                setParallaxMode={setParallaxMode}
+                disabled={isGenerating}
+              />
+
+              {/* Step 4 — preset prompt chips (prompt mode only) */}
               {mode === "prompt" && (
                 <div className="flex flex-wrap gap-2 justify-center max-w-3xl mx-auto pt-2">
                   {suggestions.map((s) => (
@@ -914,6 +871,65 @@ const PowerPointAgent: React.FC = () => {
                   ))}
                 </div>
               )}
+
+              {/* Step 5 — Start from a template (collapsible) */}
+              <div className="max-w-3xl mx-auto pt-2 space-y-3">
+                {selectedTemplateId ? (() => {
+                  const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === selectedTemplateId);
+                  if (!tpl) return null;
+                  return (
+                    <div className="flex items-center gap-3 rounded-xl border bg-card/60 backdrop-blur-sm p-3 text-left">
+                      <div
+                        className="h-10 w-14 rounded-md border shrink-0"
+                        style={{ background: tpl.palette.bg }}
+                      >
+                        <div className="flex gap-1 p-1.5">
+                          <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.accent }} />
+                          <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.secondary }} />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold flex items-center gap-1.5">
+                          <Check className="h-3.5 w-3.5 text-primary" />
+                          {tpl.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{tpl.description || "Look & feel applied to your deck"}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setSelectedTemplateId(""); setThemeOverride(""); setShowTemplateGallery(true); }}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  );
+                })() : (
+                  <div className="flex flex-col items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setShowTemplateGallery((v) => !v)}
+                      disabled={isGenerating}
+                      className="gap-2"
+                    >
+                      <LayoutTemplate className="h-4 w-4" />
+                      {showTemplateGallery ? "Hide templates" : "Pick a template"}
+                    </Button>
+                    {showTemplateGallery && (
+                      <div className="w-full">
+                        <TemplateGallery
+                          selectedId={selectedTemplateId}
+                          onSelect={applyTemplate}
+                          disabled={isGenerating}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <p className="text-[11px] text-muted-foreground/80 pt-2">
                 Outline first → review & edit → we build a real .pptx you can open in PowerPoint, Keynote, or Google Slides.
