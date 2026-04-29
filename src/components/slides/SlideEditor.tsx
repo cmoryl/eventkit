@@ -563,6 +563,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 Export
               </Button>
 
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSaveTemplateOpen(true)}
+                title="Save the current deck as a reusable template"
+              >
+                <Bookmark className="h-3.5 w-3.5 mr-1.5" />
+                Save as Template
+              </Button>
+
               <Select value={slideTransition} onValueChange={(v) => setSlideTransition(v as SlideTransition)}>
                 <SelectTrigger className="h-8 w-[110px] text-xs">
                   <SelectValue />
