@@ -199,6 +199,16 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                     />
                     <button
                       type="button"
+                      onClick={() => handlePopulateOne(i)}
+                      disabled={populatingIdx.has(i) || populatingAll}
+                      className="shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] border bg-violet-400/15 border-violet-300/50 text-violet-100 hover:bg-violet-400/25 transition-colors disabled:opacity-60"
+                      title="Use AI to write details, bullets, and visual guidance for this slide"
+                    >
+                      {populatingIdx.has(i) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Wand2 className="h-3 w-3" />}
+                      AI fill
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => toggleDetails(i)}
                       className={`shrink-0 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] border transition-colors ${
                         open
