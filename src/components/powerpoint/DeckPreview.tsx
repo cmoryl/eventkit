@@ -315,13 +315,24 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
           {/* Canvas preview */}
           <div className="p-4 border-b" style={{ background: `#${outline.palette.background}` }}>
             <div
-              className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner bg-cover bg-center"
+              className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner bg-cover bg-center cursor-pointer"
               style={{
                 color: `#${outline.palette.text}`,
                 fontFamily: outline.fonts?.body,
                 backgroundColor: `#${outline.palette.background}`,
                 backgroundImage: templatePreviewImage(templateId, active.layout) ? `url(${templatePreviewImage(templateId, active.layout)})` : undefined,
               }}
+              onDoubleClick={() => {
+                // Prefer chart, then first reference image
+                if (active.chart || active.visualIntent === "chart") {
+                  setEditTarget({ kind: "chart", chart: active.chart });
+                } else if (active.references && active.references.length > 0) {
+                  setEditTarget({ kind: "image", image: active.references[0], index: 0 });
+                } else {
+                  toast({ title: "No editable assets on this slide", description: "Add a chart or reference image below to edit." });
+                }
+              }}
+              title="Double-click to edit chart or first reference image"
             >
               <SlideRenderer slide={active} palette={outline.palette} fonts={outline.fonts} templateId={templateId} />
             </div>
