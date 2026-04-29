@@ -20,6 +20,7 @@ import { QuickControls } from "@/components/powerpoint/composer/QuickControls";
 import { OutlineReview } from "@/components/powerpoint/composer/OutlineReview";
 
 import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
+import horizonBg from "@/assets/horizon-bg.png";
 
 // Default 10-slide outline suggestions per template — populates topic area when picked
 const TEMPLATE_DEFAULT_TOPICS: Record<string, { topic: string; audience?: string; tone?: string }> = {
@@ -474,7 +475,16 @@ const PowerPointAgent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div
+      className="min-h-screen flex flex-col text-foreground"
+      style={{
+        backgroundColor: '#03002C',
+        backgroundImage: `url(${horizonBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center bottom',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      }}>
       {/* Header */}
       <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
