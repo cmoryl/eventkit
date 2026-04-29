@@ -175,13 +175,14 @@ Plan a deck that fully exploits this template's visual system (rich layouts, var
 }
 
 /**
- * Detect when the user pasted pre-structured slide content (e.g. "Slide 1: ...", "Slide 2: ...").
- * When detected we tell the model to render those slides VERBATIM and override slideCount.
+ * Detect when the user pasted pre-structured slide content.
+ * Accepts a wide range of variants: "Slide 1:", "**Slide 1**", "## Slide 1 —",
+ * "Slide 1.", "Slide 1 -", with optional markdown bold/heading prefixes.
  */
 function detectPrestructuredSlides(topic: string): { count: number; blocks: string[] } | null {
   if (!topic) return null;
-  // Match "Slide 1:", "Slide 1 -", "Slide 1." etc. at start of a line
-  const re = /^\s*Slide\s+(\d+)\s*[:\-–.]/gim;
+  // Strip leading markdown markers (#, *, -, >) so "## **Slide 1:**" still matches.
+  const re = /^[\s>#*\-_]*\**\s*Slide\s+(\d+)\s*\**\s*[:\-–.)]/gim;
   const matches: { idx: number; num: number }[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(topic)) !== null) {
