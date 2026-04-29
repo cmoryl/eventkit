@@ -645,7 +645,7 @@ const PowerPointAgent: React.FC = () => {
         </div>
       </header>
 
-      <main ref={scrollRef} className="flex-1 overflow-y-auto">
+      <main ref={scrollRef} className={`flex-1 overflow-y-auto ${activeTab === "editor" ? "hidden" : ""}`}>
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
           {/* Outline review step (Gamma-style) */}
           {pendingOutline && (
