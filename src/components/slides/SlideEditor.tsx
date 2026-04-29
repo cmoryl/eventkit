@@ -853,7 +853,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   <InlineEditOverlay
                     slide={activeSlide}
                     onUpdate={(updates) => updateSlide(activeIndex, updates)}
-                    enabled={activeSlide.layout !== 'demo-mock' && activeSlide.layout !== 'parallax'}
+                    enabled={activeSlide.layout !== 'parallax'}
                   >
                     <SlideRenderer
                       slide={activeSlide}
