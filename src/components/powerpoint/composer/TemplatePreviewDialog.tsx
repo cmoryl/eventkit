@@ -1732,7 +1732,15 @@ const SlideMock: React.FC<{
               />
             ) : (
               <div className="absolute inset-0">
-                <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
+                <VisualVariant
+                  variant={pickVariant(t.id, "feature-split-bg", index)}
+                  accent={t.palette.accent}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                  seed={index + 17}
+                  size="lg"
+                />
               </div>
             )}
             {/* Bottom gradient for legibility */}
