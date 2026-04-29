@@ -174,6 +174,9 @@ Style guidance for empty fields only:
     // Strip chart unless explicitly chart intent
     if (patch.visualIntent !== "chart") delete (patch as any).chart;
 
+    // Hard guardrail: NEVER let the model overwrite user-filled fields, even if it ignored the prompt.
+    for (const k of lockedFields) delete (patch as any)[k];
+
     return new Response(JSON.stringify({ patch }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
