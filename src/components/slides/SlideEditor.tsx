@@ -355,22 +355,23 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setActiveIndex(0);
   }, []);
 
-  const updateDemoDeckContent = useCallback((nextOrUpdater: any) => {
+  const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
     setSlides(prev => {
       const target = prev[activeIndex];
       if (!target?.demoContent) return prev;
       const nextContent = typeof nextOrUpdater === 'function'
-        ? nextOrUpdater(target.demoContent)
+        ? (nextOrUpdater as (current: SlideData['demoContent']) => SlideData['demoContent'])(target.demoContent)
         : nextOrUpdater;
       const templateId = target.demoTemplate?.id;
-      const imagery = nextContent?.imagery ?? [];
+      const nextDemoContent = nextContent as SlideData['demoContent'];
+      const imagery = nextDemoContent?.imagery ?? [];
       return prev.map(s => {
         const sameDemoDeck = s.layout === 'demo-mock' && (!templateId || s.demoTemplate?.id === templateId);
         return sameDemoDeck
           ? {
               ...s,
-              demoContent: nextContent,
-              title: nextContent?.title || s.title,
+              demoContent: nextDemoContent,
+              title: nextDemoContent?.title || s.title,
               imageUrl: imagery[0] || s.imageUrl,
               images: imagery.length > 0 ? imagery : s.images,
             }
@@ -379,18 +380,19 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     });
   }, [activeIndex]);
 
-  const updateDemoDeckTemplate = useCallback((nextOrUpdater: any) => {
+  const updateDemoDeckTemplate = useCallback((nextOrUpdater: unknown) => {
     setSlides(prev => {
       const target = prev[activeIndex];
       if (!target?.demoTemplate) return prev;
       const nextTemplate = typeof nextOrUpdater === 'function'
-        ? nextOrUpdater(target.demoTemplate)
+        ? (nextOrUpdater as (current: SlideData['demoTemplate']) => SlideData['demoTemplate'])(target.demoTemplate)
         : nextOrUpdater;
+      const nextDemoTemplate = nextTemplate as SlideData['demoTemplate'];
       const templateId = target.demoTemplate?.id;
       return prev.map(s => {
         const sameDemoDeck = s.layout === 'demo-mock' && (!templateId || s.demoTemplate?.id === templateId);
         return sameDemoDeck
-          ? { ...s, demoTemplate: nextTemplate, bgColor: nextTemplate?.palette?.bg || s.bgColor }
+          ? { ...s, demoTemplate: nextDemoTemplate, bgColor: nextDemoTemplate?.palette?.bg || s.bgColor }
           : s;
       });
     });
@@ -417,9 +419,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setSlides(imported);
       setActiveIndex(0);
       toast.success(`Imported ${imported.length} slides from ${file.name}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('PPTX import error:', err);
-      toast.error(err.message || 'Failed to import PPTX file');
+      toast.error(err instanceof Error ? err.message : 'Failed to import PPTX file');
     }
   }, []);
 
@@ -452,7 +454,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     };
 
     const fetchViaProxy = async (): Promise<Blob> => {
-      const base = (import.meta as any).env?.VITE_SUPABASE_URL;
+      const base = import.meta.env?.VITE_SUPABASE_URL;
       if (!base) throw new Error('Proxy unavailable');
       const proxyUrl = `${base}/functions/v1/proxy-brandhub-file?url=${encodeURIComponent(file.url)}`;
       const res = await fetch(proxyUrl);
