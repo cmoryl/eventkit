@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, Pencil, Check, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Copy, Wand2, Minimize2, Maximize2, Shuffle, Sparkles } from "lucide-react";
+import { Download, Pencil, Check, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Copy, Wand2, Minimize2, Maximize2, Shuffle, Sparkles, BarChart3, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AssetEditDialog, type AssetEditTarget } from "./composer/AssetEditDialog";
 import transperfectHero from "@/assets/templates/transperfect-hero.jpg";
 import transperfectHeroSquare from "@/assets/templates/transperfect-hero-square.jpg";
 import transperfectSectionBg from "@/assets/templates/transperfect-section-bg.jpg";
