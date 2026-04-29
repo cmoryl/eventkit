@@ -820,7 +820,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           { step: "02", title: "Strategy & approach", duration: "15 min" },
           { step: "03", title: "Roadmap & milestones", duration: "20 min" },
           { step: "04", title: "Investment & next steps", duration: "10 min" },
-        ]).slice(0, 6);
+        ]).slice(0, 10); // up to 10 agenda items
 
         const startY = 2.0;
         const rowH = (H - startY - PAD - 0.4) / Math.max(items.length, 1);
