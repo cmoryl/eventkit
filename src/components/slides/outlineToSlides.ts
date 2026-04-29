@@ -58,7 +58,7 @@ function convertOne(s: SlideOutline & {
     variation: VARIATION_MAP[s.layout],
   };
 
-  switch (s.layout) {
+  switch (s.layout as string) {
     case "title":
     case "section":
     case "closing": {
