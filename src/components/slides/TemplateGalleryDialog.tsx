@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { ScaledSlide } from './ScaledSlide';
 import { SlideRenderer } from './SlideRenderer';
 import { applyDemoTheme, type DemoThemeId, type SlideData } from './slideTypes';
+import { getThemePack } from './themePacks';
 import {
   INFOGRAPHIC_TEMPLATES,
   INFOGRAPHIC_CATEGORIES,
@@ -188,14 +189,23 @@ export function TemplateGalleryDialog({
   );
 }
 
-/** Returns the template with its slide payload themed to the demo style. */
+/** Returns the template with its slide payload themed to the demo style.
+ *  Applies the theme pack's bg/effect/variant + auto-fills the hero image
+ *  for title slides so cards visually match the demo decks. */
 function themedTemplate(template: InfographicTemplate): InfographicTemplate {
   if (!template.theme) return template;
   const [themed] = applyDemoTheme([template.slide], template.theme);
-  // The demo theme's bgEffect (TransPerfect orbs, Modern Dark mesh, etc.) is the
-  // whole point of the style — always let it win over the template's stock effect
-  // so gallery cards visually match the demo decks.
-  return { ...template, slide: themed };
+  const pack = getThemePack(template.theme);
+  // For title slides, prefer the pack's suggested variant + first hero image
+  // unless the template already specifies its own.
+  const isTitleish = themed.layout === 'title';
+  const heroImg = pack.images[0]?.src;
+  const enriched: Omit<SlideData, 'id'> = {
+    ...themed,
+    variation: themed.variation || pack.variants[themed.layout],
+    imageUrl: themed.imageUrl || (isTitleish ? heroImg : themed.imageUrl),
+  };
+  return { ...template, slide: enriched };
 }
 
 function CategoryButton({
