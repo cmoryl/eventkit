@@ -893,6 +893,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   />
                 )}
 
+                {activeSlide.layout !== 'demo-mock' && (
+                <>
+
                 {/* Layout selector */}
                 <div className="space-y-2">
                   <label className="text-xs font-medium text-muted-foreground">Layout</label>
@@ -1455,6 +1458,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                       </Button>
                     </label>
                   </div>
+                )}
+
+                </>
                 )}
 
                 {/* Speaker notes */}
