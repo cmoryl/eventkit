@@ -1033,7 +1033,7 @@ const PowerPointAgent: React.FC = () => {
         initialSlides={editorInitialSlides}
       />
 
-
+      <BrandHubImportModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
         onBrandImported={() => { setShowImportModal(false); loadBrands(); }}
