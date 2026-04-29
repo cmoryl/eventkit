@@ -303,6 +303,52 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
           </div>
           <ScrollArea className="flex-1">
             <div className="p-5 space-y-6">
+              {!search.trim() && savedAsDeckTemplates.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <Bookmark className="h-3 w-3" />
+                    My Templates
+                    {loadingSaved && <Loader2 className="h-3 w-3 animate-spin" />}
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {savedAsDeckTemplates.map((t) => {
+                      const savedId = t.id.replace(/^saved:/, "");
+                      const saved = savedTemplates.find((s) => s.id === savedId);
+                      const ownedByMe = saved?.user_id === user?.id;
+                      return (
+                        <div key={t.id} className="relative group">
+                          <TemplateCard
+                            template={t}
+                            selected={selectedId === t.id}
+                            disabled={disabled}
+                            onClick={() => setPreviewTemplate(t)}
+                          />
+                          {saved?.is_shared && (
+                            <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground text-[9px] font-bold flex items-center gap-1">
+                              <Globe2 className="h-2.5 w-2.5" />
+                              Shared
+                            </div>
+                          )}
+                          {ownedByMe && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteSaved(savedId, t.name);
+                              }}
+                              className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-background/90 border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground"
+                              title="Delete saved template"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {!search.trim() && (
                 <div>
                   <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
