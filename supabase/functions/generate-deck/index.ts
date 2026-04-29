@@ -1256,11 +1256,19 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           fontSize: 32, bold: true, color: ON_BG, fontFace: headFont,
         });
         slide.addShape("rect", { x: PAD, y: PAD + 1.35, w: 0.5, h: 0.06, fill: { color: ACCENT } });
+        // Auto-shrink font + spacing when the user has many bullets so we never
+        // have to drop content to fit the slide.
+        const bulletList = orPhBullets(s.bullets, 5);
+        const bulletFs =
+          bulletList.length <= 5 ? 18 :
+          bulletList.length <= 8 ? 15 :
+          bulletList.length <= 12 ? 12 : 10;
+        const bulletGap = bulletList.length <= 5 ? 12 : bulletList.length <= 8 ? 8 : 4;
         slide.addText(
-          orPhBullets(s.bullets, 5).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 12 } })),
+          bulletList.map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: bulletGap } })),
           {
             x: PAD, y: PAD + 1.55, w: contentW, h: H - PAD * 2 - 1.55 - 0.4,
-            fontSize: 18, color: ON_BG, fontFace: bodyFont, valign: "top",
+            fontSize: bulletFs, color: ON_BG, fontFace: bodyFont, valign: "top",
           },
         );
         if (hasFeature && featureImg) {
