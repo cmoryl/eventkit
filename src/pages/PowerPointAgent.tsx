@@ -417,6 +417,67 @@ const PowerPointAgent: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // ── PPTX source ────────────────────────────────────────────────────────────
+  const runPptxExtraction = async (file: File) => {
+    setExtractedSource(null);
+    setSelectedSections(new Set());
+    setExtracting(true);
+    try {
+      const { extractPptxAsSource } = await import("@/components/powerpoint/composer/extractPptxSource");
+      const data = await extractPptxAsSource(file, {
+        includeText,
+        includeImagery,
+        includeLookAndFeel,
+        influence,
+      });
+      setExtractedSource(data);
+      const sectionCount = data.extracted.outline.length;
+      setSelectedSections(new Set(Array.from({ length: sectionCount }, (_, i) => i)));
+      toast({ title: "PPTX extracted", description: `${data.extracted.pageCount} slides parsed.` });
+      return true;
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Couldn't read PPTX", description: e?.message || "Parse failed", variant: "destructive" });
+      return false;
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const handlePptxSelect = async (file: File | null) => {
+    if (!file) return;
+    const isPptx =
+      file.name.toLowerCase().endsWith(".pptx") ||
+      file.type === "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    if (!isPptx) {
+      toast({ title: "PPTX only", description: "Please upload a .pptx file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 20MB.", variant: "destructive" });
+      return;
+    }
+    // PPTX replaces any existing PDF source.
+    setPdfFile(null);
+    setThumbnails(new Map());
+    setSelectedPages([]);
+    setPptxFile(file);
+    const ok = await runPptxExtraction(file);
+    if (!ok) setPptxFile(null);
+  };
+
+  const clearPptx = () => {
+    setPptxFile(null);
+    setExtractedSource(null);
+    setSelectedSections(new Set());
+    if (pptxInputRef.current) pptxInputRef.current.value = "";
+  };
+
+  const rerunPptxExtraction = async () => {
+    if (!pptxFile || extracting || isGenerating) return;
+    await runPptxExtraction(pptxFile);
+  };
+
   /**
    * Build the shared body sent to generate-deck. Used for both planning and final build.
    */
