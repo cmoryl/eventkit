@@ -1381,8 +1381,27 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+  );
+
+  return (
+    <>
+    {inline ? (
+      isOpen ? (
+        <div className="fixed inset-0 z-40 bg-background">
+          {editorBody}
+        </div>
+      ) : null
+    ) : (
+      <Dialog open={isOpen} onOpenChange={() => onClose()}>
+        <DialogContent
+          className="max-w-[100vw] w-[100vw] h-[100vh] p-0 overflow-hidden rounded-none border-none"
+          hideClose
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          {editorBody}
+        </DialogContent>
+      </Dialog>
+    )}
 
     <AISlideGenerator
       isOpen={isAIGeneratorOpen}
