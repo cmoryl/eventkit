@@ -289,3 +289,212 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
     </div>
   );
 };
+
+// =====================================================================
+// RichContentEditor — surfaces the structured fields (kpis, metrics,
+// columns, quote, comparison, timeline, agenda, process, stat, chart)
+// directly inside the outline review card so the user can SEE every
+// stat/bullet they pasted and edit it in place. Without this, rich
+// layouts looked empty and "AI fill" felt like it was inventing
+// generic content from scratch.
+// =====================================================================
+const fieldBoxClass =
+  "rounded-lg border border-white/10 bg-white/[0.03] p-2.5 space-y-2";
+const labelClass = "text-[10px] uppercase tracking-wider text-white/55 font-semibold";
+const inputCls = "h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/40";
+const taCls = "text-xs bg-white/5 border-white/10 text-white placeholder:text-white/40";
+
+const RichContentEditor: React.FC<{
+  slide: SlideOutline;
+  onChange: (patch: Partial<SlideOutline>) => void;
+}> = ({ slide, onChange }) => {
+  const blocks: React.ReactNode[] = [];
+
+  // -------- stat / single big number --------
+  if (slide.layout === "stat" || slide.stat) {
+    const stat = slide.stat || { value: "", label: "" };
+    blocks.push(
+      <div key="stat" className={fieldBoxClass}>
+        <div className={labelClass}>Stat</div>
+        <div className="grid grid-cols-2 gap-2">
+          <Input className={inputCls} placeholder="Value (e.g. 40%)" value={stat.value}
+            onChange={(e) => onChange({ stat: { ...stat, value: e.target.value } })} />
+          <Input className={inputCls} placeholder="Label" value={stat.label}
+            onChange={(e) => onChange({ stat: { ...stat, label: e.target.value } })} />
+        </div>
+      </div>
+    );
+  }
+
+  // -------- quote --------
+  if (slide.layout === "quote" || slide.quote) {
+    const q = slide.quote || { text: "", attribution: "" };
+    blocks.push(
+      <div key="quote" className={fieldBoxClass}>
+        <div className={labelClass}>Quote</div>
+        <Textarea className={taCls} rows={2} placeholder="Quote text" value={q.text}
+          onChange={(e) => onChange({ quote: { ...q, text: e.target.value } })} />
+        <Input className={inputCls} placeholder="Attribution" value={q.attribution || ""}
+          onChange={(e) => onChange({ quote: { ...q, attribution: e.target.value } })} />
+      </div>
+    );
+  }
+
+  // -------- two_column / leftColumn + rightColumn --------
+  if (slide.leftColumn || slide.rightColumn || slide.layout === "two_column") {
+    const L = slide.leftColumn || { heading: "", bullets: [] };
+    const R = slide.rightColumn || { heading: "", bullets: [] };
+    blocks.push(
+      <div key="cols" className={fieldBoxClass}>
+        <div className={labelClass}>Two columns</div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Input className={inputCls} placeholder="Left heading" value={L.heading}
+              onChange={(e) => onChange({ leftColumn: { ...L, heading: e.target.value } })} />
+            <Textarea className={taCls} rows={4} placeholder="One bullet per line"
+              value={(L.bullets || []).join("\n")}
+              onChange={(e) => onChange({ leftColumn: { ...L, bullets: e.target.value.split("\n").filter(Boolean) } })} />
+          </div>
+          <div className="space-y-1">
+            <Input className={inputCls} placeholder="Right heading" value={R.heading}
+              onChange={(e) => onChange({ rightColumn: { ...R, heading: e.target.value } })} />
+            <Textarea className={taCls} rows={4} placeholder="One bullet per line"
+              value={(R.bullets || []).join("\n")}
+              onChange={(e) => onChange({ rightColumn: { ...R, bullets: e.target.value.split("\n").filter(Boolean) } })} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------- comparison (before / after) --------
+  if (slide.comparison || slide.layout === "comparison") {
+    const c = slide.comparison || { before: { title: "Before", points: [] }, after: { title: "After", points: [] } };
+    blocks.push(
+      <div key="cmp" className={fieldBoxClass}>
+        <div className={labelClass}>Before vs After</div>
+        <Input className={inputCls} placeholder="Comparison heading (optional)" value={c.heading || ""}
+          onChange={(e) => onChange({ comparison: { ...c, heading: e.target.value } })} />
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Input className={inputCls} placeholder="Before title" value={c.before.title}
+              onChange={(e) => onChange({ comparison: { ...c, before: { ...c.before, title: e.target.value } } })} />
+            <Textarea className={taCls} rows={4} placeholder="One point per line"
+              value={(c.before.points || []).join("\n")}
+              onChange={(e) => onChange({ comparison: { ...c, before: { ...c.before, points: e.target.value.split("\n").filter(Boolean) } } })} />
+          </div>
+          <div className="space-y-1">
+            <Input className={inputCls} placeholder="After title" value={c.after.title}
+              onChange={(e) => onChange({ comparison: { ...c, after: { ...c.after, title: e.target.value } } })} />
+            <Textarea className={taCls} rows={4} placeholder="One point per line"
+              value={(c.after.points || []).join("\n")}
+              onChange={(e) => onChange({ comparison: { ...c, after: { ...c.after, points: e.target.value.split("\n").filter(Boolean) } } })} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------- kpis / metrics (treat similarly: list of value + label rows) --------
+  const renderTiles = (
+    key: "kpis" | "metrics",
+    label: string,
+    items: Array<{ value: string; label: string; sublabel?: string }>,
+  ) => (
+    <div key={key} className={fieldBoxClass}>
+      <div className="flex items-center justify-between">
+        <div className={labelClass}>{label}</div>
+        <button type="button" className="text-[10px] text-cyan-300 hover:text-cyan-200"
+          onClick={() => onChange({ [key]: [...items, { value: "", label: "", sublabel: "" }] } as any)}>
+          + Add
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {items.map((it, idx) => (
+          <div key={idx} className="grid grid-cols-[1fr_2fr_2fr_auto] gap-1.5 items-center">
+            <Input className={inputCls} placeholder="Value" value={it.value}
+              onChange={(e) => {
+                const next = [...items]; next[idx] = { ...it, value: e.target.value };
+                onChange({ [key]: next } as any);
+              }} />
+            <Input className={inputCls} placeholder="Label" value={it.label}
+              onChange={(e) => {
+                const next = [...items]; next[idx] = { ...it, label: e.target.value };
+                onChange({ [key]: next } as any);
+              }} />
+            <Input className={inputCls} placeholder="Sublabel (optional)" value={it.sublabel || ""}
+              onChange={(e) => {
+                const next = [...items]; next[idx] = { ...it, sublabel: e.target.value };
+                onChange({ [key]: next } as any);
+              }} />
+            <button type="button" className="text-white/50 hover:text-red-400 text-xs px-1"
+              onClick={() => onChange({ [key]: items.filter((_, j) => j !== idx) } as any)}>
+              ×
+            </button>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="text-[11px] text-white/40 italic">No {label.toLowerCase()} yet — click + Add.</div>
+        )}
+      </div>
+    </div>
+  );
+  if (slide.kpis || slide.layout === "kpi_grid") {
+    blocks.push(renderTiles("kpis", "KPIs", slide.kpis || []));
+  }
+  if (slide.metrics || slide.layout === "metrics") {
+    blocks.push(renderTiles("metrics", "Metrics", slide.metrics || []));
+  }
+
+  // -------- agenda / process / timeline (step-style lists, simple textarea per item) --------
+  const renderSteps = <T extends { step?: string; when?: string; title: string; body?: string }>(
+    key: "agenda" | "process" | "timeline",
+    label: string,
+    items: T[],
+    indexLabel: "step" | "when",
+  ) => (
+    <div key={key} className={fieldBoxClass}>
+      <div className="flex items-center justify-between">
+        <div className={labelClass}>{label}</div>
+        <button type="button" className="text-[10px] text-cyan-300 hover:text-cyan-200"
+          onClick={() => onChange({
+            [key]: [...items, { [indexLabel]: String(items.length + 1), title: "", body: "" } as any],
+          } as any)}>
+          + Add
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {items.map((it, idx) => (
+          <div key={idx} className="grid grid-cols-[60px_1fr_2fr_auto] gap-1.5 items-center">
+            <Input className={inputCls} placeholder={indexLabel === "step" ? "Step" : "When"}
+              value={(it as any)[indexLabel] || ""}
+              onChange={(e) => {
+                const next = [...items]; (next[idx] as any)[indexLabel] = e.target.value;
+                onChange({ [key]: next } as any);
+              }} />
+            <Input className={inputCls} placeholder="Title" value={it.title}
+              onChange={(e) => {
+                const next = [...items]; next[idx] = { ...it, title: e.target.value };
+                onChange({ [key]: next } as any);
+              }} />
+            <Input className={inputCls} placeholder="Body (optional)" value={it.body || ""}
+              onChange={(e) => {
+                const next = [...items]; next[idx] = { ...it, body: e.target.value };
+                onChange({ [key]: next } as any);
+              }} />
+            <button type="button" className="text-white/50 hover:text-red-400 text-xs px-1"
+              onClick={() => onChange({ [key]: items.filter((_, j) => j !== idx) } as any)}>
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  if (slide.agenda || slide.layout === "agenda") blocks.push(renderSteps("agenda", "Agenda", slide.agenda || [], "step"));
+  if (slide.process || slide.layout === "process") blocks.push(renderSteps("process", "Process", slide.process || [], "step"));
+  if (slide.timeline || slide.layout === "timeline") blocks.push(renderSteps("timeline", "Timeline", slide.timeline || [], "when"));
+
+  if (blocks.length === 0) return null;
+  return <div className="space-y-2">{blocks}</div>;
+};
