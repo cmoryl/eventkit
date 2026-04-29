@@ -570,6 +570,7 @@ export const TemplateDemoCard: React.FC<Props> = ({ template: t, selected, disab
   const muted = isLight ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.65)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.08)" : "rgba(255,255,255,0.12)";
   const cardBg = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.06)";
+  const thumb = TEMPLATE_THUMBNAILS[t.id];
 
   return (
     <button
