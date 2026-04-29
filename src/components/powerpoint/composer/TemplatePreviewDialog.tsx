@@ -939,6 +939,433 @@ const SlideMock: React.FC<{
           </div>
         </div>
       )}
+
+      {/* KPI HERO — Apple-style giant stat with supporting metrics */}
+      {kind === "kpi-hero" && (
+        <div className="relative h-full p-10 grid grid-cols-5 gap-6 items-center z-10">
+          <div className="col-span-3">
+            <div
+              className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+              style={{ color: t.palette.accent }}
+            >
+              Headline result
+            </div>
+            <Editable
+              as="div"
+              ariaLabel="KPI big"
+              editing={editing}
+              value={content.kpi.big}
+              onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, big: v } }))}
+              className="mt-3 text-[7rem] sm:text-[9rem] font-extrabold leading-[0.85] tracking-[-0.04em]"
+              style={{ color: t.palette.accent }}
+            />
+            <Editable
+              as="div"
+              ariaLabel="KPI label"
+              editing={editing}
+              value={content.kpi.bigLabel}
+              onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, bigLabel: v } }))}
+              className="mt-3 text-base font-medium"
+              style={{ color: t.palette.text }}
+            />
+            <Editable
+              as="div"
+              ariaLabel="KPI headline"
+              editing={editing}
+              multiline
+              value={content.kpi.headline}
+              onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, headline: v } }))}
+              className="mt-4 text-sm max-w-[90%] leading-relaxed"
+              style={{ color: muted }}
+            />
+          </div>
+          <div className="col-span-2 grid grid-cols-2 gap-3">
+            {content.kpi.supporting.map((s, i) => (
+              <div
+                key={i}
+                className="rounded-xl p-4 flex flex-col justify-between min-h-[7rem]"
+                style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+              >
+                <div
+                  className="text-[10px] uppercase tracking-wider font-semibold"
+                  style={{ color: muted }}
+                >
+                  {s.label}
+                </div>
+                <div
+                  className="text-2xl font-extrabold tracking-tight"
+                  style={{ color: t.palette.text }}
+                >
+                  {s.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* BENTO — asymmetric feature grid */}
+      {kind === "bento" && (
+        <div className="relative h-full p-8 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <LayoutGrid className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              Bento highlights
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Why teams pick us</h3>
+          <div className="mt-4 grid grid-cols-4 grid-rows-3 gap-2.5 flex-1">
+            {content.bento.map((b, i) => {
+              const Ic = b.icon;
+              const span =
+                b.size === "lg"
+                  ? "col-span-2 row-span-2"
+                  : b.size === "wide"
+                  ? "col-span-2 row-span-1"
+                  : b.size === "tall"
+                  ? "col-span-1 row-span-2"
+                  : b.size === "md"
+                  ? "col-span-1 row-span-1"
+                  : "col-span-1 row-span-1";
+              const tileImg = b.imageIndex !== undefined ? imageAt(b.imageIndex) : undefined;
+              return (
+                <div
+                  key={i}
+                  className={`relative rounded-xl overflow-hidden p-3 flex flex-col justify-between ${span}`}
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  {tileImg && (
+                    <>
+                      <img
+                        src={tileImg}
+                        alt=""
+                        aria-hidden
+                        loading="lazy"
+                        className="absolute inset-0 h-full w-full object-cover opacity-50"
+                      />
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background: `linear-gradient(180deg, ${t.palette.bg}55 0%, ${t.palette.bg}EE 100%)`,
+                        }}
+                      />
+                    </>
+                  )}
+                  <div className="relative flex items-center justify-between">
+                    {Ic ? (
+                      <div
+                        className="h-7 w-7 rounded-md flex items-center justify-center"
+                        style={{ background: `${t.palette.accent}22` }}
+                      >
+                        <Ic className="h-3.5 w-3.5" style={{ color: t.palette.accent }} />
+                      </div>
+                    ) : (
+                      <span />
+                    )}
+                    {b.metric && (
+                      <div
+                        className="text-xl font-extrabold tracking-tight"
+                        style={{ color: t.palette.accent }}
+                      >
+                        {b.metric}
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <div className="text-[12px] font-bold leading-tight" style={{ color: t.palette.text }}>
+                      {b.title}
+                    </div>
+                    {b.body && (
+                      <div className="text-[10px] mt-1 leading-snug" style={{ color: muted }}>
+                        {b.body}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* FEATURE SPLIT — left image / right feature list */}
+      {kind === "feature-split" && (
+        <div className="relative h-full grid grid-cols-2 z-10">
+          <div className="relative overflow-hidden">
+            {featureImg ? (
+              <>
+                <img
+                  src={featureImg}
+                  alt=""
+                  aria-hidden
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{ background: `linear-gradient(90deg, transparent 60%, ${t.palette.bg} 100%)` }}
+                />
+              </>
+            ) : (
+              <div className="absolute inset-0" style={{ background: `${t.palette.accent}22` }} />
+            )}
+            <div className="relative p-8 h-full flex flex-col justify-end">
+              <div
+                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold w-fit backdrop-blur"
+                style={{ background: `${t.palette.bg}CC`, color: t.palette.text }}
+              >
+                <Sparkles className="h-3 w-3" style={{ color: t.palette.accent }} />
+                Featured capability
+              </div>
+            </div>
+          </div>
+          <div className="p-8 flex flex-col justify-center">
+            <div
+              className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+              style={{ color: t.palette.accent }}
+            >
+              {content.cards[0]?.title || "Feature"}
+            </div>
+            <h3 className="mt-2 text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
+              {content.kpi.headline}
+            </h3>
+            <ul className="mt-5 space-y-3">
+              {content.cards.map((c, i) => {
+                const Ic = c.icon;
+                return (
+                  <li key={i} className="flex gap-3 items-start">
+                    <div
+                      className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
+                      style={{ background: `${t.palette.accent}22` }}
+                    >
+                      {Ic ? (
+                        <Ic className="h-4 w-4" style={{ color: t.palette.accent }} />
+                      ) : (
+                        <CheckIcon className="h-4 w-4" style={{ color: t.palette.accent }} />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
+                        {c.title}
+                      </div>
+                      <div className="text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
+                        {c.body}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* PROCESS — numbered horizontal flow */}
+      {kind === "process" && (
+        <div className="relative h-full p-10 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <Workflow className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              How it works
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A repeatable process</h3>
+          <div className="mt-8 grid gap-4 flex-1" style={{ gridTemplateColumns: `repeat(${content.process.length}, 1fr)` }}>
+            {content.process.map((p, i) => {
+              const Ic = p.icon;
+              return (
+                <div key={i} className="relative flex flex-col">
+                  <div className="relative flex items-center gap-2 mb-3">
+                    <div
+                      className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0"
+                      style={{
+                        background: i === 0 ? t.palette.accent : "transparent",
+                        color: i === 0 ? t.palette.bg : t.palette.accent,
+                        border: `1.5px solid ${t.palette.accent}`,
+                      }}
+                    >
+                      {p.step}
+                    </div>
+                    {i < content.process.length - 1 && (
+                      <div
+                        className="flex-1 h-0.5 rounded-full"
+                        style={{ background: subtleBorder }}
+                      />
+                    )}
+                  </div>
+                  <div
+                    className="rounded-lg p-3 flex-1"
+                    style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                  >
+                    {Ic && <Ic className="h-4 w-4 mb-1.5" style={{ color: t.palette.accent }} />}
+                    <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
+                      {p.title}
+                    </div>
+                    <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
+                      {p.body}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TEAM — people grid with avatars */}
+      {kind === "team" && (
+        <div className="relative h-full p-10 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <Users className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              The team
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Built by operators</h3>
+          <div className="mt-6 grid grid-cols-4 gap-4 flex-1">
+            {content.team.map((m, i) => (
+              <div
+                key={i}
+                className="rounded-xl p-4 flex flex-col items-start"
+                style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+              >
+                <div
+                  className="h-14 w-14 rounded-full flex items-center justify-center text-base font-extrabold mb-3"
+                  style={{
+                    background: `linear-gradient(135deg, ${t.palette.accent}, ${t.palette.secondary})`,
+                    color: t.palette.bg,
+                  }}
+                >
+                  {m.initials}
+                </div>
+                <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
+                  {m.name}
+                </div>
+                <div className="text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
+                  {m.role}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PRICING — three-tier table with highlighted middle */}
+      {kind === "pricing" && (
+        <div className="relative h-full p-10 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <Crown className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              Pricing
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Simple, scalable plans</h3>
+          <div className="mt-6 grid grid-cols-3 gap-3 flex-1">
+            {content.pricing.map((p, i) => (
+              <div
+                key={i}
+                className="relative rounded-xl p-5 flex flex-col"
+                style={{
+                  background: p.highlighted ? `${t.palette.accent}14` : cardBg,
+                  border: `1.5px solid ${p.highlighted ? t.palette.accent : subtleBorder}`,
+                }}
+              >
+                {p.highlighted && (
+                  <div
+                    className="absolute -top-2 left-5 px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wider"
+                    style={{ background: t.palette.accent, color: t.palette.bg }}
+                  >
+                    Most popular
+                  </div>
+                )}
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+                  {p.name}
+                </div>
+                <div className="mt-2 flex items-baseline gap-1.5">
+                  <span
+                    className="text-3xl font-extrabold tracking-tight"
+                    style={{ color: t.palette.text }}
+                  >
+                    {p.price}
+                  </span>
+                  <span className="text-[10px]" style={{ color: muted }}>
+                    {p.cadence}
+                  </span>
+                </div>
+                <div className="text-[11px] mt-1 italic" style={{ color: muted }}>
+                  {p.tagline}
+                </div>
+                <ul className="mt-4 space-y-1.5">
+                  {p.features.map((f, fi) => (
+                    <li key={fi} className="flex gap-2 items-start text-[11px]">
+                      <CheckIcon
+                        className="h-3 w-3 mt-0.5 shrink-0"
+                        style={{ color: p.highlighted ? t.palette.accent : muted }}
+                      />
+                      <span style={{ color: t.palette.text }}>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* GALLERY — 4-image mood grid */}
+      {kind === "gallery" && (
+        <div className="relative h-full p-8 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <ImageIcon className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              Visual language
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A mood, not a moodboard</h3>
+          <div className="mt-5 grid grid-cols-4 grid-rows-2 gap-2 flex-1">
+            {[0, 1, 2, 3].map((i) => {
+              const img = imageAt(i);
+              const span =
+                i === 0 ? "col-span-2 row-span-2" : i === 1 ? "col-span-2 row-span-1" : "col-span-1 row-span-1";
+              return (
+                <div
+                  key={i}
+                  className={`relative rounded-xl overflow-hidden ${span}`}
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  {img ? (
+                    <img
+                      src={img}
+                      alt=""
+                      loading="lazy"
+                      aria-hidden
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background: `linear-gradient(135deg, ${t.palette.accent}55, ${t.palette.secondary}55)`,
+                      }}
+                    />
+                  )}
+                  {i === 0 && (
+                    <div
+                      className="absolute bottom-0 left-0 right-0 px-3 py-2 text-[11px] font-semibold"
+                      style={{
+                        background: `linear-gradient(0deg, ${t.palette.bg}E6, transparent)`,
+                        color: t.palette.text,
+                      }}
+                    >
+                      Hero · brand visual
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
