@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { Image as ImageIcon, BarChart3, FileText, Sparkles, Upload, X, Loader2, Plus } from "lucide-react";
+import { Image as ImageIcon, BarChart3, FileText, Sparkles, Upload, X, Loader2, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,9 @@ import type {
   SlideReferenceImage,
   VisualIntent,
   ChartType,
+  DeckOutline,
 } from "../DeckPreview";
+import { AssetEditDialog, type AssetEditTarget } from "./AssetEditDialog";
 
 interface Props {
   slide: SlideOutline;
