@@ -371,10 +371,10 @@ const SlideMock: React.FC<{
               <div className="h-1.5 w-3 rounded-full opacity-30" style={{ background: t.palette.text }} />
             </div>
           </div>
-          {thumb && (
+          {titleImg && (
             <div className="relative overflow-hidden">
               <img
-                src={thumb}
+                src={titleImg}
                 alt={`${t.name} title visual`}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover"
