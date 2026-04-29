@@ -51,6 +51,7 @@ const buildInitialContent = (t: DeckTemplate): DemoContent => {
     eyebrow: d.eyebrow,
     title: d.title,
     subtitle: d.subtitle,
+      slideHeadings: d.slideHeadings ? { ...d.slideHeadings } : undefined,
     imagery: d.imagery ? [...d.imagery] : undefined,
     cards: d.cards.map((c) => ({
       title: c.title,
@@ -626,6 +627,9 @@ export const SlideMock: React.FC<{
 
   const update = (fn: (c: DemoContent) => DemoContent) =>
     setContent((prev) => (prev ? fn(prev) : prev));
+  const headingFor = (key: string, fallback: string) => content.slideHeadings?.[key] || fallback;
+  const updateHeading = (key: string, value: string) =>
+    update((c) => ({ ...c, slideHeadings: { ...(c.slideHeadings || {}), [key]: value } }));
 
   return (
     <div
@@ -767,7 +771,15 @@ export const SlideMock: React.FC<{
               Agenda
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">What we'll cover</h3>
+          <Editable
+            as="div"
+            ariaLabel="Agenda heading"
+            editing={editing}
+            value={headingFor("agenda", "What we'll cover")}
+            onChange={(v) => updateHeading("agenda", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
             {content.agenda.map((a, i) => (
               <div
@@ -783,30 +795,59 @@ export const SlideMock: React.FC<{
                     border: `1px solid ${t.palette.accent}`,
                   }}
                 >
-                  {a.step}
+                  <Editable
+                    ariaLabel={`Agenda ${i + 1} step`}
+                    editing={editing}
+                    value={a.step}
+                    onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, step: v } : item)) }))}
+                    className="inline-block"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-bold leading-tight">{a.title}</div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Agenda ${i + 1} title`}
+                      editing={editing}
+                      value={a.title}
+                      onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, title: v } : item)) }))}
+                      className="text-sm font-bold leading-tight"
+                    />
                     {a.duration && (
-                      <span
+                      <Editable
+                        ariaLabel={`Agenda ${i + 1} duration`}
+                        editing={editing}
+                        value={a.duration}
+                        onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, duration: v } : item)) }))}
                         className="text-[9px] font-mono px-1.5 py-0.5 rounded"
                         style={{ background: `${t.palette.accent}22`, color: t.palette.accent }}
-                      >
-                        {a.duration}
-                      </span>
+                      />
                     )}
                   </div>
-                  <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
-                    {a.body}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Agenda ${i + 1} body`}
+                    editing={editing}
+                    value={a.body}
+                    multiline
+                    onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, body: v } : item)) }))}
+                    className="text-[11px] mt-1 leading-snug"
+                    style={{ color: muted }}
+                  />
                   {a.owner && (
                     <div className="mt-2 flex items-center gap-1.5 text-[10px]" style={{ color: muted }}>
                       <span
                         className="inline-block h-1 w-1 rounded-full"
                         style={{ background: t.palette.accent }}
                       />
-                      <span className="truncate">Led by {a.owner}</span>
+                      <span>Led by</span>
+                      <Editable
+                        ariaLabel={`Agenda ${i + 1} owner`}
+                        editing={editing}
+                        value={a.owner}
+                        onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, owner: v } : item)) }))}
+                        className="truncate"
+                      />
                     </div>
                   )}
                 </div>
@@ -871,9 +912,15 @@ export const SlideMock: React.FC<{
                   <div className="text-[8px] font-mono" style={{ color: t.palette.accent }}>
                     {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div className="text-[10px] font-bold leading-tight truncate" style={{ color: t.palette.text }}>
-                    {c.title}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Section chapter card ${i + 1}`}
+                    editing={editing}
+                    value={c.title}
+                    onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, title: v } : card)) }))}
+                    className="text-[10px] font-bold leading-tight truncate"
+                    style={{ color: t.palette.text }}
+                  />
                 </div>
               ))}
             </div>
@@ -927,7 +974,15 @@ export const SlideMock: React.FC<{
               Card layout
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">What you get</h3>
+          <Editable
+            as="div"
+            ariaLabel="Cards heading"
+            editing={editing}
+            value={headingFor("cards", "What you get")}
+            onChange={(v) => updateHeading("cards", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-3 gap-3 mt-5 flex-1">
             {content.cards.map((c, i) => {
               const Ic = c.icon;
@@ -1051,7 +1106,15 @@ export const SlideMock: React.FC<{
               By the numbers
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">The signals that matter</h3>
+          <Editable
+            as="div"
+            ariaLabel="Metrics heading"
+            editing={editing}
+            value={headingFor("metrics", "The signals that matter")}
+            onChange={(v) => updateHeading("metrics", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
@@ -1087,7 +1150,12 @@ export const SlideMock: React.FC<{
                         {m.direction === "up" && <span style={{ color: t.palette.accent }}>▲</span>}
                         {m.direction === "down" && <span style={{ color: t.palette.accent }}>▼</span>}
                         {m.direction === "flat" && <span style={{ color: muted }}>—</span>}
-                        {m.trend}
+                        <Editable
+                          ariaLabel={`Metric ${i + 1} trend`}
+                          editing={editing}
+                          value={m.trend}
+                          onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, trend: v } : metric)) }))}
+                        />
                       </span>
                     )}
                   </div>
@@ -1111,15 +1179,33 @@ export const SlideMock: React.FC<{
                       className="text-3xl font-extrabold leading-none tracking-tight"
                       style={{ color: t.palette.accent }}
                     >
-                      {m.value}
+                      <Editable
+                        ariaLabel={`Metric ${i + 1} value`}
+                        editing={editing}
+                        value={m.value}
+                        onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, value: v } : metric)) }))}
+                        className="inline-block"
+                      />
                     </div>
-                    <div className="text-[11px] mt-1 font-semibold" style={{ color: t.palette.text }}>
-                      {m.label}
-                    </div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Metric ${i + 1} label`}
+                      editing={editing}
+                      value={m.label}
+                      onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, label: v } : metric)) }))}
+                      className="text-[11px] mt-1 font-semibold"
+                      style={{ color: t.palette.text }}
+                    />
                     {m.sublabel && (
-                      <div className="text-[9px] mt-0.5 leading-snug" style={{ color: muted }}>
-                        {m.sublabel}
-                      </div>
+                      <Editable
+                        as="div"
+                        ariaLabel={`Metric ${i + 1} sublabel`}
+                        editing={editing}
+                        value={m.sublabel}
+                        onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, sublabel: v } : metric)) }))}
+                        className="text-[9px] mt-0.5 leading-snug"
+                        style={{ color: muted }}
+                      />
                     )}
                   </div>
                 </div>
@@ -1139,7 +1225,15 @@ export const SlideMock: React.FC<{
                 Trend
               </span>
             </div>
-            <div className="text-sm font-bold mt-1">{content.chart.title}</div>
+            <Editable
+              as="div"
+              ariaLabel="Chart title"
+              editing={editing}
+              value={content.chart.title}
+              onChange={(v) => update((c) => ({ ...c, chart: { ...c.chart, title: v } }))}
+              className="text-sm font-bold mt-1"
+              style={{ color: t.palette.text }}
+            />
             <div className="flex-1 mt-2 min-h-0">
               <BarLineChart
                 series={content.chart.series}
@@ -1201,7 +1295,15 @@ export const SlideMock: React.FC<{
               Roadmap
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A sequence that compounds</h3>
+          <Editable
+            as="div"
+            ariaLabel="Timeline heading"
+            editing={editing}
+            value={headingFor("timeline", "A sequence that compounds")}
+            onChange={(v) => updateHeading("timeline", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
 
           <div className="relative mt-8 flex-1">
             {/* spine */}
@@ -1230,17 +1332,38 @@ export const SlideMock: React.FC<{
                       className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
                       style={{ color: t.palette.accent }}
                     >
-                      {tl.when}
+                      <Editable
+                        ariaLabel={`Timeline ${i + 1} date`}
+                        editing={editing}
+                        value={tl.when}
+                        onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, when: v } : item)) }))}
+                        className="inline-block"
+                      />
                     </span>
                   </div>
                   <div
                     className="rounded-lg p-3"
                     style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                   >
-                    <div className="text-sm font-bold leading-tight">{tl.title}</div>
-                    <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
-                      {tl.body}
-                    </div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Timeline ${i + 1} title`}
+                      editing={editing}
+                      value={tl.title}
+                      onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, title: v } : item)) }))}
+                      className="text-sm font-bold leading-tight"
+                      style={{ color: t.palette.text }}
+                    />
+                    <Editable
+                      as="div"
+                      ariaLabel={`Timeline ${i + 1} body`}
+                      editing={editing}
+                      value={tl.body}
+                      multiline
+                      onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, body: v } : item)) }))}
+                      className="text-[11px] mt-1 leading-snug"
+                      style={{ color: muted }}
+                    />
                     {tl.deliverables && tl.deliverables.length > 0 && (
                       <ul className="mt-2 space-y-0.5">
                         {tl.deliverables.map((d, di) => (
@@ -1253,7 +1376,17 @@ export const SlideMock: React.FC<{
                               className="mt-1 h-1 w-1 rounded-full shrink-0"
                               style={{ background: t.palette.accent }}
                             />
-                            <span>{d}</span>
+                            <Editable
+                              ariaLabel={`Timeline ${i + 1} deliverable ${di + 1}`}
+                              editing={editing}
+                              value={d}
+                              onChange={(v) => update((c) => ({
+                                ...c,
+                                timeline: c.timeline.map((item, idx) => idx === i
+                                  ? { ...item, deliverables: (item.deliverables || []).map((dd, ddi) => (ddi === di ? v : dd)) }
+                                  : item),
+                              }))}
+                            />
                           </li>
                         ))}
                       </ul>
@@ -1263,7 +1396,13 @@ export const SlideMock: React.FC<{
                         className="mt-2 pt-2 border-t text-[9px] font-semibold uppercase tracking-wider"
                         style={{ color: muted, borderColor: subtleBorder }}
                       >
-                        {tl.owner}
+                        <Editable
+                          ariaLabel={`Timeline ${i + 1} owner`}
+                          editing={editing}
+                          value={tl.owner}
+                          onChange={(v) => update((c) => ({ ...c, timeline: c.timeline.map((item, idx) => (idx === i ? { ...item, owner: v } : item)) }))}
+                          className="inline-block"
+                        />
                       </div>
                     )}
                   </div>
@@ -1283,12 +1422,25 @@ export const SlideMock: React.FC<{
               Comparison
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">{content.compare.heading}</h3>
+          <Editable
+            as="div"
+            ariaLabel="Comparison heading"
+            editing={editing}
+            value={content.compare.heading}
+            onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, heading: v } }))}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
             <div className="rounded-lg p-5 flex flex-col relative overflow-hidden" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
               <div className="flex items-center justify-between">
                 <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                  {content.compare.before.title}
+                  <Editable
+                    ariaLabel="Before comparison title"
+                    editing={editing}
+                    value={content.compare.before.title}
+                    onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, before: { ...c.compare.before, title: v } } }))}
+                  />
                 </div>
                 <RingGauge percent={32} accent={t.palette.secondary} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
               </div>
@@ -1299,7 +1451,13 @@ export const SlideMock: React.FC<{
                       className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
                       style={{ background: t.palette.secondary, opacity: 0.6 }}
                     />
-                    <span style={{ color: muted }}>{p}</span>
+                    <Editable
+                      ariaLabel={`Before comparison point ${i + 1}`}
+                      editing={editing}
+                      value={p}
+                      onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, before: { ...c.compare.before, points: c.compare.before.points.map((point, idx) => (idx === i ? v : point)) } } }))}
+                      style={{ color: muted }}
+                    />
                   </li>
                 ))}
               </ul>
@@ -1338,7 +1496,12 @@ export const SlideMock: React.FC<{
               </div>
               <div className="flex items-center justify-between">
                 <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: t.palette.accent }}>
-                  {content.compare.after.title}
+                  <Editable
+                    ariaLabel="After comparison title"
+                    editing={editing}
+                    value={content.compare.after.title}
+                    onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, after: { ...c.compare.after, title: v } } }))}
+                  />
                 </div>
                 <RingGauge percent={91} accent={t.palette.accent} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
               </div>
@@ -1349,7 +1512,12 @@ export const SlideMock: React.FC<{
                       className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
                       style={{ background: t.palette.accent }}
                     />
-                    <span>{p}</span>
+                    <Editable
+                      ariaLabel={`After comparison point ${i + 1}`}
+                      editing={editing}
+                      value={p}
+                      onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, after: { ...c.compare.after, points: c.compare.after.points.map((point, idx) => (idx === i ? v : point)) } } }))}
+                    />
                   </li>
                 ))}
               </ul>
@@ -1411,11 +1579,23 @@ export const SlideMock: React.FC<{
                   style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                 >
                   <div className="text-sm font-extrabold" style={{ color: t.palette.text }}>
-                    {m.value}
+                    <Editable
+                      ariaLabel={`Stat supporting metric ${i + 1} value`}
+                      editing={editing}
+                      value={m.value}
+                      onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, value: v } : metric)) }))}
+                      className="inline-block"
+                    />
                   </div>
-                  <div className="text-[10px] truncate" style={{ color: muted }}>
-                    {m.label}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Stat supporting metric ${i + 1} label`}
+                    editing={editing}
+                    value={m.label}
+                    onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, label: v } : metric)) }))}
+                    className="text-[10px] truncate"
+                    style={{ color: muted }}
+                  />
                 </div>
               ))}
             </div>
@@ -1456,12 +1636,24 @@ export const SlideMock: React.FC<{
                       style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
                     />
                     <div className="text-xs font-semibold" style={{ color: t.palette.text }}>
-                      {c.title}
+                      <Editable
+                        ariaLabel={`Stat card ${i + 1} title`}
+                        editing={editing}
+                        value={c.title}
+                        onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, title: v } : card)) }))}
+                      />
                     </div>
                   </div>
-                  <div className="text-[11px] mt-1" style={{ color: muted }}>
-                    {c.body}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Stat card ${i + 1} body`}
+                    editing={editing}
+                    value={c.body}
+                    multiline
+                    onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, body: v } : card)) }))}
+                    className="text-[11px] mt-1"
+                    style={{ color: muted }}
+                  />
                 </div>
               ))}
             </div>
@@ -1575,7 +1767,12 @@ export const SlideMock: React.FC<{
                     className="text-[10px] uppercase tracking-wider font-semibold"
                     style={{ color: muted }}
                   >
-                    {s.label}
+                    <Editable
+                      ariaLabel={`KPI supporting ${i + 1} label`}
+                      editing={editing}
+                      value={s.label}
+                      onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, supporting: c.kpi.supporting.map((item, idx) => (idx === i ? { ...item, label: v } : item)) } }))}
+                    />
                   </div>
                   <div className="flex-1 min-h-0">
                     <VisualVariant
@@ -1593,7 +1790,13 @@ export const SlideMock: React.FC<{
                     className="text-xl font-extrabold tracking-tight leading-none"
                     style={{ color: t.palette.text }}
                   >
-                    {s.value}
+                    <Editable
+                      ariaLabel={`KPI supporting ${i + 1} value`}
+                      editing={editing}
+                      value={s.value}
+                      onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, supporting: c.kpi.supporting.map((item, idx) => (idx === i ? { ...item, value: v } : item)) } }))}
+                      className="inline-block"
+                    />
                   </div>
                 </div>
               );
@@ -1611,7 +1814,15 @@ export const SlideMock: React.FC<{
               Bento highlights
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Why teams pick us</h3>
+          <Editable
+            as="div"
+            ariaLabel="Bento heading"
+            editing={editing}
+            value={headingFor("bento", "Why teams pick us")}
+            onChange={(v) => updateHeading("bento", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-4 grid grid-cols-4 grid-rows-3 gap-2.5 flex-1">
             {content.bento.map((b, i) => {
               const Ic = b.icon;
@@ -1685,18 +1896,36 @@ export const SlideMock: React.FC<{
                         className="text-xl font-extrabold tracking-tight"
                         style={{ color: t.palette.accent }}
                       >
-                        {b.metric}
+                        <Editable
+                          ariaLabel={`Bento ${i + 1} metric`}
+                          editing={editing}
+                          value={b.metric}
+                          onChange={(v) => update((c) => ({ ...c, bento: c.bento.map((tile, idx) => (idx === i ? { ...tile, metric: v } : tile)) }))}
+                          className="inline-block"
+                        />
                       </div>
                     )}
                   </div>
                   <div className="relative">
                     <div className="text-[12px] font-bold leading-tight" style={{ color: t.palette.text }}>
-                      {b.title}
+                      <Editable
+                        ariaLabel={`Bento ${i + 1} title`}
+                        editing={editing}
+                        value={b.title}
+                        onChange={(v) => update((c) => ({ ...c, bento: c.bento.map((tile, idx) => (idx === i ? { ...tile, title: v } : tile)) }))}
+                      />
                     </div>
                     {b.body && (
-                      <div className="text-[10px] mt-1 leading-snug" style={{ color: muted }}>
-                        {b.body}
-                      </div>
+                      <Editable
+                        as="div"
+                        ariaLabel={`Bento ${i + 1} body`}
+                        editing={editing}
+                        value={b.body}
+                        multiline
+                        onChange={(v) => update((c) => ({ ...c, bento: c.bento.map((tile, idx) => (idx === i ? { ...tile, body: v } : tile)) }))}
+                        className="text-[10px] mt-1 leading-snug"
+                        style={{ color: muted }}
+                      />
                     )}
                   </div>
                 </div>
@@ -1790,11 +2019,23 @@ export const SlideMock: React.FC<{
               className="text-[11px] font-semibold uppercase tracking-[0.22em]"
               style={{ color: t.palette.accent }}
             >
-              {content.cards[0]?.title || "Feature"}
+              <Editable
+                ariaLabel="Feature eyebrow"
+                editing={editing}
+                value={content.cards[0]?.title || "Feature"}
+                onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === 0 ? { ...card, title: v } : card)) }))}
+              />
             </div>
-            <h3 className="mt-2 text-2xl sm:text-3xl font-bold leading-tight tracking-tight">
-              {content.kpi.headline}
-            </h3>
+            <Editable
+              as="div"
+              ariaLabel="Feature split headline"
+              editing={editing}
+              value={content.kpi.headline}
+              multiline
+              onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, headline: v } }))}
+              className="mt-2 text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+              style={{ color: t.palette.text }}
+            />
             <ul className="mt-5 space-y-3">
               {content.cards.map((c, i) => {
                 const Ic = c.icon;
@@ -1812,11 +2053,23 @@ export const SlideMock: React.FC<{
                     </div>
                     <div className="min-w-0">
                       <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                        {c.title}
+                        <Editable
+                          ariaLabel={`Feature ${i + 1} title`}
+                          editing={editing}
+                          value={c.title}
+                          onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, title: v } : card)) }))}
+                        />
                       </div>
-                      <div className="text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
-                        {c.body}
-                      </div>
+                      <Editable
+                        as="div"
+                        ariaLabel={`Feature ${i + 1} body`}
+                        editing={editing}
+                        value={c.body}
+                        multiline
+                        onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, body: v } : card)) }))}
+                        className="text-[11px] mt-0.5 leading-snug"
+                        style={{ color: muted }}
+                      />
                     </div>
                   </li>
                 );
@@ -1835,7 +2088,15 @@ export const SlideMock: React.FC<{
               How it works
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A repeatable process</h3>
+          <Editable
+            as="div"
+            ariaLabel="Process heading"
+            editing={editing}
+            value={headingFor("process", "A repeatable process")}
+            onChange={(v) => updateHeading("process", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-8 grid gap-4 flex-1" style={{ gridTemplateColumns: `repeat(${content.process.length}, 1fr)` }}>
             {content.process.map((p, i) => {
               const Ic = p.icon;
@@ -1850,7 +2111,13 @@ export const SlideMock: React.FC<{
                         border: `1.5px solid ${t.palette.accent}`,
                       }}
                     >
-                      {p.step}
+                      <Editable
+                        ariaLabel={`Process ${i + 1} step`}
+                        editing={editing}
+                        value={p.step}
+                        onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, step: v } : item)) }))}
+                        className="inline-block"
+                      />
                     </div>
                     {i < content.process.length - 1 && (
                       <div
@@ -1865,11 +2132,23 @@ export const SlideMock: React.FC<{
                   >
                     {Ic && <Ic className="h-4 w-4 mb-1.5" style={{ color: t.palette.accent }} />}
                     <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                      {p.title}
+                      <Editable
+                        ariaLabel={`Process ${i + 1} title`}
+                        editing={editing}
+                        value={p.title}
+                        onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, title: v } : item)) }))}
+                      />
                     </div>
-                    <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
-                      {p.body}
-                    </div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Process ${i + 1} body`}
+                      editing={editing}
+                      value={p.body}
+                      multiline
+                      onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, body: v } : item)) }))}
+                      className="text-[11px] mt-1 leading-snug"
+                      style={{ color: muted }}
+                    />
                     <div className="mt-auto pt-2 space-y-1">
                       {p.output && (
                         <div className="flex items-center gap-1.5 text-[9px]" style={{ color: t.palette.text }}>
@@ -1880,7 +2159,12 @@ export const SlideMock: React.FC<{
                             Output
                           </span>
                           <span className="truncate" style={{ color: muted }}>
-                            {p.output}
+                            <Editable
+                              ariaLabel={`Process ${i + 1} output`}
+                              editing={editing}
+                              value={p.output}
+                              onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, output: v } : item)) }))}
+                            />
                           </span>
                         </div>
                       )}
@@ -1893,7 +2177,12 @@ export const SlideMock: React.FC<{
                             Time
                           </span>
                           <span className="truncate" style={{ color: muted }}>
-                            {p.duration}
+                            <Editable
+                              ariaLabel={`Process ${i + 1} duration`}
+                              editing={editing}
+                              value={p.duration}
+                              onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, duration: v } : item)) }))}
+                            />
                           </span>
                         </div>
                       )}
@@ -1915,7 +2204,15 @@ export const SlideMock: React.FC<{
               The team
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Built by operators</h3>
+          <Editable
+            as="div"
+            ariaLabel="Team heading"
+            editing={editing}
+            value={headingFor("team", "Built by operators")}
+            onChange={(v) => updateHeading("team", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-6 grid grid-cols-4 gap-4 flex-1">
             {content.team.map((m, i) => (
               <div
@@ -1936,21 +2233,45 @@ export const SlideMock: React.FC<{
                     color: t.palette.bg,
                   }}
                 >
-                  {m.initials}
+                  <Editable
+                    ariaLabel={`Team member ${i + 1} initials`}
+                    editing={editing}
+                    value={m.initials}
+                    onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, initials: v } : member)) }))}
+                    className="inline-block"
+                  />
                 </div>
-                <div className="relative text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                  {m.name}
-                </div>
-                <div className="relative text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
-                  {m.role}
-                </div>
+                <Editable
+                  as="div"
+                  ariaLabel={`Team member ${i + 1} name`}
+                  editing={editing}
+                  value={m.name}
+                  onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, name: v } : member)) }))}
+                  className="relative text-sm font-bold leading-tight"
+                  style={{ color: t.palette.text }}
+                />
+                <Editable
+                  as="div"
+                  ariaLabel={`Team member ${i + 1} role`}
+                  editing={editing}
+                  value={m.role}
+                  onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, role: v } : member)) }))}
+                  className="relative text-[11px] mt-0.5 leading-snug"
+                  style={{ color: muted }}
+                />
                 {m.location && (
                   <div
                     className="relative mt-2 inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider"
                     style={{ color: t.palette.accent }}
                   >
                     <span className="inline-block h-1 w-1 rounded-full" style={{ background: t.palette.accent }} />
-                    {m.location}
+                    <Editable
+                      ariaLabel={`Team member ${i + 1} location`}
+                      editing={editing}
+                      value={m.location}
+                      onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, location: v } : member)) }))}
+                      className="inline-block"
+                    />
                   </div>
                 )}
                 {m.focus && (
@@ -1958,7 +2279,13 @@ export const SlideMock: React.FC<{
                     className="relative mt-2 pt-2 text-[10px] italic leading-snug border-t"
                     style={{ color: muted, borderColor: subtleBorder }}
                   >
-                    "{m.focus}"
+                    “<Editable
+                      ariaLabel={`Team member ${i + 1} focus`}
+                      editing={editing}
+                      value={m.focus}
+                      multiline
+                      onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, focus: v } : member)) }))}
+                    />”
                   </div>
                 )}
               </div>
@@ -1976,7 +2303,15 @@ export const SlideMock: React.FC<{
               Pricing
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Simple, scalable plans</h3>
+          <Editable
+            as="div"
+            ariaLabel="Pricing heading"
+            editing={editing}
+            value={headingFor("pricing", "Simple, scalable plans")}
+            onChange={(v) => updateHeading("pricing", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-6 grid grid-cols-3 gap-3 flex-1">
             {content.pricing.map((p, i) => (
               <div
@@ -1996,27 +2331,55 @@ export const SlideMock: React.FC<{
                   </div>
                 )}
                 <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                  {p.name}
+                  <Editable
+                    ariaLabel={`Pricing ${i + 1} plan name`}
+                    editing={editing}
+                    value={p.name}
+                    onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, name: v } : tier)) }))}
+                  />
                 </div>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span
                     className="text-3xl font-extrabold tracking-tight"
                     style={{ color: t.palette.text }}
                   >
-                    {p.price}
+                    <Editable
+                      ariaLabel={`Pricing ${i + 1} price`}
+                      editing={editing}
+                      value={p.price}
+                      onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, price: v } : tier)) }))}
+                      className="inline-block"
+                    />
                   </span>
-                  <span className="text-[10px]" style={{ color: muted }}>
-                    {p.cadence}
-                  </span>
+                  <Editable
+                    ariaLabel={`Pricing ${i + 1} cadence`}
+                    editing={editing}
+                    value={p.cadence}
+                    onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, cadence: v } : tier)) }))}
+                    className="text-[10px]"
+                    style={{ color: muted }}
+                  />
                 </div>
                 {p.limit && (
                   <div className="text-[9px] mt-1 font-mono" style={{ color: muted }}>
-                    {p.limit}
+                    <Editable
+                      ariaLabel={`Pricing ${i + 1} limit`}
+                      editing={editing}
+                      value={p.limit}
+                      onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, limit: v } : tier)) }))}
+                    />
                   </div>
                 )}
-                <div className="text-[11px] mt-1 italic" style={{ color: muted }}>
-                  {p.tagline}
-                </div>
+                <Editable
+                  as="div"
+                  ariaLabel={`Pricing ${i + 1} tagline`}
+                  editing={editing}
+                  value={p.tagline}
+                  multiline
+                  onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, tagline: v } : tier)) }))}
+                  className="text-[11px] mt-1 italic"
+                  style={{ color: muted }}
+                />
                 <ul className="mt-4 space-y-1.5 flex-1">
                   {p.features.map((f, fi) => (
                     <li key={fi} className="flex gap-2 items-start text-[11px]">
@@ -2024,7 +2387,13 @@ export const SlideMock: React.FC<{
                         className="h-3 w-3 mt-0.5 shrink-0"
                         style={{ color: p.highlighted ? t.palette.accent : muted }}
                       />
-                      <span style={{ color: t.palette.text }}>{f}</span>
+                      <Editable
+                        ariaLabel={`Pricing ${i + 1} feature ${fi + 1}`}
+                        editing={editing}
+                        value={f}
+                        onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => idx === i ? { ...tier, features: tier.features.map((feature, fidx) => (fidx === fi ? v : feature)) } : tier) }))}
+                        style={{ color: t.palette.text }}
+                      />
                     </li>
                   ))}
                 </ul>
@@ -2037,7 +2406,12 @@ export const SlideMock: React.FC<{
                       border: `1px solid ${t.palette.accent}`,
                     }}
                   >
-                    {p.cta}
+                    <Editable
+                      ariaLabel={`Pricing ${i + 1} CTA`}
+                      editing={editing}
+                      value={p.cta}
+                      onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, cta: v } : tier)) }))}
+                    />
                   </div>
                 )}
               </div>
@@ -2055,7 +2429,15 @@ export const SlideMock: React.FC<{
               Visual language
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A mood, not a moodboard</h3>
+          <Editable
+            as="div"
+            ariaLabel="Gallery heading"
+            editing={editing}
+            value={headingFor("gallery", "A mood, not a moodboard")}
+            onChange={(v) => updateHeading("gallery", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-5 grid grid-cols-4 grid-rows-2 gap-2 flex-1">
             {[0, 1, 2, 3].map((i) => {
               const img = imageAt(i);
