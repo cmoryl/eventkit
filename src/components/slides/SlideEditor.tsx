@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
@@ -101,6 +101,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
   const [canvasFileOver, setCanvasFileOver] = useState(false);
   const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!initialSlides || initialSlides.length === 0) return;
+    setSlides(initialSlides);
+    setActiveIndex(0);
+  }, [initialSlides]);
 
   // Auto-discover BrandHub files for the active brand so we can show a "Brand Decks" hint.
   const { byCategory: brandFilesByCategory } = useBrandHubFiles({
