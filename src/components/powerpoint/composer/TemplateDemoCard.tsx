@@ -588,6 +588,23 @@ export const TemplateDemoCard: React.FC<Props> = ({ template: t, selected, disab
         className="aspect-[16/9] p-5 flex flex-col justify-between relative overflow-hidden"
         style={{ background: t.palette.bg, color: t.palette.text }}
       >
+        {thumb && (
+          <>
+            <img
+              src={thumb}
+              alt={`${t.name} cover`}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, ${t.palette.bg}F2 0%, ${t.palette.bg}B8 45%, ${t.palette.bg}55 100%)`,
+              }}
+            />
+          </>
+        )}
         <div
           className="absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-30 blur-2xl"
           style={{ background: t.palette.accent }}
