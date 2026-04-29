@@ -287,7 +287,122 @@ export const DEFAULT_SLIDES: SlideData[] = [
   },
 ];
 
-export const SLIDE_TEMPLATES: { name: string; slides: Omit<SlideData, 'id'>[] }[] = [
+/* ------------------------------------------------------------------ */
+/* Demo themes — mirror the composer's DECK_TEMPLATES so editor       */
+/* templates inherit the same gorgeous look-and-feel as the gallery   */
+/* demos (TransPerfect orbs, Modern Dark mesh, Editorial Light, etc.) */
+/* ------------------------------------------------------------------ */
+
+export type DemoThemeId =
+  | 'transperfect'
+  | 'modern-dark'
+  | 'editorial-light'
+  | 'corporate-navy'
+  | 'vibrant-startup'
+  | 'warm-terracotta'
+  | 'mono-brutalist';
+
+interface DemoTheme {
+  /** Strong "hero" colour used for title / section / quote / closing slides. */
+  heroBg: string;
+  /** Lighter "content" colour used for cards, stats, charts, comparison etc. */
+  contentBg: string;
+  /** Default variant token applied to every slide so SlideRenderer picks
+   *  the right text colour & layout treatment. */
+  variant: SlideData['variant'];
+  /** Animated background effect applied across the deck (subtle). */
+  bgEffect?: SlideBgEffect;
+  /** Alternative effect used on hero/section slides (more dramatic). */
+  heroBgEffect?: SlideBgEffect;
+  /** Layouts that should always use the hero bg + variant 'gradient'/'dark'. */
+  heroLayouts?: SlideLayout[];
+}
+
+const DEMO_THEMES: Record<DemoThemeId, DemoTheme> = {
+  // TransPerfect — deep navy + glowing orb gradients (turquoise / lavender)
+  transperfect: {
+    heroBg: '#03002C',
+    contentBg: '#0A0A3D',
+    variant: 'brand',
+    bgEffect: { type: 'orbs', speed: 0.6, intensity: 0.5, count: 3, size: 60, blur: 90, color: '#A1F9F9' },
+    heroBgEffect: { type: 'orbs', speed: 1.0, intensity: 0.85, count: 4, size: 75, blur: 60, color: '#C2A3FF' },
+  },
+  // Modern Dark — near-black + electric cyan mesh
+  'modern-dark': {
+    heroBg: '#0B0F19',
+    contentBg: '#111726',
+    variant: 'dark',
+    bgEffect: { type: 'mesh', speed: 0.7, intensity: 0.4, blur: 80, hueRotate: 30, color: '#22D3EE' },
+    heroBgEffect: { type: 'mesh', speed: 1.2, intensity: 0.7, blur: 60, hueRotate: 60, color: '#22D3EE' },
+  },
+  // Editorial Light — warm off-white + grain texture, charcoal text
+  'editorial-light': {
+    heroBg: '#1A1A1A',
+    contentBg: '#F7F5F1',
+    variant: 'minimal',
+    bgEffect: { type: 'grain', speed: 0.6, intensity: 0.3, density: 0.6, color: '#C4654A' },
+    heroBgEffect: { type: 'beam', speed: 0.8, intensity: 0.5, angle: 30, width: 200, color: '#C4654A' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+  // Corporate Navy — deep navy + gold beam accents
+  'corporate-navy': {
+    heroBg: '#0F1B3D',
+    contentBg: '#152854',
+    variant: 'brand',
+    bgEffect: { type: 'grid', speed: 0.6, intensity: 0.3, spacing: 60, dotSize: 1.5, color: '#C9A84C' },
+    heroBgEffect: { type: 'beam', speed: 0.9, intensity: 0.6, angle: 35, width: 220, color: '#C9A84C' },
+  },
+  // Vibrant Startup — white + coral/indigo waves
+  'vibrant-startup': {
+    heroBg: '#1E1B4B',
+    contentBg: '#FFFFFF',
+    variant: 'minimal',
+    bgEffect: { type: 'waves', speed: 1.0, intensity: 0.5, amplitude: 30, layers: 2, color: '#F96167' },
+    heroBgEffect: { type: 'orbs', speed: 1.4, intensity: 0.85, count: 3, size: 65, blur: 70, color: '#F96167' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+  // Warm Terracotta — sand + terracotta + sage
+  'warm-terracotta': {
+    heroBg: '#B85042',
+    contentBg: '#E7E8D1',
+    variant: 'minimal',
+    bgEffect: { type: 'grain', speed: 0.7, intensity: 0.35, density: 0.7, color: '#A7BEAE' },
+    heroBgEffect: { type: 'orbs', speed: 0.9, intensity: 0.7, count: 3, size: 60, blur: 80, color: '#A7BEAE' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+  // Mono Brutalist — pure white / pure black + yellow accent
+  'mono-brutalist': {
+    heroBg: '#000000',
+    contentBg: '#FFFFFF',
+    variant: 'minimal',
+    bgEffect: { type: 'grid', speed: 0.8, intensity: 0.45, spacing: 50, dotSize: 2, color: '#FFEB3B' },
+    heroBgEffect: { type: 'beam', speed: 1.5, intensity: 0.75, angle: 45, width: 250, color: '#FFEB3B' },
+    heroLayouts: ['title', 'section', 'quote'],
+  },
+};
+
+const DEFAULT_HERO_LAYOUTS: SlideLayout[] = ['title', 'section', 'quote'];
+
+/** Apply a demo theme uniformly to a list of slides — sets bgColor, variant, bgEffect. */
+function applyDemoTheme(
+  slides: Omit<SlideData, 'id'>[],
+  themeId: DemoThemeId,
+): Omit<SlideData, 'id'>[] {
+  const theme = DEMO_THEMES[themeId];
+  const heroLayouts = theme.heroLayouts ?? DEFAULT_HERO_LAYOUTS;
+  return slides.map((s) => {
+    const isHero = heroLayouts.includes(s.layout);
+    return {
+      ...s,
+      bgColor: isHero ? theme.heroBg : theme.contentBg,
+      variant: isHero ? 'gradient' : theme.variant,
+      bgEffect: isHero ? theme.heroBgEffect ?? theme.bgEffect : theme.bgEffect,
+    };
+  });
+}
+
+/** Raw template definitions — content only. Themed at export time below. */
+const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<SlideData, 'id'>[] }[] = [
   {
     name: 'Keynote',
     slides: [
