@@ -536,6 +536,11 @@ const PowerPointAgent: React.FC = () => {
         },
       ]);
 
+      // Auto-switch into the full Presentation Studio (Editor tab) so the user lands on
+      // an editable view of the freshly generated deck. The chat agent stays available
+      // as a sidebar inside the editor for refinements.
+      setActiveTab("editor");
+
       // Archive the outline so it isn't lost. Best-effort — never block the UX.
       if (user && deck.outline) {
         supabase
