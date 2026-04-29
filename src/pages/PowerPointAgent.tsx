@@ -1,6 +1,9 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check } from "lucide-react";
+import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check, Bot, LayoutTemplate } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SlideEditor } from "@/components/slides/SlideEditor";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -93,7 +96,41 @@ const PowerPointAgent: React.FC = () => {
   const [mode, setMode] = useState<Mode>("prompt");
   const [pendingOutline, setPendingOutline] = useState<DeckOutline | null>(null);
   const [pasteText, setPasteText] = useState("");
-  const [searchParams] = useSearchParams();
+  const [parallaxMode, setParallaxMode] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get("tab") === "editor" ? "editor" : "agent") as "agent" | "editor";
+  const setActiveTab = useCallback((t: "agent" | "editor") => {
+    const next = new URLSearchParams(searchParams);
+    if (t === "agent") next.delete("tab"); else next.set("tab", t);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Convert the most recent built deck's outline into SlideData[] for the inline SlideEditor.
+  const editorInitialSlides = useMemo(() => {
+    const lastDeck = [...history].reverse().find((h) => h.deck?.outline)?.deck;
+    if (!lastDeck?.outline) return undefined;
+    return lastDeck.outline.slides.map((s) => {
+      const variant: "default" | "dark" | "gradient" | "brand" = parallaxMode ? "gradient" : "default";
+      const base: any = {
+        id: crypto.randomUUID(),
+        title: s.title,
+        subtitle: s.subtitle,
+        body: (s.bullets || []).map((b) => `• ${b}`).join("\n"),
+        notes: s.notes,
+        variant,
+      };
+      if (parallaxMode) return { ...base, layout: "parallax" };
+      switch (s.layout) {
+        case "title": return { ...base, layout: "title" };
+        case "section": return { ...base, layout: "title" };
+        case "two_column": return { ...base, layout: "two-column" };
+        case "stat": return { ...base, layout: "big-number", stats: s.stat ? [{ value: s.stat.value, label: s.stat.label }] : [] };
+        case "quote": return { ...base, layout: "quote", title: s.quote?.text || s.title, quoteAuthor: s.quote?.attribution };
+        case "closing": return { ...base, layout: "title" };
+        default: return { ...base, layout: "content" };
+      }
+    });
+  }, [history, parallaxMode]);
 
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
     setSelectedTemplateId(tpl.id);
@@ -350,7 +387,12 @@ const PowerPointAgent: React.FC = () => {
       slideCount,
       tone: tone || undefined,
       brand: brandPayload,
-      themeOverride: themeOverride || undefined,
+      themeOverride: [
+        themeOverride,
+        parallaxMode
+          ? "Design the deck for a cinematic 3D parallax video export: bold full-bleed hero imagery, dramatic depth, layered foreground/midground/background, large display typography, dark gradient backgrounds with strong color accents — exports as MP4 video deck with parallax depth layers."
+          : null,
+      ].filter(Boolean).join(" — ") || undefined,
       templateId: selectedTemplateId || undefined,
       source: sourcePayload,
       planOnly: opts.planOnly || undefined,
@@ -573,23 +615,29 @@ const PowerPointAgent: React.FC = () => {
       `}</style>
       {/* Header */}
       <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <Button asChild variant="ghost" size="sm">
               <Link to="/"><ArrowLeft className="h-4 w-4" /> Back</Link>
             </Button>
             <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
                 <Presentation className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-base font-semibold leading-tight">PowerPoint Agent</h1>
-                <p className="text-xs text-muted-foreground">AI deck designer · exports .pptx</p>
+              <div className="min-w-0">
+                <h1 className="text-base font-semibold leading-tight truncate">Presentation Studio</h1>
+                <p className="text-xs text-muted-foreground truncate">AI deck designer · slide editor · .pptx + MP4 export</p>
               </div>
             </div>
           </div>
-          {history.length > 0 && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "agent" | "editor")}>
+            <TabsList className="bg-card/40 backdrop-blur">
+              <TabsTrigger value="agent" className="gap-2"><Bot className="h-4 w-4" /> Agent</TabsTrigger>
+              <TabsTrigger value="editor" className="gap-2"><LayoutTemplate className="h-4 w-4" /> Editor</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {history.length > 0 && activeTab === "agent" && (
             <Button variant="ghost" size="sm" onClick={reset}>
               <RefreshCw className="h-4 w-4" /> New deck
             </Button>
@@ -597,7 +645,7 @@ const PowerPointAgent: React.FC = () => {
         </div>
       </header>
 
-      <main ref={scrollRef} className="flex-1 overflow-y-auto">
+      <main ref={scrollRef} className={`flex-1 overflow-y-auto ${activeTab === "editor" ? "hidden" : ""}`}>
         <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
           {/* Outline review step (Gamma-style) */}
           {pendingOutline && (
@@ -677,6 +725,8 @@ const PowerPointAgent: React.FC = () => {
                 setTone={setTone}
                 audience={audience}
                 setAudience={setAudience}
+                parallaxMode={parallaxMode}
+                setParallaxMode={setParallaxMode}
                 disabled={isGenerating}
               />
 
@@ -889,7 +939,7 @@ const PowerPointAgent: React.FC = () => {
       </main>
 
       {/* Sticky footer composer — only shown after the first deck */}
-      {history.length > 0 && (
+      {history.length > 0 && activeTab === "agent" && (
         <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0">
           <div className="max-w-6xl mx-auto px-6 py-3 space-y-2">
             <form
@@ -974,6 +1024,16 @@ const PowerPointAgent: React.FC = () => {
           </div>
         </footer>
       )}
+
+      {/* Editor tab — full slide editor, prefilled with the most recent agent-generated outline */}
+      <SlideEditor
+        isOpen={activeTab === "editor"}
+        onClose={() => setActiveTab("agent")}
+        assetType="presentation"
+        assetName={history.find((h) => h.deck)?.deck?.title || "New Presentation"}
+        brand={(activeBrand as any) || null}
+        initialSlides={editorInitialSlides}
+      />
 
       <BrandHubImportModal
         isOpen={showImportModal}
