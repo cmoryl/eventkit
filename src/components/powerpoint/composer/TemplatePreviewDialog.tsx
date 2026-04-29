@@ -579,7 +579,7 @@ export type SlideKind =
   | "stat"
   | "quote";
 
-const SLIDES: SlideKind[] = [
+export const PREVIEW_SLIDE_KINDS: SlideKind[] = [
   "title",
   "agenda",
   "kpi-hero",
@@ -599,7 +599,9 @@ const SLIDES: SlideKind[] = [
   "quote",
 ];
 
-const SlideMock: React.FC<{
+const SLIDES: SlideKind[] = PREVIEW_SLIDE_KINDS;
+
+export const SlideMock: React.FC<{
   template: DeckTemplate;
   content: DemoContent;
   setContent: React.Dispatch<React.SetStateAction<DemoContent | null>>;
