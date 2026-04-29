@@ -1008,6 +1008,25 @@ const PowerPointAgent: React.FC = () => {
                       rerunPptxExtraction={rerunPptxExtraction}
                       disabled={isGenerating}
                     />
+                    <input
+                      ref={importPptxAsDeckRef}
+                      type="file"
+                      accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
+                      className="hidden"
+                      onChange={handleImportPptxAsDeck}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full gap-1.5"
+                      onClick={() => importPptxAsDeckRef.current?.click()}
+                      disabled={isGenerating}
+                      title="Import a .pptx file straight into the editor — fully editable, no AI"
+                    >
+                      <Presentation className="h-3.5 w-3.5" />
+                      Import .pptx
+                    </Button>
                     <RefinePopover
                       audience={audience}
                       setAudience={setAudience}
