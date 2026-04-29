@@ -219,6 +219,10 @@ export const AssetShowcase: React.FC<AssetShowcaseProps> = ({
   const navigate = useNavigate();
   
   const handleStudioClick = (studioId: StudioType) => {
+    if (studioId === 'presentations') {
+      navigate('/agent/powerpoint');
+      return;
+    }
     navigate(`/studio/${studioId}`);
   };
 
