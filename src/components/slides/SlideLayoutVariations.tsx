@@ -674,6 +674,8 @@ function TitleEditorial({ slide, headingFont, bodyFont, accentColor, headingColo
     </div>
   );
 }
+
+// ── CONTENT ──────────────────────────────────────────────────────
 function ContentColumns({ slide, headingFont, bodyFont, headingColor, hSize, bSize, align }: VariationContext) {
   const lines = (slide.body || '').split('\n').filter(Boolean);
   const half = Math.ceil(lines.length / 2);
