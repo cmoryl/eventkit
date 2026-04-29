@@ -212,6 +212,9 @@ const PowerPointAgent: React.FC = () => {
   const [selectedSections, setSelectedSections] = useState<Set<number>>(new Set());
   // BrandHub source pick (brand / event / product) — alternative or supplement to PDF source
   const [brandHubSource, setBrandHubSource] = useState<BrandHubSourcePick | null>(null);
+  // PPTX source — uses the same `extractedSource` slot as PDF (mutually exclusive)
+  const [pptxFile, setPptxFile] = useState<File | null>(null);
+  const pptxInputRef = useRef<HTMLInputElement>(null);
 
   const loadBrands = useCallback(async () => {
     if (!user) return;
