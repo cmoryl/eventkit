@@ -7,9 +7,11 @@ import { Search, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScaledSlide } from './ScaledSlide';
 import { SlideRenderer } from './SlideRenderer';
+import { applyDemoTheme, type DemoThemeId, type SlideData } from './slideTypes';
 import {
   INFOGRAPHIC_TEMPLATES,
   INFOGRAPHIC_CATEGORIES,
+  DEMO_STYLES,
   type InfographicTemplate,
   type InfographicCategory,
 } from './infographicTemplates';
@@ -23,6 +25,7 @@ interface TemplateGalleryDialogProps {
 }
 
 type CategoryFilter = 'all' | InfographicCategory;
+type StyleFilter = 'all' | DemoThemeId;
 
 export function TemplateGalleryDialog({
   isOpen,
@@ -33,6 +36,7 @@ export function TemplateGalleryDialog({
 }: TemplateGalleryDialogProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
+  const [style, setStyle] = useState<StyleFilter>('all');
   const [animatedOnly, setAnimatedOnly] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
@@ -40,16 +44,25 @@ export function TemplateGalleryDialog({
     const q = search.trim().toLowerCase();
     return INFOGRAPHIC_TEMPLATES.filter((t) => {
       if (category !== 'all' && t.category !== category) return false;
+      if (style !== 'all' && t.theme !== style) return false;
       if (animatedOnly && !t.animated) return false;
       if (!q) return true;
-      const haystack = `${t.name} ${t.description} ${t.tags.join(' ')} ${t.category}`.toLowerCase();
+      const haystack = `${t.name} ${t.description} ${t.tags.join(' ')} ${t.category} ${t.theme ?? ''}`.toLowerCase();
       return haystack.includes(q);
     });
-  }, [search, category, animatedOnly]);
+  }, [search, category, style, animatedOnly]);
 
-  const counts = useMemo(() => {
+  const categoryCounts = useMemo(() => {
     const map: Record<string, number> = { all: INFOGRAPHIC_TEMPLATES.length };
     for (const t of INFOGRAPHIC_TEMPLATES) map[t.category] = (map[t.category] || 0) + 1;
+    return map;
+  }, []);
+
+  const styleCounts = useMemo(() => {
+    const map: Record<string, number> = { all: INFOGRAPHIC_TEMPLATES.length };
+    for (const t of INFOGRAPHIC_TEMPLATES) {
+      if (t.theme) map[t.theme] = (map[t.theme] || 0) + 1;
+    }
     return map;
   }, []);
 
@@ -61,7 +74,9 @@ export function TemplateGalleryDialog({
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             <h2 className="text-base font-semibold">Template Gallery</h2>
-            <span className="text-xs text-muted-foreground">{filtered.length} of {INFOGRAPHIC_TEMPLATES.length}</span>
+            <span className="text-xs text-muted-foreground">
+              {filtered.length} of {INFOGRAPHIC_TEMPLATES.length}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
@@ -88,13 +103,33 @@ export function TemplateGalleryDialog({
         {/* Body */}
         <div className="flex flex-1 min-h-0">
           {/* Sidebar */}
-          <div className="w-[200px] border-r bg-muted/20 p-2 shrink-0 overflow-y-auto">
+          <div className="w-[220px] border-r bg-muted/20 p-2 shrink-0 overflow-y-auto">
             <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-2 py-1.5">
+              Demo Styles
+            </div>
+            <CategoryButton
+              label="All Styles"
+              count={styleCounts.all}
+              active={style === 'all'}
+              onClick={() => setStyle('all')}
+            />
+            {DEMO_STYLES.map((s) => (
+              <StyleButton
+                key={s.value}
+                label={s.label}
+                swatch={s.swatch}
+                count={styleCounts[s.value] || 0}
+                active={style === s.value}
+                onClick={() => setStyle(s.value)}
+              />
+            ))}
+
+            <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide px-2 py-1.5 mt-3">
               Categories
             </div>
             <CategoryButton
               label="All Templates"
-              count={counts.all}
+              count={categoryCounts.all}
               active={category === 'all'}
               onClick={() => setCategory('all')}
             />
@@ -102,7 +137,7 @@ export function TemplateGalleryDialog({
               <CategoryButton
                 key={value}
                 label={label}
-                count={counts[value] || 0}
+                count={categoryCounts[value] || 0}
                 active={category === value}
                 onClick={() => setCategory(value)}
               />
@@ -118,7 +153,12 @@ export function TemplateGalleryDialog({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => { setSearch(''); setCategory('all'); setAnimatedOnly(false); }}
+                  onClick={() => {
+                    setSearch('');
+                    setCategory('all');
+                    setStyle('all');
+                    setAnimatedOnly(false);
+                  }}
                 >
                   Reset filters
                 </Button>
@@ -131,7 +171,10 @@ export function TemplateGalleryDialog({
                     template={template}
                     isHovered={hoveredId === template.id}
                     onHoverChange={(hovered) => setHoveredId(hovered ? template.id : null)}
-                    onSelect={() => { onSelect(template); onClose(); }}
+                    onSelect={() => {
+                      onSelect(themedTemplate(template));
+                      onClose();
+                    }}
                     brandColors={brandColors}
                     brandFonts={brandFonts}
                   />
@@ -143,6 +186,18 @@ export function TemplateGalleryDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** Returns the template with its slide payload themed to the demo style. */
+function themedTemplate(template: InfographicTemplate): InfographicTemplate {
+  if (!template.theme) return template;
+  const [themed] = applyDemoTheme([template.slide], template.theme);
+  // Preserve any explicit bgEffect already on the slide (template-specific motion).
+  const merged: Omit<SlideData, 'id'> = {
+    ...themed,
+    bgEffect: template.slide.bgEffect ?? themed.bgEffect,
+  };
+  return { ...template, slide: merged };
 }
 
 function CategoryButton({
@@ -175,6 +230,44 @@ function CategoryButton({
   );
 }
 
+function StyleButton({
+  label,
+  swatch,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  swatch: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'w-full flex items-center justify-between gap-2 text-left rounded-md px-2.5 py-1.5 text-xs transition-colors',
+        active
+          ? 'bg-primary/10 text-foreground font-medium'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+      )}
+    >
+      <span className="flex items-center gap-2 min-w-0">
+        <span
+          className="h-3.5 w-3.5 rounded-sm border border-border/60 shrink-0"
+          style={{ background: swatch }}
+        />
+        <span className="truncate">{label}</span>
+      </span>
+      <span className={cn('text-[10px] font-mono', active ? 'text-primary' : 'text-muted-foreground/60')}>
+        {count}
+      </span>
+    </button>
+  );
+}
+
 function TemplateCard({
   template,
   isHovered,
@@ -190,9 +283,14 @@ function TemplateCard({
   brandColors?: { primary?: string; secondary?: string; accent?: string };
   brandFonts?: { heading?: string; body?: string };
 }) {
-  // Stable id for the slide passed to SlideRenderer (not used by renderer but required by type)
-  const slideWithId = useMemo(() => ({ ...template.slide, id: template.id }), [template]);
+  // Apply the template's demo style for the preview so the gallery card
+  // visually matches the corresponding demo deck (orbs, mesh, beams, etc).
+  const slideWithId = useMemo(() => {
+    const themed = themedTemplate(template).slide;
+    return { ...themed, id: template.id };
+  }, [template]);
   const categoryLabel = INFOGRAPHIC_CATEGORIES.find((c) => c.value === template.category)?.label;
+  const styleLabel = DEMO_STYLES.find((s) => s.value === template.theme)?.label;
 
   return (
     <button
@@ -216,6 +314,11 @@ function TemplateCard({
           <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-background/90 backdrop-blur-sm text-[9px] font-medium text-primary flex items-center gap-1">
             <Sparkles className="h-2.5 w-2.5" />
             Animated
+          </div>
+        )}
+        {styleLabel && (
+          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-full bg-background/85 backdrop-blur-sm text-[9px] font-medium text-foreground/80 border border-border/50">
+            {styleLabel}
           </div>
         )}
         <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 pointer-events-none transition-colors" />
