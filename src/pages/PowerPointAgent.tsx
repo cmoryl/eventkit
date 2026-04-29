@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, Check, Bot, LayoutTemplate } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
+import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
