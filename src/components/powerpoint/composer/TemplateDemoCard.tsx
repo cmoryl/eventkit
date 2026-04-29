@@ -145,6 +145,8 @@ export interface DemoContent {
   eyebrow: string;
   title: string;
   subtitle: string;
+  /** Optional user-edited titles for each rendered demo slide kind. */
+  slideHeadings?: Partial<Record<string, string>>;
   /** Optional per-template imagery (Unsplash URLs). Slides cycle through these. */
   imagery?: string[];
   cards: DemoCard[];
