@@ -265,12 +265,13 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               {(slide.stats || []).map((stat, i) => (
                 <div key={i} className="text-center">
                   <div
+                    data-slide-field={`stats.${i}.value`}
                     className="font-bold mb-[16px]"
                     style={{ fontSize: 96, color: accentColor || (isDark ? '#a78bfa' : '#6366f1'), fontFamily: headingFont }}
                   >
                     {stat.value}
                   </div>
-                  <div className="opacity-60 uppercase tracking-widest" style={{ fontSize: bSize || 28, fontFamily: bodyFont }}>
+                  <div data-slide-field={`stats.${i}.label`} className="opacity-60 uppercase tracking-widest" style={{ fontSize: bSize || 28, fontFamily: bodyFont }}>
                     {stat.label}
                   </div>
                 </div>
