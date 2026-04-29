@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { DeckOutline, SlideOutline } from "../DeckPreview";
 import { SlideDetailsPanel } from "./SlideDetailsPanel";
+import { ContentIntegrityReport } from "./ContentIntegrityReport";
 
 interface Props {
   outline: DeckOutline;
@@ -15,6 +16,8 @@ interface Props {
   onBack: () => void;
   onConfirm: () => void;
   building: boolean;
+  /** Original source text the user pasted/typed — used to flag missing content. */
+  sourceContent?: string;
 }
 
 const LAYOUT_LABELS: Partial<Record<SlideOutline["layout"], string>> = {
