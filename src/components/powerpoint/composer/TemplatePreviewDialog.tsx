@@ -606,14 +606,28 @@ const SlideMock: React.FC<{
                     </div>
                   )}
                   <div className="p-3 flex flex-col gap-1 flex-1">
-                    {!cardImg && Ic && (
-                      <div
-                        className="h-7 w-7 rounded-md flex items-center justify-center mb-1"
-                        style={{ background: `${t.palette.accent}22` }}
-                      >
-                        <Ic className="h-4 w-4" style={{ color: t.palette.accent }} />
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {!cardImg && Ic && (
+                        <div
+                          className="h-7 w-7 rounded-md flex items-center justify-center"
+                          style={{ background: `${t.palette.accent}22` }}
+                        >
+                          <Ic className="h-4 w-4" style={{ color: t.palette.accent }} />
+                        </div>
+                      )}
+                      {c.tag && (
+                        <span
+                          className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                          style={{
+                            background: `${t.palette.accent}1F`,
+                            color: t.palette.accent,
+                            border: `1px solid ${t.palette.accent}55`,
+                          }}
+                        >
+                          {c.tag}
+                        </span>
+                      )}
+                    </div>
                     <Editable
                       as="div"
                       ariaLabel={`Card ${i + 1} title`}
@@ -643,6 +657,31 @@ const SlideMock: React.FC<{
                       className="text-[11px] leading-snug"
                       style={{ color: muted }}
                     />
+                    {c.subPoints && c.subPoints.length > 0 && (
+                      <ul className="mt-1.5 space-y-1">
+                        {c.subPoints.map((sp, si) => (
+                          <li
+                            key={si}
+                            className="flex items-start gap-1.5 text-[10px] leading-snug"
+                            style={{ color: t.palette.text }}
+                          >
+                            <CheckIcon
+                              className="h-2.5 w-2.5 mt-0.5 shrink-0"
+                              style={{ color: t.palette.accent }}
+                            />
+                            <span>{sp}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {c.footnote && (
+                      <div
+                        className="mt-auto pt-2 text-[9px] italic border-t"
+                        style={{ color: muted, borderColor: subtleBorder }}
+                      >
+                        {c.footnote}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
