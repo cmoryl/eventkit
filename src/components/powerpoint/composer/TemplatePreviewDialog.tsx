@@ -2,9 +2,27 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, X, BarChart3, Quote as QuoteIcon, Layers, Pencil, RotateCcw } from "lucide-react";
+import {
+  Sparkles,
+  X,
+  BarChart3,
+  Quote as QuoteIcon,
+  Layers,
+  Pencil,
+  RotateCcw,
+  ListChecks,
+  CalendarRange,
+  GitCompareArrows,
+  LineChart as LineChartIcon,
+  TrendingUp,
+} from "lucide-react";
 import type { DeckTemplate } from "./TemplateGallery";
-import { DEMO_BY_TEMPLATE, FALLBACK_DEMO, isLightColor } from "./TemplateDemoCard";
+import {
+  DEMO_BY_TEMPLATE,
+  FALLBACK_DEMO,
+  isLightColor,
+  type DemoContent,
+} from "./TemplateDemoCard";
 import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
 
 interface Props {
@@ -15,32 +33,12 @@ interface Props {
   disabled?: boolean;
 }
 
-/** Editable content shape mirroring DEMO_BY_TEMPLATE entries. */
-interface EditableContent {
-  eyebrow: string;
-  title: string;
-  subtitle: string;
-  cards: Array<{ title: string; body: string }>;
-  stat: { value: string; label: string };
-  quote: { text: string; by: string };
-}
-
-const buildInitialContent = (t: DeckTemplate): EditableContent => {
+const buildInitialContent = (t: DeckTemplate): DemoContent => {
   const d = DEMO_BY_TEMPLATE[t.id] || FALLBACK_DEMO;
-  return {
-    eyebrow: d.eyebrow,
-    title: d.title,
-    subtitle: d.subtitle,
-    cards: d.cards.map((c) => ({ title: c.title, body: c.body })),
-    stat: { value: d.stat.value, label: d.stat.label },
-    quote: { text: d.quote.text, by: d.quote.by },
-  };
+  // Deep-clone so edits don't mutate the shared demo
+  return JSON.parse(JSON.stringify({ ...d, cards: d.cards.map((c) => ({ title: c.title, body: c.body })) }));
 };
 
-/**
- * Inline contentEditable span. We keep React's value as the source of truth via
- * `key` re-mounts when `editing` toggles, then read DOM text on blur to commit.
- */
 const Editable: React.FC<{
   value: string;
   onChange: (v: string) => void;
@@ -84,13 +82,160 @@ const Editable: React.FC<{
   );
 };
 
-/** A single large 16:9 slide mockup. */
+/* ------------------------------ Charts ------------------------------ */
+const BarLineChart: React.FC<{
+  series: { label: string; value: number }[];
+  trendline?: number[];
+  accent: string;
+  secondary: string;
+  text: string;
+  muted: string;
+  unit?: string;
+}> = ({ series, trendline, accent, secondary, text, muted, unit }) => {
+  const w = 600;
+  const h = 220;
+  const pad = { l: 32, r: 12, t: 14, b: 26 };
+  const innerW = w - pad.l - pad.r;
+  const innerH = h - pad.t - pad.b;
+  const max = Math.max(...series.map((s) => s.value), ...(trendline || [0]));
+  const min = 0;
+  const stepX = innerW / Math.max(series.length - 1, 1);
+  const barW = (innerW / series.length) * 0.55;
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((p) => max * p);
+  const linePts = (trendline || series.map((s) => s.value))
+    .map((v, i) => `${pad.l + i * stepX},${pad.t + (1 - (v - min) / (max - min || 1)) * innerH}`)
+    .join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" role="img" aria-label="Trend chart">
+      {/* Grid + Y labels */}
+      {yTicks.map((tv, i) => {
+        const y = pad.t + (1 - i / 4) * innerH;
+        return (
+          <g key={i}>
+            <line x1={pad.l} x2={w - pad.r} y1={y} y2={y} stroke={muted} strokeWidth={0.4} opacity={0.35} />
+            <text x={pad.l - 6} y={y + 3} textAnchor="end" fontSize={9} fill={muted}>
+              {Math.round(tv)}
+              {unit || ""}
+            </text>
+          </g>
+        );
+      })}
+      {/* Bars */}
+      {series.map((s, i) => {
+        const x = pad.l + i * stepX - barW / 2;
+        const bh = ((s.value - min) / (max - min || 1)) * innerH;
+        const y = pad.t + innerH - bh;
+        return (
+          <g key={i}>
+            <rect x={x} y={y} width={barW} height={bh} fill={secondary} opacity={0.5} rx={2} />
+            <text x={pad.l + i * stepX} y={h - 8} textAnchor="middle" fontSize={10} fill={muted}>
+              {s.label}
+            </text>
+            <text
+              x={pad.l + i * stepX}
+              y={y - 4}
+              textAnchor="middle"
+              fontSize={9}
+              fontWeight={700}
+              fill={text}
+            >
+              {s.value}
+              {unit || ""}
+            </text>
+          </g>
+        );
+      })}
+      {/* Line */}
+      <polyline points={linePts} fill="none" stroke={accent} strokeWidth={2} />
+      {(trendline || series.map((s) => s.value)).map((v, i) => (
+        <circle
+          key={i}
+          cx={pad.l + i * stepX}
+          cy={pad.t + (1 - (v - min) / (max - min || 1)) * innerH}
+          r={2.6}
+          fill={accent}
+        />
+      ))}
+    </svg>
+  );
+};
+
+const Donut: React.FC<{ percent: number; accent: string; track: string; label: string; sub: string; text: string; muted: string }> = ({
+  percent,
+  accent,
+  track,
+  label,
+  sub,
+  text,
+  muted,
+}) => {
+  const r = 36;
+  const c = 2 * Math.PI * r;
+  const dash = (c * Math.min(Math.max(percent, 0), 100)) / 100;
+  return (
+    <div className="flex items-center gap-3">
+      <svg viewBox="0 0 100 100" className="h-16 w-16 -rotate-90">
+        <circle cx={50} cy={50} r={r} fill="none" stroke={track} strokeWidth={10} opacity={0.3} />
+        <circle
+          cx={50}
+          cy={50}
+          r={r}
+          fill="none"
+          stroke={accent}
+          strokeWidth={10}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c - dash}`}
+        />
+      </svg>
+      <div className="min-w-0">
+        <div className="text-2xl font-extrabold leading-none" style={{ color: text }}>
+          {Math.round(percent)}%
+        </div>
+        <div className="text-[11px] font-semibold" style={{ color: text }}>
+          {label}
+        </div>
+        <div className="text-[10px]" style={{ color: muted }}>
+          {sub}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ------------------------------ Slide kinds ------------------------------ */
+type SlideKind =
+  | "title"
+  | "agenda"
+  | "section"
+  | "cards"
+  | "metrics"
+  | "chart"
+  | "timeline"
+  | "compare"
+  | "stat"
+  | "quote";
+
+const SLIDES: SlideKind[] = [
+  "title",
+  "agenda",
+  "section",
+  "cards",
+  "metrics",
+  "chart",
+  "timeline",
+  "compare",
+  "stat",
+  "quote",
+];
+
 const SlideMock: React.FC<{
   template: DeckTemplate;
-  content: EditableContent;
-  setContent: React.SetStateAction<any>;
+  content: DemoContent;
+  setContent: React.Dispatch<React.SetStateAction<DemoContent | null>>;
   editing: boolean;
-  kind: "title" | "section" | "cards" | "stat" | "quote";
+  kind: SlideKind;
   index: number;
   total: number;
 }> = ({ template: t, content, setContent, editing, kind, index, total }) => {
@@ -100,8 +245,8 @@ const SlideMock: React.FC<{
   const cardBg = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)";
   const thumb = TEMPLATE_THUMBNAILS[t.id];
 
-  const update = (fn: (c: EditableContent) => EditableContent) =>
-    setContent((prev: EditableContent) => fn(prev));
+  const update = (fn: (c: DemoContent) => DemoContent) =>
+    setContent((prev) => (prev ? fn(prev) : prev));
 
   return (
     <div
@@ -118,14 +263,14 @@ const SlideMock: React.FC<{
         style={{ background: t.palette.secondary }}
       />
 
-      {/* Slide number */}
       <div
-        className="absolute top-3 right-4 text-[10px] font-mono tracking-wider"
+        className="absolute top-3 right-4 text-[10px] font-mono tracking-wider z-20"
         style={{ color: muted }}
       >
         {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
       </div>
 
+      {/* TITLE */}
       {kind === "title" && (
         <div className="relative h-full grid" style={{ gridTemplateColumns: thumb ? "1.1fr 1fr" : "1fr" }}>
           <div className="relative p-10 flex flex-col justify-between z-10">
@@ -175,15 +320,53 @@ const SlideMock: React.FC<{
               />
               <div
                 className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(90deg, ${t.palette.bg} 0%, transparent 35%)`,
-                }}
+                style={{ background: `linear-gradient(90deg, ${t.palette.bg} 0%, transparent 35%)` }}
               />
             </div>
           )}
         </div>
       )}
 
+      {/* AGENDA */}
+      {kind === "agenda" && (
+        <div className="relative h-full p-10 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <ListChecks className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              Agenda
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">What we'll cover</h3>
+          <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
+            {content.agenda.map((a, i) => (
+              <div
+                key={i}
+                className="rounded-lg p-4 flex gap-3 items-start"
+                style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+              >
+                <div
+                  className="h-9 w-9 rounded-md flex items-center justify-center text-sm font-extrabold shrink-0"
+                  style={{
+                    background: i === 0 ? t.palette.accent : "transparent",
+                    color: i === 0 ? t.palette.bg : t.palette.accent,
+                    border: `1px solid ${t.palette.accent}`,
+                  }}
+                >
+                  {a.step}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold leading-tight">{a.title}</div>
+                  <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
+                    {a.body}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SECTION */}
       {kind === "section" && (
         <div className="relative h-full">
           {thumb && (
@@ -197,9 +380,7 @@ const SlideMock: React.FC<{
               />
               <div
                 className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(180deg, ${t.palette.bg}EE 0%, ${t.palette.bg}AA 100%)`,
-                }}
+                style={{ background: `linear-gradient(180deg, ${t.palette.bg}EE 0%, ${t.palette.bg}AA 100%)` }}
               />
             </>
           )}
@@ -243,6 +424,7 @@ const SlideMock: React.FC<{
         </div>
       )}
 
+      {/* CARDS w/ icons */}
       {kind === "cards" && (
         <div className="relative h-full p-8 flex flex-col">
           <div className="flex items-center gap-2 mb-2">
@@ -251,76 +433,311 @@ const SlideMock: React.FC<{
               Card layout
             </span>
           </div>
-          <h3
-            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
-            style={{ color: t.palette.text }}
-          >
-            What you get
-          </h3>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">What you get</h3>
           <div className="grid grid-cols-3 gap-3 mt-5 flex-1">
-            {content.cards.map((c, i) => (
-              <div
-                key={i}
-                className="rounded-lg overflow-hidden flex flex-col"
-                style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
-              >
-                {thumb && (
-                  <div className="relative aspect-[16/9] overflow-hidden">
-                    <img
-                      src={thumb}
-                      alt=""
-                      loading="lazy"
-                      aria-hidden
-                      className="absolute inset-0 h-full w-full object-cover"
-                      style={{ filter: `hue-rotate(${i * 25}deg) saturate(${1 + i * 0.1})` }}
+            {content.cards.map((c, i) => {
+              const Ic = c.icon;
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg overflow-hidden flex flex-col"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  {thumb && (
+                    <div className="relative aspect-[16/9] overflow-hidden">
+                      <img
+                        src={thumb}
+                        alt=""
+                        loading="lazy"
+                        aria-hidden
+                        className="absolute inset-0 h-full w-full object-cover"
+                        style={{ filter: `hue-rotate(${i * 25}deg) saturate(${1 + i * 0.1})` }}
+                      />
+                      {Ic && (
+                        <div
+                          className="absolute top-2 left-2 h-7 w-7 rounded-full flex items-center justify-center backdrop-blur"
+                          style={{ background: `${t.palette.bg}CC`, border: `1px solid ${subtleBorder}` }}
+                        >
+                          <Ic className="h-3.5 w-3.5" style={{ color: t.palette.accent }} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className="p-3 flex flex-col gap-1 flex-1">
+                    {!thumb && Ic && (
+                      <div
+                        className="h-7 w-7 rounded-md flex items-center justify-center mb-1"
+                        style={{ background: `${t.palette.accent}22` }}
+                      >
+                        <Ic className="h-4 w-4" style={{ color: t.palette.accent }} />
+                      </div>
+                    )}
+                    <Editable
+                      as="div"
+                      ariaLabel={`Card ${i + 1} title`}
+                      editing={editing}
+                      value={c.title}
+                      onChange={(v) =>
+                        update((cc) => ({
+                          ...cc,
+                          cards: cc.cards.map((card, idx) => (idx === i ? { ...card, title: v } : card)),
+                        }))
+                      }
+                      className="text-sm font-bold leading-tight"
+                      style={{ color: t.palette.text }}
+                    />
+                    <Editable
+                      as="div"
+                      ariaLabel={`Card ${i + 1} body`}
+                      editing={editing}
+                      value={c.body}
+                      multiline
+                      onChange={(v) =>
+                        update((cc) => ({
+                          ...cc,
+                          cards: cc.cards.map((card, idx) => (idx === i ? { ...card, body: v } : card)),
+                        }))
+                      }
+                      className="text-[11px] leading-snug"
+                      style={{ color: muted }}
                     />
                   </div>
-                )}
-                <div className="p-3 flex flex-col gap-1 flex-1">
-                  <div
-                    className="h-1 w-6 rounded-full"
-                    style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
-                  />
-                  <Editable
-                    as="div"
-                    ariaLabel={`Card ${i + 1} title`}
-                    editing={editing}
-                    value={c.title}
-                    onChange={(v) =>
-                      update((cc) => ({
-                        ...cc,
-                        cards: cc.cards.map((card, idx) =>
-                          idx === i ? { ...card, title: v } : card,
-                        ),
-                      }))
-                    }
-                    className="text-sm font-bold leading-tight"
-                    style={{ color: t.palette.text }}
-                  />
-                  <Editable
-                    as="div"
-                    ariaLabel={`Card ${i + 1} body`}
-                    editing={editing}
-                    value={c.body}
-                    multiline
-                    onChange={(v) =>
-                      update((cc) => ({
-                        ...cc,
-                        cards: cc.cards.map((card, idx) =>
-                          idx === i ? { ...card, body: v } : card,
-                        ),
-                      }))
-                    }
-                    className="text-[11px] leading-snug"
-                    style={{ color: muted }}
-                  />
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
+      {/* METRICS GRID */}
+      {kind === "metrics" && (
+        <div className="relative h-full p-8 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <BarChart3 className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              By the numbers
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">The signals that matter</h3>
+          <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
+            {content.metrics.slice(0, 4).map((m, i) => {
+              const Ic = m.icon;
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg p-4 flex flex-col justify-between"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  <div className="flex items-center justify-between">
+                    {Ic && (
+                      <div
+                        className="h-8 w-8 rounded-md flex items-center justify-center"
+                        style={{ background: `${t.palette.accent}22` }}
+                      >
+                        <Ic className="h-4 w-4" style={{ color: t.palette.accent }} />
+                      </div>
+                    )}
+                    {m.trend && (
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                        style={{ background: `${t.palette.secondary}33`, color: t.palette.text }}
+                      >
+                        {m.trend}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <div
+                      className="text-3xl font-extrabold leading-none tracking-tight"
+                      style={{ color: t.palette.accent }}
+                    >
+                      {m.value}
+                    </div>
+                    <div className="text-[11px] mt-1" style={{ color: muted }}>
+                      {m.label}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* CHART */}
+      {kind === "chart" && (
+        <div className="relative h-full p-8 grid grid-cols-3 gap-4 z-10">
+          <div className="col-span-2 rounded-lg p-4 flex flex-col" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+            <div className="flex items-center gap-2">
+              <LineChartIcon className="h-3.5 w-3.5" style={{ color: t.palette.accent }} />
+              <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+                Trend
+              </span>
+            </div>
+            <div className="text-sm font-bold mt-1">{content.chart.title}</div>
+            <div className="flex-1 mt-2 min-h-0">
+              <BarLineChart
+                series={content.chart.series}
+                trendline={content.chart.trendline}
+                accent={t.palette.accent}
+                secondary={t.palette.secondary}
+                text={t.palette.text}
+                muted={muted}
+                unit={content.chart.unit}
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 min-h-0">
+            <div className="rounded-lg p-4" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+              <div className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: muted }}>
+                Distribution
+              </div>
+              <Donut
+                percent={Math.min(
+                  100,
+                  Math.round(
+                    ((content.chart.series.at(-1)?.value || 0) /
+                      Math.max(content.chart.series.reduce((a, b) => a + b.value, 0), 1)) *
+                      100 *
+                      content.chart.series.length,
+                  ),
+                )}
+                accent={t.palette.accent}
+                track={t.palette.text}
+                label="Latest share"
+                sub="of total period"
+                text={t.palette.text}
+                muted={muted}
+              />
+            </div>
+            <div className="rounded-lg p-4 flex-1 flex items-center gap-3" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+              <TrendingUp className="h-5 w-5" style={{ color: t.palette.accent }} />
+              <div className="min-w-0">
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+                  Headline
+                </div>
+                <div className="text-sm font-bold leading-snug">
+                  {content.chart.series.at(-1)?.value}
+                  {content.chart.unit || ""} · up from {content.chart.series[0]?.value}
+                  {content.chart.unit || ""}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TIMELINE */}
+      {kind === "timeline" && (
+        <div className="relative h-full p-8 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarRange className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              Roadmap
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A sequence that compounds</h3>
+
+          <div className="relative mt-8 flex-1">
+            {/* spine */}
+            <div
+              className="absolute left-0 right-0 top-5 h-0.5 rounded-full"
+              style={{ background: subtleBorder }}
+            />
+            <div
+              className="absolute left-0 top-5 h-0.5 rounded-full"
+              style={{ width: "33%", background: t.palette.accent }}
+            />
+            <div className="grid grid-cols-4 gap-4 relative">
+              {content.timeline.map((tl, i) => (
+                <div key={i} className="flex flex-col">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div
+                      className="h-3 w-3 rounded-full ring-4"
+                      style={{
+                        background: i === 0 ? t.palette.accent : t.palette.bg,
+                        boxShadow: `inset 0 0 0 2px ${t.palette.accent}`,
+                        // @ts-ignore custom var
+                        "--tw-ring-color": `${t.palette.bg}`,
+                      } as React.CSSProperties}
+                    />
+                    <span
+                      className="text-[10px] font-extrabold uppercase tracking-[0.18em]"
+                      style={{ color: t.palette.accent }}
+                    >
+                      {tl.when}
+                    </span>
+                  </div>
+                  <div
+                    className="rounded-lg p-3"
+                    style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                  >
+                    <div className="text-sm font-bold leading-tight">{tl.title}</div>
+                    <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
+                      {tl.body}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* COMPARE */}
+      {kind === "compare" && (
+        <div className="relative h-full p-8 flex flex-col z-10">
+          <div className="flex items-center gap-2 mb-1">
+            <GitCompareArrows className="h-4 w-4" style={{ color: t.palette.accent }} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+              Comparison
+            </span>
+          </div>
+          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">{content.compare.heading}</h3>
+          <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
+            <div className="rounded-lg p-5 flex flex-col" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+              <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+                {content.compare.before.title}
+              </div>
+              <ul className="mt-3 space-y-2">
+                {content.compare.before.points.map((p, i) => (
+                  <li key={i} className="flex gap-2 items-start text-sm" style={{ color: t.palette.text }}>
+                    <span
+                      className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
+                      style={{ background: t.palette.secondary, opacity: 0.6 }}
+                    />
+                    <span style={{ color: muted }}>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div
+              className="rounded-lg p-5 flex flex-col"
+              style={{
+                background: `${t.palette.accent}14`,
+                border: `1px solid ${t.palette.accent}55`,
+              }}
+            >
+              <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: t.palette.accent }}>
+                {content.compare.after.title}
+              </div>
+              <ul className="mt-3 space-y-2">
+                {content.compare.after.points.map((p, i) => (
+                  <li key={i} className="flex gap-2 items-start text-sm" style={{ color: t.palette.text }}>
+                    <span
+                      className="mt-1.5 h-1.5 w-1.5 rounded-full shrink-0"
+                      style={{ background: t.palette.accent }}
+                    />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STAT */}
       {kind === "stat" && (
         <div className="relative h-full p-10 grid grid-cols-2 gap-8 items-center">
           <div>
@@ -349,6 +766,22 @@ const SlideMock: React.FC<{
               className="mt-3 text-sm font-medium"
               style={{ color: t.palette.text }}
             />
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              {content.metrics.slice(0, 3).map((m, i) => (
+                <div
+                  key={i}
+                  className="rounded-md px-2 py-2"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  <div className="text-sm font-extrabold" style={{ color: t.palette.text }}>
+                    {m.value}
+                  </div>
+                  <div className="text-[10px] truncate" style={{ color: muted }}>
+                    {m.label}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
           {thumb ? (
             <div
@@ -399,6 +832,7 @@ const SlideMock: React.FC<{
         </div>
       )}
 
+      {/* QUOTE */}
       {kind === "quote" && (
         <div className="relative h-full">
           {thumb && (
@@ -451,9 +885,8 @@ const SlideMock: React.FC<{
 export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, disabled }) => {
   const [editing, setEditing] = useState(false);
   const initial = useMemo(() => (template ? buildInitialContent(template) : null), [template?.id]);
-  const [content, setContent] = useState<EditableContent | null>(initial);
+  const [content, setContent] = useState<DemoContent | null>(initial);
 
-  // Reset content whenever the template changes or dialog re-opens
   useEffect(() => {
     if (template) {
       setContent(buildInitialContent(template));
@@ -463,13 +896,6 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
 
   if (!template || !content) return null;
   const t = template;
-  const slides: Array<"title" | "section" | "cards" | "stat" | "quote"> = [
-    "title",
-    "section",
-    "cards",
-    "stat",
-    "quote",
-  ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -491,7 +917,7 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
               <p className="text-xs text-muted-foreground truncate">
                 {editing
                   ? "Click any text on the slides to edit it"
-                  : t.description || "Look & feel preview"}
+                  : `${SLIDES.length} slides · ${t.description || "Look & feel preview"}`}
               </p>
             </div>
           </div>
@@ -537,7 +963,7 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
         {/* Slide deck */}
         <ScrollArea className="flex-1">
           <div className="p-5 space-y-5">
-            {slides.map((kind, i) => (
+            {SLIDES.map((kind, i) => (
               <SlideMock
                 key={kind}
                 template={t}
@@ -546,7 +972,7 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
                 editing={editing}
                 kind={kind}
                 index={i}
-                total={slides.length}
+                total={SLIDES.length}
               />
             ))}
 
@@ -563,10 +989,7 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
                   { label: "Secondary", value: t.palette.secondary },
                 ].map((s) => (
                   <div key={s.label} className="flex items-center gap-2 rounded-md border p-2">
-                    <div
-                      className="h-8 w-8 rounded-md border shrink-0"
-                      style={{ background: s.value }}
-                    />
+                    <div className="h-8 w-8 rounded-md border shrink-0" style={{ background: s.value }} />
                     <div className="min-w-0">
                       <div className="text-[11px] font-semibold truncate">{s.label}</div>
                       <div className="text-[10px] font-mono text-muted-foreground truncate">
