@@ -174,7 +174,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
           </div>
           <div className="w-[45%] bg-black/5 flex items-center justify-center overflow-hidden">
             {slide.imageUrl ? (
-              <img src={slide.imageUrl} alt="" className="w-full h-full object-cover" />
+              <img src={slide.imageUrl} alt="" data-slide-image="hero" className="w-full h-full object-cover" />
             ) : slide.images && slide.images.length > 0 ? (
               <ImageGallery images={slide.images} />
             ) : (
