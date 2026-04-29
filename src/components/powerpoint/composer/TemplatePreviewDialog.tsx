@@ -2077,7 +2077,15 @@ export const SlideMock: React.FC<{
               How it works
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">A repeatable process</h3>
+          <Editable
+            as="div"
+            ariaLabel="Process heading"
+            editing={editing}
+            value={headingFor("process", "A repeatable process")}
+            onChange={(v) => updateHeading("process", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-8 grid gap-4 flex-1" style={{ gridTemplateColumns: `repeat(${content.process.length}, 1fr)` }}>
             {content.process.map((p, i) => {
               const Ic = p.icon;
@@ -2092,7 +2100,13 @@ export const SlideMock: React.FC<{
                         border: `1.5px solid ${t.palette.accent}`,
                       }}
                     >
-                      {p.step}
+                      <Editable
+                        ariaLabel={`Process ${i + 1} step`}
+                        editing={editing}
+                        value={p.step}
+                        onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, step: v } : item)) }))}
+                        className="inline-block"
+                      />
                     </div>
                     {i < content.process.length - 1 && (
                       <div
@@ -2107,11 +2121,23 @@ export const SlideMock: React.FC<{
                   >
                     {Ic && <Ic className="h-4 w-4 mb-1.5" style={{ color: t.palette.accent }} />}
                     <div className="text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                      {p.title}
+                      <Editable
+                        ariaLabel={`Process ${i + 1} title`}
+                        editing={editing}
+                        value={p.title}
+                        onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, title: v } : item)) }))}
+                      />
                     </div>
-                    <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
-                      {p.body}
-                    </div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Process ${i + 1} body`}
+                      editing={editing}
+                      value={p.body}
+                      multiline
+                      onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, body: v } : item)) }))}
+                      className="text-[11px] mt-1 leading-snug"
+                      style={{ color: muted }}
+                    />
                     <div className="mt-auto pt-2 space-y-1">
                       {p.output && (
                         <div className="flex items-center gap-1.5 text-[9px]" style={{ color: t.palette.text }}>
@@ -2122,7 +2148,12 @@ export const SlideMock: React.FC<{
                             Output
                           </span>
                           <span className="truncate" style={{ color: muted }}>
-                            {p.output}
+                            <Editable
+                              ariaLabel={`Process ${i + 1} output`}
+                              editing={editing}
+                              value={p.output}
+                              onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, output: v } : item)) }))}
+                            />
                           </span>
                         </div>
                       )}
@@ -2135,7 +2166,12 @@ export const SlideMock: React.FC<{
                             Time
                           </span>
                           <span className="truncate" style={{ color: muted }}>
-                            {p.duration}
+                            <Editable
+                              ariaLabel={`Process ${i + 1} duration`}
+                              editing={editing}
+                              value={p.duration}
+                              onChange={(v) => update((c) => ({ ...c, process: c.process.map((item, idx) => (idx === i ? { ...item, duration: v } : item)) }))}
+                            />
                           </span>
                         </div>
                       )}
