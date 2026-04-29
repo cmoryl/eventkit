@@ -202,6 +202,23 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
                         properties: { text: { type: "string" }, attribution: { type: "string" } },
                       },
                       notes: { type: "string" },
+                      designNotes: { type: "string", description: "Internal AI guidance — not shown on the slide. Mirror what the user wrote." },
+                      visualIntent: { type: "string", enum: ["auto", "photo", "infographic", "chart", "icon-grid", "screenshot", "none"] },
+                      chart: {
+                        type: "object",
+                        properties: {
+                          type: { type: "string", enum: ["bar", "line", "pie", "donut", "area", "scatter"] },
+                          title: { type: "string" },
+                          data: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: { label: { type: "string" }, value: { type: "number" } },
+                              required: ["label", "value"],
+                            },
+                          },
+                        },
+                      },
                     },
                     required: ["layout", "title"],
                   },
