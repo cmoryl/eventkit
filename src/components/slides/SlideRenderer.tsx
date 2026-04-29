@@ -393,7 +393,21 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
         </div>
       )}
 
-      {slide.layout === 'chart' && (
+      {slide.layout === 'chart' && slide.variation === 'growth-bars' && slide.chart?.data?.length && (
+        <BrandHubGrowthChart
+          slide={slide}
+          accentColor={accentColor}
+          brandColors={brandColors}
+          headingFont={headingFont}
+          bodyFont={bodyFont}
+          headingColor={headingColor}
+          hSize={hSize}
+          isDark={isDark}
+          align={align}
+        />
+      )}
+
+      {slide.layout === 'chart' && slide.variation !== 'growth-bars' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
           <h2
             className="font-bold mb-[40px]"
