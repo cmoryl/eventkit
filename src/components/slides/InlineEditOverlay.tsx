@@ -438,6 +438,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       if (section) {
         section.title = 'Alt+click or click padding to select section · drag to move';
       }
+    };
 
     root.addEventListener('click', onClick);
     root.addEventListener('dblclick', onDoubleClick);
