@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Download, Pencil, Check, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Copy, Wand2, Minimize2, Maximize2, Shuffle, Sparkles } from "lucide-react";
+import { Download, Pencil, Check, X, Loader2, RefreshCw, ChevronLeft, ChevronRight, Plus, Trash2, Copy, Wand2, Minimize2, Maximize2, Shuffle, Sparkles, BarChart3, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AssetEditDialog, type AssetEditTarget } from "./composer/AssetEditDialog";
 import transperfectHero from "@/assets/templates/transperfect-hero.jpg";
 import transperfectHeroSquare from "@/assets/templates/transperfect-hero-square.jpg";
 import transperfectSectionBg from "@/assets/templates/transperfect-section-bg.jpg";
@@ -23,6 +24,13 @@ export interface SlideChartSpec {
   /** Free-form data; either CSV-like rows or {label, value} pairs the AI will interpret. */
   data: Array<{ label: string; value: number }>;
   notes?: string;
+  /** Optional axis labels (used for bar/line/area/scatter charts). */
+  xLabel?: string;
+  yLabel?: string;
+  /** Series colors as hex (without #). Falls back to deck palette when omitted. */
+  colors?: string[];
+  /** Whether to render a legend below the chart. */
+  showLegend?: boolean;
 }
 
 export interface SlideReferenceImage {
@@ -106,6 +114,10 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
   const [rebuilding, setRebuilding] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<AssetEditTarget | null>(null);
+  // Stable per-slide ids — keyed by index, regenerated only when slide count changes
+  const [slideIds] = useState<string[]>(() => initial.slides.map(() => crypto.randomUUID()));
+  const slideIdFor = (i: number) => slideIds[i] || `slide-${i}`;
 
   const active = outline.slides[activeIdx];
 
@@ -303,13 +315,24 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
           {/* Canvas preview */}
           <div className="p-4 border-b" style={{ background: `#${outline.palette.background}` }}>
             <div
-              className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner bg-cover bg-center"
+              className="aspect-video w-full rounded-lg p-6 flex flex-col justify-between shadow-inner bg-cover bg-center cursor-pointer"
               style={{
                 color: `#${outline.palette.text}`,
                 fontFamily: outline.fonts?.body,
                 backgroundColor: `#${outline.palette.background}`,
                 backgroundImage: templatePreviewImage(templateId, active.layout) ? `url(${templatePreviewImage(templateId, active.layout)})` : undefined,
               }}
+              onDoubleClick={() => {
+                // Prefer chart, then first reference image
+                if (active.chart || active.visualIntent === "chart") {
+                  setEditTarget({ kind: "chart", chart: active.chart });
+                } else if (active.references && active.references.length > 0) {
+                  setEditTarget({ kind: "image", image: active.references[0], index: 0 });
+                } else {
+                  toast({ title: "No editable assets on this slide", description: "Add a chart or reference image below to edit." });
+                }
+              }}
+              title="Double-click to edit chart or first reference image"
             >
               <SlideRenderer slide={active} palette={outline.palette} fonts={outline.fonts} templateId={templateId} />
             </div>
@@ -479,9 +502,78 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
               <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Speaker notes</label>
               <Textarea value={active.notes || ""} onChange={(e) => updateSlide({ notes: e.target.value })} rows={2} className="text-xs" />
             </div>
+
+            {/* Assets — chart + reference images. Double-click any tile to open the editor. */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Assets on this slide</label>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-[10px]"
+                    onClick={() => setEditTarget({ kind: "chart", chart: active.chart })}
+                    title="Add or edit chart"
+                  >
+                    <BarChart3 className="h-3 w-3" /> {active.chart ? "Edit chart" : "Add chart"}
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {active.chart && (
+                  <button
+                    type="button"
+                    onDoubleClick={() => setEditTarget({ kind: "chart", chart: active.chart })}
+                    onClick={() => setEditTarget({ kind: "chart", chart: active.chart })}
+                    className="aspect-video rounded-md border border-border bg-muted/40 hover:border-primary/60 transition-colors flex flex-col items-center justify-center text-[10px] text-muted-foreground gap-1 p-2"
+                    title="Double-click to edit chart"
+                  >
+                    <BarChart3 className="h-5 w-5" style={{ color: `#${outline.palette.accent}` }} />
+                    <span className="font-medium text-foreground">{active.chart.title || `${active.chart.type} chart`}</span>
+                    <span>{active.chart.data?.length || 0} rows · double-click to edit</span>
+                  </button>
+                )}
+                {(active.references || []).map((r, i) => (
+                  <button
+                    type="button"
+                    key={r.url + i}
+                    onDoubleClick={() => setEditTarget({ kind: "image", image: r, index: i })}
+                    onClick={() => setEditTarget({ kind: "image", image: r, index: i })}
+                    className="relative aspect-video rounded-md border border-border bg-muted/40 hover:border-primary/60 transition-colors overflow-hidden group"
+                    title="Double-click to edit (replace, restyle, caption, treatment)"
+                  >
+                    <img src={r.url} alt={r.caption || `ref ${i + 1}`} className="absolute inset-0 w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
+                    <ImageIcon className="absolute top-1 right-1 h-3 w-3 text-white drop-shadow opacity-0 group-hover:opacity-100" />
+                  </button>
+                ))}
+                {!active.chart && (!active.references || active.references.length === 0) && (
+                  <div className="col-span-3 text-[11px] text-muted-foreground italic px-1">
+                    No assets yet. Click "Add chart" above, or add reference images during outline review.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      <AssetEditDialog
+        open={editTarget !== null}
+        onOpenChange={(v) => { if (!v) setEditTarget(null); }}
+        target={editTarget}
+        slideId={slideIdFor(activeIdx)}
+        palette={outline.palette}
+        onChartChange={(chart) => updateSlide({ chart })}
+        onImageChange={(idx, img) => {
+          const next = (active.references || []).map((r, i) => (i === idx ? img : r));
+          updateSlide({ references: next });
+        }}
+        onImageRemove={(idx) => {
+          const next = (active.references || []).filter((_, i) => i !== idx);
+          updateSlide({ references: next });
+        }}
+      />
     </Card>
   );
 };

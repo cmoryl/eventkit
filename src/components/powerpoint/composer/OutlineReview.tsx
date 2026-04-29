@@ -165,6 +165,7 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                       slide={s}
                       slideId={slideIds[i]}
                       onChange={(patch) => updateSlide(i, patch)}
+                      palette={outline.palette}
                     />
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from "react";
-import { Image as ImageIcon, BarChart3, FileText, Sparkles, Upload, X, Loader2, Plus } from "lucide-react";
+import { Image as ImageIcon, BarChart3, FileText, Sparkles, Upload, X, Loader2, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -14,12 +14,16 @@ import type {
   SlideReferenceImage,
   VisualIntent,
   ChartType,
+  DeckOutline,
 } from "../DeckPreview";
+import { AssetEditDialog, type AssetEditTarget } from "./AssetEditDialog";
 
 interface Props {
   slide: SlideOutline;
   slideId: string;            // stable id for storage path; pass a generated key
   onChange: (patch: Partial<SlideOutline>) => void;
+  /** Deck palette for chart color defaults + AI image restyling. */
+  palette?: DeckOutline["palette"];
 }
 
 const VISUAL_INTENTS: { value: VisualIntent; label: string; hint: string }[] = [
@@ -35,12 +39,13 @@ const VISUAL_INTENTS: { value: VisualIntent; label: string; hint: string }[] = [
 const CHART_TYPES: ChartType[] = ["bar", "line", "pie", "donut", "area", "scatter"];
 
 /** Compact, dark-glass per-slide details editor: notes, visual intent, chart data, image refs. */
-export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange }) => {
+export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange, palette }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [chartCsv, setChartCsv] = useState<string>(() => csvFromChart(slide.chart));
   const fileRef = useRef<HTMLInputElement>(null);
+  const [editTarget, setEditTarget] = useState<AssetEditTarget | null>(null);
 
   const setIntent = (v: VisualIntent) => onChange({ visualIntent: v });
 
@@ -161,27 +166,44 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange })
 
       {/* Chart data — show when intent is chart, or always allow opting in */}
       {(slide.visualIntent === "chart" || slide.chart) && (
-        <div className="space-y-1.5 rounded-md border border-white/10 bg-white/[0.04] p-2.5">
+        <div
+          className="space-y-1.5 rounded-md border border-white/10 bg-white/[0.04] p-2.5 cursor-pointer hover:border-cyan-300/40 transition-colors"
+          onDoubleClick={() => setEditTarget({ kind: "chart", chart: slide.chart })}
+          title="Double-click to open full chart editor"
+        >
           <div className="flex items-center justify-between gap-2">
             <Label className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/70">
               <BarChart3 className="h-3 w-3" /> Chart data
             </Label>
-            <Select value={slide.chart?.type || "bar"} onValueChange={(v) => setChartType(v as ChartType)}>
-              <SelectTrigger className="h-7 w-28 text-xs bg-white/5 border-white/10 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHART_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={(e) => { e.stopPropagation(); setEditTarget({ kind: "chart", chart: slide.chart }); }}
+                className="h-7 px-2 text-[11px] text-cyan-300 hover:text-cyan-200 hover:bg-white/5"
+                title="Open full editor (colors, axes, legend)"
+              >
+                <Pencil className="h-3 w-3" /> Edit
+              </Button>
+              <Select value={slide.chart?.type || "bar"} onValueChange={(v) => setChartType(v as ChartType)}>
+                <SelectTrigger className="h-7 w-24 text-xs bg-white/5 border-white/10 text-white" onClick={(e) => e.stopPropagation()}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CHART_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <Input
             value={slide.chart?.title || ""}
             onChange={(e) => onChange({
               chart: { ...(slide.chart || { type: "bar", data: [] }), title: e.target.value },
             })}
+            onClick={(e) => e.stopPropagation()}
             placeholder="Chart title (optional)"
             className="h-8 text-xs bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
@@ -189,11 +211,12 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange })
             value={chartCsv}
             onChange={(e) => setChartCsv(e.target.value)}
             onBlur={commitChartData}
+            onClick={(e) => e.stopPropagation()}
             placeholder={"label, value\nQ1, 12\nQ2, 18\nQ3, 27"}
             rows={4}
             className="text-xs font-mono bg-white/5 border-white/10 text-white placeholder:text-white/40"
           />
-          <p className="text-[10px] text-white/45">One row per data point. The AI will style this to match the deck.</p>
+          <p className="text-[10px] text-white/45">Quick-edit here, or double-click the card to fine-tune colors, axes, and legend.</p>
         </div>
       )}
 
@@ -226,17 +249,30 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange })
         {(slide.references && slide.references.length > 0) ? (
           <div className="grid grid-cols-3 gap-2">
             {slide.references.map((r, i) => (
-              <div key={r.url + i} className="relative rounded-md overflow-hidden border border-white/10 bg-white/5">
+              <div
+                key={r.url + i}
+                className="relative rounded-md overflow-hidden border border-white/10 bg-white/5 cursor-pointer hover:border-cyan-300/40 transition-colors"
+                onDoubleClick={() => setEditTarget({ kind: "image", image: r, index: i })}
+                title="Double-click to edit (replace, restyle, caption, treatment)"
+              >
                 <img src={r.url} alt={r.caption || `ref ${i + 1}`} className="w-full h-20 object-cover" />
                 <button
                   type="button"
-                  onClick={() => removeRef(i)}
+                  onClick={(e) => { e.stopPropagation(); setEditTarget({ kind: "image", image: r, index: i }); }}
+                  className="absolute top-1 left-1 rounded-full bg-cyan-500/80 hover:bg-cyan-400 text-[#0A0838] p-0.5"
+                  title="Edit"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); removeRef(i); }}
                   className="absolute top-1 right-1 rounded-full bg-black/60 hover:bg-black/80 text-white p-0.5"
                   title="Remove"
                 >
                   <X className="h-3 w-3" />
                 </button>
-                <div className="p-1.5 space-y-1">
+                <div className="p-1.5 space-y-1" onClick={(e) => e.stopPropagation()}>
                   <Input
                     value={r.caption || ""}
                     onChange={(e) => setRefCaption(i, e.target.value)}
@@ -270,6 +306,26 @@ export const SlideDetailsPanel: React.FC<Props> = ({ slide, slideId, onChange })
           </button>
         )}
       </div>
+
+      <AssetEditDialog
+        open={editTarget !== null}
+        onOpenChange={(v) => { if (!v) setEditTarget(null); }}
+        target={editTarget}
+        slideId={slideId}
+        palette={palette}
+        onChartChange={(chart) => {
+          onChange({ chart });
+          setChartCsv(csvFromChart(chart));
+        }}
+        onImageChange={(idx, img) => {
+          const next = (slide.references || []).map((r, i) => (i === idx ? img : r));
+          onChange({ references: next });
+        }}
+        onImageRemove={(idx) => {
+          const next = (slide.references || []).filter((_, i) => i !== idx);
+          onChange({ references: next });
+        }}
+      />
     </div>
   );
 };
