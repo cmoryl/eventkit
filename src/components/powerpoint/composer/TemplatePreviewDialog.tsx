@@ -771,7 +771,15 @@ export const SlideMock: React.FC<{
               Agenda
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">What we'll cover</h3>
+          <Editable
+            as="div"
+            ariaLabel="Agenda heading"
+            editing={editing}
+            value={headingFor("agenda", "What we'll cover")}
+            onChange={(v) => updateHeading("agenda", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
             {content.agenda.map((a, i) => (
               <div
@@ -787,30 +795,60 @@ export const SlideMock: React.FC<{
                     border: `1px solid ${t.palette.accent}`,
                   }}
                 >
-                  {a.step}
+                  <Editable
+                    ariaLabel={`Agenda ${i + 1} step`}
+                    editing={editing}
+                    value={a.step}
+                    onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, step: v } : item)) }))}
+                    className="inline-block"
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="text-sm font-bold leading-tight">{a.title}</div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Agenda ${i + 1} title`}
+                      editing={editing}
+                      value={a.title}
+                      onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, title: v } : item)) }))}
+                      className="text-sm font-bold leading-tight"
+                    />
                     {a.duration && (
-                      <span
+                      <Editable
+                        ariaLabel={`Agenda ${i + 1} duration`}
+                        editing={editing}
+                        value={a.duration}
+                        onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, duration: v } : item)) }))}
+                        className="text-[9px] font-mono px-1.5 py-0.5 rounded"
                         className="text-[9px] font-mono px-1.5 py-0.5 rounded"
                         style={{ background: `${t.palette.accent}22`, color: t.palette.accent }}
-                      >
-                        {a.duration}
-                      </span>
+                      />
                     )}
                   </div>
-                  <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
-                    {a.body}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Agenda ${i + 1} body`}
+                    editing={editing}
+                    value={a.body}
+                    multiline
+                    onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, body: v } : item)) }))}
+                    className="text-[11px] mt-1 leading-snug"
+                    style={{ color: muted }}
+                  />
                   {a.owner && (
                     <div className="mt-2 flex items-center gap-1.5 text-[10px]" style={{ color: muted }}>
                       <span
                         className="inline-block h-1 w-1 rounded-full"
                         style={{ background: t.palette.accent }}
                       />
-                      <span className="truncate">Led by {a.owner}</span>
+                      <span>Led by</span>
+                      <Editable
+                        ariaLabel={`Agenda ${i + 1} owner`}
+                        editing={editing}
+                        value={a.owner}
+                        onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, owner: v } : item)) }))}
+                        className="truncate"
+                      />
                     </div>
                   )}
                 </div>
