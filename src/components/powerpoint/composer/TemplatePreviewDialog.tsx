@@ -297,6 +297,14 @@ const SlideMock: React.FC<{
   const subtleBorder = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.14)";
   const cardBg = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)";
   const thumb = TEMPLATE_THUMBNAILS[t.id];
+  // Imagery rotation per slide so different layouts feature different visuals.
+  const imagery = content.imagery && content.imagery.length > 0 ? content.imagery : (thumb ? [thumb] : []);
+  const imageAt = (i: number): string | undefined =>
+    imagery.length ? imagery[i % imagery.length] : undefined;
+  const titleImg = imageAt(0) || thumb;
+  const sectionImg = imageAt(1) || thumb;
+  const quoteImg = imageAt(2) || thumb;
+  const featureImg = imageAt(3) || thumb;
 
   const update = (fn: (c: DemoContent) => DemoContent) =>
     setContent((prev) => (prev ? fn(prev) : prev));
