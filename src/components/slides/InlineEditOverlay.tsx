@@ -319,7 +319,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
   };
 
   return (
-    <>
+    <div className="relative w-full h-full">
       <div ref={wrapperRef} className="contents">
         {children}
       </div>
