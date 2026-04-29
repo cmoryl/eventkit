@@ -96,7 +96,41 @@ const PowerPointAgent: React.FC = () => {
   const [mode, setMode] = useState<Mode>("prompt");
   const [pendingOutline, setPendingOutline] = useState<DeckOutline | null>(null);
   const [pasteText, setPasteText] = useState("");
-  const [searchParams] = useSearchParams();
+  const [parallaxMode, setParallaxMode] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = (searchParams.get("tab") === "editor" ? "editor" : "agent") as "agent" | "editor";
+  const setActiveTab = useCallback((t: "agent" | "editor") => {
+    const next = new URLSearchParams(searchParams);
+    if (t === "agent") next.delete("tab"); else next.set("tab", t);
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // Convert the most recent built deck's outline into SlideData[] for the inline SlideEditor.
+  const editorInitialSlides = useMemo(() => {
+    const lastDeck = [...history].reverse().find((h) => h.deck?.outline)?.deck;
+    if (!lastDeck?.outline) return undefined;
+    return lastDeck.outline.slides.map((s) => {
+      const variant: "default" | "dark" | "gradient" | "brand" = parallaxMode ? "gradient" : "default";
+      const base: any = {
+        id: crypto.randomUUID(),
+        title: s.title,
+        subtitle: s.subtitle,
+        body: (s.bullets || []).map((b) => `• ${b}`).join("\n"),
+        notes: s.notes,
+        variant,
+      };
+      if (parallaxMode) return { ...base, layout: "parallax" };
+      switch (s.layout) {
+        case "title": return { ...base, layout: "title" };
+        case "section": return { ...base, layout: "title" };
+        case "two_column": return { ...base, layout: "two-column" };
+        case "stat": return { ...base, layout: "big-number", stats: s.stat ? [{ value: s.stat.value, label: s.stat.label }] : [] };
+        case "quote": return { ...base, layout: "quote", title: s.quote?.text || s.title, quoteAuthor: s.quote?.attribution };
+        case "closing": return { ...base, layout: "title" };
+        default: return { ...base, layout: "content" };
+      }
+    });
+  }, [history, parallaxMode]);
 
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
     setSelectedTemplateId(tpl.id);
