@@ -559,7 +559,7 @@ const PowerPointAgent: React.FC = () => {
   return (
     <div
       data-ppt-agent
-      className="ppt-agent-page min-h-screen flex flex-col"
+      className="ppt-agent-page min-h-screen flex flex-col relative"
       style={{
         backgroundColor: '#03002C',
         backgroundImage: `url(${horizonBg})`,
@@ -568,6 +568,16 @@ const PowerPointAgent: React.FC = () => {
         backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed',
       }}>
+      {/* Readability scrim — keeps body content legible against the bright cyan
+          horizon dome without losing the atmospheric glow at the edges. */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 50% 55%, rgba(3,0,44,0.55) 0%, rgba(3,0,44,0.35) 45%, rgba(3,0,44,0) 80%)',
+        }}
+      />
       {/* Scoped readable typography — works against navy sky AND bright cyan dome,
           independent of light/dark theme */}
       <style>{`
