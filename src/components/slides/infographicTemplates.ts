@@ -940,3 +940,56 @@ export const INFOGRAPHIC_TEMPLATES: InfographicTemplate[] = [
     },
   },
 ];
+
+/* ------------------------------------------------------------------ */
+/* Default demo-style assignment                                      */
+/* Distributes the 7 demo deck styles across all templates so the     */
+/* gallery showcases the full TransPerfect / Modern Dark / Editorial /*/
+/* Corporate / Vibrant / Terracotta / Brutalist look-and-feel.        */
+/* ------------------------------------------------------------------ */
+const STYLE_CYCLE: DemoThemeId[] = [
+  'transperfect',
+  'modern-dark',
+  'corporate-navy',
+  'vibrant-startup',
+  'editorial-light',
+  'warm-terracotta',
+  'mono-brutalist',
+];
+
+// Curated overrides — pin templates to the style they read best in.
+const STYLE_OVERRIDES: Record<string, DemoThemeId> = {
+  'stat-hero-roi':            'transperfect',
+  'stat-grid-4':              'editorial-light',
+  'stat-ranked-3':            'transperfect',
+  'stat-big-percent':         'modern-dark',
+  'stat-trend-dashboard':     'modern-dark',
+  'stat-quarterly-vs':        'corporate-navy',
+  'chart-bar-quarterly':      'transperfect',
+  'chart-line-trend':         'modern-dark',
+  'chart-donut':              'vibrant-startup',
+  'chart-multi-series':       'corporate-navy',
+  'chart-pie-mix':            'warm-terracotta',
+  'chart-actual-vs-target':   'transperfect',
+  'timeline-horizontal':      'corporate-navy',
+  'timeline-year-review':     'transperfect',
+  'timeline-roadmap-launch':  'modern-dark',
+  'process-linear-4':         'editorial-light',
+  'process-funnel-5':         'vibrant-startup',
+  'comparison-before-after':  'editorial-light',
+  'comparison-pros-cons':     'mono-brutalist',
+  'list-agenda-numbered':     'corporate-navy',
+  'list-key-points':          'editorial-light',
+  'hero-gradient-title':      'transperfect',
+  'hero-bold-statement':      'mono-brutalist',
+  'section-divider-mesh':     'modern-dark',
+  'section-featured-quote':   'warm-terracotta',
+  'section-thank-you':        'transperfect',
+};
+
+for (let i = 0; i < INFOGRAPHIC_TEMPLATES.length; i++) {
+  const t = INFOGRAPHIC_TEMPLATES[i];
+  if (!t.theme) {
+    t.theme = STYLE_OVERRIDES[t.id] ?? STYLE_CYCLE[i % STYLE_CYCLE.length];
+  }
+}
