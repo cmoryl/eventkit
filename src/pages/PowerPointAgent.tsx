@@ -166,6 +166,31 @@ const PowerPointAgent: React.FC = () => {
     toast({ title: `${tpl.name} template applied`, description: "Look & feel locked in. Edit the topic and hit Generate." });
   }, [toast]);
 
+  // Pick the best matching starter deck for a given DeckTemplate.
+  // Strategy: match the template's demo theme (TransPerfect / Modern Dark / Editorial Light, etc.)
+  // and grab the first SLIDE_TEMPLATES entry that targets the same theme. Falls back to "Keynote".
+  const buildStarterSlidesForTemplate = useCallback((tpl: DeckTemplate): SlideData[] => {
+    const themeId = DECK_TEMPLATE_TO_DEMO_THEME[tpl.id] || resolveDemoThemeId(tpl.id, tpl.palette);
+    const candidates = SLIDE_TEMPLATES.filter((t) => t.theme === themeId);
+    const pick = candidates[0] || SLIDE_TEMPLATES[0];
+    return pick.slides.map((s) => ({ ...s, id: crypto.randomUUID() } as SlideData));
+  }, []);
+
+  const openTemplateInEditor = useCallback((tpl: DeckTemplate) => {
+    setSelectedTemplateId(tpl.id);
+    setThemeOverride(tpl.themePrompt);
+    setShowTemplateGallery(false);
+    const starter = buildStarterSlidesForTemplate(tpl);
+    setTemplateStarterSlides(starter);
+    // Jump straight into the editor tab — bypass outline review entirely.
+    setActiveTab("editor");
+    toast({
+      title: `${tpl.name} loaded into editor`,
+      description: `${starter.length} starter slides ready — edit anything, then Save as Template to keep your version.`,
+    });
+  }, [buildStarterSlidesForTemplate, setActiveTab, toast]);
+
+
   // Apply ?template= from URL once brands etc. are ready
   useEffect(() => {
     const tplId = searchParams.get("template");
