@@ -725,6 +725,8 @@ const PowerPointAgent: React.FC = () => {
                 setTone={setTone}
                 audience={audience}
                 setAudience={setAudience}
+                parallaxMode={parallaxMode}
+                setParallaxMode={setParallaxMode}
                 disabled={isGenerating}
               />
 
