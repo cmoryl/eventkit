@@ -49,6 +49,19 @@ interface DeckRequest {
   planOnly?: boolean; // when true, return outline only — skip .pptx build & upload
 }
 
+interface SlideChartSpec {
+  type: "bar" | "line" | "pie" | "donut" | "area" | "scatter";
+  title?: string;
+  data: Array<{ label: string; value: number }>;
+  notes?: string;
+}
+
+interface SlideReferenceImage {
+  url: string;
+  caption?: string;
+  treatment?: "style-match" | "as-is" | "inspiration";
+}
+
 interface SlideOutline {
   layout: "title" | "section" | "bullets" | "two_column" | "stat" | "quote" | "closing";
   title: string;
@@ -59,6 +72,10 @@ interface SlideOutline {
   stat?: { value: string; label: string };
   quote?: { text: string; attribution?: string };
   notes?: string;
+  designNotes?: string;
+  visualIntent?: "auto" | "photo" | "infographic" | "chart" | "icon-grid" | "screenshot" | "none";
+  chart?: SlideChartSpec;
+  references?: SlideReferenceImage[];
 }
 
 interface DeckOutline {
