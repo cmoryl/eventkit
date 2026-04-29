@@ -820,7 +820,6 @@ export const SlideMock: React.FC<{
                         value={a.duration}
                         onChange={(v) => update((c) => ({ ...c, agenda: c.agenda.map((item, idx) => (idx === i ? { ...item, duration: v } : item)) }))}
                         className="text-[9px] font-mono px-1.5 py-0.5 rounded"
-                        className="text-[9px] font-mono px-1.5 py-0.5 rounded"
                         style={{ background: `${t.palette.accent}22`, color: t.palette.accent }}
                       />
                     )}
