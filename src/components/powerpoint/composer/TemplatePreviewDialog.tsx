@@ -1808,7 +1808,15 @@ export const SlideMock: React.FC<{
               Bento highlights
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Why teams pick us</h3>
+          <Editable
+            as="div"
+            ariaLabel="Bento heading"
+            editing={editing}
+            value={headingFor("bento", "Why teams pick us")}
+            onChange={(v) => updateHeading("bento", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-4 grid grid-cols-4 grid-rows-3 gap-2.5 flex-1">
             {content.bento.map((b, i) => {
               const Ic = b.icon;
@@ -1882,18 +1890,36 @@ export const SlideMock: React.FC<{
                         className="text-xl font-extrabold tracking-tight"
                         style={{ color: t.palette.accent }}
                       >
-                        {b.metric}
+                        <Editable
+                          ariaLabel={`Bento ${i + 1} metric`}
+                          editing={editing}
+                          value={b.metric}
+                          onChange={(v) => update((c) => ({ ...c, bento: c.bento.map((tile, idx) => (idx === i ? { ...tile, metric: v } : tile)) }))}
+                          className="inline-block"
+                        />
                       </div>
                     )}
                   </div>
                   <div className="relative">
                     <div className="text-[12px] font-bold leading-tight" style={{ color: t.palette.text }}>
-                      {b.title}
+                      <Editable
+                        ariaLabel={`Bento ${i + 1} title`}
+                        editing={editing}
+                        value={b.title}
+                        onChange={(v) => update((c) => ({ ...c, bento: c.bento.map((tile, idx) => (idx === i ? { ...tile, title: v } : tile)) }))}
+                      />
                     </div>
                     {b.body && (
-                      <div className="text-[10px] mt-1 leading-snug" style={{ color: muted }}>
-                        {b.body}
-                      </div>
+                      <Editable
+                        as="div"
+                        ariaLabel={`Bento ${i + 1} body`}
+                        editing={editing}
+                        value={b.body}
+                        multiline
+                        onChange={(v) => update((c) => ({ ...c, bento: c.bento.map((tile, idx) => (idx === i ? { ...tile, body: v } : tile)) }))}
+                        className="text-[10px] mt-1 leading-snug"
+                        style={{ color: muted }}
+                      />
                     )}
                   </div>
                 </div>
