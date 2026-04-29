@@ -931,3 +931,16 @@ const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<Slid
     ],
   },
 ];
+
+/**
+ * Public template catalog — content + matching demo theme baked in so every
+ * template renders with the same look-and-feel as the composer's gallery
+ * previews (TransPerfect orbs, Modern Dark mesh, Editorial Light grain, etc.).
+ */
+export const SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<SlideData, 'id'>[] }[] =
+  RAW_SLIDE_TEMPLATES.map((t) => ({
+    name: t.name,
+    theme: t.theme,
+    slides: applyDemoTheme(t.slides, t.theme),
+  }));
+
