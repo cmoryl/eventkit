@@ -844,13 +844,13 @@ const SlideMock: React.FC<{
               ))}
             </div>
           </div>
-          {thumb ? (
+          {featureImg ? (
             <div
               className="relative aspect-[4/3] rounded-xl overflow-hidden"
               style={{ border: `1px solid ${subtleBorder}` }}
             >
               <img
-                src={thumb}
+                src={featureImg}
                 alt=""
                 loading="lazy"
                 aria-hidden
