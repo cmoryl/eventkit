@@ -968,7 +968,15 @@ export const SlideMock: React.FC<{
               Card layout
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">What you get</h3>
+          <Editable
+            as="div"
+            ariaLabel="Cards heading"
+            editing={editing}
+            value={headingFor("cards", "What you get")}
+            onChange={(v) => updateHeading("cards", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-3 gap-3 mt-5 flex-1">
             {content.cards.map((c, i) => {
               const Ic = c.icon;
@@ -1092,7 +1100,15 @@ export const SlideMock: React.FC<{
               By the numbers
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">The signals that matter</h3>
+          <Editable
+            as="div"
+            ariaLabel="Metrics heading"
+            editing={editing}
+            value={headingFor("metrics", "The signals that matter")}
+            onChange={(v) => updateHeading("metrics", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
@@ -1128,7 +1144,12 @@ export const SlideMock: React.FC<{
                         {m.direction === "up" && <span style={{ color: t.palette.accent }}>▲</span>}
                         {m.direction === "down" && <span style={{ color: t.palette.accent }}>▼</span>}
                         {m.direction === "flat" && <span style={{ color: muted }}>—</span>}
-                        {m.trend}
+                        <Editable
+                          ariaLabel={`Metric ${i + 1} trend`}
+                          editing={editing}
+                          value={m.trend}
+                          onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, trend: v } : metric)) }))}
+                        />
                       </span>
                     )}
                   </div>
@@ -1152,15 +1173,33 @@ export const SlideMock: React.FC<{
                       className="text-3xl font-extrabold leading-none tracking-tight"
                       style={{ color: t.palette.accent }}
                     >
-                      {m.value}
+                      <Editable
+                        ariaLabel={`Metric ${i + 1} value`}
+                        editing={editing}
+                        value={m.value}
+                        onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, value: v } : metric)) }))}
+                        className="inline-block"
+                      />
                     </div>
-                    <div className="text-[11px] mt-1 font-semibold" style={{ color: t.palette.text }}>
-                      {m.label}
-                    </div>
+                    <Editable
+                      as="div"
+                      ariaLabel={`Metric ${i + 1} label`}
+                      editing={editing}
+                      value={m.label}
+                      onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, label: v } : metric)) }))}
+                      className="text-[11px] mt-1 font-semibold"
+                      style={{ color: t.palette.text }}
+                    />
                     {m.sublabel && (
-                      <div className="text-[9px] mt-0.5 leading-snug" style={{ color: muted }}>
-                        {m.sublabel}
-                      </div>
+                      <Editable
+                        as="div"
+                        ariaLabel={`Metric ${i + 1} sublabel`}
+                        editing={editing}
+                        value={m.sublabel}
+                        onChange={(v) => update((c) => ({ ...c, metrics: c.metrics.map((metric, idx) => (idx === i ? { ...metric, sublabel: v } : metric)) }))}
+                        className="text-[9px] mt-0.5 leading-snug"
+                        style={{ color: muted }}
+                      />
                     )}
                   </div>
                 </div>
