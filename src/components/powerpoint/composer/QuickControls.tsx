@@ -1,5 +1,7 @@
 import React from "react";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Layers } from "lucide-react";
 
 interface Props {
   slideCount: number;
@@ -8,6 +10,8 @@ interface Props {
   setTone: (t: string) => void;
   audience: string;
   setAudience: (a: string) => void;
+  parallaxMode?: boolean;
+  setParallaxMode?: (v: boolean) => void;
   disabled?: boolean;
 }
 
@@ -16,10 +20,11 @@ const AUDIENCES = ["Executives", "Clients", "Internal team", "Investors", "Stude
 
 /**
  * Always-visible controls customers expect (Gamma / Beautiful.ai style):
- * slide count slider + tone chips + audience chips.
+ * slide count slider + tone chips + audience chips + 3D parallax / MP4 export toggle.
  */
 export const QuickControls: React.FC<Props> = ({
-  slideCount, setSlideCount, tone, setTone, audience, setAudience, disabled,
+  slideCount, setSlideCount, tone, setTone, audience, setAudience,
+  parallaxMode, setParallaxMode, disabled,
 }) => (
   <div className="rounded-2xl border bg-card/60 backdrop-blur-sm p-4 space-y-4 max-w-3xl mx-auto">
     {/* Slide count */}
