@@ -52,16 +52,20 @@ export const BrandPopover: React.FC<Props> = ({
           variant={active ? "default" : "outline"}
           size="sm"
           disabled={disabled}
-          className="h-9 rounded-full gap-2"
+          className={
+            active
+              ? "h-9 rounded-full gap-2"
+              : "h-9 rounded-full gap-2 bg-white/10 border-white/20 text-white hover:bg-white/15 hover:text-white"
+          }
         >
           {active && swatch ? (
             <span className="h-3 w-3 rounded-full border border-border/60" style={{ background: swatch }} />
           ) : (
-            <Palette className="h-3.5 w-3.5" />
+            <Palette className="h-3.5 w-3.5 text-white/80" />
           )}
-          <span className="text-xs">{active ? selected!.name : "Add brand"}</span>
+          <span className="text-xs text-white">{active ? selected!.name : "Add brand"}</span>
           {active && selected!.isFromBrandHub && (
-            <span className="text-[10px] opacity-70">· BrandHub</span>
+            <span className="text-[10px] text-white/70">· BrandHub</span>
           )}
         </Button>
       </PopoverTrigger>
