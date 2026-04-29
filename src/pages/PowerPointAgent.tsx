@@ -937,7 +937,7 @@ const PowerPointAgent: React.FC = () => {
       </main>
 
       {/* Sticky footer composer — only shown after the first deck */}
-      {history.length > 0 && (
+      {history.length > 0 && activeTab === "agent" && (
         <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0">
           <div className="max-w-6xl mx-auto px-6 py-3 space-y-2">
             <form
