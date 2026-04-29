@@ -1509,10 +1509,15 @@ const SlideMock: React.FC<{
                     {p.cadence}
                   </span>
                 </div>
+                {p.limit && (
+                  <div className="text-[9px] mt-1 font-mono" style={{ color: muted }}>
+                    {p.limit}
+                  </div>
+                )}
                 <div className="text-[11px] mt-1 italic" style={{ color: muted }}>
                   {p.tagline}
                 </div>
-                <ul className="mt-4 space-y-1.5">
+                <ul className="mt-4 space-y-1.5 flex-1">
                   {p.features.map((f, fi) => (
                     <li key={fi} className="flex gap-2 items-start text-[11px]">
                       <CheckIcon
@@ -1523,6 +1528,18 @@ const SlideMock: React.FC<{
                     </li>
                   ))}
                 </ul>
+                {p.cta && (
+                  <div
+                    className="mt-3 text-center text-[10px] font-bold uppercase tracking-wider rounded-md py-1.5"
+                    style={{
+                      background: p.highlighted ? t.palette.accent : "transparent",
+                      color: p.highlighted ? t.palette.bg : t.palette.accent,
+                      border: `1px solid ${t.palette.accent}`,
+                    }}
+                  >
+                    {p.cta}
+                  </div>
+                )}
               </div>
             ))}
           </div>
