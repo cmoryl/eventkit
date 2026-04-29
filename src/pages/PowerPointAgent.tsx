@@ -726,6 +726,52 @@ const PowerPointAgent: React.FC = () => {
               {/* Step 1 — choose mode */}
               <ModeCards active={mode} onChange={setMode} disabled={isGenerating} />
 
+              {/* Blank mode — prominent template showcase at the top */}
+              {mode === "blank" && (
+                <div className="pt-2">
+                  {selectedTemplateId ? (() => {
+                    const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === selectedTemplateId);
+                    if (!tpl) return null;
+                    return (
+                      <div className="max-w-3xl mx-auto flex items-center gap-3 rounded-xl border bg-card/60 backdrop-blur-sm p-3 text-left">
+                        <div
+                          className="h-10 w-14 rounded-md border shrink-0"
+                          style={{ background: tpl.palette.bg }}
+                        >
+                          <div className="flex gap-1 p-1.5">
+                            <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.accent }} />
+                            <span className="h-2 w-2 rounded-full" style={{ background: tpl.palette.secondary }} />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold flex items-center gap-1.5">
+                            <Check className="h-3.5 w-3.5 text-primary" />
+                            {tpl.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{tpl.description || "Look & feel applied to your deck"}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => { setSelectedTemplateId(""); setThemeOverride(""); }}
+                        >
+                          Change
+                        </Button>
+                      </div>
+                    );
+                  })() : (
+                    <TemplateGallery
+                      selectedId={selectedTemplateId}
+                      onSelect={applyTemplate}
+                      disabled={isGenerating}
+                      variant="showcase"
+                    />
+                  )}
+                </div>
+              )}
+
+
               {/* Step 2 — composer (user input) */}
               <form
                 onSubmit={(e) => {

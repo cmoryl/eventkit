@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALL_PRESENTATION_TEMPLATES } from "@/config/editableTemplates/presentationTemplates";
+import { TemplateDemoCard } from "./TemplateDemoCard";
 
 export interface DeckTemplate {
   id: string;
@@ -98,6 +99,8 @@ interface Props {
   selectedId: string | null;
   onSelect: (template: DeckTemplate) => void;
   disabled?: boolean;
+  /** "compact" = small cards (legacy). "showcase" = rich demo cards at top of blank mode. */
+  variant?: "compact" | "showcase";
 }
 
 const TemplateCard: React.FC<{
@@ -141,7 +144,7 @@ const TemplateCard: React.FC<{
   </button>
 );
 
-export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disabled }) => {
+export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disabled, variant = "compact" }) => {
   const [browseOpen, setBrowseOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -155,12 +158,21 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
     );
   }, [search]);
 
+  const isShowcase = variant === "showcase";
+
   return (
-    <div className="max-w-3xl mx-auto pt-2 space-y-3">
+    <div className={`${isShowcase ? "max-w-6xl" : "max-w-3xl"} mx-auto pt-2 space-y-3`}>
       <div className="flex items-center justify-between px-1">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-          Pick a template
-        </p>
+        <div>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            {isShowcase ? "Pick a fully-built template" : "Pick a template"}
+          </p>
+          {isShowcase && (
+            <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+              Each template includes a title, card grid, stats and quote layouts — ready to populate.
+            </p>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setBrowseOpen(true)}
@@ -170,20 +182,35 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
           Browse all {ALL_DECK_TEMPLATES.length}
         </button>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {DECK_TEMPLATES.map((t) => (
-          <TemplateCard
-            key={t.id}
-            template={t}
-            selected={selectedId === t.id}
-            disabled={disabled}
-            onClick={() => onSelect(t)}
-          />
-        ))}
-      </div>
+
+      {isShowcase ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {DECK_TEMPLATES.map((t) => (
+            <TemplateDemoCard
+              key={t.id}
+              template={t}
+              selected={selectedId === t.id}
+              disabled={disabled}
+              onClick={() => onSelect(t)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {DECK_TEMPLATES.map((t) => (
+            <TemplateCard
+              key={t.id}
+              template={t}
+              selected={selectedId === t.id}
+              disabled={disabled}
+              onClick={() => onSelect(t)}
+            />
+          ))}
+        </div>
+      )}
 
       <Dialog open={browseOpen} onOpenChange={setBrowseOpen}>
-        <DialogContent className="max-w-5xl w-[95vw] h-[85vh] p-0 overflow-hidden flex flex-col gap-0">
+        <DialogContent className="max-w-6xl w-[95vw] h-[88vh] p-0 overflow-hidden flex flex-col gap-0">
           <div className="flex items-center justify-between border-b px-5 py-3 shrink-0">
             <div className="flex items-center gap-2">
               <LayoutGrid className="h-4 w-4 text-primary" />
@@ -208,24 +235,55 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, disable
             </div>
           </div>
           <ScrollArea className="flex-1">
-            <div className="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {filtered.map((t) => (
-                <TemplateCard
-                  key={t.id}
-                  template={t}
-                  selected={selectedId === t.id}
-                  disabled={disabled}
-                  onClick={() => {
-                    onSelect(t);
-                    setBrowseOpen(false);
-                  }}
-                />
-              ))}
-              {filtered.length === 0 && (
-                <div className="col-span-full text-center text-sm text-muted-foreground py-12">
-                  No templates match "{search}".
+            <div className="p-5 space-y-6">
+              {!search.trim() && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Featured · fully-built demos
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {DECK_TEMPLATES.map((t) => (
+                      <TemplateDemoCard
+                        key={t.id}
+                        template={t}
+                        selected={selectedId === t.id}
+                        disabled={disabled}
+                        onClick={() => {
+                          onSelect(t);
+                          setBrowseOpen(false);
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               )}
+
+              <div>
+                {!search.trim() && (
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Library
+                  </h3>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {(search.trim() ? filtered : LIBRARY_TEMPLATES).map((t) => (
+                    <TemplateCard
+                      key={t.id}
+                      template={t}
+                      selected={selectedId === t.id}
+                      disabled={disabled}
+                      onClick={() => {
+                        onSelect(t);
+                        setBrowseOpen(false);
+                      }}
+                    />
+                  ))}
+                  {filtered.length === 0 && (
+                    <div className="col-span-full text-center text-sm text-muted-foreground py-12">
+                      No templates match "{search}".
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </ScrollArea>
         </DialogContent>
