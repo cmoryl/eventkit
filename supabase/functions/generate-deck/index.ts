@@ -562,9 +562,10 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
 
       case "bullets":
       default: {
-        // Optional template "feature image" panel on the right (content slides only)
-        const featureImg = templateImages.card || templateImages.heroSquare;
-        const hasFeature = !!featureImg && idx > 0 && idx % 3 === 0; // every 3rd content slide
+        // Feature image: prefer per-slide image (user upload or AI), else template fallback
+        const tplFeature = templateImages.card || templateImages.heroSquare;
+        const featureImg = slideImg || (idx > 0 && idx % 3 === 0 ? tplFeature : undefined);
+        const hasFeature = !!featureImg;
         const contentW = hasFeature ? W - PAD * 3 - 4.5 : W - PAD * 2;
 
         slide.addShape("rect", { x: PAD, y: PAD + 0.95, w: 0.6, h: 0.06, fill: { color: ACCENT } });
