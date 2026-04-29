@@ -246,6 +246,9 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                       className="text-sm bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   )}
+                  {/* Render the actual user content for rich layouts so stats/columns/quotes are visible & editable */}
+                  <RichContentEditor slide={s} onChange={(patch) => updateSlide(i, patch)} />
+
                   {open && (
                     <SlideDetailsPanel
                       slide={s}
