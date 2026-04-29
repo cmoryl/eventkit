@@ -17,16 +17,6 @@ export const DEMO_BY_TEMPLATE: Record<
     quote: { text: string; by: string };
   }
 > = {
-  string,
-  {
-    eyebrow: string;
-    title: string;
-    subtitle: string;
-    cards: { title: string; body: string }[];
-    stat: { value: string; label: string };
-    quote: { text: string; by: string };
-  }
-> = {
   "transperfect-2026": {
     eyebrow: "Global Solutions · 2026",
     title: "Speak every market.",
