@@ -89,9 +89,13 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
           // simpler: always expanded; collapse on click of the chevron later
           void collapsed;
           return (
-            <Card key={i} className="p-3 group hover:border-primary/40 transition-colors">
+            <Card
+              key={i}
+              className="p-3 group transition-colors border border-white/10 bg-[#0A0838]/55 hover:border-cyan-300/40"
+              style={{ backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" }}
+            >
               <div className="flex items-start gap-2">
-                <div className="flex flex-col items-center gap-1 pt-1.5 text-muted-foreground">
+                <div className="flex flex-col items-center gap-1 pt-1.5 text-white/55">
                   <GripVertical className="h-4 w-4" />
                   <span className="text-[10px] font-mono">{i + 1}</span>
                 </div>
@@ -100,17 +104,17 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                     <select
                       value={s.layout}
                       onChange={(e) => updateSlide(i, { layout: e.target.value as SlideOutline["layout"] })}
-                      className="text-[10px] uppercase tracking-wider rounded-full border bg-background px-2 py-0.5"
+                      className="text-[10px] uppercase tracking-wider rounded-full border border-white/15 bg-white/10 text-white/90 px-2 py-0.5 backdrop-blur-sm"
                     >
                       {(Object.keys(LAYOUT_LABELS) as SlideOutline["layout"][]).map((l) => (
-                        <option key={l} value={l}>{LAYOUT_LABELS[l]}</option>
+                        <option key={l} value={l} className="bg-[#0A0838] text-white">{LAYOUT_LABELS[l]}</option>
                       ))}
                     </select>
                     <Input
                       value={s.title}
                       onChange={(e) => updateSlide(i, { title: e.target.value })}
                       placeholder="Slide title"
-                      className="font-semibold h-8 flex-1"
+                      className="font-semibold h-8 flex-1 bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   </div>
                   {(s.layout === "bullets" || s.layout === "section" || s.layout === "title" || s.layout === "closing") && (
@@ -123,7 +127,7 @@ export const OutlineReview: React.FC<Props> = ({ outline, onChange, onBack, onCo
                       }}
                       placeholder={s.layout === "bullets" ? "One bullet per line" : "Subtitle"}
                       rows={s.layout === "bullets" ? 3 : 1}
-                      className="text-sm"
+                      className="text-sm bg-white/5 border-white/10 text-white placeholder:text-white/40"
                     />
                   )}
                 </div>
