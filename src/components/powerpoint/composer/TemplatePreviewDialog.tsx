@@ -2193,7 +2193,15 @@ export const SlideMock: React.FC<{
               The team
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Built by operators</h3>
+          <Editable
+            as="div"
+            ariaLabel="Team heading"
+            editing={editing}
+            value={headingFor("team", "Built by operators")}
+            onChange={(v) => updateHeading("team", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-6 grid grid-cols-4 gap-4 flex-1">
             {content.team.map((m, i) => (
               <div
@@ -2214,14 +2222,32 @@ export const SlideMock: React.FC<{
                     color: t.palette.bg,
                   }}
                 >
-                  {m.initials}
+                  <Editable
+                    ariaLabel={`Team member ${i + 1} initials`}
+                    editing={editing}
+                    value={m.initials}
+                    onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, initials: v } : member)) }))}
+                    className="inline-block"
+                  />
                 </div>
-                <div className="relative text-sm font-bold leading-tight" style={{ color: t.palette.text }}>
-                  {m.name}
-                </div>
-                <div className="relative text-[11px] mt-0.5 leading-snug" style={{ color: muted }}>
-                  {m.role}
-                </div>
+                <Editable
+                  as="div"
+                  ariaLabel={`Team member ${i + 1} name`}
+                  editing={editing}
+                  value={m.name}
+                  onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, name: v } : member)) }))}
+                  className="relative text-sm font-bold leading-tight"
+                  style={{ color: t.palette.text }}
+                />
+                <Editable
+                  as="div"
+                  ariaLabel={`Team member ${i + 1} role`}
+                  editing={editing}
+                  value={m.role}
+                  onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, role: v } : member)) }))}
+                  className="relative text-[11px] mt-0.5 leading-snug"
+                  style={{ color: muted }}
+                />
                 {m.location && (
                   <div
                     className="relative mt-2 inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-wider"
