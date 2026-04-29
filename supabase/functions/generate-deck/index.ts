@@ -1,4 +1,5 @@
 // PowerPoint Deck Generator - AI plans outline, pptxgenjs builds .pptx
+// Rich-layout edition: kpi_grid, agenda, timeline, comparison, metrics, team, image_hero, chart, process
 import PptxGenJS from "https://esm.sh/pptxgenjs@3.12.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { requireUser } from "../_shared/auth.ts";
@@ -33,7 +34,21 @@ interface ExtractedSource {
   influence?: number;
   scope?: { text?: boolean; imagery?: boolean; lookAndFeel?: boolean };
   fileName?: string;
-  selectedImages?: { page: number; dataUrl: string }[]; // user-picked PDF page snapshots
+  selectedImages?: { page: number; dataUrl: string }[];
+}
+
+/**
+ * The client passes the selected template's full metadata so the AI plans a deck
+ * that mirrors the preview's structure (KPI grids, agenda, timeline, comparison, etc.)
+ * and the renderer locks palette/fonts to it.
+ */
+interface TemplateContext {
+  id: string;
+  name: string;
+  description?: string;
+  themePrompt?: string;
+  palette: { bg: string; text: string; accent: string; secondary: string };
+  fonts?: { heading?: string; body?: string };
 }
 
 interface DeckRequest {
@@ -42,11 +57,12 @@ interface DeckRequest {
   slideCount: number;
   tone?: string;
   brand?: BrandStyle;
-  themeOverride?: string; // free-form override "use a dark navy and gold theme"
-  templateId?: string; // e.g. "transperfect-2026" — enables branded background imagery
-  source?: ExtractedSource; // PDF-derived material
-  prebuiltOutline?: DeckOutline; // skip AI planning and just build .pptx from this
-  planOnly?: boolean; // when true, return outline only — skip .pptx build & upload
+  themeOverride?: string;
+  templateId?: string;
+  template?: TemplateContext;
+  source?: ExtractedSource;
+  prebuiltOutline?: DeckOutline;
+  planOnly?: boolean;
 }
 
 interface SlideChartSpec {
@@ -62,8 +78,27 @@ interface SlideReferenceImage {
   treatment?: "style-match" | "as-is" | "inspiration";
 }
 
+type SlideLayout =
+  | "title"
+  | "section"
+  | "bullets"
+  | "two_column"
+  | "stat"
+  | "quote"
+  | "closing"
+  // ---- new rich layouts ----
+  | "kpi_grid"        // 3-4 KPI tiles with big numbers + sub-label
+  | "agenda"          // numbered agenda with owner/duration
+  | "timeline"        // horizontal milestones
+  | "comparison"      // before/after, us/them
+  | "metrics"         // 4-6 small metric tiles in a grid
+  | "team"            // team grid with avatars (initials)
+  | "image_hero"      // full-bleed image w/ headline overlay
+  | "chart"           // dedicated data chart slide
+  | "process";        // numbered process / steps
+
 interface SlideOutline {
-  layout: "title" | "section" | "bullets" | "two_column" | "stat" | "quote" | "closing";
+  layout: SlideLayout;
   title: string;
   subtitle?: string;
   bullets?: string[];
@@ -76,6 +111,15 @@ interface SlideOutline {
   visualIntent?: "auto" | "photo" | "infographic" | "chart" | "icon-grid" | "screenshot" | "none";
   chart?: SlideChartSpec;
   references?: SlideReferenceImage[];
+
+  // ---- rich layout fields ----
+  kpis?: Array<{ value: string; label: string; sublabel?: string; trend?: string }>;
+  agenda?: Array<{ step: string; title: string; body?: string; duration?: string; owner?: string }>;
+  timeline?: Array<{ when: string; title: string; body?: string; deliverables?: string[] }>;
+  comparison?: { heading?: string; before: { title: string; points: string[] }; after: { title: string; points: string[] } };
+  metrics?: Array<{ value: string; label: string; sublabel?: string }>;
+  team?: Array<{ name: string; role: string; initials: string; location?: string; focus?: string }>;
+  process?: Array<{ step: string; title: string; body?: string }>;
 }
 
 interface DeckOutline {
@@ -86,36 +130,64 @@ interface DeckOutline {
   slides: SlideOutline[];
 }
 
-const SYSTEM = `You are a senior presentation designer. Output a structured deck outline that follows pitch-deck best practices: clear narrative arc, varied layouts, concise text (max 6 bullets/slide, max 12 words/bullet), strong opening and closing.
+const ALL_LAYOUTS: SlideLayout[] = [
+  "title", "section", "bullets", "two_column", "stat", "quote", "closing",
+  "kpi_grid", "agenda", "timeline", "comparison", "metrics", "team", "image_hero", "chart", "process",
+];
 
-Layout rules:
-- Slide 1 must be "title"
-- Final slide should be "closing" (call to action / thank you)
-- Mix layouts (don't use "bullets" for every content slide) — use "two_column", "stat", "quote", "section" for variety
-- Section dividers ("section") help break up long decks
-- Always include speaker notes (1-3 sentences per slide)`;
+const SYSTEM = `You are a senior presentation designer at a top brand studio. Output a structured deck outline that mirrors the visual richness of award-winning industry decks.
+
+NARRATIVE & LAYOUT RULES
+- Slide 1 must be "title". Slide 2 should usually be "agenda".
+- Final slide must be "closing".
+- Use a wide variety of layouts. Aim for at least 6 of these in any deck of 8+ slides:
+  agenda, kpi_grid, metrics, timeline, comparison, process, chart, team, image_hero, quote, section, two_column, bullets, stat
+- Never use the same layout 3 times in a row. Avoid using "bullets" more than ~25% of the time.
+- Insert "section" dividers every 4-6 slides to break up the deck.
+- Always include speaker notes (1-3 sentences per slide).
+
+CONTENT QUALITY
+- Concise text. Max 5 bullets/slide, max 12 words/bullet.
+- KPIs and stats should feel real (numbers + units + sublabels), not "00%".
+- Agenda items must have a step number, a short title, and ideally a duration.
+- Timelines: 4-6 milestones, each with a date/quarter and a deliverable line.
+- Comparisons: 3-4 contrast points per side, parallel phrasing.
+- Process: 3-5 steps with verbs as titles.
+- Team: 3-6 plausible roles with initials and 1-line focus.
+- For "chart" slides, return a chart spec with 4-7 data points.
+
+Match the requested template's palette, fonts, and visual mood. The renderer will style every slide using the deck palette + fonts you return.`;
+
+function buildTemplateBlock(tpl?: TemplateContext): string {
+  if (!tpl) return "";
+  const f = tpl.fonts || {};
+  return `\n=== ACTIVE TEMPLATE ===
+Template: ${tpl.name}${tpl.description ? ` — ${tpl.description}` : ""}
+Locked palette (use these exact hex values, no #):
+  background ${tpl.palette.bg}
+  text       ${tpl.palette.text}
+  accent     ${tpl.palette.accent}
+  secondary  ${tpl.palette.secondary}
+${f.heading || f.body ? `Locked fonts: heading "${f.heading || "Inter"}", body "${f.body || "Inter"}"` : ""}
+${tpl.themePrompt ? `Mood / visual direction: ${tpl.themePrompt}` : ""}
+Plan a deck that fully exploits this template's visual system (rich layouts, varied slide types, KPI tiles, agendas, timelines, comparisons, charts).
+=== END TEMPLATE ===\n`;
+}
 
 async function planDeck(req: DeckRequest, apiKey: string): Promise<DeckOutline> {
   const src = req.source;
+  const tplBlock = buildTemplateBlock(req.template);
   const sourceBlock = src
     ? `\n\n=== SOURCE DOCUMENT ${src.fileName ? `(${src.fileName})` : ""} ===
-Influence: ${src.influence ?? 70}/100 — ${(src.influence ?? 70) >= 70 ? "stay very close to source" : (src.influence ?? 70) >= 40 ? "primary inspiration" : "light reference"}
+Influence: ${src.influence ?? 70}/100
 Scope: ${[src.scope?.text && "text", src.scope?.imagery && "imagery", src.scope?.lookAndFeel && "look-and-feel"].filter(Boolean).join(", ") || "all"}
-
 Summary: ${src.summary || "(none)"}
-
 ${src.outline?.length ? `Outline:\n${src.outline.map((o) => `• ${o.heading}\n${o.bullets.map((b) => `   - ${b}`).join("\n")}`).join("\n")}` : ""}
-
 ${src.keyFacts?.length ? `Key facts:\n${src.keyFacts.map((f) => `- ${f}`).join("\n")}` : ""}
-
 ${src.quotes?.length ? `Quotes:\n${src.quotes.map((q) => `"${q.text}"${q.attribution ? ` — ${q.attribution}` : ""}`).join("\n")}` : ""}
-
-${src.scope?.lookAndFeel && src.lookAndFeel ? `Source look-and-feel: palette ${(src.lookAndFeel.palette || []).join(", ")}; fonts ${src.lookAndFeel.headingFont || "?"} / ${src.lookAndFeel.bodyFont || "?"}; mood ${src.lookAndFeel.mood || "?"}. ${src.lookAndFeel.description || ""}` : ""}
-
-${src.scope?.imagery && src.imageDescriptions?.length ? `Imagery cues to evoke (describe in speaker notes):\n${src.imageDescriptions.map((d) => `- ${d}`).join("\n")}` : ""}
 === END SOURCE ===
 
-Use the source material as the primary content backbone proportional to the influence level. Faithfully preserve facts and quotes; do not invent contradicting data.`
+Use the source as the primary content backbone. Faithfully preserve facts and quotes.`
     : "";
 
   const userPrompt = `Create a ${req.slideCount}-slide deck.
@@ -124,10 +196,11 @@ Topic: ${req.topic}
 ${req.audience ? `Audience: ${req.audience}` : ""}
 ${req.tone ? `Tone: ${req.tone}` : ""}
 ${req.themeOverride ? `Theme override: ${req.themeOverride}` : ""}
-${req.brand ? `Brand colors available: primary ${req.brand.primary}, secondary ${req.brand.secondary}, accent ${req.brand.accent}. Brand fonts: ${req.brand.headingFont || "default"} / ${req.brand.bodyFont || "default"}.` : ""}
+${req.brand ? `Brand colors: primary ${req.brand.primary}, secondary ${req.brand.secondary}, accent ${req.brand.accent}. Brand fonts: ${req.brand.headingFont || "default"} / ${req.brand.bodyFont || "default"}.` : ""}
+${tplBlock}
 ${sourceBlock}
 
-Pick a palette that fits the topic. Priority: theme override > brand > source look-and-feel > your judgement. Use HEX colors WITHOUT the # prefix.`;
+Return HEX colors WITHOUT the # prefix. Use the locked template palette/fonts above when provided.`;
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -140,7 +213,7 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
           role: "user",
           content: src?.selectedImages?.length
             ? [
-                { type: "text", text: userPrompt + `\n\nThe user attached ${src.selectedImages.length} reference page image(s) from the source PDF (page numbers: ${src.selectedImages.map((i) => i.page).join(", ")}). Use these as primary visual & layout inspiration — match their imagery, color tone, layout style, and information hierarchy where appropriate. Reference them in speaker notes (e.g. "based on PDF p.${src.selectedImages[0].page}").` },
+                { type: "text", text: userPrompt + `\n\nThe user attached ${src.selectedImages.length} reference page image(s). Match their imagery, color tone, layout style, and information hierarchy.` },
                 ...src.selectedImages.map((img) => ({
                   type: "image_url" as const,
                   image_url: { url: img.dataUrl },
@@ -154,7 +227,7 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
           type: "function",
           function: {
             name: "build_deck",
-            description: "Return a complete deck outline.",
+            description: "Return a complete deck outline with rich, varied layouts.",
             parameters: {
               type: "object",
               properties: {
@@ -181,29 +254,85 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
                   items: {
                     type: "object",
                     properties: {
-                      layout: { type: "string", enum: ["title", "section", "bullets", "two_column", "stat", "quote", "closing"] },
+                      layout: { type: "string", enum: ALL_LAYOUTS },
                       title: { type: "string" },
                       subtitle: { type: "string" },
                       bullets: { type: "array", items: { type: "string" } },
-                      leftColumn: {
-                        type: "object",
-                        properties: { heading: { type: "string" }, bullets: { type: "array", items: { type: "string" } } },
-                      },
-                      rightColumn: {
-                        type: "object",
-                        properties: { heading: { type: "string" }, bullets: { type: "array", items: { type: "string" } } },
-                      },
-                      stat: {
-                        type: "object",
-                        properties: { value: { type: "string" }, label: { type: "string" } },
-                      },
-                      quote: {
-                        type: "object",
-                        properties: { text: { type: "string" }, attribution: { type: "string" } },
-                      },
+                      leftColumn: { type: "object", properties: { heading: { type: "string" }, bullets: { type: "array", items: { type: "string" } } } },
+                      rightColumn: { type: "object", properties: { heading: { type: "string" }, bullets: { type: "array", items: { type: "string" } } } },
+                      stat: { type: "object", properties: { value: { type: "string" }, label: { type: "string" } } },
+                      quote: { type: "object", properties: { text: { type: "string" }, attribution: { type: "string" } } },
                       notes: { type: "string" },
-                      designNotes: { type: "string", description: "Internal AI guidance — not shown on the slide. Mirror what the user wrote." },
+                      designNotes: { type: "string" },
                       visualIntent: { type: "string", enum: ["auto", "photo", "infographic", "chart", "icon-grid", "screenshot", "none"] },
+                      kpis: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            value: { type: "string" }, label: { type: "string" },
+                            sublabel: { type: "string" }, trend: { type: "string" },
+                          },
+                          required: ["value", "label"],
+                        },
+                      },
+                      agenda: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            step: { type: "string" }, title: { type: "string" }, body: { type: "string" },
+                            duration: { type: "string" }, owner: { type: "string" },
+                          },
+                          required: ["step", "title"],
+                        },
+                      },
+                      timeline: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            when: { type: "string" }, title: { type: "string" }, body: { type: "string" },
+                            deliverables: { type: "array", items: { type: "string" } },
+                          },
+                          required: ["when", "title"],
+                        },
+                      },
+                      comparison: {
+                        type: "object",
+                        properties: {
+                          heading: { type: "string" },
+                          before: { type: "object", properties: { title: { type: "string" }, points: { type: "array", items: { type: "string" } } } },
+                          after:  { type: "object", properties: { title: { type: "string" }, points: { type: "array", items: { type: "string" } } } },
+                        },
+                      },
+                      metrics: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: { value: { type: "string" }, label: { type: "string" }, sublabel: { type: "string" } },
+                          required: ["value", "label"],
+                        },
+                      },
+                      team: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            name: { type: "string" }, role: { type: "string" }, initials: { type: "string" },
+                            location: { type: "string" }, focus: { type: "string" },
+                          },
+                          required: ["name", "role", "initials"],
+                        },
+                      },
+                      process: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: { step: { type: "string" }, title: { type: "string" }, body: { type: "string" } },
+                          required: ["step", "title"],
+                        },
+                      },
                       chart: {
                         type: "object",
                         properties: {
@@ -242,10 +371,30 @@ Pick a palette that fits the topic. Priority: theme override > brand > source lo
   const data = await response.json();
   const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!args) throw new Error("No outline returned by AI");
-  return JSON.parse(args) as DeckOutline;
+  const outline = JSON.parse(args) as DeckOutline;
+
+  // Lock palette/fonts to template if provided (AI sometimes drifts)
+  if (req.template) {
+    const tp = req.template.palette;
+    const stripHash = (c: string) => (c || "").replace("#", "");
+    outline.palette = {
+      primary: stripHash(tp.accent),
+      secondary: stripHash(tp.secondary),
+      accent: stripHash(tp.accent),
+      background: stripHash(tp.bg),
+      text: stripHash(tp.text),
+    };
+    if (req.template.fonts) {
+      outline.fonts = {
+        heading: req.template.fonts.heading || outline.fonts?.heading || "Inter",
+        body: req.template.fonts.body || outline.fonts?.body || "Inter",
+      };
+    }
+  }
+  return outline;
 }
 
-// Map of template id -> bundled background images (public URLs)
+// ----- Template background imagery -----
 const TEMPLATE_IMAGES: Record<string, Record<string, string>> = {
   "transperfect-2026": {
     hero: "https://fkrxorswdcuaiyiesooj.supabase.co/storage/v1/object/public/asset-images/templates/transperfect-2026/hero.jpg",
@@ -289,51 +438,39 @@ async function loadTemplateImages(templateId?: string): Promise<Record<string, s
   return out;
 }
 
-/**
- * Generate or fetch one feature image per slide.
- * Priority:
- *  1. First user-uploaded reference (s.references[0]) — fetched & embedded as-is
- *  2. AI-generated image via Gemini Flash Image when visualIntent indicates imagery
- *  3. undefined → renderer falls back to template feature image
- */
-async function resolveSlideImages(
-  outline: DeckOutline,
-  apiKey: string,
-): Promise<Array<string | undefined>> {
+async function resolveSlideImages(outline: DeckOutline, apiKey: string): Promise<Array<string | undefined>> {
   const palette = outline.palette;
-  const moodDesc = `Brand palette: primary ${palette.primary}, secondary ${palette.secondary}, accent ${palette.accent}. Background ${palette.background}. Cohesive, on-brand, premium editorial style.`;
+  const moodDesc = `Brand palette: primary #${palette.primary}, accent #${palette.accent}. Cohesive, on-brand, premium editorial style.`;
 
   return Promise.all(
     outline.slides.map(async (s) => {
       try {
-        // 1) User-provided reference
         const userRef = s.references?.[0]?.url;
         if (userRef) {
           const data = await fetchAsDataUrl(userRef);
           if (data) return data;
         }
 
-        // 2) AI-generated when intent calls for imagery
         const intent = s.visualIntent || "auto";
         if (intent === "none" || intent === "chart") return undefined;
-        // Only generate for layouts that have room for a feature image
         const layoutWantsImage =
           s.layout === "bullets" ||
           s.layout === "stat" ||
           s.layout === "section" ||
           s.layout === "title" ||
           s.layout === "closing" ||
-          s.layout === "two_column";
+          s.layout === "two_column" ||
+          s.layout === "image_hero";
         if (!layoutWantsImage) return undefined;
 
         const styleHint =
-          intent === "photo" ? "photorealistic editorial photograph, natural light, no text, no logos"
-          : intent === "infographic" ? "minimal flat infographic illustration, geometric shapes, no text, no logos"
-          : intent === "icon-grid" ? "set of minimal line icons in a clean grid, no text, no logos"
+          intent === "photo" ? "photorealistic editorial photograph, natural light, no text"
+          : intent === "infographic" ? "minimal flat infographic illustration, geometric shapes, no text"
+          : intent === "icon-grid" ? "set of minimal line icons in a clean grid, no text"
           : intent === "screenshot" ? "abstract product UI screenshot, soft glassmorphism, no readable text"
           : "clean abstract editorial illustration, no text, no logos";
 
-        const prompt = `${styleHint}. Subject: "${s.title}". ${s.designNotes ? `Context: ${s.designNotes}.` : ""} ${moodDesc} Aspect 4:3. ABSOLUTELY NO TEXT, NO WORDS, NO LETTERS, NO LOGOS in the image.`;
+        const prompt = `${styleHint}. Subject: "${s.title}". ${s.designNotes ? `Context: ${s.designNotes}.` : ""} ${moodDesc} ABSOLUTELY NO TEXT, NO WORDS, NO LETTERS, NO LOGOS in the image.`;
 
         const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -344,24 +481,22 @@ async function resolveSlideImages(
             modalities: ["image", "text"],
           }),
         });
-        if (!r.ok) {
-          console.warn(`[slide-image] gen failed (${r.status}) for "${s.title}"`);
-          return undefined;
-        }
+        if (!r.ok) return undefined;
         const j = await r.json();
-        const url: string | undefined = j?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        return url;
-      } catch (e) {
-        console.warn("[slide-image] error:", e instanceof Error ? e.message : e);
+        return j?.choices?.[0]?.message?.images?.[0]?.image_url?.url as string | undefined;
+      } catch {
         return undefined;
       }
     }),
   );
 }
 
+// ============================================================================
+// PPTX BUILDER
+// ============================================================================
 function buildPptx(outline: DeckOutline, templateImages: Record<string, string> = {}, slideImages: Array<string | undefined> = []): Promise<ArrayBuffer> {
   const pptx = new PptxGenJS();
-  pptx.layout = "LAYOUT_WIDE"; // 13.33 x 7.5
+  pptx.layout = "LAYOUT_WIDE";
   pptx.title = outline.title;
   pptx.author = "EventKIT PowerPoint Agent";
 
@@ -369,9 +504,9 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
   const H = 7.5;
   const PAD = 0.6;
   const p = outline.palette;
-  const headFont = outline.fonts.heading || "Calibri";
-  const bodyFont = outline.fonts.body || "Calibri";
-  const clean = (c: string) => c.replace("#", "").toUpperCase();
+  const headFont = outline.fonts.heading || "Inter";
+  const bodyFont = outline.fonts.body || "Inter";
+  const clean = (c: string) => (c || "").replace("#", "").toUpperCase();
 
   const PRIMARY = clean(p.primary);
   const SECONDARY = clean(p.secondary);
@@ -379,222 +514,680 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
   const BG = clean(p.background);
   const TEXT = clean(p.text);
 
-  // Pick a background image for a given layout from the template library
+  // Decide if background is dark, so we know what color to use for text on it
+  const isDarkBg = (() => {
+    try {
+      const r = parseInt(BG.slice(0, 2), 16);
+      const g = parseInt(BG.slice(2, 4), 16);
+      const b = parseInt(BG.slice(4, 6), 16);
+      return (r * 299 + g * 587 + b * 114) / 1000 < 128;
+    } catch { return true; }
+  })();
+  const ON_BG = isDarkBg ? "FFFFFF" : "111111";
+  const MUTED = isDarkBg ? "B8C0CC" : "5A6271";
+  const SURFACE = isDarkBg ? "1A1F2E" : "F4F2EE"; // card surface
+
   const bgFor = (layout: string): string | undefined => {
     if (!templateImages || Object.keys(templateImages).length === 0) return undefined;
     switch (layout) {
-      case "title": return templateImages.hero;
-      case "closing": return templateImages.hero;
+      case "title":
+      case "closing":
+      case "image_hero": return templateImages.hero;
       case "section": return templateImages.sectionBg;
       case "quote": return templateImages.heroSquare || templateImages.hero;
       case "stat": return templateImages.card;
-      case "two_column": return templateImages.lightPattern;
-      case "bullets":
-      default: return templateImages.lightPattern;
+      default: return undefined;
     }
   };
 
-  const paintTemplateBackground = (slide: any, image?: string) => {
-    slide.background = { color: BG };
-    if (!image) return;
-    slide.addImage({
-      data: image,
-      x: 0, y: 0, w: W, h: H,
-      sizing: { type: "cover", x: 0, y: 0, w: W, h: H },
+  const paintBackground = (slide: any, image?: string, color?: string) => {
+    slide.background = { color: color || BG };
+    if (image) {
+      slide.addImage({ data: image, x: 0, y: 0, w: W, h: H, sizing: { type: "cover", x: 0, y: 0, w: W, h: H } });
+    }
+  };
+
+  const addEyebrow = (slide: any, text: string, x: number, y: number, w: number, color = ACCENT) => {
+    slide.addText(text.toUpperCase(), {
+      x, y, w, h: 0.3,
+      fontSize: 10, bold: true, color, fontFace: bodyFont, charSpacing: 2,
     });
   };
 
-  // Fallback placeholder content (used when AI returns sparse fields)
   const ph = {
     title: "Untitled slide",
     subtitle: "Add a subtitle to introduce this section",
-    sectionLabel: "Section",
-    bullet: [
-      "Headline point — replace with your key message",
-      "Supporting detail — explain the context",
-      "Outcome or proof point — quantify the impact",
-      "Action — what the audience should take away",
-    ],
-    statValue: "00%",
-    statLabel: "Replace with your headline metric",
-    quote: "Add a memorable quote that anchors this slide.",
-    quoteAttribution: "Speaker · Title",
-    columnHeading: "Column heading",
-    closingTitle: "Thank you",
-    closingSubtitle: "Questions? Let's talk.",
+    bullet: ["Headline point", "Supporting detail", "Outcome or proof point", "Action or takeaway"],
   };
-  const orPh = (v: string | undefined | null, fallback: string) =>
-    v && v.trim().length > 0 ? v : fallback;
-  const orPhBullets = (arr: string[] | undefined, count = 4): string[] => {
+  const orPh = (v: string | undefined | null, fb: string) => (v && v.trim().length > 0 ? v : fb);
+  const orPhBullets = (arr: string[] | undefined, count = 4) => {
     const list = (arr || []).filter((b) => b && b.trim().length > 0);
-    if (list.length >= 1) return list;
-    return ph.bullet.slice(0, count);
+    return list.length >= 1 ? list : ph.bullet.slice(0, count);
   };
 
   outline.slides.forEach((s, idx) => {
     const slide = pptx.addSlide();
     const tplBg = bgFor(s.layout);
-    paintTemplateBackground(slide, tplBg);
+    paintBackground(slide, tplBg);
     if (s.notes) slide.addNotes(s.notes);
-    const slideImg = slideImages[idx]; // user upload OR AI-generated feature image
-
+    const slideImg = slideImages[idx];
     const slideTitle = orPh(s.title, ph.title);
 
-    // Page number / footer (skip on title)
-    if (idx > 0 && s.layout !== "title") {
+    // Footer (skip on title/closing/image_hero)
+    if (idx > 0 && !["title", "closing", "image_hero", "section"].includes(s.layout)) {
       slide.addText(`${idx + 1} / ${outline.slides.length}`, {
         x: W - 1.2, y: H - 0.4, w: 0.8, h: 0.3,
-        fontSize: 9, color: TEXT, fontFace: bodyFont, align: "right",
+        fontSize: 9, color: MUTED, fontFace: bodyFont, align: "right",
       });
       slide.addText(outline.title || "Presentation", {
         x: PAD, y: H - 0.4, w: W - 2, h: 0.3,
-        fontSize: 9, color: TEXT, fontFace: bodyFont, transparency: 40,
+        fontSize: 9, color: MUTED, fontFace: bodyFont,
       });
     }
 
     switch (s.layout) {
+      // ────────────────────────── TITLE ──────────────────────────
       case "title": {
-        if (!tplBg) slide.background = { color: PRIMARY };
-        // Accent bar
-        slide.addShape("rect", { x: 0, y: H / 2 + 1.5, w: 1.5, h: 0.08, fill: { color: ACCENT } });
-        slide.addText(slideTitle, {
-          x: PAD, y: H / 2 - 1.5, w: W - PAD * 2, h: 2,
-          fontSize: 60, bold: true, color: "FFFFFF", fontFace: headFont,
+        if (!tplBg) paintBackground(slide, undefined, PRIMARY);
+        // Big accent block + corner mark
+        slide.addShape("rect", { x: 0, y: H - 1.4, w: 0.4, h: 1.4, fill: { color: ACCENT } });
+        slide.addShape("rect", { x: PAD, y: PAD, w: 0.6, h: 0.06, fill: { color: ACCENT } });
+        slide.addText((outline.subtitle || "PRESENTATION").toUpperCase(), {
+          x: PAD, y: PAD + 0.15, w: W - PAD * 2, h: 0.4,
+          fontSize: 12, bold: true, color: "FFFFFF", fontFace: bodyFont, charSpacing: 4,
         });
-        slide.addText(orPh(s.subtitle, ph.subtitle), {
-          x: PAD, y: H / 2 + 0.8, w: W - PAD * 2, h: 0.7,
-          fontSize: 22, color: "FFFFFF", fontFace: bodyFont, transparency: 20,
+        slide.addText(slideTitle, {
+          x: PAD, y: H / 2 - 1.6, w: W - PAD * 2, h: 2.4,
+          fontSize: 64, bold: true, color: "FFFFFF", fontFace: headFont,
+        });
+        slide.addText(orPh(s.subtitle, "A presentation by EventKIT"), {
+          x: PAD, y: H / 2 + 1.0, w: W - PAD * 2, h: 0.6,
+          fontSize: 22, color: "FFFFFF", fontFace: bodyFont, transparency: 25,
         });
         break;
       }
 
+      // ────────────────────────── SECTION ──────────────────────────
       case "section": {
-        if (!tplBg) slide.background = { color: SECONDARY };
+        if (!tplBg) paintBackground(slide, undefined, SECONDARY);
         slide.addText(`0${idx + 1}`.slice(-2), {
-          x: PAD, y: PAD, w: 2, h: 1, fontSize: 56, bold: true, color: ACCENT, fontFace: headFont,
+          x: PAD, y: PAD, w: 3, h: 1.4, fontSize: 88, bold: true, color: ACCENT, fontFace: headFont,
         });
+        slide.addShape("rect", { x: PAD, y: H / 2 - 0.05, w: 1.2, h: 0.06, fill: { color: ACCENT } });
         slide.addText(slideTitle, {
-          x: PAD, y: H / 2 - 0.8, w: W - PAD * 2, h: 1.6,
-          fontSize: 48, bold: true, color: TEXT, fontFace: headFont,
+          x: PAD, y: H / 2 + 0.1, w: W - PAD * 2, h: 1.6,
+          fontSize: 52, bold: true, color: "FFFFFF", fontFace: headFont,
         });
-        slide.addText(orPh(s.subtitle, ph.sectionLabel), {
-          x: PAD, y: H / 2 + 0.9, w: W - PAD * 2, h: 0.6,
-          fontSize: 18, color: TEXT, fontFace: bodyFont, transparency: 30,
+        slide.addText(orPh(s.subtitle, "Section overview"), {
+          x: PAD, y: H / 2 + 1.7, w: W - PAD * 2, h: 0.6,
+          fontSize: 18, color: "FFFFFF", fontFace: bodyFont, transparency: 25,
         });
         break;
       }
 
+      // ────────────────────────── KPI GRID ──────────────────────────
+      case "kpi_grid": {
+        addEyebrow(slide, orPh(s.subtitle, "Key results"), PAD, PAD, W - PAD * 2);
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const kpis = (s.kpis && s.kpis.length ? s.kpis : [
+          { value: "+42%", label: "Growth", sublabel: "vs last quarter" },
+          { value: "12k", label: "Active users", sublabel: "monthly" },
+          { value: "4.8★", label: "CSAT", sublabel: "n=1,200" },
+          { value: "$2.4M", label: "ARR", sublabel: "trailing 12mo" },
+        ]).slice(0, 4);
+
+        const n = kpis.length;
+        const gap = 0.25;
+        const tileW = (W - PAD * 2 - gap * (n - 1)) / n;
+        const tileY = 2.0;
+        const tileH = H - tileY - PAD - 0.4;
+
+        kpis.forEach((k, i) => {
+          const x = PAD + i * (tileW + gap);
+          slide.addShape("roundRect", {
+            x, y: tileY, w: tileW, h: tileH,
+            fill: { color: SURFACE }, line: { color: ACCENT, width: 0, type: "solid" },
+            rectRadius: 0.15,
+          });
+          slide.addShape("rect", { x: x + 0.3, y: tileY + 0.3, w: 0.5, h: 0.06, fill: { color: ACCENT } });
+          slide.addText(k.value || "—", {
+            x: x + 0.25, y: tileY + 0.7, w: tileW - 0.5, h: 1.6,
+            fontSize: 56, bold: true, color: ON_BG, fontFace: headFont,
+          });
+          slide.addText(k.label || "Metric", {
+            x: x + 0.25, y: tileY + 2.4, w: tileW - 0.5, h: 0.4,
+            fontSize: 14, bold: true, color: ON_BG, fontFace: bodyFont,
+          });
+          if (k.sublabel) {
+            slide.addText(k.sublabel, {
+              x: x + 0.25, y: tileY + 2.85, w: tileW - 0.5, h: 0.4,
+              fontSize: 11, color: MUTED, fontFace: bodyFont,
+            });
+          }
+          if (k.trend) {
+            slide.addText(k.trend, {
+              x: x + 0.25, y: tileY + tileH - 0.5, w: tileW - 0.5, h: 0.35,
+              fontSize: 10, bold: true, color: ACCENT, fontFace: bodyFont,
+            });
+          }
+        });
+        break;
+      }
+
+      // ────────────────────────── METRICS GRID (smaller, 6-up) ──────────────────────────
+      case "metrics": {
+        addEyebrow(slide, orPh(s.subtitle, "By the numbers"), PAD, PAD, W - PAD * 2);
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const metrics = (s.metrics && s.metrics.length ? s.metrics : [
+          { value: "98%", label: "Uptime" },
+          { value: "320ms", label: "P95 latency" },
+          { value: "4.8★", label: "Reviews" },
+          { value: "+38%", label: "Adoption" },
+          { value: "12k", label: "Users" },
+          { value: "0", label: "Critical bugs" },
+        ]).slice(0, 6);
+
+        const cols = 3, rows = Math.ceil(metrics.length / cols);
+        const gap = 0.2;
+        const gridY = 2.0;
+        const gridH = H - gridY - PAD - 0.4;
+        const tileW = (W - PAD * 2 - gap * (cols - 1)) / cols;
+        const tileH = (gridH - gap * (rows - 1)) / rows;
+
+        metrics.forEach((m, i) => {
+          const c = i % cols, r = Math.floor(i / cols);
+          const x = PAD + c * (tileW + gap);
+          const y = gridY + r * (tileH + gap);
+          slide.addShape("roundRect", {
+            x, y, w: tileW, h: tileH,
+            fill: { color: SURFACE }, line: { type: "none" }, rectRadius: 0.12,
+          });
+          slide.addText(m.value, {
+            x: x + 0.2, y: y + 0.25, w: tileW - 0.4, h: tileH * 0.55,
+            fontSize: 38, bold: true, color: ACCENT, fontFace: headFont,
+          });
+          slide.addText(m.label, {
+            x: x + 0.2, y: y + tileH * 0.65, w: tileW - 0.4, h: 0.4,
+            fontSize: 13, bold: true, color: ON_BG, fontFace: bodyFont,
+          });
+          if (m.sublabel) {
+            slide.addText(m.sublabel, {
+              x: x + 0.2, y: y + tileH * 0.85, w: tileW - 0.4, h: 0.3,
+              fontSize: 10, color: MUTED, fontFace: bodyFont,
+            });
+          }
+        });
+        break;
+      }
+
+      // ────────────────────────── AGENDA ──────────────────────────
+      case "agenda": {
+        addEyebrow(slide, "Agenda", PAD, PAD, W - PAD * 2);
+        slide.addText(orPh(s.title, "What we'll cover"), {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 32, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const items = (s.agenda && s.agenda.length ? s.agenda : [
+          { step: "01", title: "Context & opportunity", duration: "10 min" },
+          { step: "02", title: "Strategy & approach", duration: "15 min" },
+          { step: "03", title: "Roadmap & milestones", duration: "20 min" },
+          { step: "04", title: "Investment & next steps", duration: "10 min" },
+        ]).slice(0, 6);
+
+        const startY = 2.0;
+        const rowH = (H - startY - PAD - 0.4) / Math.max(items.length, 1);
+        items.forEach((it, i) => {
+          const y = startY + i * rowH;
+          slide.addText(it.step || `0${i + 1}`.slice(-2), {
+            x: PAD, y, w: 1.0, h: rowH, fontSize: 36, bold: true, color: ACCENT, fontFace: headFont, valign: "middle",
+          });
+          slide.addText(it.title, {
+            x: PAD + 1.1, y, w: W - PAD * 2 - 3, h: rowH * 0.5,
+            fontSize: 18, bold: true, color: ON_BG, fontFace: headFont, valign: "middle",
+          });
+          if (it.body) {
+            slide.addText(it.body, {
+              x: PAD + 1.1, y: y + rowH * 0.5, w: W - PAD * 2 - 3, h: rowH * 0.5,
+              fontSize: 12, color: MUTED, fontFace: bodyFont,
+            });
+          }
+          if (it.duration || it.owner) {
+            slide.addText([it.duration, it.owner].filter(Boolean).join(" · "), {
+              x: W - PAD - 1.8, y, w: 1.8, h: rowH,
+              fontSize: 11, color: MUTED, fontFace: bodyFont, align: "right", valign: "middle",
+            });
+          }
+          // separator line
+          if (i < items.length - 1) {
+            slide.addShape("line", {
+              x: PAD, y: y + rowH - 0.02, w: W - PAD * 2, h: 0,
+              line: { color: MUTED, width: 0.5, transparency: 70 },
+            });
+          }
+        });
+        break;
+      }
+
+      // ────────────────────────── TIMELINE ──────────────────────────
+      case "timeline": {
+        addEyebrow(slide, orPh(s.subtitle, "Roadmap"), PAD, PAD, W - PAD * 2);
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const items = (s.timeline && s.timeline.length ? s.timeline : [
+          { when: "Q1", title: "Discovery", body: "Research & insights", deliverables: ["Findings", "Persona"] },
+          { when: "Q2", title: "Design", body: "Concept & validate", deliverables: ["Wireframes"] },
+          { when: "Q3", title: "Build", body: "Engineering sprint", deliverables: ["MVP launch"] },
+          { when: "Q4", title: "Scale", body: "Rollout & optimize", deliverables: ["GA release"] },
+        ]).slice(0, 5);
+
+        const trackY = 3.6;
+        slide.addShape("line", {
+          x: PAD + 0.4, y: trackY, w: W - PAD * 2 - 0.8, h: 0,
+          line: { color: ACCENT, width: 2, transparency: 30 },
+        });
+
+        const n = items.length;
+        const colW = (W - PAD * 2) / n;
+        items.forEach((it, i) => {
+          const cx = PAD + colW * i + colW / 2;
+          // node
+          slide.addShape("ellipse", {
+            x: cx - 0.18, y: trackY - 0.18, w: 0.36, h: 0.36,
+            fill: { color: ACCENT }, line: { color: BG, width: 2 },
+          });
+          // when (above)
+          slide.addText(it.when, {
+            x: cx - colW / 2 + 0.1, y: trackY - 1.0, w: colW - 0.2, h: 0.4,
+            fontSize: 14, bold: true, color: ACCENT, fontFace: headFont, align: "center",
+          });
+          slide.addText(it.title, {
+            x: cx - colW / 2 + 0.1, y: trackY - 0.6, w: colW - 0.2, h: 0.45,
+            fontSize: 16, bold: true, color: ON_BG, fontFace: headFont, align: "center",
+          });
+          // body (below)
+          if (it.body) {
+            slide.addText(it.body, {
+              x: cx - colW / 2 + 0.1, y: trackY + 0.4, w: colW - 0.2, h: 0.5,
+              fontSize: 12, color: MUTED, fontFace: bodyFont, align: "center",
+            });
+          }
+          if (it.deliverables?.length) {
+            slide.addText(it.deliverables.slice(0, 3).map((d) => `• ${d}`).join("\n"), {
+              x: cx - colW / 2 + 0.1, y: trackY + 1.0, w: colW - 0.2, h: 1.4,
+              fontSize: 11, color: ON_BG, fontFace: bodyFont, align: "center",
+            });
+          }
+        });
+        break;
+      }
+
+      // ────────────────────────── COMPARISON ──────────────────────────
+      case "comparison": {
+        addEyebrow(slide, orPh(s.comparison?.heading || s.subtitle, "Comparison"), PAD, PAD, W - PAD * 2);
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const cmp = s.comparison || {
+          heading: "Before vs After",
+          before: { title: "Current state", points: ["Manual", "Slow", "Error-prone"] },
+          after: { title: "With our solution", points: ["Automated", "Fast", "Reliable"] },
+        };
+        const colY = 2.0;
+        const colH = H - colY - PAD - 0.4;
+        const colW = (W - PAD * 3) / 2;
+
+        const renderColumn = (x: number, side: { title: string; points: string[] }, accent: string, isAfter: boolean) => {
+          slide.addShape("roundRect", {
+            x, y: colY, w: colW, h: colH,
+            fill: { color: SURFACE }, line: { color: accent, width: isAfter ? 2 : 0, type: "solid" },
+            rectRadius: 0.15,
+          });
+          slide.addShape("rect", { x: x + 0.4, y: colY + 0.4, w: 0.5, h: 0.06, fill: { color: accent } });
+          slide.addText(side.title, {
+            x: x + 0.4, y: colY + 0.6, w: colW - 0.8, h: 0.5,
+            fontSize: 22, bold: true, color: ON_BG, fontFace: headFont,
+          });
+          const pts = (side.points || []).slice(0, 5);
+          slide.addText(
+            pts.map((pt) => ({ text: pt, options: { bullet: { code: isAfter ? "25CF" : "2014" }, paraSpaceAfter: 8 } })),
+            {
+              x: x + 0.4, y: colY + 1.4, w: colW - 0.8, h: colH - 1.6,
+              fontSize: 16, color: ON_BG, fontFace: bodyFont, valign: "top",
+            },
+          );
+        };
+        renderColumn(PAD, cmp.before, MUTED, false);
+        renderColumn(PAD * 2 + colW, cmp.after, ACCENT, true);
+
+        // VS divider
+        slide.addShape("ellipse", {
+          x: W / 2 - 0.35, y: colY + colH / 2 - 0.35, w: 0.7, h: 0.7,
+          fill: { color: ACCENT }, line: { type: "none" },
+        });
+        slide.addText("VS", {
+          x: W / 2 - 0.35, y: colY + colH / 2 - 0.35, w: 0.7, h: 0.7,
+          fontSize: 14, bold: true, color: BG, fontFace: headFont, align: "center", valign: "middle",
+        });
+        break;
+      }
+
+      // ────────────────────────── PROCESS ──────────────────────────
+      case "process": {
+        addEyebrow(slide, orPh(s.subtitle, "Our process"), PAD, PAD, W - PAD * 2);
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const steps = (s.process && s.process.length ? s.process : [
+          { step: "01", title: "Discover", body: "Understand the problem" },
+          { step: "02", title: "Design", body: "Explore solutions" },
+          { step: "03", title: "Build", body: "Ship fast, learn faster" },
+          { step: "04", title: "Scale", body: "Grow with confidence" },
+        ]).slice(0, 5);
+
+        const n = steps.length;
+        const gap = 0.2;
+        const tileW = (W - PAD * 2 - gap * (n - 1)) / n;
+        const tileY = 2.4;
+        const tileH = H - tileY - PAD - 0.4;
+        steps.forEach((st, i) => {
+          const x = PAD + i * (tileW + gap);
+          slide.addShape("roundRect", {
+            x, y: tileY, w: tileW, h: tileH,
+            fill: { color: SURFACE }, line: { type: "none" }, rectRadius: 0.15,
+          });
+          slide.addShape("ellipse", {
+            x: x + tileW / 2 - 0.4, y: tileY - 0.4, w: 0.8, h: 0.8,
+            fill: { color: ACCENT }, line: { type: "none" },
+          });
+          slide.addText(st.step || `0${i + 1}`.slice(-2), {
+            x: x + tileW / 2 - 0.4, y: tileY - 0.4, w: 0.8, h: 0.8,
+            fontSize: 18, bold: true, color: BG, fontFace: headFont, align: "center", valign: "middle",
+          });
+          slide.addText(st.title, {
+            x: x + 0.25, y: tileY + 0.7, w: tileW - 0.5, h: 0.6,
+            fontSize: 18, bold: true, color: ON_BG, fontFace: headFont, align: "center",
+          });
+          if (st.body) {
+            slide.addText(st.body, {
+              x: x + 0.25, y: tileY + 1.4, w: tileW - 0.5, h: tileH - 1.6,
+              fontSize: 13, color: MUTED, fontFace: bodyFont, align: "center", valign: "top",
+            });
+          }
+          // arrow between
+          if (i < n - 1) {
+            slide.addShape("rightTriangle", {
+              x: x + tileW + gap / 2 - 0.08, y: tileY + tileH / 2 - 0.1, w: 0.16, h: 0.2,
+              fill: { color: ACCENT }, line: { type: "none" }, rotate: 90,
+            });
+          }
+        });
+        break;
+      }
+
+      // ────────────────────────── TEAM ──────────────────────────
+      case "team": {
+        addEyebrow(slide, orPh(s.subtitle, "The team"), PAD, PAD, W - PAD * 2);
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const members = (s.team && s.team.length ? s.team : [
+          { name: "Alex Rivera", role: "Lead Designer", initials: "AR", focus: "Brand systems" },
+          { name: "Sam Patel", role: "Head of Eng", initials: "SP", focus: "Platform" },
+          { name: "Jordan Kim", role: "PM", initials: "JK", focus: "Roadmap" },
+          { name: "Taylor Reed", role: "Strategy", initials: "TR", focus: "Insights" },
+        ]).slice(0, 6);
+
+        const cols = members.length <= 3 ? members.length : Math.min(4, members.length);
+        const rows = Math.ceil(members.length / cols);
+        const gap = 0.3;
+        const gridY = 2.0;
+        const gridH = H - gridY - PAD - 0.4;
+        const tileW = (W - PAD * 2 - gap * (cols - 1)) / cols;
+        const tileH = (gridH - gap * (rows - 1)) / rows;
+
+        members.forEach((m, i) => {
+          const c = i % cols, r = Math.floor(i / cols);
+          const x = PAD + c * (tileW + gap);
+          const y = gridY + r * (tileH + gap);
+          slide.addShape("roundRect", {
+            x, y, w: tileW, h: tileH, fill: { color: SURFACE }, line: { type: "none" }, rectRadius: 0.15,
+          });
+          // Avatar circle
+          const avatarSize = Math.min(1.4, tileH * 0.45);
+          slide.addShape("ellipse", {
+            x: x + tileW / 2 - avatarSize / 2, y: y + 0.35, w: avatarSize, h: avatarSize,
+            fill: { color: ACCENT }, line: { type: "none" },
+          });
+          slide.addText(m.initials, {
+            x: x + tileW / 2 - avatarSize / 2, y: y + 0.35, w: avatarSize, h: avatarSize,
+            fontSize: avatarSize > 1.2 ? 24 : 18, bold: true, color: BG, fontFace: headFont,
+            align: "center", valign: "middle",
+          });
+          slide.addText(m.name, {
+            x: x + 0.2, y: y + 0.4 + avatarSize, w: tileW - 0.4, h: 0.4,
+            fontSize: 14, bold: true, color: ON_BG, fontFace: headFont, align: "center",
+          });
+          slide.addText(m.role, {
+            x: x + 0.2, y: y + 0.8 + avatarSize, w: tileW - 0.4, h: 0.35,
+            fontSize: 11, color: ACCENT, fontFace: bodyFont, align: "center",
+          });
+          if (m.focus) {
+            slide.addText(m.focus, {
+              x: x + 0.2, y: y + 1.15 + avatarSize, w: tileW - 0.4, h: 0.5,
+              fontSize: 10, color: MUTED, fontFace: bodyFont, align: "center",
+            });
+          }
+        });
+        break;
+      }
+
+      // ────────────────────────── IMAGE HERO ──────────────────────────
+      case "image_hero": {
+        if (slideImg) {
+          slide.addImage({ data: slideImg, x: 0, y: 0, w: W, h: H, sizing: { type: "cover", w: W, h: H } });
+        } else if (!tplBg) {
+          paintBackground(slide, undefined, PRIMARY);
+        }
+        // Dark overlay band at bottom for legibility
+        slide.addShape("rect", { x: 0, y: H - 3.2, w: W, h: 3.2, fill: { color: "000000", transparency: 40 } });
+        slide.addShape("rect", { x: PAD, y: H - 2.8, w: 0.6, h: 0.06, fill: { color: ACCENT } });
+        addEyebrow(slide, orPh(s.subtitle, "Spotlight"), PAD, H - 2.6, W - PAD * 2, "FFFFFF");
+        slide.addText(slideTitle, {
+          x: PAD, y: H - 2.2, w: W - PAD * 2, h: 1.2,
+          fontSize: 44, bold: true, color: "FFFFFF", fontFace: headFont,
+        });
+        if (s.bullets?.length) {
+          slide.addText(orPhBullets(s.bullets, 2).slice(0, 2).join(" · "), {
+            x: PAD, y: H - 1.0, w: W - PAD * 2, h: 0.5,
+            fontSize: 16, color: "FFFFFF", fontFace: bodyFont, transparency: 15,
+          });
+        }
+        break;
+      }
+
+      // ────────────────────────── CHART ──────────────────────────
+      case "chart": {
+        addEyebrow(slide, orPh(s.subtitle, "Data"), PAD, PAD, W - PAD * 2);
+        slide.addText(slideTitle, {
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
+        });
+
+        const c = s.chart || {
+          type: "bar" as const,
+          title: "",
+          data: [
+            { label: "Q1", value: 24 }, { label: "Q2", value: 38 },
+            { label: "Q3", value: 52 }, { label: "Q4", value: 68 },
+          ],
+        };
+        const data = c.data && c.data.length ? c.data : [{ label: "—", value: 1 }];
+
+        const chartType = (() => {
+          switch (c.type) {
+            case "line": return pptx.ChartType.line;
+            case "pie": return pptx.ChartType.pie;
+            case "donut": return pptx.ChartType.doughnut;
+            case "area": return pptx.ChartType.area;
+            case "scatter": return pptx.ChartType.scatter;
+            default: return pptx.ChartType.bar;
+          }
+        })();
+
+        const chartData = [{
+          name: c.title || s.title,
+          labels: data.map((d) => d.label),
+          values: data.map((d) => d.value),
+        }];
+
+        slide.addChart(chartType, chartData as any, {
+          x: PAD, y: 2.0, w: W - PAD * 2, h: H - 2.0 - PAD - 0.4,
+          chartColors: [ACCENT, SECONDARY, PRIMARY, MUTED],
+          showLegend: false, showTitle: false,
+          catAxisLabelColor: ON_BG, catAxisLabelFontFace: bodyFont, catAxisLabelFontSize: 11,
+          valAxisLabelColor: ON_BG, valAxisLabelFontFace: bodyFont, valAxisLabelFontSize: 11,
+          dataLabelColor: ON_BG, dataLabelFontFace: bodyFont, dataLabelFontSize: 11,
+          plotArea: { fill: { color: SURFACE } },
+        });
+        break;
+      }
+
+      // ────────────────────────── STAT ──────────────────────────
       case "stat": {
         slide.addShape("rect", { x: 0, y: 0, w: 0.15, h: H, fill: { color: ACCENT } });
-        // Optional right-side feature image (user upload or AI)
         const statImgW = slideImg ? 4.0 : 0;
         const statContentW = W - PAD * 2 - statImgW - (slideImg ? PAD : 0);
+        addEyebrow(slide, orPh(s.subtitle, "Headline metric"), PAD, PAD, statContentW);
         slide.addText(slideTitle, {
-          x: PAD, y: PAD, w: statContentW, h: 0.7,
-          fontSize: 24, bold: true, color: TEXT, fontFace: headFont,
+          x: PAD, y: PAD + 0.4, w: statContentW, h: 0.7,
+          fontSize: 24, bold: true, color: ON_BG, fontFace: headFont,
         });
-        slide.addText(orPh(s.stat?.value, ph.statValue), {
-          x: PAD, y: H / 2 - 1.5, w: statContentW, h: 2.5,
-          fontSize: 130, bold: true, color: PRIMARY, fontFace: headFont, align: "center",
+        slide.addText(orPh(s.stat?.value, "+72%"), {
+          x: PAD, y: H / 2 - 1.6, w: statContentW, h: 2.6,
+          fontSize: 150, bold: true, color: ACCENT, fontFace: headFont, align: "center",
         });
-        slide.addText(orPh(s.stat?.label, ph.statLabel), {
-          x: PAD, y: H / 2 + 1.4, w: statContentW, h: 0.6,
-          fontSize: 20, color: TEXT, fontFace: bodyFont, align: "center", transparency: 20,
+        slide.addText(orPh(s.stat?.label, "improvement after launch"), {
+          x: PAD, y: H / 2 + 1.5, w: statContentW, h: 0.6,
+          fontSize: 20, color: ON_BG, fontFace: bodyFont, align: "center", transparency: 20,
         });
         if (slideImg) {
           slide.addImage({
-            data: slideImg,
-            x: W - PAD - statImgW, y: PAD + 0.3, w: statImgW, h: H - PAD * 2 - 0.6,
+            data: slideImg, x: W - PAD - statImgW, y: PAD + 0.3, w: statImgW, h: H - PAD * 2 - 0.6,
             sizing: { type: "cover", w: statImgW, h: H - PAD * 2 - 0.6 },
           });
         }
         break;
       }
 
+      // ────────────────────────── QUOTE ──────────────────────────
       case "quote": {
-        if (!tplBg) slide.background = { color: PRIMARY };
+        if (!tplBg) paintBackground(slide, undefined, PRIMARY);
         slide.addText("\u201C", {
-          x: PAD, y: PAD, w: 2, h: 2, fontSize: 180, color: ACCENT, fontFace: headFont, bold: true,
+          x: PAD, y: PAD - 0.3, w: 2.5, h: 2.5, fontSize: 220, color: ACCENT, fontFace: headFont, bold: true,
         });
-        slide.addText(orPh(s.quote?.text, orPh(s.title, ph.quote)), {
-          x: PAD + 1, y: H / 2 - 1.5, w: W - PAD * 2 - 1, h: 2.5,
-          fontSize: 32, italic: true, color: "FFFFFF", fontFace: headFont,
+        slide.addText(orPh(s.quote?.text, orPh(s.title, "An anchoring quote.")), {
+          x: PAD + 1.4, y: H / 2 - 1.6, w: W - PAD * 2 - 1.4, h: 2.8,
+          fontSize: 30, italic: true, color: "FFFFFF", fontFace: headFont,
         });
-        slide.addText(`— ${orPh(s.quote?.attribution, ph.quoteAttribution)}`, {
-          x: PAD + 1, y: H / 2 + 1.5, w: W - PAD * 2 - 1, h: 0.5,
-          fontSize: 16, color: ACCENT, fontFace: bodyFont,
+        slide.addShape("rect", { x: PAD + 1.4, y: H / 2 + 1.5, w: 0.4, h: 0.04, fill: { color: ACCENT } });
+        slide.addText(orPh(s.quote?.attribution, "Speaker · Title"), {
+          x: PAD + 1.9, y: H / 2 + 1.4, w: W - PAD * 2 - 1.9, h: 0.5,
+          fontSize: 14, color: ACCENT, fontFace: bodyFont, bold: true,
         });
         break;
       }
 
+      // ────────────────────────── TWO COLUMN ──────────────────────────
       case "two_column": {
+        addEyebrow(slide, orPh(s.subtitle, "Overview"), PAD, PAD, W - PAD * 2);
         slide.addText(slideTitle, {
-          x: PAD, y: PAD, w: W - PAD * 2, h: 0.8,
-          fontSize: 32, bold: true, color: PRIMARY, fontFace: headFont,
+          x: PAD, y: PAD + 0.4, w: W - PAD * 2, h: 0.9,
+          fontSize: 30, bold: true, color: ON_BG, fontFace: headFont,
         });
         const colW = (W - PAD * 3) / 2;
-        const colY = PAD + 1.2;
-        const colH = H - colY - PAD - 0.3;
-
-        const renderCol = (x: number, heading: string, bullets: string[], headingColor: string) => {
-          slide.addShape("rect", { x, y: colY, w: colW, h: 0.06, fill: { color: headingColor } });
-          slide.addText(orPh(heading, ph.columnHeading), {
-            x, y: colY + 0.15, w: colW, h: 0.5,
-            fontSize: 18, bold: true, color: TEXT, fontFace: headFont,
+        const colY = 2.0;
+        const colH = H - colY - PAD - 0.4;
+        const renderCol = (x: number, heading: string, bullets: string[], accent: string) => {
+          slide.addShape("roundRect", {
+            x, y: colY, w: colW, h: colH, fill: { color: SURFACE }, line: { type: "none" }, rectRadius: 0.12,
+          });
+          slide.addShape("rect", { x: x + 0.4, y: colY + 0.5, w: 0.4, h: 0.06, fill: { color: accent } });
+          slide.addText(orPh(heading, "Column"), {
+            x: x + 0.4, y: colY + 0.7, w: colW - 0.8, h: 0.5,
+            fontSize: 20, bold: true, color: ON_BG, fontFace: headFont,
           });
           slide.addText(
-            orPhBullets(bullets, 3).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 6 } })),
+            orPhBullets(bullets, 4).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 8 } })),
             {
-              x, y: colY + 0.8, w: colW, h: colH - 0.8,
-              fontSize: 14, color: TEXT, fontFace: bodyFont, valign: "top",
+              x: x + 0.4, y: colY + 1.4, w: colW - 0.8, h: colH - 1.6,
+              fontSize: 14, color: ON_BG, fontFace: bodyFont, valign: "top",
             },
           );
         };
-
-        renderCol(PAD, s.leftColumn?.heading || "", s.leftColumn?.bullets || [], PRIMARY);
-        renderCol(PAD * 2 + colW, s.rightColumn?.heading || "", s.rightColumn?.bullets || [], ACCENT);
+        renderCol(PAD, s.leftColumn?.heading || "", s.leftColumn?.bullets || [], ACCENT);
+        renderCol(PAD * 2 + colW, s.rightColumn?.heading || "", s.rightColumn?.bullets || [], SECONDARY);
         break;
       }
 
+      // ────────────────────────── CLOSING ──────────────────────────
       case "closing": {
-        if (!tplBg) slide.background = { color: PRIMARY };
-        slide.addText(orPh(s.title, ph.closingTitle), {
-          x: PAD, y: H / 2 - 1, w: W - PAD * 2, h: 1.5,
-          fontSize: 56, bold: true, color: "FFFFFF", fontFace: headFont, align: "center",
+        if (!tplBg) paintBackground(slide, undefined, PRIMARY);
+        slide.addShape("rect", { x: W / 2 - 1.5, y: H / 2 - 1.5, w: 3, h: 0.06, fill: { color: ACCENT } });
+        slide.addText(orPh(s.title, "Thank you"), {
+          x: PAD, y: H / 2 - 1.1, w: W - PAD * 2, h: 1.5,
+          fontSize: 64, bold: true, color: "FFFFFF", fontFace: headFont, align: "center",
         });
-        slide.addText(orPh(s.subtitle, ph.closingSubtitle), {
-          x: PAD, y: H / 2 + 0.7, w: W - PAD * 2, h: 0.6,
-          fontSize: 20, color: "FFFFFF", fontFace: bodyFont, align: "center", transparency: 20,
+        slide.addText(orPh(s.subtitle, "Questions? Let's talk."), {
+          x: PAD, y: H / 2 + 0.8, w: W - PAD * 2, h: 0.6,
+          fontSize: 22, color: "FFFFFF", fontFace: bodyFont, align: "center", transparency: 20,
         });
-        slide.addShape("rect", { x: W / 2 - 0.75, y: H / 2 + 1.5, w: 1.5, h: 0.08, fill: { color: ACCENT } });
         break;
       }
 
+      // ────────────────────────── BULLETS (default) ──────────────────────────
       case "bullets":
       default: {
-        // Feature image: prefer per-slide image (user upload or AI), else template fallback
         const tplFeature = templateImages.card || templateImages.heroSquare;
-        const featureImg = slideImg || (idx > 0 && idx % 3 === 0 ? tplFeature : undefined);
+        const featureImg = slideImg || (idx > 0 && idx % 4 === 0 ? tplFeature : undefined);
         const hasFeature = !!featureImg;
-        const contentW = hasFeature ? W - PAD * 3 - 4.5 : W - PAD * 2;
+        const contentW = hasFeature ? W - PAD * 3 - 4.8 : W - PAD * 2;
 
-        slide.addShape("rect", { x: PAD, y: PAD + 0.95, w: 0.6, h: 0.06, fill: { color: ACCENT } });
+        addEyebrow(slide, orPh(s.subtitle, "Key points"), PAD, PAD, contentW);
         slide.addText(slideTitle, {
-          x: PAD, y: PAD, w: contentW, h: 0.9,
-          fontSize: 32, bold: true, color: PRIMARY, fontFace: headFont,
+          x: PAD, y: PAD + 0.4, w: contentW, h: 0.9,
+          fontSize: 32, bold: true, color: ON_BG, fontFace: headFont,
         });
+        slide.addShape("rect", { x: PAD, y: PAD + 1.35, w: 0.5, h: 0.06, fill: { color: ACCENT } });
         slide.addText(
-          orPhBullets(s.bullets, 4).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 10 } })),
+          orPhBullets(s.bullets, 5).map((b) => ({ text: b, options: { bullet: { code: "25CF" }, paraSpaceAfter: 12 } })),
           {
-            x: PAD, y: PAD + 1.4, w: contentW, h: H - PAD * 2 - 1.4 - 0.4,
-            fontSize: 18, color: TEXT, fontFace: bodyFont, valign: "top",
+            x: PAD, y: PAD + 1.55, w: contentW, h: H - PAD * 2 - 1.55 - 0.4,
+            fontSize: 18, color: ON_BG, fontFace: bodyFont, valign: "top",
           },
         );
         if (hasFeature && featureImg) {
           slide.addImage({
-            data: featureImg,
-            x: W - PAD - 4.5, y: PAD + 1.4, w: 4.5, h: H - PAD * 2 - 1.8,
-            sizing: { type: "cover", w: 4.5, h: H - PAD * 2 - 1.8 },
+            data: featureImg, x: W - PAD - 4.8, y: PAD + 0.4, w: 4.8, h: H - PAD * 2 - 0.8,
+            sizing: { type: "cover", w: 4.8, h: H - PAD * 2 - 0.8 },
+            rounding: true,
           });
         }
         break;
@@ -627,7 +1220,6 @@ Deno.serve(async (req: Request) => {
       throw new Error("Missing server configuration");
     }
 
-    // 1) Plan outline via AI (or use prebuilt one for re-renders after editing)
     let outline: DeckOutline;
     if (body.prebuiltOutline && Array.isArray(body.prebuiltOutline.slides) && body.prebuiltOutline.slides.length) {
       outline = body.prebuiltOutline;
@@ -650,29 +1242,20 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 2) If planOnly, return outline now — client will edit then re-call with prebuiltOutline
     if (body.planOnly) {
       return new Response(JSON.stringify({
-        success: true,
-        planOnly: true,
-        templateId: body.templateId,
-        title: outline.title,
-        subtitle: outline.subtitle,
-        slideCount: outline.slides.length,
-        palette: outline.palette,
-        fonts: outline.fonts,
+        success: true, planOnly: true, templateId: body.templateId,
+        title: outline.title, subtitle: outline.subtitle,
+        slideCount: outline.slides.length, palette: outline.palette, fonts: outline.fonts,
         slides: outline.slides.map((s) => ({ layout: s.layout, title: s.title })),
         outline,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // 3) Build .pptx
     const templateImages = await loadTemplateImages(body.templateId);
-    // Generate per-slide imagery in parallel (user uploads + AI photos/infographics)
     const slideImages = await resolveSlideImages(outline, LOVABLE_API_KEY);
     const pptxBuffer = await buildPptx(outline, templateImages, slideImages);
 
-    // 4) Upload to storage
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
     const safeName = outline.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 40) || "deck";
     const filename = `${crypto.randomUUID()}/${safeName}.pptx`;
@@ -691,16 +1274,11 @@ Deno.serve(async (req: Request) => {
       downloadUrl: pub.publicUrl,
       filename: `${safeName}.pptx`,
       templateId: body.templateId,
-      title: outline.title,
-      subtitle: outline.subtitle,
-      slideCount: outline.slides.length,
-      palette: outline.palette,
-      fonts: outline.fonts,
+      title: outline.title, subtitle: outline.subtitle,
+      slideCount: outline.slides.length, palette: outline.palette, fonts: outline.fonts,
       slides: outline.slides.map((s) => ({ layout: s.layout, title: s.title })),
       outline,
-    }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("generate-deck error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
