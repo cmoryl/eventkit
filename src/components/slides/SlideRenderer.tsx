@@ -47,6 +47,7 @@ function SlideImages({ images, variant }: { images: string[]; variant: SlideData
           key={i}
           src={src}
           alt=""
+          data-slide-image={`images.${i}`}
           className="max-h-[500px] object-contain rounded-[12px]"
           style={{
             boxShadow: variant === 'default' || variant === 'minimal'
