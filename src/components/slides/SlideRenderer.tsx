@@ -228,7 +228,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
             {slide.title}
           </h2>
           {slide.quoteAuthor && (
-            <p className="opacity-60 tracking-wide uppercase" style={{ fontFamily: bodyFont, fontSize: bSize || 32 }}>
+            <p data-slide-field="quoteAuthor" className="opacity-60 tracking-wide uppercase" style={{ fontFamily: bodyFont, fontSize: bSize || 32 }}>
               — {slide.quoteAuthor}
             </p>
           )}
