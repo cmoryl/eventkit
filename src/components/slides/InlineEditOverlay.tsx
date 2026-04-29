@@ -560,6 +560,57 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           </button>
         </div>
       )}
+
+      {sectionToolbar && (
+        <div
+          className="absolute z-50 flex items-center gap-1 rounded-lg border bg-background/95 backdrop-blur px-2 py-1.5 shadow-lg"
+          style={{
+            left: sectionToolbar.x,
+            top: sectionToolbar.y - 44,
+            transform: 'translateX(-50%)',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground pr-1">
+            Section
+          </span>
+          <div className="flex items-center gap-0.5">
+            <button type="button" className="text-[11px] w-6 h-6 rounded border hover:bg-muted" title="Move up"
+              onClick={() => nudge(sectionToolbar.id, 0, -2)}>↑</button>
+            <button type="button" className="text-[11px] w-6 h-6 rounded border hover:bg-muted" title="Move down"
+              onClick={() => nudge(sectionToolbar.id, 0, 2)}>↓</button>
+            <button type="button" className="text-[11px] w-6 h-6 rounded border hover:bg-muted" title="Move left"
+              onClick={() => nudge(sectionToolbar.id, -2, 0)}>←</button>
+            <button type="button" className="text-[11px] w-6 h-6 rounded border hover:bg-muted" title="Move right"
+              onClick={() => nudge(sectionToolbar.id, 2, 0)}>→</button>
+          </div>
+          <button
+            type="button"
+            className="text-[11px] px-2 py-0.5 rounded border hover:bg-muted"
+            title="Hide section"
+            onClick={() => { updateSection(sectionToolbar.id, { hidden: true }); setSectionToolbar(null); }}
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            className="text-[11px] px-2 py-0.5 rounded border hover:bg-muted"
+            title="Reset position"
+            onClick={() => { resetSection(sectionToolbar.id); setSectionToolbar(null); }}
+          >
+            Reset
+          </button>
+          <button
+            type="button"
+            className="text-[11px] px-1.5 py-0.5 rounded hover:bg-muted text-muted-foreground"
+            onClick={() => setSectionToolbar(null)}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
