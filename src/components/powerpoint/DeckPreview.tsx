@@ -114,6 +114,10 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
   const [rebuilding, setRebuilding] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [aiBusy, setAiBusy] = useState<string | null>(null);
+  const [editTarget, setEditTarget] = useState<AssetEditTarget | null>(null);
+  // Stable per-slide ids — keyed by index, regenerated only when slide count changes
+  const [slideIds] = useState<string[]>(() => initial.slides.map(() => crypto.randomUUID()));
+  const slideIdFor = (i: number) => slideIds[i] || `slide-${i}`;
 
   const active = outline.slides[activeIdx];
 
