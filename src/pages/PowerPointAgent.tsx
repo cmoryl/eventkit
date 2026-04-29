@@ -476,7 +476,8 @@ const PowerPointAgent: React.FC = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col text-foreground"
+      data-ppt-agent
+      className="ppt-agent-page min-h-screen flex flex-col"
       style={{
         backgroundColor: '#03002C',
         backgroundImage: `url(${horizonBg})`,
@@ -485,6 +486,59 @@ const PowerPointAgent: React.FC = () => {
         backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed',
       }}>
+      {/* Scoped readable typography — works against navy sky AND bright cyan dome,
+          independent of light/dark theme */}
+      <style>{`
+        .ppt-agent-page {
+          color: #F4F7FF;
+          font-family: 'Geist', 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+          font-feature-settings: "ss01", "cv11";
+          -webkit-font-smoothing: antialiased;
+          text-rendering: optimizeLegibility;
+        }
+        .ppt-agent-page h1,
+        .ppt-agent-page h2,
+        .ppt-agent-page h3,
+        .ppt-agent-page h4 {
+          color: #FFFFFF;
+          letter-spacing: -0.02em;
+          text-shadow: 0 1px 2px rgba(3, 0, 44, 0.55);
+        }
+        .ppt-agent-page p,
+        .ppt-agent-page span,
+        .ppt-agent-page label,
+        .ppt-agent-page li {
+          text-shadow: 0 1px 1px rgba(3, 0, 44, 0.45);
+        }
+        .ppt-agent-page .text-foreground { color: #FFFFFF !important; }
+        .ppt-agent-page .text-muted-foreground { color: rgba(228, 232, 245, 0.78) !important; }
+        /* Cards/headers stay readable: lift their surface so text above gets a dark backdrop */
+        .ppt-agent-page header.bg-card\\/60,
+        .ppt-agent-page .bg-card\\/60 {
+          background-color: rgba(3, 0, 44, 0.55) !important;
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+        }
+        .ppt-agent-page .bg-card\\/80 {
+          background-color: rgba(3, 0, 44, 0.7) !important;
+        }
+        .ppt-agent-page .border,
+        .ppt-agent-page .border-b {
+          border-color: rgba(255, 255, 255, 0.14) !important;
+        }
+        /* Inputs/textareas need their own readable surface */
+        .ppt-agent-page input,
+        .ppt-agent-page textarea,
+        .ppt-agent-page select {
+          background-color: rgba(3, 0, 44, 0.55) !important;
+          color: #FFFFFF !important;
+          border-color: rgba(255, 255, 255, 0.18) !important;
+        }
+        .ppt-agent-page input::placeholder,
+        .ppt-agent-page textarea::placeholder {
+          color: rgba(228, 232, 245, 0.55) !important;
+        }
+      `}</style>
       {/* Header */}
       <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
