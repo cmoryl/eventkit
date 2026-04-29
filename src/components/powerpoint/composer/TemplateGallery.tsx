@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALL_PRESENTATION_TEMPLATES } from "@/config/editableTemplates/presentationTemplates";
+import { TemplateDemoCard } from "./TemplateDemoCard";
 
 export interface DeckTemplate {
   id: string;
