@@ -6,7 +6,17 @@ import type { DeckTemplate } from "./TemplateGallery";
  * Per-template demo content. Keeps cards visually distinct & relevant —
  * each preview reads like a real, fully-built mini deck.
  */
-const DEMO_BY_TEMPLATE: Record<
+export const DEMO_BY_TEMPLATE: Record<
+  string,
+  {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    cards: { title: string; body: string }[];
+    stat: { value: string; label: string };
+    quote: { text: string; by: string };
+  }
+> = {
   string,
   {
     eyebrow: string;
