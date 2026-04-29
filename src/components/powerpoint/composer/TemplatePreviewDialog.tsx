@@ -720,9 +720,12 @@ const SlideMock: React.FC<{
                     )}
                     {m.trend && (
                       <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                        className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded"
                         style={{ background: `${t.palette.secondary}33`, color: t.palette.text }}
                       >
+                        {m.direction === "up" && <span style={{ color: t.palette.accent }}>▲</span>}
+                        {m.direction === "down" && <span style={{ color: t.palette.accent }}>▼</span>}
+                        {m.direction === "flat" && <span style={{ color: muted }}>—</span>}
                         {m.trend}
                       </span>
                     )}
@@ -734,8 +737,26 @@ const SlideMock: React.FC<{
                     >
                       {m.value}
                     </div>
-                    <div className="text-[11px] mt-1" style={{ color: muted }}>
+                    <div className="text-[11px] mt-1 font-semibold" style={{ color: t.palette.text }}>
                       {m.label}
+                    </div>
+                    {m.sublabel && (
+                      <div className="text-[9px] mt-0.5 leading-snug" style={{ color: muted }}>
+                        {m.sublabel}
+                      </div>
+                    )}
+                    {/* Mini sparkbar */}
+                    <div className="mt-2 flex items-end gap-0.5 h-3">
+                      {[0.4, 0.6, 0.5, 0.7, 0.85, 1].map((h, hi) => (
+                        <span
+                          key={hi}
+                          className="flex-1 rounded-sm"
+                          style={{
+                            height: `${h * 100}%`,
+                            background: hi === 5 ? t.palette.accent : `${t.palette.secondary}88`,
+                          }}
+                        />
+                      ))}
                     </div>
                   </div>
                 </div>
