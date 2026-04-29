@@ -256,7 +256,11 @@ Return HEX colors WITHOUT the # prefix. Use the locked template palette/fonts ab
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      // Pro model handles long, faithful content reproduction far better than flash.
+      // Flash silently summarizes when input/output is large.
+      model: prestructured ? "google/gemini-2.5-pro" : "google/gemini-3-flash-preview",
+      // Generous token budget so the model never has to truncate user content to fit.
+      max_tokens: 16000,
       messages: [
         { role: "system", content: SYSTEM },
         {
