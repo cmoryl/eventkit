@@ -83,21 +83,16 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       if (next && onDemoContentChange) onDemoContentChange(next);
     };
     return (
-      <div
-        className="absolute inset-0 flex items-center justify-center p-[40px]"
-        style={{ background: slide.demoTemplate.palette?.bg || '#0b1024' }}
-      >
-        <div className="w-full h-full">
-          <SlideMock
-            template={slide.demoTemplate}
-            content={slide.demoContent}
-            setContent={setContentShim}
-            editing={!!editable}
-            kind={slide.demoKind as any}
-            index={0}
-            total={1}
-          />
-        </div>
+      <div className="absolute inset-0 demo-mock-fill">
+        <SlideMock
+          template={slide.demoTemplate}
+          content={slide.demoContent}
+          setContent={setContentShim}
+          editing={!!editable}
+          kind={slide.demoKind as any}
+          index={0}
+          total={1}
+        />
       </div>
     );
   }
