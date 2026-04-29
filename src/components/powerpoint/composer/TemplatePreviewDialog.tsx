@@ -211,6 +211,209 @@ const BarLineChart: React.FC<{
   );
 };
 
+/* ------------------------------ Visual fillers ------------------------------ */
+// Reusable SVG visuals to make every card/section feel designed instead of empty.
+
+const Sparkline: React.FC<{ accent: string; secondary: string; muted: string; seed?: number; area?: boolean }> = ({
+  accent,
+  secondary,
+  muted,
+  seed = 1,
+  area = true,
+}) => {
+  const w = 200;
+  const h = 56;
+  const n = 14;
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    const noise = Math.sin(i * 1.7 + seed * 2.3) * 0.18 + Math.cos(i * 0.6 + seed) * 0.12;
+    const trend = t * 0.7 + 0.18;
+    const v = Math.max(0.05, Math.min(0.95, trend + noise));
+    pts.push({ x: t * w, y: (1 - v) * h });
+  }
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const areaPath = `${line} L${w} ${h} L0 ${h} Z`;
+  const last = pts[pts.length - 1];
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`spark-${seed}`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* baseline grid */}
+      {[0.25, 0.5, 0.75].map((p) => (
+        <line key={p} x1={0} x2={w} y1={h * p} y2={h * p} stroke={muted} strokeWidth={0.3} opacity={0.3} />
+      ))}
+      {area && <path d={areaPath} fill={`url(#spark-${seed})`} />}
+      <path d={line} fill="none" stroke={accent} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last.x} cy={last.y} r={2.4} fill={accent} />
+      <circle cx={last.x} cy={last.y} r={5} fill={accent} opacity={0.25} />
+    </svg>
+  );
+};
+
+const RingGauge: React.FC<{ percent: number; accent: string; track: string; size?: number; thickness?: number; label?: string; text?: string }> = ({
+  percent,
+  accent,
+  track,
+  size = 64,
+  thickness = 8,
+  label,
+  text,
+}) => {
+  const r = (size - thickness) / 2;
+  const c = 2 * Math.PI * r;
+  const dash = (c * Math.min(Math.max(percent, 0), 100)) / 100;
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90" style={{ width: size, height: size }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={thickness} opacity={0.18} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={accent}
+          strokeWidth={thickness}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c - dash}`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-xs font-extrabold leading-none" style={{ color: text }}>
+          {Math.round(percent)}%
+        </div>
+        {label && <div className="text-[7px] uppercase tracking-wider mt-0.5" style={{ color: text, opacity: 0.6 }}>{label}</div>}
+      </div>
+    </div>
+  );
+};
+
+const HBars: React.FC<{ values: { label: string; v: number }[]; accent: string; secondary: string; text: string; muted: string }> = ({
+  values,
+  accent,
+  secondary,
+  text,
+  muted,
+}) => {
+  const max = Math.max(...values.map((v) => v.v), 1);
+  return (
+    <div className="w-full space-y-1.5">
+      {values.map((row, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <div className="text-[8px] font-mono uppercase tracking-wider w-10 truncate" style={{ color: muted }}>
+            {row.label}
+          </div>
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: `${secondary}33` }}>
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${(row.v / max) * 100}%`,
+                background: i === 0 ? accent : `${accent}88`,
+              }}
+            />
+          </div>
+          <div className="text-[9px] font-bold w-7 text-right" style={{ color: text }}>
+            {row.v}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const RadialBlob: React.FC<{ accent: string; secondary: string; seed?: number }> = ({ accent, secondary, seed = 1 }) => (
+  <svg viewBox="0 0 200 200" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id={`blob-${seed}`} cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stopColor={accent} stopOpacity="0.55" />
+        <stop offset="60%" stopColor={secondary} stopOpacity="0.25" />
+        <stop offset="100%" stopColor={accent} stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="100" cy="90" r="80" fill={`url(#blob-${seed})`} />
+    {/* concentric rings */}
+    {[30, 50, 70].map((r) => (
+      <circle key={r} cx="100" cy="90" r={r} fill="none" stroke={accent} strokeWidth={0.4} opacity={0.35} />
+    ))}
+    {/* orbit dots */}
+    {[0, 60, 130, 220, 300].map((deg, i) => {
+      const rad = (deg * Math.PI) / 180;
+      const rr = 70;
+      return (
+        <circle
+          key={i}
+          cx={100 + Math.cos(rad) * rr}
+          cy={90 + Math.sin(rad) * rr}
+          r={i === 0 ? 3 : 1.6}
+          fill={accent}
+          opacity={i === 0 ? 1 : 0.5}
+        />
+      );
+    })}
+  </svg>
+);
+
+const IsoStack: React.FC<{ accent: string; secondary: string; text: string }> = ({ accent, secondary, text }) => (
+  <svg viewBox="0 0 220 140" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+    {/* layered isometric blocks */}
+    {[0, 1, 2, 3].map((i) => {
+      const y = 90 - i * 14;
+      const w = 90 - i * 6;
+      const x = 65 + i * 3;
+      const fill = i === 3 ? accent : i === 2 ? `${accent}AA` : i === 1 ? `${secondary}99` : `${secondary}66`;
+      return (
+        <g key={i}>
+          <polygon points={`${x},${y} ${x + w},${y - 12} ${x + w + 30},${y} ${x + 30},${y + 12}`} fill={fill} stroke={text} strokeOpacity={0.15} strokeWidth={0.6} />
+          <polygon points={`${x},${y} ${x + 30},${y + 12} ${x + 30},${y + 24} ${x},${y + 12}`} fill={fill} fillOpacity={0.7} stroke={text} strokeOpacity={0.15} strokeWidth={0.6} />
+          <polygon points={`${x + 30},${y + 12} ${x + w + 30},${y} ${x + w + 30},${y + 12} ${x + 30},${y + 24}`} fill={fill} fillOpacity={0.5} stroke={text} strokeOpacity={0.15} strokeWidth={0.6} />
+        </g>
+      );
+    })}
+  </svg>
+);
+
+const WavePattern: React.FC<{ accent: string; secondary: string }> = ({ accent, secondary }) => (
+  <svg viewBox="0 0 300 160" className="w-full h-full" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="wave-grad" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0%" stopColor={accent} stopOpacity="0.5" />
+        <stop offset="100%" stopColor={secondary} stopOpacity="0.15" />
+      </linearGradient>
+    </defs>
+    {[0, 14, 28, 42, 56].map((o, i) => (
+      <path
+        key={i}
+        d={`M0 ${80 + o} C 60 ${40 + o}, 120 ${110 + o}, 180 ${60 + o} S 300 ${80 + o}, 300 ${80 + o}`}
+        fill="none"
+        stroke={i === 0 ? accent : "url(#wave-grad)"}
+        strokeWidth={i === 0 ? 1.6 : 1}
+        opacity={1 - i * 0.18}
+      />
+    ))}
+  </svg>
+);
+
+const GridDecor: React.FC<{ accent: string; secondary: string; text: string }> = ({ accent, secondary, text }) => (
+  <svg viewBox="0 0 200 120" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <pattern id="grid-dec" width="14" height="14" patternUnits="userSpaceOnUse">
+        <path d="M14 0 H0 V14" fill="none" stroke={text} strokeOpacity={0.12} strokeWidth={0.5} />
+      </pattern>
+    </defs>
+    <rect width="200" height="120" fill="url(#grid-dec)" />
+    {/* highlighted cells */}
+    <rect x="56" y="42" width="14" height="14" fill={accent} opacity={0.85} />
+    <rect x="70" y="42" width="14" height="14" fill={accent} opacity={0.4} />
+    <rect x="84" y="56" width="14" height="14" fill={secondary} opacity={0.6} />
+    <rect x="56" y="56" width="14" height="14" fill={accent} opacity={0.25} />
+    <rect x="98" y="42" width="14" height="14" fill={secondary} opacity={0.3} />
+  </svg>
+);
+
 const Donut: React.FC<{ percent: number; accent: string; track: string; label: string; sub: string; text: string; muted: string }> = ({
   percent,
   accent,
@@ -510,23 +713,8 @@ const SlideMock: React.FC<{
 
       {/* SECTION */}
       {kind === "section" && (
-        <div className="relative h-full">
-          {sectionImg && (
-            <>
-              <img
-                src={sectionImg}
-                alt=""
-                loading="lazy"
-                aria-hidden
-                className="absolute inset-0 h-full w-full object-cover opacity-25"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ background: `linear-gradient(180deg, ${t.palette.bg}EE 0%, ${t.palette.bg}AA 100%)` }}
-              />
-            </>
-          )}
-          <div className="relative h-full p-10 flex flex-col justify-center z-10">
+        <div className="relative h-full grid grid-cols-2 z-10">
+          <div className="relative p-10 flex flex-col justify-center">
             <div
               className="text-[11px] font-semibold uppercase tracking-[0.22em]"
               style={{ color: t.palette.accent }}
@@ -559,9 +747,60 @@ const SlideMock: React.FC<{
                   cards: c.cards.map((card, i) => (i === 0 ? { ...card, body: v } : card)),
                 }))
               }
-              className="mt-4 text-sm max-w-[60%]"
+              className="mt-4 text-sm max-w-[90%]"
               style={{ color: muted }}
             />
+            <div className="mt-6 flex items-center gap-3">
+              <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: muted }}>
+                In this chapter
+              </div>
+              <div className="h-px flex-1" style={{ background: subtleBorder }} />
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {content.cards.slice(0, 3).map((c, i) => (
+                <div
+                  key={i}
+                  className="rounded-md px-2 py-1.5"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  <div className="text-[8px] font-mono" style={{ color: t.palette.accent }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <div className="text-[10px] font-bold leading-tight truncate" style={{ color: t.palette.text }}>
+                    {c.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: designed visual composition (no blurred photo) */}
+          <div
+            className="relative overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, ${t.palette.accent}18 0%, ${t.palette.secondary}10 60%, transparent 100%)`,
+              borderLeft: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <div className="absolute inset-0">
+              <RadialBlob accent={t.palette.accent} secondary={t.palette.secondary} seed={index + 5} />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-[70%] h-[55%]">
+                <IsoStack accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />
+              </div>
+            </div>
+            <div
+              className="absolute top-6 right-6 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-sm"
+              style={{ background: `${t.palette.bg}AA`, color: t.palette.accent, border: `1px solid ${t.palette.accent}55` }}
+            >
+              Chapter {String(index + 1).padStart(2, "0")}
+            </div>
+            <div className="absolute bottom-8 left-6 right-6 flex items-end justify-between text-[8px] font-mono uppercase tracking-wider" style={{ color: muted }}>
+              <span>{t.palette.accent}</span>
+              <span>·</span>
+              <span>x: {(index + 1) * 12} / y: {(index + 1) * 8}</span>
+            </div>
           </div>
         </div>
       )}
@@ -703,12 +942,22 @@ const SlideMock: React.FC<{
           <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
+              // Pseudo-percent derived from value to drive visualizations
+              const numeric = parseFloat(String(m.value).replace(/[^0-9.]/g, "")) || (i + 1) * 17;
+              const pct = Math.min(98, Math.max(12, (numeric % 100) + 8));
+              const useRing = i % 2 === 0;
               return (
                 <div
                   key={i}
-                  className="rounded-lg p-4 flex flex-col justify-between"
+                  className="rounded-lg p-4 flex flex-col gap-3 relative overflow-hidden"
                   style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                 >
+                  {/* corner accent stripe */}
+                  <div
+                    aria-hidden
+                    className="absolute top-0 left-0 h-1 w-12 rounded-br-md"
+                    style={{ background: t.palette.accent }}
+                  />
                   <div className="flex items-center justify-between">
                     {Ic && (
                       <div
@@ -730,6 +979,46 @@ const SlideMock: React.FC<{
                       </span>
                     )}
                   </div>
+
+                  {/* Visualization fills the empty middle */}
+                  <div className="flex-1 min-h-[60px] flex items-center justify-center">
+                    {useRing ? (
+                      <div className="flex items-center gap-3 w-full">
+                        <RingGauge
+                          percent={pct}
+                          accent={t.palette.accent}
+                          track={t.palette.text}
+                          size={68}
+                          thickness={9}
+                          label="vs goal"
+                          text={t.palette.text}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <HBars
+                            values={[
+                              { label: "Q1", v: Math.round(pct * 0.6) },
+                              { label: "Q2", v: Math.round(pct * 0.78) },
+                              { label: "Q3", v: Math.round(pct) },
+                            ]}
+                            accent={t.palette.accent}
+                            secondary={t.palette.secondary}
+                            text={t.palette.text}
+                            muted={muted}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-16">
+                        <Sparkline
+                          accent={t.palette.accent}
+                          secondary={t.palette.secondary}
+                          muted={muted}
+                          seed={i + 2}
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <div
                       className="text-3xl font-extrabold leading-none tracking-tight"
@@ -745,19 +1034,6 @@ const SlideMock: React.FC<{
                         {m.sublabel}
                       </div>
                     )}
-                    {/* Mini sparkbar */}
-                    <div className="mt-2 flex items-end gap-0.5 h-3">
-                      {[0.4, 0.6, 0.5, 0.7, 0.85, 1].map((h, hi) => (
-                        <span
-                          key={hi}
-                          className="flex-1 rounded-sm"
-                          style={{
-                            height: `${h * 100}%`,
-                            background: hi === 5 ? t.palette.accent : `${t.palette.secondary}88`,
-                          }}
-                        />
-                      ))}
-                    </div>
                   </div>
                 </div>
               );
@@ -922,11 +1198,14 @@ const SlideMock: React.FC<{
           </div>
           <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">{content.compare.heading}</h3>
           <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
-            <div className="rounded-lg p-5 flex flex-col" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
-              <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                {content.compare.before.title}
+            <div className="rounded-lg p-5 flex flex-col relative overflow-hidden" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+                  {content.compare.before.title}
+                </div>
+                <RingGauge percent={32} accent={t.palette.secondary} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
               </div>
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.before.points.map((p, i) => (
                   <li key={i} className="flex gap-2 items-start text-sm" style={{ color: t.palette.text }}>
                     <span
@@ -937,18 +1216,46 @@ const SlideMock: React.FC<{
                   </li>
                 ))}
               </ul>
+              {/* baseline bars */}
+              <div className="mt-4 pt-3 border-t" style={{ borderColor: subtleBorder }}>
+                <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: muted }}>
+                  Baseline performance
+                </div>
+                <HBars
+                  values={[
+                    { label: "Speed", v: 28 },
+                    { label: "Cost", v: 64 },
+                    { label: "Effort", v: 78 },
+                  ]}
+                  accent={t.palette.secondary}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                />
+              </div>
             </div>
             <div
-              className="rounded-lg p-5 flex flex-col"
+              className="rounded-lg p-5 flex flex-col relative overflow-hidden"
               style={{
                 background: `${t.palette.accent}14`,
                 border: `1px solid ${t.palette.accent}55`,
               }}
             >
-              <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: t.palette.accent }}>
-                {content.compare.after.title}
+              {/* corner accent */}
+              <div
+                aria-hidden
+                className="absolute top-0 right-0 px-2 py-1 text-[8px] font-extrabold uppercase tracking-wider rounded-bl-md"
+                style={{ background: t.palette.accent, color: t.palette.bg }}
+              >
+                +218%
               </div>
-              <ul className="mt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: t.palette.accent }}>
+                  {content.compare.after.title}
+                </div>
+                <RingGauge percent={91} accent={t.palette.accent} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
+              </div>
+              <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.after.points.map((p, i) => (
                   <li key={i} className="flex gap-2 items-start text-sm" style={{ color: t.palette.text }}>
                     <span
@@ -959,6 +1266,22 @@ const SlideMock: React.FC<{
                   </li>
                 ))}
               </ul>
+              <div className="mt-4 pt-3 border-t" style={{ borderColor: `${t.palette.accent}33` }}>
+                <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: t.palette.accent }}>
+                  Lifted performance
+                </div>
+                <HBars
+                  values={[
+                    { label: "Speed", v: 92 },
+                    { label: "Cost", v: 38 },
+                    { label: "Effort", v: 22 },
+                  ]}
+                  accent={t.palette.accent}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -1146,26 +1469,66 @@ const SlideMock: React.FC<{
             />
           </div>
           <div className="col-span-2 grid grid-cols-2 gap-3">
-            {content.kpi.supporting.map((s, i) => (
-              <div
-                key={i}
-                className="rounded-xl p-4 flex flex-col justify-between min-h-[7rem]"
-                style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
-              >
+            {content.kpi.supporting.map((s, i) => {
+              const numeric = parseFloat(String(s.value).replace(/[^0-9.]/g, "")) || (i + 1) * 21;
+              const pct = Math.min(96, Math.max(20, (numeric % 100) + 14));
+              const variants = ["spark", "ring", "bars", "wave"] as const;
+              const variant = variants[i % variants.length];
+              return (
                 <div
-                  className="text-[10px] uppercase tracking-wider font-semibold"
-                  style={{ color: muted }}
+                  key={i}
+                  className="rounded-xl p-3 flex flex-col gap-2 min-h-[7rem] relative overflow-hidden"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                 >
-                  {s.label}
+                  <div
+                    aria-hidden
+                    className="absolute top-0 right-0 h-1 w-10 rounded-bl-md"
+                    style={{ background: t.palette.accent }}
+                  />
+                  <div
+                    className="text-[10px] uppercase tracking-wider font-semibold"
+                    style={{ color: muted }}
+                  >
+                    {s.label}
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    {variant === "spark" && (
+                      <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={i + 9} />
+                    )}
+                    {variant === "ring" && (
+                      <div className="h-full flex items-center justify-center">
+                        <RingGauge percent={pct} accent={t.palette.accent} track={t.palette.text} size={56} thickness={7} text={t.palette.text} />
+                      </div>
+                    )}
+                    {variant === "bars" && (
+                      <div className="h-full flex items-center">
+                        <HBars
+                          values={[
+                            { label: "wk1", v: Math.round(pct * 0.55) },
+                            { label: "wk2", v: Math.round(pct * 0.72) },
+                            { label: "wk3", v: Math.round(pct * 0.86) },
+                            { label: "wk4", v: Math.round(pct) },
+                          ]}
+                          accent={t.palette.accent}
+                          secondary={t.palette.secondary}
+                          text={t.palette.text}
+                          muted={muted}
+                        />
+                      </div>
+                    )}
+                    {variant === "wave" && (
+                      <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
+                    )}
+                  </div>
+                  <div
+                    className="text-xl font-extrabold tracking-tight leading-none"
+                    style={{ color: t.palette.text }}
+                  >
+                    {s.value}
+                  </div>
                 </div>
-                <div
-                  className="text-2xl font-extrabold tracking-tight"
-                  style={{ color: t.palette.text }}
-                >
-                  {s.value}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -1217,6 +1580,36 @@ const SlideMock: React.FC<{
                       />
                     </>
                   )}
+                  {/* Non-image tile: inject a visual filler so it doesn't feel empty */}
+                  {!tileImg && (
+                    <div className="absolute inset-0 pointer-events-none opacity-80">
+                      {(() => {
+                        const variants = ["wave", "blob", "grid", "iso", "spark"] as const;
+                        const v = variants[i % variants.length];
+                        if (v === "wave") return <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />;
+                        if (v === "blob") return <RadialBlob accent={t.palette.accent} secondary={t.palette.secondary} seed={i + 3} />;
+                        if (v === "grid") return <GridDecor accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />;
+                        if (v === "iso") return (
+                          <div className="absolute inset-0 flex items-end justify-end p-1 opacity-90">
+                            <div className="w-3/4 h-3/4">
+                              <IsoStack accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />
+                            </div>
+                          </div>
+                        );
+                        return (
+                          <div className="absolute inset-0 flex items-center p-2">
+                            <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={i + 4} />
+                          </div>
+                        );
+                      })()}
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background: `linear-gradient(180deg, transparent 30%, ${t.palette.bg}DD 100%)`,
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="relative flex items-center justify-between">
                     {Ic ? (
                       <div
@@ -1259,29 +1652,69 @@ const SlideMock: React.FC<{
         <div className="relative h-full grid grid-cols-2 z-10">
           <div className="relative overflow-hidden">
             {featureImg ? (
-              <>
-                <img
-                  src={featureImg}
-                  alt=""
-                  aria-hidden
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{ background: `linear-gradient(90deg, transparent 60%, ${t.palette.bg} 100%)` }}
-                />
-              </>
+              <img
+                src={featureImg}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             ) : (
-              <div className="absolute inset-0" style={{ background: `${t.palette.accent}22` }} />
+              <div className="absolute inset-0">
+                <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
+              </div>
             )}
-            <div className="relative p-8 h-full flex flex-col justify-end">
+            {/* Bottom gradient for legibility */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(180deg, ${t.palette.bg}33 0%, ${t.palette.bg}EE 80%, ${t.palette.bg} 100%)`,
+              }}
+            />
+            {/* Floating data card overlay (replaces blank dark gradient) */}
+            <div className="relative h-full p-6 flex flex-col justify-between">
               <div
                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold w-fit backdrop-blur"
-                style={{ background: `${t.palette.bg}CC`, color: t.palette.text }}
+                style={{ background: `${t.palette.bg}CC`, color: t.palette.text, border: `1px solid ${subtleBorder}` }}
               >
                 <Sparkles className="h-3 w-3" style={{ color: t.palette.accent }} />
                 Featured capability
+              </div>
+
+              <div
+                className="rounded-xl p-3 backdrop-blur-md w-[78%] self-start"
+                style={{ background: `${t.palette.bg}DD`, border: `1px solid ${t.palette.accent}55` }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: muted }}>
+                    Live performance
+                  </div>
+                  <div
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: t.palette.accent, color: t.palette.bg }}
+                  >
+                    +42%
+                  </div>
+                </div>
+                <div className="mt-2 h-12">
+                  <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={index + 11} />
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {[
+                    { l: "ARR", v: "$1.2B" },
+                    { l: "NRR", v: "126%" },
+                    { l: "Margin", v: "78%" },
+                  ].map((s, i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-xs font-extrabold leading-none" style={{ color: t.palette.text }}>
+                        {s.v}
+                      </div>
+                      <div className="text-[8px] mt-0.5" style={{ color: muted }}>
+                        {s.l}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
