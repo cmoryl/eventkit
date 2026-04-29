@@ -138,6 +138,59 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
         }
       }
     });
+
+    /* ------------------------------------------------------------------
+     * SECTION AUTO-TAGGING — finds top-level "section" blocks inside
+     * SlideMock (grid items, agenda cards, stat tiles, KPI columns…)
+     * and assigns a stable data-slide-section id. Then applies
+     * move/hide/duplicate overrides.
+     * ---------------------------------------------------------------- */
+    const sectionOverrides = slide.demoSectionOverrides || {};
+    const sectionSeen = new Map<string, number>();
+    const sectionId = (base: string) => {
+      const n = (sectionSeen.get(base) ?? 0) + 1;
+      sectionSeen.set(base, n);
+      return n === 1 ? base : `${base}-${n}`;
+    };
+
+    const sectionCandidates: HTMLElement[] = [];
+    // Strategy: any direct child of a `grid` container that contains text/img is
+    // a "section". Plus any `.rounded-lg/xl/2xl` block that holds Editable text.
+    root.querySelectorAll<HTMLElement>('.grid > *, .flex > .rounded-lg, .flex > .rounded-xl').forEach((el) => {
+      if (el.hasAttribute('data-slide-shape')) return;
+      if (el.children.length === 0) return;
+      // must have visible text or an image inside
+      if (!el.innerText.trim() && !el.querySelector('img, svg')) return;
+      sectionCandidates.push(el);
+    });
+    // Also tag big standalone p-* blocks (title, hero text columns)
+    root.querySelectorAll<HTMLElement>('[class*="p-10"], [class*="p-8"]').forEach((el) => {
+      if (el.parentElement?.classList.contains('grid')) return; // already covered
+      if (el.children.length === 0) return;
+      sectionCandidates.push(el);
+    });
+
+    sectionCandidates.forEach((el) => {
+      let id = el.getAttribute('data-slide-section');
+      if (!id) {
+        const cls = el.getAttribute('class') || '';
+        let base = 'section';
+        if (/rounded-(lg|xl|2xl)/.test(cls)) base = 'card';
+        else if (/p-10|p-8/.test(cls)) base = 'pane';
+        id = sectionId(base);
+        el.setAttribute('data-slide-section', id);
+        // make positioned so transform works
+        const pos = getComputedStyle(el).position;
+        if (pos === 'static') el.style.position = 'relative';
+      }
+      const ov = sectionOverrides[id];
+      const dx = ov?.dx || 0;
+      const dy = ov?.dy || 0;
+      el.style.transform = dx || dy ? `translate(${dx}%, ${dy}%)` : '';
+      el.style.transition = dragRef.current?.id === id ? 'none' : 'transform 120ms ease-out';
+      if (ov?.hidden) el.style.display = 'none';
+      else if (el.style.display === 'none' && !overrides[el.getAttribute('data-slide-shape') || '']?.hidden) el.style.display = '';
+    });
   });
 
   /* ----------------------------------------------------------------------
