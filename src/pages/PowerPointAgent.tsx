@@ -615,23 +615,29 @@ const PowerPointAgent: React.FC = () => {
       `}</style>
       {/* Header */}
       <header className="border-b bg-card/60 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <Button asChild variant="ghost" size="sm">
               <Link to="/"><ArrowLeft className="h-4 w-4" /> Back</Link>
             </Button>
             <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
                 <Presentation className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h1 className="text-base font-semibold leading-tight">PowerPoint Agent</h1>
-                <p className="text-xs text-muted-foreground">AI deck designer · exports .pptx</p>
+              <div className="min-w-0">
+                <h1 className="text-base font-semibold leading-tight truncate">Presentation Studio</h1>
+                <p className="text-xs text-muted-foreground truncate">AI deck designer · slide editor · .pptx + MP4 export</p>
               </div>
             </div>
           </div>
-          {history.length > 0 && (
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "agent" | "editor")}>
+            <TabsList className="bg-card/40 backdrop-blur">
+              <TabsTrigger value="agent" className="gap-2"><Bot className="h-4 w-4" /> Agent</TabsTrigger>
+              <TabsTrigger value="editor" className="gap-2"><LayoutTemplate className="h-4 w-4" /> Editor</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {history.length > 0 && activeTab === "agent" && (
             <Button variant="ghost" size="sm" onClick={reset}>
               <RefreshCw className="h-4 w-4" /> New deck
             </Button>
