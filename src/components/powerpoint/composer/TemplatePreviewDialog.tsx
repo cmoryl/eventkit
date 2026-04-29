@@ -326,19 +326,71 @@ const SlideMock: React.FC<{
     >
       {/* Decorative orbs */}
       <div
-        className="absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-25 blur-3xl"
+        className="absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-25 blur-3xl pointer-events-none"
         style={{ background: t.palette.accent }}
       />
       <div
-        className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full opacity-20 blur-3xl"
+        className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full opacity-20 blur-3xl pointer-events-none"
         style={{ background: t.palette.secondary }}
       />
 
+      {/* Decorative dotted grid (very low opacity) */}
+      <div
+        aria-hidden
+        className="absolute inset-0 pointer-events-none opacity-[0.06]"
+        style={{
+          backgroundImage: `radial-gradient(${t.palette.text} 1px, transparent 1px)`,
+          backgroundSize: "18px 18px",
+        }}
+      />
+
+      {/* Decorative corner brackets */}
+      <svg
+        aria-hidden
+        className="absolute top-2.5 left-2.5 h-4 w-4 pointer-events-none opacity-60"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path d="M1 6 V1 H6" stroke={t.palette.accent} strokeWidth="1.4" />
+      </svg>
+      <svg
+        aria-hidden
+        className="absolute bottom-2.5 right-2.5 h-4 w-4 pointer-events-none opacity-60"
+        viewBox="0 0 16 16"
+        fill="none"
+      >
+        <path d="M15 10 V15 H10" stroke={t.palette.accent} strokeWidth="1.4" />
+      </svg>
+
+      {/* Watermark eyebrow (very subtle, top-left) */}
+      <div
+        className="absolute top-3 left-6 text-[9px] font-mono tracking-[0.25em] uppercase z-20 pointer-events-none"
+        style={{ color: muted, opacity: 0.7 }}
+      >
+        {content.eyebrow}
+      </div>
+
+      {/* Slide counter (top-right) */}
       <div
         className="absolute top-3 right-4 text-[10px] font-mono tracking-wider z-20"
         style={{ color: muted }}
       >
         {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+      </div>
+
+      {/* Footer brand bar */}
+      <div
+        className="absolute bottom-2 left-6 right-6 z-20 flex items-center justify-between text-[9px] font-mono tracking-[0.18em] uppercase pointer-events-none"
+        style={{ color: muted }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block h-1.5 w-1.5 rounded-full"
+            style={{ background: t.palette.accent }}
+          />
+          <span>{t.name}</span>
+        </div>
+        <div className="opacity-70">{kind.replace(/-/g, " ")}</div>
       </div>
 
       {/* TITLE */}
