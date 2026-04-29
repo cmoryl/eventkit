@@ -206,6 +206,7 @@ export const LAYOUT_VARIATIONS: Partial<Record<SlideLayout, { value: string; lab
     { value: 'grid',        label: 'Grid' },
     { value: 'ranked',      label: 'Ranked Bars' },
     { value: 'cards',       label: 'Cards' },
+    { value: 'brandhub-tiles', label: 'BrandHub Tiles' },
   ],
   timeline: [
     { value: 'rail',        label: 'Horizontal Rail' },
