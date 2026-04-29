@@ -5,6 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sparkles, X, BarChart3, Quote as QuoteIcon, Layers } from "lucide-react";
 import type { DeckTemplate } from "./TemplateGallery";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO, isLightColor } from "./TemplateDemoCard";
+import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
 
 interface Props {
   template: DeckTemplate | null;
@@ -26,6 +27,7 @@ const SlideMock: React.FC<{
   const muted = isLight ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.7)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.14)";
   const cardBg = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)";
+  const thumb = TEMPLATE_THUMBNAILS[t.id];
 
   return (
     <div
