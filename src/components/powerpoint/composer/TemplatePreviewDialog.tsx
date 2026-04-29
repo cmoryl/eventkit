@@ -1571,8 +1571,7 @@ const SlideMock: React.FC<{
             {content.kpi.supporting.map((s, i) => {
               const numeric = parseFloat(String(s.value).replace(/[^0-9.]/g, "")) || (i + 1) * 21;
               const pct = Math.min(96, Math.max(20, (numeric % 100) + 14));
-              const variants = ["spark", "ring", "bars", "wave"] as const;
-              const variant = variants[i % variants.length];
+              const variant = pickVariant(t.id, `kpi-${i}`, index + i);
               return (
                 <div
                   key={i}
@@ -1591,33 +1590,16 @@ const SlideMock: React.FC<{
                     {s.label}
                   </div>
                   <div className="flex-1 min-h-0">
-                    {variant === "spark" && (
-                      <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={i + 9} />
-                    )}
-                    {variant === "ring" && (
-                      <div className="h-full flex items-center justify-center">
-                        <RingGauge percent={pct} accent={t.palette.accent} track={t.palette.text} size={56} thickness={7} text={t.palette.text} />
-                      </div>
-                    )}
-                    {variant === "bars" && (
-                      <div className="h-full flex items-center">
-                        <HBars
-                          values={[
-                            { label: "wk1", v: Math.round(pct * 0.55) },
-                            { label: "wk2", v: Math.round(pct * 0.72) },
-                            { label: "wk3", v: Math.round(pct * 0.86) },
-                            { label: "wk4", v: Math.round(pct) },
-                          ]}
-                          accent={t.palette.accent}
-                          secondary={t.palette.secondary}
-                          text={t.palette.text}
-                          muted={muted}
-                        />
-                      </div>
-                    )}
-                    {variant === "wave" && (
-                      <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
-                    )}
+                    <VisualVariant
+                      variant={variant}
+                      accent={t.palette.accent}
+                      secondary={t.palette.secondary}
+                      text={t.palette.text}
+                      muted={muted}
+                      seed={i + 9}
+                      percent={pct}
+                      size="sm"
+                    />
                   </div>
                   <div
                     className="text-xl font-extrabold tracking-tight leading-none"
