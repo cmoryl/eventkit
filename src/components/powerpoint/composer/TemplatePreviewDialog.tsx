@@ -211,6 +211,209 @@ const BarLineChart: React.FC<{
   );
 };
 
+/* ------------------------------ Visual fillers ------------------------------ */
+// Reusable SVG visuals to make every card/section feel designed instead of empty.
+
+const Sparkline: React.FC<{ accent: string; secondary: string; muted: string; seed?: number; area?: boolean }> = ({
+  accent,
+  secondary,
+  muted,
+  seed = 1,
+  area = true,
+}) => {
+  const w = 200;
+  const h = 56;
+  const n = 14;
+  const pts: { x: number; y: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    const noise = Math.sin(i * 1.7 + seed * 2.3) * 0.18 + Math.cos(i * 0.6 + seed) * 0.12;
+    const trend = t * 0.7 + 0.18;
+    const v = Math.max(0.05, Math.min(0.95, trend + noise));
+    pts.push({ x: t * w, y: (1 - v) * h });
+  }
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const areaPath = `${line} L${w} ${h} L0 ${h} Z`;
+  const last = pts[pts.length - 1];
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`spark-${seed}`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* baseline grid */}
+      {[0.25, 0.5, 0.75].map((p) => (
+        <line key={p} x1={0} x2={w} y1={h * p} y2={h * p} stroke={muted} strokeWidth={0.3} opacity={0.3} />
+      ))}
+      {area && <path d={areaPath} fill={`url(#spark-${seed})`} />}
+      <path d={line} fill="none" stroke={accent} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last.x} cy={last.y} r={2.4} fill={accent} />
+      <circle cx={last.x} cy={last.y} r={5} fill={accent} opacity={0.25} />
+    </svg>
+  );
+};
+
+const RingGauge: React.FC<{ percent: number; accent: string; track: string; size?: number; thickness?: number; label?: string; text?: string }> = ({
+  percent,
+  accent,
+  track,
+  size = 64,
+  thickness = 8,
+  label,
+  text,
+}) => {
+  const r = (size - thickness) / 2;
+  const c = 2 * Math.PI * r;
+  const dash = (c * Math.min(Math.max(percent, 0), 100)) / 100;
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90" style={{ width: size, height: size }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={thickness} opacity={0.18} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={accent}
+          strokeWidth={thickness}
+          strokeLinecap="round"
+          strokeDasharray={`${dash} ${c - dash}`}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="text-xs font-extrabold leading-none" style={{ color: text }}>
+          {Math.round(percent)}%
+        </div>
+        {label && <div className="text-[7px] uppercase tracking-wider mt-0.5" style={{ color: text, opacity: 0.6 }}>{label}</div>}
+      </div>
+    </div>
+  );
+};
+
+const HBars: React.FC<{ values: { label: string; v: number }[]; accent: string; secondary: string; text: string; muted: string }> = ({
+  values,
+  accent,
+  secondary,
+  text,
+  muted,
+}) => {
+  const max = Math.max(...values.map((v) => v.v), 1);
+  return (
+    <div className="w-full space-y-1.5">
+      {values.map((row, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <div className="text-[8px] font-mono uppercase tracking-wider w-10 truncate" style={{ color: muted }}>
+            {row.label}
+          </div>
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: `${secondary}33` }}>
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${(row.v / max) * 100}%`,
+                background: i === 0 ? accent : `${accent}88`,
+              }}
+            />
+          </div>
+          <div className="text-[9px] font-bold w-7 text-right" style={{ color: text }}>
+            {row.v}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const RadialBlob: React.FC<{ accent: string; secondary: string; seed?: number }> = ({ accent, secondary, seed = 1 }) => (
+  <svg viewBox="0 0 200 200" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id={`blob-${seed}`} cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stopColor={accent} stopOpacity="0.55" />
+        <stop offset="60%" stopColor={secondary} stopOpacity="0.25" />
+        <stop offset="100%" stopColor={accent} stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <circle cx="100" cy="90" r="80" fill={`url(#blob-${seed})`} />
+    {/* concentric rings */}
+    {[30, 50, 70].map((r) => (
+      <circle key={r} cx="100" cy="90" r={r} fill="none" stroke={accent} strokeWidth={0.4} opacity={0.35} />
+    ))}
+    {/* orbit dots */}
+    {[0, 60, 130, 220, 300].map((deg, i) => {
+      const rad = (deg * Math.PI) / 180;
+      const rr = 70;
+      return (
+        <circle
+          key={i}
+          cx={100 + Math.cos(rad) * rr}
+          cy={90 + Math.sin(rad) * rr}
+          r={i === 0 ? 3 : 1.6}
+          fill={accent}
+          opacity={i === 0 ? 1 : 0.5}
+        />
+      );
+    })}
+  </svg>
+);
+
+const IsoStack: React.FC<{ accent: string; secondary: string; text: string }> = ({ accent, secondary, text }) => (
+  <svg viewBox="0 0 220 140" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+    {/* layered isometric blocks */}
+    {[0, 1, 2, 3].map((i) => {
+      const y = 90 - i * 14;
+      const w = 90 - i * 6;
+      const x = 65 + i * 3;
+      const fill = i === 3 ? accent : i === 2 ? `${accent}AA` : i === 1 ? `${secondary}99` : `${secondary}66`;
+      return (
+        <g key={i}>
+          <polygon points={`${x},${y} ${x + w},${y - 12} ${x + w + 30},${y} ${x + 30},${y + 12}`} fill={fill} stroke={text} strokeOpacity={0.15} strokeWidth={0.6} />
+          <polygon points={`${x},${y} ${x + 30},${y + 12} ${x + 30},${y + 24} ${x},${y + 12}`} fill={fill} fillOpacity={0.7} stroke={text} strokeOpacity={0.15} strokeWidth={0.6} />
+          <polygon points={`${x + 30},${y + 12} ${x + w + 30},${y} ${x + w + 30},${y + 12} ${x + 30},${y + 24}`} fill={fill} fillOpacity={0.5} stroke={text} strokeOpacity={0.15} strokeWidth={0.6} />
+        </g>
+      );
+    })}
+  </svg>
+);
+
+const WavePattern: React.FC<{ accent: string; secondary: string }> = ({ accent, secondary }) => (
+  <svg viewBox="0 0 300 160" className="w-full h-full" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="wave-grad" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0%" stopColor={accent} stopOpacity="0.5" />
+        <stop offset="100%" stopColor={secondary} stopOpacity="0.15" />
+      </linearGradient>
+    </defs>
+    {[0, 14, 28, 42, 56].map((o, i) => (
+      <path
+        key={i}
+        d={`M0 ${80 + o} C 60 ${40 + o}, 120 ${110 + o}, 180 ${60 + o} S 300 ${80 + o}, 300 ${80 + o}`}
+        fill="none"
+        stroke={i === 0 ? accent : "url(#wave-grad)"}
+        strokeWidth={i === 0 ? 1.6 : 1}
+        opacity={1 - i * 0.18}
+      />
+    ))}
+  </svg>
+);
+
+const GridDecor: React.FC<{ accent: string; secondary: string; text: string }> = ({ accent, secondary, text }) => (
+  <svg viewBox="0 0 200 120" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <pattern id="grid-dec" width="14" height="14" patternUnits="userSpaceOnUse">
+        <path d="M14 0 H0 V14" fill="none" stroke={text} strokeOpacity={0.12} strokeWidth={0.5} />
+      </pattern>
+    </defs>
+    <rect width="200" height="120" fill="url(#grid-dec)" />
+    {/* highlighted cells */}
+    <rect x="56" y="42" width="14" height="14" fill={accent} opacity={0.85} />
+    <rect x="70" y="42" width="14" height="14" fill={accent} opacity={0.4} />
+    <rect x="84" y="56" width="14" height="14" fill={secondary} opacity={0.6} />
+    <rect x="56" y="56" width="14" height="14" fill={accent} opacity={0.25} />
+    <rect x="98" y="42" width="14" height="14" fill={secondary} opacity={0.3} />
+  </svg>
+);
+
 const Donut: React.FC<{ percent: number; accent: string; track: string; label: string; sub: string; text: string; muted: string }> = ({
   percent,
   accent,
