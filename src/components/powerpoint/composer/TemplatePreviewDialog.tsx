@@ -35,8 +35,30 @@ interface Props {
 
 const buildInitialContent = (t: DeckTemplate): DemoContent => {
   const d = DEMO_BY_TEMPLATE[t.id] || FALLBACK_DEMO;
-  // Deep-clone so edits don't mutate the shared demo
-  return JSON.parse(JSON.stringify({ ...d, cards: d.cards.map((c) => ({ title: c.title, body: c.body })) }));
+  // Manual clone — JSON.stringify mangles Lucide icon components (forwardRef objects)
+  // into empty {} which then crash React when rendered as <Ic />.
+  return {
+    eyebrow: d.eyebrow,
+    title: d.title,
+    subtitle: d.subtitle,
+    cards: d.cards.map((c) => ({ title: c.title, body: c.body, icon: c.icon })),
+    stat: { ...d.stat },
+    quote: { ...d.quote },
+    agenda: d.agenda.map((a) => ({ ...a })),
+    metrics: d.metrics.map((m) => ({ ...m })),
+    timeline: d.timeline.map((tl) => ({ ...tl })),
+    compare: {
+      heading: d.compare.heading,
+      before: { title: d.compare.before.title, points: [...d.compare.before.points] },
+      after: { title: d.compare.after.title, points: [...d.compare.after.points] },
+    },
+    chart: {
+      title: d.chart.title,
+      unit: d.chart.unit,
+      series: d.chart.series.map((s) => ({ ...s })),
+      trendline: d.chart.trendline ? [...d.chart.trendline] : undefined,
+    },
+  };
 };
 
 const Editable: React.FC<{
