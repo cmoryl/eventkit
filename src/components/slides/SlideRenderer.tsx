@@ -111,14 +111,14 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {variationNode || <>
       {slide.layout === 'title' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
-          <h1
+          <h1 data-slide-field="title"
             className="font-bold leading-tight mb-[40px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 96, textAlign: 'center' }}
           >
             {slide.title}
           </h1>
           {slide.subtitle && (
-            <p className="opacity-70" style={{ fontFamily: bodyFont, fontSize: bSize || 48 }}>
+            <p data-slide-field="subtitle" className="opacity-70" style={{ fontFamily: bodyFont, fontSize: bSize || 48 }}>
               {slide.subtitle}
             </p>
           )}
@@ -130,7 +130,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'content' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[60px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 72 }}
           >
@@ -156,7 +156,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {(slide.layout === 'image-left' || slide.layout === 'image-right') && (
         <div className={`flex h-full ${slide.layout === 'image-right' ? 'flex-row' : 'flex-row-reverse'}`}>
           <div className="flex-1 flex flex-col justify-center px-[100px] py-[80px]" style={{ textAlign: align }}>
-            <h2
+            <h2 data-slide-field="title"
               className="font-bold mb-[40px]"
               style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}
             >
@@ -186,7 +186,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'two-column' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]" style={{ textAlign: align }}>
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[60px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}
           >
@@ -221,7 +221,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {slide.layout === 'quote' && (
         <div className="flex flex-col items-center justify-center h-full px-[240px] text-center">
           <div className="mb-[40px] opacity-20" style={{ fontSize: 160, lineHeight: '1', fontFamily: 'Georgia, serif' }}>"</div>
-          <h2
+          <h2 data-slide-field="title"
             className="font-medium italic leading-snug mb-[60px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, marginTop: -100 }}
           >
@@ -251,7 +251,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'stats' && slide.variation !== 'brandhub-tiles' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[80px] text-center"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 72 }}
           >
@@ -291,11 +291,11 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               />
               {slide.title && (
                 <div className="absolute inset-0 flex flex-col items-center justify-end pb-[120px] bg-gradient-to-t from-black/70 via-transparent to-transparent">
-                  <h2 className="font-bold text-white text-center px-[120px]" style={{ fontFamily: headingFont, fontSize: hSize || 72 }}>
+                  <h2 data-slide-field="title" className="font-bold text-white text-center px-[120px]" style={{ fontFamily: headingFont, fontSize: hSize || 72 }}>
                     {slide.title}
                   </h2>
                   {slide.subtitle && (
-                    <p className="text-white/70 mt-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 36 }}>
+                    <p data-slide-field="subtitle" className="text-white/70 mt-[20px]" style={{ fontFamily: bodyFont, fontSize: bSize || 36 }}>
                       {slide.subtitle}
                     </p>
                   )}
@@ -312,7 +312,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'comparison' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[60px] text-center"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64 }}
           >
@@ -347,7 +347,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'timeline' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[80px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
           >
@@ -387,7 +387,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'process' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[80px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
           >
@@ -441,7 +441,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'chart' && slide.variation !== 'growth-bars' && (
         <div className="flex flex-col h-full px-[120px] py-[100px]">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[40px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 64, textAlign: align }}
           >
@@ -533,7 +533,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
       {slide.layout === 'section' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
-          <h2
+          <h2 data-slide-field="title"
             className="font-bold mb-[30px]"
             style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 88 }}
           >
@@ -551,7 +551,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {slide.layout === 'agenda' && (
         <div className="flex h-full px-[120px] py-[100px] gap-[120px]">
           <div className="flex flex-col justify-center" style={{ minWidth: 320 }}>
-            <h2
+            <h2 data-slide-field="title"
               className="font-bold leading-tight"
               style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize || 80 }}
             >
@@ -583,7 +583,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       {slide.layout === 'big-number' && (
         <div className="flex flex-col items-center justify-center h-full px-[160px] text-center gap-[32px]">
           {slide.title && (
-            <h2
+            <h2 data-slide-field="title"
               className="font-semibold opacity-70 uppercase tracking-widest"
               style={{ fontFamily: headingFont, color: headingColor, fontSize: hSize ? hSize * 0.45 : 36 }}
             >
@@ -609,7 +609,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
             <p className="opacity-30 text-[40px]">Add a stat in the editor</p>
           )}
           {slide.subtitle && (
-            <p className="opacity-50 mt-[8px]" style={{ fontFamily: bodyFont, fontSize: bSize ? bSize * 0.7 : 28 }}>
+            <p data-slide-field="subtitle" className="opacity-50 mt-[8px]" style={{ fontFamily: bodyFont, fontSize: bSize ? bSize * 0.7 : 28 }}>
               {slide.subtitle}
             </p>
           )}
