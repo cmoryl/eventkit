@@ -15,6 +15,12 @@ import {
   GitCompareArrows,
   LineChart as LineChartIcon,
   TrendingUp,
+  Users,
+  Workflow,
+  LayoutGrid,
+  Crown,
+  Image as ImageIcon,
+  Check as CheckIcon,
 } from "lucide-react";
 import type { DeckTemplate } from "./TemplateGallery";
 import {
