@@ -823,6 +823,7 @@ const PowerPointAgent: React.FC = () => {
                     <TemplateGallery
                       selectedId={selectedTemplateId}
                       onSelect={applyTemplate}
+                      onOpenInEditor={openTemplateInEditor}
                       disabled={isGenerating}
                       variant="showcase"
                     />
@@ -1028,6 +1029,7 @@ const PowerPointAgent: React.FC = () => {
                         <TemplateGallery
                           selectedId={selectedTemplateId}
                           onSelect={applyTemplate}
+                          onOpenInEditor={openTemplateInEditor}
                           disabled={isGenerating}
                         />
                       </div>
