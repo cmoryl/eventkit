@@ -42,6 +42,7 @@ export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChan
       [key]: (c[key] || []).map((item: any, i: number) => (i === index ? { ...item, ...patch } : item)),
     }));
   };
+  const slideHeadingLabel = kind ? kind.replace(/-/g, ' ') : 'slide';
   const removeArrayItem = (key: string, index: number) => {
     update((c) => ({ ...c, [key]: (c[key] || []).filter((_: any, i: number) => i !== index) }));
   };
@@ -58,6 +59,16 @@ export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChan
 
   const renderSharedText = () => (
     <Section title="Deck text">
+      <Field label={`${slideHeadingLabel} heading`}>
+        <MiniInput
+          value={content.slideHeadings?.[kind || ''] || ''}
+          placeholder="Slide-specific heading"
+          onChange={(e) => update((c) => ({
+            ...c,
+            slideHeadings: { ...(c.slideHeadings || {}), [kind || 'slide']: e.target.value },
+          }))}
+        />
+      </Field>
       <Field label="Eyebrow">
         <MiniInput value={content.eyebrow || ''} onChange={(e) => update((c) => ({ ...c, eyebrow: e.target.value }))} />
       </Field>
