@@ -115,31 +115,26 @@ const PowerPointAgent: React.FC = () => {
   }, [searchParams, setSearchParams]);
 
   // Convert the most recent built deck's outline into SlideData[] for the inline SlideEditor.
+  // Uses the shared outlineToThemedSlides converter so AI-generated decks inherit the same
+  // demo theme look-and-feel (TransPerfect orbs, Modern Dark mesh, etc.) as the gallery templates,
+  // and so rich layouts (kpi_grid, comparison, agenda, timeline, process, chart) survive intact.
   const editorInitialSlides = useMemo(() => {
     const lastDeck = [...history].reverse().find((h) => h.deck?.outline)?.deck;
     if (!lastDeck?.outline) return undefined;
-    return lastDeck.outline.slides.map((s) => {
-      const variant: "default" | "dark" | "gradient" | "brand" = parallaxMode ? "gradient" : "default";
-      const base: any = {
+    if (parallaxMode) {
+      // Parallax mode short-circuits: use the legacy gradient/parallax mapping.
+      return lastDeck.outline.slides.map((s) => ({
         id: crypto.randomUUID(),
         title: s.title,
         subtitle: s.subtitle,
         body: (s.bullets || []).map((b) => `• ${b}`).join("\n"),
         notes: s.notes,
-        variant,
-      };
-      if (parallaxMode) return { ...base, layout: "parallax" };
-      switch (s.layout) {
-        case "title": return { ...base, layout: "title" };
-        case "section": return { ...base, layout: "title" };
-        case "two_column": return { ...base, layout: "two-column" };
-        case "stat": return { ...base, layout: "big-number", stats: s.stat ? [{ value: s.stat.value, label: s.stat.label }] : [] };
-        case "quote": return { ...base, layout: "quote", title: s.quote?.text || s.title, quoteAuthor: s.quote?.attribution };
-        case "closing": return { ...base, layout: "title" };
-        default: return { ...base, layout: "content" };
-      }
-    });
-  }, [history, parallaxMode]);
+        variant: "gradient" as const,
+        layout: "parallax" as const,
+      }));
+    }
+    return outlineToThemedSlides(lastDeck.outline, { templateId: selectedTemplateId || undefined });
+  }, [history, parallaxMode, selectedTemplateId]);
 
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
     setSelectedTemplateId(tpl.id);
