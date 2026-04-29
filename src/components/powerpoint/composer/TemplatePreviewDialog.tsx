@@ -560,7 +560,7 @@ export const VisualVariant: React.FC<VVProps> = ({
 };
 
 /* ------------------------------ Slide kinds ------------------------------ */
-type SlideKind =
+export type SlideKind =
   | "title"
   | "agenda"
   | "section"
