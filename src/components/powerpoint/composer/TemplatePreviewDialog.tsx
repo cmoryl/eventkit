@@ -2104,6 +2104,7 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
   const [editing, setEditing] = useState(false);
   const initial = useMemo(() => (template ? buildInitialContent(template) : null), [template?.id]);
   const [content, setContent] = useState<DemoContent | null>(initial);
+  const [saveOpen, setSaveOpen] = useState(false);
 
   useEffect(() => {
     if (template) {
