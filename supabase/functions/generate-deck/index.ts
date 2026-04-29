@@ -359,7 +359,7 @@ async function resolveSlideImages(
   );
 }
 
-function buildPptx(outline: DeckOutline, templateImages: Record<string, string> = {}): Promise<ArrayBuffer> {
+function buildPptx(outline: DeckOutline, templateImages: Record<string, string> = {}, slideImages: Array<string | undefined> = []): Promise<ArrayBuffer> {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE"; // 13.33 x 7.5
   pptx.title = outline.title;
