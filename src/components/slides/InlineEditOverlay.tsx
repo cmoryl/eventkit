@@ -432,8 +432,12 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       if (shape) {
         shape.style.cursor = 'pointer';
         shape.title = 'Click to recolor or hide';
+        return;
       }
-    };
+      const section = t.closest<HTMLElement>('[data-slide-section]');
+      if (section) {
+        section.title = 'Alt+click or click padding to select section · drag to move';
+      }
 
     root.addEventListener('click', onClick);
     root.addEventListener('dblclick', onDoubleClick);
