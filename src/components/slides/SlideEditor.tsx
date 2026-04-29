@@ -850,14 +850,20 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 onDrop={handleCanvasDrop}
               >
                 <CenteredScaledSlide zoom={zoom}>
-                  <SlideRenderer
+                  <InlineEditOverlay
                     slide={activeSlide}
-                    brandColors={brandColors}
-                    brandFonts={brandFonts}
-                    animated={animatedBackgrounds}
-                    editable={activeSlide.layout === 'demo-mock'}
-                    onDemoContentChange={updateDemoDeckContent}
-                  />
+                    onUpdate={(updates) => updateSlide(activeIndex, updates)}
+                    enabled={activeSlide.layout !== 'demo-mock' && activeSlide.layout !== 'parallax'}
+                  >
+                    <SlideRenderer
+                      slide={activeSlide}
+                      brandColors={brandColors}
+                      brandFonts={brandFonts}
+                      animated={animatedBackgrounds}
+                      editable={activeSlide.layout === 'demo-mock'}
+                      onDemoContentChange={updateDemoDeckContent}
+                    />
+                  </InlineEditOverlay>
                 </CenteredScaledSlide>
 
                 {/* Drop overlay */}
