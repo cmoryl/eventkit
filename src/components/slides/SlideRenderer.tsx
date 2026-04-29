@@ -4,6 +4,7 @@ import { SlideLayout } from './SlideLayout';
 import { renderLayoutVariation } from './SlideLayoutVariations';
 import { ParallaxRenderer } from './ParallaxRenderer';
 import { BrandHubGrowthChart, BrandHubKpiTiles } from './BrandHubVisualizations';
+import { SlideMock } from '@/components/powerpoint/composer/TemplatePreviewDialog';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
