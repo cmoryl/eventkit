@@ -436,6 +436,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
     const tplBg = bgFor(s.layout);
     paintTemplateBackground(slide, tplBg);
     if (s.notes) slide.addNotes(s.notes);
+    const slideImg = slideImages[idx]; // user upload OR AI-generated feature image
 
     const slideTitle = orPh(s.title, ph.title);
 
