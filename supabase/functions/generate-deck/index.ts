@@ -234,12 +234,13 @@ Use the source as the primary content backbone. Faithfully preserve facts and qu
 
   const userPrompt = `Create a ${req.slideCount}-slide deck.
 
-Topic: ${req.topic}
+${prestructured ? "" : `Topic: ${req.topic}`}
 ${req.audience ? `Audience: ${req.audience}` : ""}
 ${req.tone ? `Tone: ${req.tone}` : ""}
 ${req.themeOverride ? `Theme override: ${req.themeOverride}` : ""}
 ${req.brand ? `Brand colors: primary ${req.brand.primary}, secondary ${req.brand.secondary}, accent ${req.brand.accent}. Brand fonts: ${req.brand.headingFont || "default"} / ${req.brand.bodyFont || "default"}.` : ""}
 ${tplBlock}
+${verbatimBlock}
 ${sourceBlock}
 
 Return HEX colors WITHOUT the # prefix. Use the locked template palette/fonts above when provided.`;
