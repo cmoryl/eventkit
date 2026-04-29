@@ -287,6 +287,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               <img
                 src={slide.imageUrl || slide.images![0]}
                 alt=""
+                data-slide-image={slide.imageUrl ? 'hero' : 'images.0'}
                 className="w-full h-full object-cover"
               />
               {slide.title && (
