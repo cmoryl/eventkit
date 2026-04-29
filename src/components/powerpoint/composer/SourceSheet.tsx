@@ -149,16 +149,20 @@ export const SourceSheet: React.FC<Props> = (props) => {
         <SheetHeader>
           <SheetTitle>Reference source</SheetTitle>
           <SheetDescription>
-            Optionally feed a PDF or a BrandHub item so the deck mirrors its content,
-            imagery, and look & feel.
+            Optionally feed a PDF, an existing PowerPoint, or a BrandHub item so the deck
+            mirrors its content, imagery, and look & feel.
           </SheetDescription>
         </SheetHeader>
 
         <Tabs value={tab} onValueChange={setTab} className="mt-4">
-          <TabsList className="grid grid-cols-2 h-9">
+          <TabsList className="grid grid-cols-3 h-9">
             <TabsTrigger value="pdf" className="text-xs gap-1.5">
               <FileText className="h-3 w-3" /> PDF
               {hasPdf && <span className="text-[10px] opacity-70">·active</span>}
+            </TabsTrigger>
+            <TabsTrigger value="pptx" className="text-xs gap-1.5">
+              <Presentation className="h-3 w-3" /> PowerPoint
+              {hasPptx && <span className="text-[10px] opacity-70">·active</span>}
             </TabsTrigger>
             <TabsTrigger value="brandhub" className="text-xs gap-1.5">
               <Library className="h-3 w-3" /> BrandHub
