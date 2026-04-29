@@ -1,4 +1,4 @@
-import type { SlideData } from './slideTypes';
+import type { SlideData, DemoThemeId } from './slideTypes';
 
 export type InfographicCategory =
   | 'stats' | 'charts' | 'timelines' | 'process' | 'comparison' | 'lists' | 'hero' | 'sections';
@@ -11,9 +11,23 @@ export interface InfographicTemplate {
   tags: string[];
   /** Has motion/effects when previewed (used for the "show only animated" filter) */
   animated?: boolean;
+  /** Default demo deck style this template was designed for. Drives the
+   *  Template Gallery's "Style" filter and the default themed preview. */
+  theme?: DemoThemeId;
   /** Slide payload — id is assigned at insert time */
   slide: Omit<SlideData, 'id'>;
 }
+
+/** Ordered list of demo deck styles surfaced in the Template Gallery sidebar. */
+export const DEMO_STYLES: { value: DemoThemeId; label: string; swatch: string }[] = [
+  { value: 'transperfect',     label: 'TransPerfect 2026', swatch: '#03002C' },
+  { value: 'modern-dark',      label: 'Modern Dark',       swatch: '#0B0F19' },
+  { value: 'editorial-light',  label: 'Editorial Light',   swatch: '#F7F5F1' },
+  { value: 'corporate-navy',   label: 'Corporate Navy',    swatch: '#0F1B3D' },
+  { value: 'vibrant-startup',  label: 'Vibrant Startup',   swatch: '#1E1B4B' },
+  { value: 'warm-terracotta',  label: 'Warm Terracotta',   swatch: '#B85042' },
+  { value: 'mono-brutalist',   label: 'Mono Brutalist',    swatch: '#000000' },
+];
 
 export const INFOGRAPHIC_CATEGORIES: { value: InfographicCategory; label: string }[] = [
   { value: 'stats',      label: 'Stats & KPIs' },
