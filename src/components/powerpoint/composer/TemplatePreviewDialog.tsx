@@ -1622,29 +1622,69 @@ const SlideMock: React.FC<{
         <div className="relative h-full grid grid-cols-2 z-10">
           <div className="relative overflow-hidden">
             {featureImg ? (
-              <>
-                <img
-                  src={featureImg}
-                  alt=""
-                  aria-hidden
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{ background: `linear-gradient(90deg, transparent 60%, ${t.palette.bg} 100%)` }}
-                />
-              </>
+              <img
+                src={featureImg}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             ) : (
-              <div className="absolute inset-0" style={{ background: `${t.palette.accent}22` }} />
+              <div className="absolute inset-0">
+                <WavePattern accent={t.palette.accent} secondary={t.palette.secondary} />
+              </div>
             )}
-            <div className="relative p-8 h-full flex flex-col justify-end">
+            {/* Bottom gradient for legibility */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(180deg, ${t.palette.bg}33 0%, ${t.palette.bg}EE 80%, ${t.palette.bg} 100%)`,
+              }}
+            />
+            {/* Floating data card overlay (replaces blank dark gradient) */}
+            <div className="relative h-full p-6 flex flex-col justify-between">
               <div
                 className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-semibold w-fit backdrop-blur"
-                style={{ background: `${t.palette.bg}CC`, color: t.palette.text }}
+                style={{ background: `${t.palette.bg}CC`, color: t.palette.text, border: `1px solid ${subtleBorder}` }}
               >
                 <Sparkles className="h-3 w-3" style={{ color: t.palette.accent }} />
                 Featured capability
+              </div>
+
+              <div
+                className="rounded-xl p-3 backdrop-blur-md w-[78%] self-start"
+                style={{ background: `${t.palette.bg}DD`, border: `1px solid ${t.palette.accent}55` }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-[9px] font-mono uppercase tracking-wider" style={{ color: muted }}>
+                    Live performance
+                  </div>
+                  <div
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: t.palette.accent, color: t.palette.bg }}
+                  >
+                    +42%
+                  </div>
+                </div>
+                <div className="mt-2 h-12">
+                  <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={index + 11} />
+                </div>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {[
+                    { l: "ARR", v: "$1.2B" },
+                    { l: "NRR", v: "126%" },
+                    { l: "Margin", v: "78%" },
+                  ].map((s, i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-xs font-extrabold leading-none" style={{ color: t.palette.text }}>
+                        {s.v}
+                      </div>
+                      <div className="text-[8px] mt-0.5" style={{ color: muted }}>
+                        {s.l}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
