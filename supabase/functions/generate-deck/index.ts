@@ -1254,7 +1254,11 @@ Deno.serve(async (req: Request) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const slideCount = Math.max(3, Math.min(30, Number(body.slideCount) || 10));
+    // If the user pasted explicit "Slide N:" blocks, honor that count (up to 60).
+    const detected = detectPrestructuredSlides(body.topic);
+    const slideCount = detected
+      ? Math.max(3, Math.min(60, detected.count))
+      : Math.max(3, Math.min(30, Number(body.slideCount) || 10));
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
