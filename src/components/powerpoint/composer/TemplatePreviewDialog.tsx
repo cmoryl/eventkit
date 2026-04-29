@@ -1198,11 +1198,14 @@ const SlideMock: React.FC<{
           </div>
           <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">{content.compare.heading}</h3>
           <div className="grid grid-cols-2 gap-3 mt-5 flex-1">
-            <div className="rounded-lg p-5 flex flex-col" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
-              <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                {content.compare.before.title}
+            <div className="rounded-lg p-5 flex flex-col relative overflow-hidden" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
+                  {content.compare.before.title}
+                </div>
+                <RingGauge percent={32} accent={t.palette.secondary} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
               </div>
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.before.points.map((p, i) => (
                   <li key={i} className="flex gap-2 items-start text-sm" style={{ color: t.palette.text }}>
                     <span
@@ -1213,18 +1216,46 @@ const SlideMock: React.FC<{
                   </li>
                 ))}
               </ul>
+              {/* baseline bars */}
+              <div className="mt-4 pt-3 border-t" style={{ borderColor: subtleBorder }}>
+                <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: muted }}>
+                  Baseline performance
+                </div>
+                <HBars
+                  values={[
+                    { label: "Speed", v: 28 },
+                    { label: "Cost", v: 64 },
+                    { label: "Effort", v: 78 },
+                  ]}
+                  accent={t.palette.secondary}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                />
+              </div>
             </div>
             <div
-              className="rounded-lg p-5 flex flex-col"
+              className="rounded-lg p-5 flex flex-col relative overflow-hidden"
               style={{
                 background: `${t.palette.accent}14`,
                 border: `1px solid ${t.palette.accent}55`,
               }}
             >
-              <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: t.palette.accent }}>
-                {content.compare.after.title}
+              {/* corner accent */}
+              <div
+                aria-hidden
+                className="absolute top-0 right-0 px-2 py-1 text-[8px] font-extrabold uppercase tracking-wider rounded-bl-md"
+                style={{ background: t.palette.accent, color: t.palette.bg }}
+              >
+                +218%
               </div>
-              <ul className="mt-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] uppercase tracking-wider font-extrabold" style={{ color: t.palette.accent }}>
+                  {content.compare.after.title}
+                </div>
+                <RingGauge percent={91} accent={t.palette.accent} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
+              </div>
+              <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.after.points.map((p, i) => (
                   <li key={i} className="flex gap-2 items-start text-sm" style={{ color: t.palette.text }}>
                     <span
@@ -1235,6 +1266,22 @@ const SlideMock: React.FC<{
                   </li>
                 ))}
               </ul>
+              <div className="mt-4 pt-3 border-t" style={{ borderColor: `${t.palette.accent}33` }}>
+                <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: t.palette.accent }}>
+                  Lifted performance
+                </div>
+                <HBars
+                  values={[
+                    { label: "Speed", v: 92 },
+                    { label: "Cost", v: 38 },
+                    { label: "Effort", v: 22 },
+                  ]}
+                  accent={t.palette.accent}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                />
+              </div>
             </div>
           </div>
         </div>
