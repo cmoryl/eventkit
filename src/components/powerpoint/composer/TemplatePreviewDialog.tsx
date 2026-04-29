@@ -38,6 +38,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUse: (t: DeckTemplate) => void;
+  /** Optional: open the template's starter deck directly in the Slide Editor, skipping AI generation. */
+  onOpenInEditor?: (t: DeckTemplate) => void;
   disabled?: boolean;
 }
 
@@ -2100,7 +2102,7 @@ const SlideMock: React.FC<{
   );
 };
 
-export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, disabled }) => {
+export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, onOpenInEditor, disabled }) => {
   const [editing, setEditing] = useState(false);
   const initial = useMemo(() => (template ? buildInitialContent(template) : null), [template?.id]);
   const [content, setContent] = useState<DemoContent | null>(initial);
@@ -2171,6 +2173,22 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
               <Bookmark className="h-3.5 w-3.5" />
               Save as template
             </Button>
+            {onOpenInEditor && (
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={disabled}
+                onClick={() => {
+                  onOpenInEditor(t);
+                  onOpenChange(false);
+                }}
+                className="gap-1.5"
+                title="Load this template's starter slides into the editor — skip the AI outline"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Open in Editor
+              </Button>
+            )}
             <Button
               size="sm"
               disabled={disabled}
@@ -2179,9 +2197,10 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
                 onOpenChange(false);
               }}
               className="gap-1.5"
+              title="Lock the look & feel and generate slides with AI"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              Use this template
+              Generate with AI
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenChange(false)}>
               <X className="h-4 w-4" />
