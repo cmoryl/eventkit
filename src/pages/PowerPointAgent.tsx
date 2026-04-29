@@ -975,6 +975,11 @@ const PowerPointAgent: React.FC = () => {
                       clearPdf={clearPdf}
                       brandHubSource={brandHubSource}
                       setBrandHubSource={setBrandHubSource}
+                      pptxFile={pptxFile}
+                      pptxInputRef={pptxInputRef}
+                      handlePptxSelect={handlePptxSelect}
+                      clearPptx={clearPptx}
+                      rerunPptxExtraction={rerunPptxExtraction}
                       disabled={isGenerating}
                     />
                     <RefinePopover
