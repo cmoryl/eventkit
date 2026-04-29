@@ -27,6 +27,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { DeckTemplate } from "./TemplateGallery";
+import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
 
 /**
  * Per-template demo content. Keeps cards visually distinct & relevant —
