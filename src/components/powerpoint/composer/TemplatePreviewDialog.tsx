@@ -333,7 +333,7 @@ const SlideMock: React.FC<{
 
       {/* TITLE */}
       {kind === "title" && (
-        <div className="relative h-full grid" style={{ gridTemplateColumns: thumb ? "1.1fr 1fr" : "1fr" }}>
+        <div className="relative h-full grid" style={{ gridTemplateColumns: titleImg ? "1.1fr 1fr" : "1fr" }}>
           <div className="relative p-10 flex flex-col justify-between z-10">
             <div>
               <Editable
