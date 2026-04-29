@@ -185,6 +185,31 @@ const PowerPointAgent: React.FC = () => {
     });
   }, [buildStarterSlidesForTemplate, setActiveTab, toast]);
 
+  // Direct .pptx → editor import (bypasses AI). Loads parsed slides as the
+  // starter deck and jumps to the Editor tab so the user can edit immediately.
+  const importPptxAsDeckRef = useRef<HTMLInputElement>(null);
+  const handleImportPptxAsDeck = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    if (!file.name.toLowerCase().endsWith(".pptx")) {
+      toast({ title: "PPTX only", description: "Please upload a .pptx file.", variant: "destructive" });
+      return;
+    }
+    try {
+      const imported = await parsePptxFile(file);
+      if (!imported.length) {
+        toast({ title: "No slides found", description: "We couldn't read any slides from that file.", variant: "destructive" });
+        return;
+      }
+      setTemplateStarterSlides(imported);
+      setActiveTab("editor");
+      toast({ title: "Deck imported", description: `${imported.length} slides loaded — edit anything you like.` });
+    } catch (err) {
+      console.error("PPTX import error:", err);
+      toast({ title: "Import failed", description: err instanceof Error ? err.message : "Could not read .pptx", variant: "destructive" });
+    }
+  }, [setActiveTab, toast]);
 
   // Apply ?template= from URL once brands etc. are ready
   useEffect(() => {
