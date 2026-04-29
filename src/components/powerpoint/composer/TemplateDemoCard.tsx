@@ -232,19 +232,6 @@ export const DEMO_BY_TEMPLATE: Record<string, DemoContent> = {
       { step: "03", title: "Proof points", body: "Customers, scale, results", duration: "8 min", owner: "Sara Okafor" },
       { step: "04", title: "What's next", body: "Roadmap & partnership", duration: "5 min", owner: "Liz Elting" },
     ],
-    cards: [
-      { title: "GlobalLink NEXT", body: "AI translation platform unifying every content workflow.", icon: Cpu, tag: "Platform", subPoints: ["Connect any CMS", "Translate in-context", "Auto-publish to locales"], footnote: "Generally available · Q1 2026" },
-      { title: "200+ languages", body: "Native expert network across 140 countries.", icon: Globe2, tag: "Network", subPoints: ["10k+ vetted linguists", "Cultural QA in-region", "ISO 17100 compliant"], footnote: "Source · TransPerfect Network Audit 2025" },
-      { title: "24/7 delivery", body: "Always-on localization with global handoff coverage.", icon: Zap, tag: "Operations", subPoints: ["Sun-up handoff in 3 hubs", "48hr SLA on rush", "Weekend coverage"], footnote: "Avg first-token latency · 12 min" },
-    ],
-    stat: { value: "5B+", label: "words translated yearly" },
-    quote: { text: "From content to commerce — in any language.", by: "TransPerfect" },
-    agenda: [
-      { step: "01", title: "The opportunity", body: "Why global content matters now", duration: "5 min", owner: "Phil Shawe" },
-      { step: "02", title: "Our platform", body: "GlobalLink NEXT in action", duration: "12 min", owner: "Jin Park" },
-      { step: "03", title: "Proof points", body: "Customers, scale, results", duration: "8 min", owner: "Sara Okafor" },
-      { step: "04", title: "What's next", body: "Roadmap & partnership", duration: "5 min", owner: "Liz Elting" },
-    ],
     metrics: [
       { value: "200+", label: "Languages", icon: Globe2, trend: "+12 YoY", direction: "up", sublabel: "Across 140 countries" },
       { value: "5B", label: "Words / yr", icon: Activity, trend: "+34%", direction: "up", sublabel: "Up from 3.8B in 2024" },
