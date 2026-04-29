@@ -6,7 +6,7 @@ import type { DeckTemplate } from "./TemplateGallery";
  * Per-template demo content. Keeps cards visually distinct & relevant —
  * each preview reads like a real, fully-built mini deck.
  */
-const DEMO_BY_TEMPLATE: Record<
+export const DEMO_BY_TEMPLATE: Record<
   string,
   {
     eyebrow: string;
@@ -103,7 +103,7 @@ const DEMO_BY_TEMPLATE: Record<
   },
 };
 
-const FALLBACK_DEMO = {
+export const FALLBACK_DEMO = {
   eyebrow: "Sample Deck",
   title: "Tell your story.",
   subtitle: "A flexible template for any narrative.",
@@ -286,7 +286,7 @@ export const TemplateDemoCard: React.FC<Props> = ({ template: t, selected, disab
   );
 };
 
-function isLightColor(input: string): boolean {
+export function isLightColor(input: string): boolean {
   // Handle gradients / non-hex by treating as dark (safer default for white text)
   if (!input || !input.startsWith("#")) return false;
   const hex = input.replace("#", "");
