@@ -105,6 +105,7 @@ const PowerPointAgent: React.FC = () => {
   const [pendingOutline, setPendingOutline] = useState<DeckOutline | null>(null);
   const [pasteText, setPasteText] = useState("");
   const [parallaxMode, setParallaxMode] = useState(false);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get("tab") === "editor" ? "editor" : "agent") as "agent" | "editor";
   const setActiveTab = useCallback((t: "agent" | "editor") => {
