@@ -3,7 +3,7 @@ export type SlideLayout =
   | 'title' | 'content' | 'image-left' | 'image-right' | 'blank'
   | 'section' | 'two-column' | 'quote' | 'stats' | 'full-image'
   | 'comparison' | 'timeline' | 'process' | 'chart'
-  | 'agenda' | 'big-number' | 'parallax';
+  | 'agenda' | 'big-number' | 'parallax' | 'demo-mock';
 
 /**
  * One depth layer in a parallax slide.
