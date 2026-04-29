@@ -76,7 +76,7 @@ interface BrandOption {
 const PowerPointAgent: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { activeBrand } = useActiveBrand();
+  const { activeBrand, brands: globalBrands, setActiveBrand, applyBrandToUI } = useActiveBrand();
   const [topic, setTopic] = useState("");
   const [audience, setAudience] = useState("");
   const [slideCount, setSlideCount] = useState<number>(10);
@@ -199,6 +199,27 @@ const PowerPointAgent: React.FC = () => {
   useEffect(() => {
     loadBrands();
   }, [loadBrands]);
+
+  // Keep the GLOBAL active brand in sync with the Agent's local selection so the
+  // Editor tab, theming, and downstream components all see the same brand.
+  useEffect(() => {
+    if (!selectedBrandId) return;
+    if (activeBrand?.id === selectedBrandId) return;
+    const match = globalBrands.find((b) => b.id === selectedBrandId);
+    if (match) {
+      setActiveBrand(match);
+      // Apply brand theme to UI without persisting to profile (session-only sync)
+      applyBrandToUI(match, false).catch(() => undefined);
+    }
+  }, [selectedBrandId, activeBrand?.id, globalBrands, setActiveBrand, applyBrandToUI]);
+
+  // And the inverse: if the global active brand changes elsewhere (e.g. header
+  // brand switcher), reflect it in the Agent's selection.
+  useEffect(() => {
+    if (activeBrand?.id && activeBrand.id !== selectedBrandId && brands.some((b) => b.id === activeBrand.id)) {
+      setSelectedBrandId(activeBrand.id);
+    }
+  }, [activeBrand?.id, brands, selectedBrandId]);
 
   // Load suggestion chips from agent_prompt_presets so admins can edit them
   // without redeploys. Falls back to the hardcoded list on any failure.
@@ -1031,7 +1052,7 @@ const PowerPointAgent: React.FC = () => {
         onClose={() => setActiveTab("agent")}
         assetType="presentation"
         assetName={history.find((h) => h.deck)?.deck?.title || "New Presentation"}
-        brand={(activeBrand as any) || null}
+        brand={(globalBrands.find((b) => b.id === selectedBrandId) || activeBrand) as any || null}
         initialSlides={editorInitialSlides}
       />
 
