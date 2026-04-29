@@ -2162,6 +2162,16 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
               </Button>
             )}
             <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setSaveOpen(true)}
+              title="Save your edited content as a reusable template"
+            >
+              <Bookmark className="h-3.5 w-3.5" />
+              Save as template
+            </Button>
+            <Button
               size="sm"
               disabled={disabled}
               onClick={() => {
