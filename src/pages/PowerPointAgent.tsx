@@ -166,14 +166,11 @@ const PowerPointAgent: React.FC = () => {
     toast({ title: `${tpl.name} template applied`, description: "Look & feel locked in. Edit the topic and hit Generate." });
   }, [toast]);
 
-  // Pick the best matching starter deck for a given DeckTemplate.
-  // Strategy: match the template's demo theme (TransPerfect / Modern Dark / Editorial Light, etc.)
-  // and grab the first SLIDE_TEMPLATES entry that targets the same theme. Falls back to "Keynote".
+  // Build starter slides that mirror the template's preview deck exactly —
+  // converts the same DemoContent shown in TemplatePreviewDialog into SlideData[].
   const buildStarterSlidesForTemplate = useCallback((tpl: DeckTemplate): SlideData[] => {
-    const themeId = DECK_TEMPLATE_TO_DEMO_THEME[tpl.id] || resolveDemoThemeId(tpl.id, tpl.palette);
-    const candidates = SLIDE_TEMPLATES.filter((t) => t.theme === themeId);
-    const pick = candidates[0] || SLIDE_TEMPLATES[0];
-    return pick.slides.map((s) => ({ ...s, id: crypto.randomUUID() } as SlideData));
+    const demo = DEMO_BY_TEMPLATE[tpl.id] || FALLBACK_DEMO;
+    return demoContentToSlides(tpl, demo);
   }, []);
 
   const openTemplateInEditor = useCallback((tpl: DeckTemplate) => {
@@ -186,7 +183,7 @@ const PowerPointAgent: React.FC = () => {
     setActiveTab("editor");
     toast({
       title: `${tpl.name} loaded into editor`,
-      description: `${starter.length} starter slides ready — edit anything, then Save as Template to keep your version.`,
+      description: `${starter.length} slides loaded from the preview — edit anything, then Save as Template to keep your version.`,
     });
   }, [buildStarterSlidesForTemplate, setActiveTab, toast]);
 
