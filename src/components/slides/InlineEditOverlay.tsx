@@ -43,6 +43,23 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     color: string;
   } | null>(null);
 
+  const [sectionToolbar, setSectionToolbar] = useState<{
+    id: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const dragRef = useRef<{
+    id: string;
+    el: HTMLElement;
+    startX: number;
+    startY: number;
+    baseDx: number;
+    baseDy: number;
+    slideW: number;
+    slideH: number;
+  } | null>(null);
+
   /* ----------------------------------------------------------------------
    * SHAPE AUTO-TAGGING — walks the rendered tree and assigns a stable
    * data-slide-shape="..." id to every decorative element. We then re-apply
