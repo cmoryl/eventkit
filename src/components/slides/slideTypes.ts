@@ -384,7 +384,7 @@ const DEMO_THEMES: Record<DemoThemeId, DemoTheme> = {
 const DEFAULT_HERO_LAYOUTS: SlideLayout[] = ['title', 'section', 'quote'];
 
 /** Apply a demo theme uniformly to a list of slides — sets bgColor, variant, bgEffect. */
-function applyDemoTheme(
+export function applyDemoTheme(
   slides: Omit<SlideData, 'id'>[],
   themeId: DemoThemeId,
 ): Omit<SlideData, 'id'>[] {
@@ -400,6 +400,39 @@ function applyDemoTheme(
     };
   });
 }
+
+/** Maps composer DECK_TEMPLATES ids → DemoThemeId so AI-generated decks
+ *  inherit the same look-and-feel as the gallery demos. */
+export const DECK_TEMPLATE_TO_DEMO_THEME: Record<string, DemoThemeId> = {
+  'transperfect-2026': 'transperfect',
+  'modern-dark': 'modern-dark',
+  'editorial-light': 'editorial-light',
+  'corporate-navy': 'corporate-navy',
+  'vibrant-startup': 'vibrant-startup',
+  'warm-terracotta': 'warm-terracotta',
+  'mono-brutalist': 'mono-brutalist',
+};
+
+/** Pick the closest demo theme for any template id, palette-based fallback. */
+export function resolveDemoThemeId(
+  templateId?: string,
+  palette?: { bg?: string; text?: string },
+): DemoThemeId {
+  if (templateId && DECK_TEMPLATE_TO_DEMO_THEME[templateId]) {
+    return DECK_TEMPLATE_TO_DEMO_THEME[templateId];
+  }
+  // Fallback: dark vs light heuristic from bg luminance
+  const bg = (palette?.bg || '').replace('#', '');
+  if (bg.length === 6) {
+    const r = parseInt(bg.slice(0, 2), 16);
+    const g = parseInt(bg.slice(2, 4), 16);
+    const b = parseInt(bg.slice(4, 6), 16);
+    const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luma < 0.4 ? 'modern-dark' : 'editorial-light';
+  }
+  return 'modern-dark';
+}
+
 
 /** Raw template definitions — content only. Themed at export time below. */
 const RAW_SLIDE_TEMPLATES: { name: string; theme: DemoThemeId; slides: Omit<SlideData, 'id'>[] }[] = [
