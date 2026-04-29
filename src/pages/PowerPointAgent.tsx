@@ -387,7 +387,12 @@ const PowerPointAgent: React.FC = () => {
       slideCount,
       tone: tone || undefined,
       brand: brandPayload,
-      themeOverride: themeOverride || undefined,
+      themeOverride: [
+        themeOverride,
+        parallaxMode
+          ? "Design the deck for a cinematic 3D parallax video export: bold full-bleed hero imagery, dramatic depth, layered foreground/midground/background, large display typography, dark gradient backgrounds with strong color accents — exports as MP4 video deck with parallax depth layers."
+          : null,
+      ].filter(Boolean).join(" — ") || undefined,
       templateId: selectedTemplateId || undefined,
       source: sourcePayload,
       planOnly: opts.planOnly || undefined,
