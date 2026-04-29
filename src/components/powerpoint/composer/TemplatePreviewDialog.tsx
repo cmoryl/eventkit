@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -2121,7 +2122,10 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden flex flex-col gap-0">
-        {/* Header */}
+        <VisuallyHidden>
+          <DialogTitle>{t.name} template preview</DialogTitle>
+          <DialogDescription>Preview the {t.name} template's slides — edit content inline, then load into the editor or generate with AI.</DialogDescription>
+        </VisuallyHidden>
         <div className="flex items-center justify-between border-b px-5 py-3 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div
