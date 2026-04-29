@@ -2232,6 +2232,19 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
           </div>
         </ScrollArea>
       </DialogContent>
+
+      <SaveAsTemplateDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        defaults={{
+          source_kind: "preview",
+          name: `${t.name} (custom)`,
+          description: t.description,
+          palette: t.palette,
+          theme_prompt: t.themePrompt,
+          content: content as unknown,
+        }}
+      />
     </Dialog>
   );
 };
