@@ -1094,9 +1094,10 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
           fontSize: 44, bold: true, color: "FFFFFF", fontFace: headFont,
         });
         if (s.bullets?.length) {
-          slide.addText(orPhBullets(s.bullets, 2).slice(0, 2).join(" · "), {
-            x: PAD, y: H - 1.0, w: W - PAD * 2, h: 0.5,
-            fontSize: 16, color: "FFFFFF", fontFace: bodyFont, transparency: 15,
+          // Render ALL bullets, not just the first two — previously we silently dropped the rest.
+          slide.addText(s.bullets.join(" · "), {
+            x: PAD, y: H - 1.2, w: W - PAD * 2, h: 0.7,
+            fontSize: 14, color: "FFFFFF", fontFace: bodyFont, transparency: 15,
           });
         }
         break;
