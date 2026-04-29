@@ -601,12 +601,14 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
           {slide.stats?.[0] ? (
             <>
               <div
+                data-slide-field="stats.0.value"
                 className="font-bold leading-none"
                 style={{ fontSize: 200, color: accentColor || (isDark ? '#a78bfa' : '#6366f1'), fontFamily: headingFont }}
               >
                 {slide.stats[0].value}
               </div>
               <div
+                data-slide-field="stats.0.label"
                 className="font-medium opacity-80"
                 style={{ fontFamily: bodyFont, fontSize: bSize || 40, color: headingColor }}
               >
