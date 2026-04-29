@@ -1404,8 +1404,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     <>
     {inline ? (
       isOpen ? (
-        <div className="fixed inset-0 z-40 bg-background">
-          {editorBody}
+        <div className="fixed inset-0 z-40 bg-background flex">
+          {sidebar ? (
+            <aside className="w-[380px] shrink-0 border-r bg-card/40 flex flex-col overflow-hidden">
+              {sidebar}
+            </aside>
+          ) : null}
+          <div className="flex-1 min-w-0 h-full">
+            {editorBody}
+          </div>
         </div>
       ) : null
     ) : (
