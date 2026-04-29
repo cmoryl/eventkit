@@ -1630,12 +1630,24 @@ export const SlideMock: React.FC<{
                       style={{ background: i === 0 ? t.palette.accent : t.palette.secondary }}
                     />
                     <div className="text-xs font-semibold" style={{ color: t.palette.text }}>
-                      {c.title}
+                      <Editable
+                        ariaLabel={`Stat card ${i + 1} title`}
+                        editing={editing}
+                        value={c.title}
+                        onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, title: v } : card)) }))}
+                      />
                     </div>
                   </div>
-                  <div className="text-[11px] mt-1" style={{ color: muted }}>
-                    {c.body}
-                  </div>
+                  <Editable
+                    as="div"
+                    ariaLabel={`Stat card ${i + 1} body`}
+                    editing={editing}
+                    value={c.body}
+                    multiline
+                    onChange={(v) => update((cc) => ({ ...cc, cards: cc.cards.map((card, idx) => (idx === i ? { ...card, body: v } : card)) }))}
+                    className="text-[11px] mt-1"
+                    style={{ color: muted }}
+                  />
                 </div>
               ))}
             </div>
@@ -1749,7 +1761,12 @@ export const SlideMock: React.FC<{
                     className="text-[10px] uppercase tracking-wider font-semibold"
                     style={{ color: muted }}
                   >
-                    {s.label}
+                    <Editable
+                      ariaLabel={`KPI supporting ${i + 1} label`}
+                      editing={editing}
+                      value={s.label}
+                      onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, supporting: c.kpi.supporting.map((item, idx) => (idx === i ? { ...item, label: v } : item)) } }))}
+                    />
                   </div>
                   <div className="flex-1 min-h-0">
                     <VisualVariant
@@ -1767,7 +1784,13 @@ export const SlideMock: React.FC<{
                     className="text-xl font-extrabold tracking-tight leading-none"
                     style={{ color: t.palette.text }}
                   >
-                    {s.value}
+                    <Editable
+                      ariaLabel={`KPI supporting ${i + 1} value`}
+                      editing={editing}
+                      value={s.value}
+                      onChange={(v) => update((c) => ({ ...c, kpi: { ...c.kpi, supporting: c.kpi.supporting.map((item, idx) => (idx === i ? { ...item, value: v } : item)) } }))}
+                      className="inline-block"
+                    />
                   </div>
                 </div>
               );
