@@ -1360,7 +1360,7 @@ const SlideMock: React.FC<{
                     )}
                   </div>
                   <div
-                    className="rounded-lg p-3 flex-1"
+                    className="rounded-lg p-3 flex-1 flex flex-col"
                     style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
                   >
                     {Ic && <Ic className="h-4 w-4 mb-1.5" style={{ color: t.palette.accent }} />}
@@ -1369,6 +1369,34 @@ const SlideMock: React.FC<{
                     </div>
                     <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
                       {p.body}
+                    </div>
+                    <div className="mt-auto pt-2 space-y-1">
+                      {p.output && (
+                        <div className="flex items-center gap-1.5 text-[9px]" style={{ color: t.palette.text }}>
+                          <span
+                            className="font-bold uppercase tracking-wider"
+                            style={{ color: t.palette.accent }}
+                          >
+                            Output
+                          </span>
+                          <span className="truncate" style={{ color: muted }}>
+                            {p.output}
+                          </span>
+                        </div>
+                      )}
+                      {p.duration && (
+                        <div className="flex items-center gap-1.5 text-[9px]" style={{ color: t.palette.text }}>
+                          <span
+                            className="font-bold uppercase tracking-wider"
+                            style={{ color: t.palette.accent }}
+                          >
+                            Time
+                          </span>
+                          <span className="truncate" style={{ color: muted }}>
+                            {p.duration}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
