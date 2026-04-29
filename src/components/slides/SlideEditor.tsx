@@ -72,9 +72,14 @@ interface SlideEditorProps {
    * than appearing in a windowed overlay.
    */
   inline?: boolean;
+  /**
+   * Optional sidebar content rendered to the left of the editor in `inline` mode.
+   * Used by /agent/powerpoint to keep the chat agent visible while editing the deck.
+   */
+  sidebar?: React.ReactNode;
 }
 
-export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline }: SlideEditorProps) {
+export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline, sidebar }: SlideEditorProps) {
   const [slides, setSlides] = useState<SlideData[]>(() =>
     initialSlides && initialSlides.length > 0 ? initialSlides : [...DEFAULT_SLIDES]
   );
