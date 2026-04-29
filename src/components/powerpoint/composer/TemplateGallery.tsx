@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { Check, LayoutGrid, Search, X } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Check, LayoutGrid, Search, X, Bookmark, Globe2, Loader2, Trash2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALL_PRESENTATION_TEMPLATES } from "@/config/editableTemplates/presentationTemplates";
 import { TemplateDemoCard } from "./TemplateDemoCard";
 import { TemplatePreviewDialog } from "./TemplatePreviewDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export interface DeckTemplate {
   id: string;
