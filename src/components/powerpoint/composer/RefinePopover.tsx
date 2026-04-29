@@ -46,10 +46,14 @@ export const RefinePopover: React.FC<Props> = ({
           variant={customised ? "default" : "outline"}
           size="sm"
           disabled={disabled}
-          className="h-9 rounded-full gap-2"
+          className={
+            customised
+              ? "h-9 rounded-full gap-2"
+              : "h-9 rounded-full gap-2 bg-white/10 border-white/20 text-white hover:bg-white/15 hover:text-white"
+          }
         >
-          <Settings2 className="h-3.5 w-3.5" />
-          <span className="text-xs truncate max-w-[260px]">
+          <Settings2 className="h-3.5 w-3.5 text-white/80" />
+          <span className="text-xs truncate max-w-[260px] text-white">
             {customised ? parts.join(" · ") : "Refine"}
           </span>
         </Button>
