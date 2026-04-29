@@ -4,12 +4,9 @@ import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
-import {
-  SLIDE_TEMPLATES,
-  DECK_TEMPLATE_TO_DEMO_THEME,
-  resolveDemoThemeId,
-  type SlideData,
-} from "@/components/slides/slideTypes";
+import { type SlideData } from "@/components/slides/slideTypes";
+import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
+import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
