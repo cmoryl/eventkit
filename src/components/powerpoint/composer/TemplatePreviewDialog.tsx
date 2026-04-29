@@ -430,10 +430,10 @@ const SlideMock: React.FC<{
       {/* SECTION */}
       {kind === "section" && (
         <div className="relative h-full">
-          {thumb && (
+          {sectionImg && (
             <>
               <img
-                src={thumb}
+                src={sectionImg}
                 alt=""
                 loading="lazy"
                 aria-hidden
