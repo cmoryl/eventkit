@@ -713,23 +713,8 @@ const SlideMock: React.FC<{
 
       {/* SECTION */}
       {kind === "section" && (
-        <div className="relative h-full">
-          {sectionImg && (
-            <>
-              <img
-                src={sectionImg}
-                alt=""
-                loading="lazy"
-                aria-hidden
-                className="absolute inset-0 h-full w-full object-cover opacity-25"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ background: `linear-gradient(180deg, ${t.palette.bg}EE 0%, ${t.palette.bg}AA 100%)` }}
-              />
-            </>
-          )}
-          <div className="relative h-full p-10 flex flex-col justify-center z-10">
+        <div className="relative h-full grid grid-cols-2 z-10">
+          <div className="relative p-10 flex flex-col justify-center">
             <div
               className="text-[11px] font-semibold uppercase tracking-[0.22em]"
               style={{ color: t.palette.accent }}
@@ -762,9 +747,60 @@ const SlideMock: React.FC<{
                   cards: c.cards.map((card, i) => (i === 0 ? { ...card, body: v } : card)),
                 }))
               }
-              className="mt-4 text-sm max-w-[60%]"
+              className="mt-4 text-sm max-w-[90%]"
               style={{ color: muted }}
             />
+            <div className="mt-6 flex items-center gap-3">
+              <div className="text-[10px] font-mono uppercase tracking-widest" style={{ color: muted }}>
+                In this chapter
+              </div>
+              <div className="h-px flex-1" style={{ background: subtleBorder }} />
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {content.cards.slice(0, 3).map((c, i) => (
+                <div
+                  key={i}
+                  className="rounded-md px-2 py-1.5"
+                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                >
+                  <div className="text-[8px] font-mono" style={{ color: t.palette.accent }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <div className="text-[10px] font-bold leading-tight truncate" style={{ color: t.palette.text }}>
+                    {c.title}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: designed visual composition (no blurred photo) */}
+          <div
+            className="relative overflow-hidden"
+            style={{
+              background: `linear-gradient(135deg, ${t.palette.accent}18 0%, ${t.palette.secondary}10 60%, transparent 100%)`,
+              borderLeft: `1px solid ${subtleBorder}`,
+            }}
+          >
+            <div className="absolute inset-0">
+              <RadialBlob accent={t.palette.accent} secondary={t.palette.secondary} seed={index + 5} />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-[70%] h-[55%]">
+                <IsoStack accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />
+              </div>
+            </div>
+            <div
+              className="absolute top-6 right-6 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-[0.2em] backdrop-blur-sm"
+              style={{ background: `${t.palette.bg}AA`, color: t.palette.accent, border: `1px solid ${t.palette.accent}55` }}
+            >
+              Chapter {String(index + 1).padStart(2, "0")}
+            </div>
+            <div className="absolute bottom-8 left-6 right-6 flex items-end justify-between text-[8px] font-mono uppercase tracking-wider" style={{ color: muted }}>
+              <span>{t.palette.accent}</span>
+              <span>·</span>
+              <span>x: {(index + 1) * 12} / y: {(index + 1) * 8}</span>
+            </div>
           </div>
         </div>
       )}
