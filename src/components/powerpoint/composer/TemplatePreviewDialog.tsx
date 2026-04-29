@@ -878,6 +878,31 @@ const SlideMock: React.FC<{
                     <div className="text-[11px] mt-1 leading-snug" style={{ color: muted }}>
                       {tl.body}
                     </div>
+                    {tl.deliverables && tl.deliverables.length > 0 && (
+                      <ul className="mt-2 space-y-0.5">
+                        {tl.deliverables.map((d, di) => (
+                          <li
+                            key={di}
+                            className="flex items-start gap-1 text-[9px] leading-snug"
+                            style={{ color: t.palette.text }}
+                          >
+                            <span
+                              className="mt-1 h-1 w-1 rounded-full shrink-0"
+                              style={{ background: t.palette.accent }}
+                            />
+                            <span>{d}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {tl.owner && (
+                      <div
+                        className="mt-2 pt-2 border-t text-[9px] font-semibold uppercase tracking-wider"
+                        style={{ color: muted, borderColor: subtleBorder }}
+                      >
+                        {tl.owner}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
