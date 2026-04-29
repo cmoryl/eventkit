@@ -896,10 +896,10 @@ const SlideMock: React.FC<{
       {/* QUOTE */}
       {kind === "quote" && (
         <div className="relative h-full">
-          {thumb && (
+          {quoteImg && (
             <>
               <img
-                src={thumb}
+                src={quoteImg}
                 alt=""
                 loading="lazy"
                 aria-hidden
