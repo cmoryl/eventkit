@@ -23,6 +23,13 @@ export interface SlideChartSpec {
   /** Free-form data; either CSV-like rows or {label, value} pairs the AI will interpret. */
   data: Array<{ label: string; value: number }>;
   notes?: string;
+  /** Optional axis labels (used for bar/line/area/scatter charts). */
+  xLabel?: string;
+  yLabel?: string;
+  /** Series colors as hex (without #). Falls back to deck palette when omitted. */
+  colors?: string[];
+  /** Whether to render a legend below the chart. */
+  showLegend?: boolean;
 }
 
 export interface SlideReferenceImage {
