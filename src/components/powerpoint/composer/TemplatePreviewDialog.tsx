@@ -885,8 +885,16 @@ const SlideMock: React.FC<{
               <RadialBlob accent={t.palette.accent} secondary={t.palette.secondary} seed={index + 5} />
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-[70%] h-[55%]">
-                <IsoStack accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} />
+              <div className="w-[72%] h-[62%]">
+                <VisualVariant
+                  variant={pickVariant(t.id, "section-hero", index)}
+                  accent={t.palette.accent}
+                  secondary={t.palette.secondary}
+                  text={t.palette.text}
+                  muted={muted}
+                  seed={index + 7}
+                  size="lg"
+                />
               </div>
             </div>
             <div
