@@ -301,12 +301,98 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
         shapeEl.style.outlineOffset = '2px';
         return;
       }
-      // Click outside any shape closes toolbar
+
+      // SECTION SELECT — Alt+click anywhere in a section, or click on a
+      // section's empty padding (no shape/field/image hit).
+      const sectionEl = target.closest<HTMLElement>('[data-slide-section]');
+      const onAnyEditable =
+        target.closest('[data-slide-field]') ||
+        target.closest('[data-slide-image]') ||
+        target.tagName === 'IMG';
+      if (sectionEl && (e.altKey || !onAnyEditable)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = sectionEl.getAttribute('data-slide-section')!;
+        const rect = sectionEl.getBoundingClientRect();
+        const wrapRect = root.getBoundingClientRect();
+        setSectionToolbar({
+          id,
+          x: rect.left - wrapRect.left + rect.width / 2,
+          y: rect.top - wrapRect.top,
+        });
+        document.querySelectorAll<HTMLElement>('[data-section-selected]').forEach((n) => {
+          n.removeAttribute('data-section-selected');
+          n.style.outline = '';
+        });
+        sectionEl.setAttribute('data-section-selected', '1');
+        sectionEl.style.outline = '2px solid hsl(var(--primary))';
+        sectionEl.style.outlineOffset = '4px';
+        return;
+      }
+
+      // Click outside any shape/section closes toolbars
       setShapeToolbar(null);
-      document.querySelectorAll<HTMLElement>('[data-shape-selected]').forEach((n) => {
+      setSectionToolbar(null);
+      document.querySelectorAll<HTMLElement>('[data-shape-selected], [data-section-selected]').forEach((n) => {
         n.removeAttribute('data-shape-selected');
+        n.removeAttribute('data-section-selected');
         n.style.outline = '';
       });
+    };
+
+    // DRAG to move sections (mousedown on a selected section starts a drag)
+    const onMouseDown = (e: MouseEvent) => {
+      if (!enabled) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-slide-field], [data-slide-image], img, [contenteditable="true"]')) return;
+      const sectionEl = target.closest<HTMLElement>('[data-slide-section][data-section-selected]');
+      if (!sectionEl) return;
+      e.preventDefault();
+      const id = sectionEl.getAttribute('data-slide-section')!;
+      const wrapRect = root.getBoundingClientRect();
+      const ov = slideRef.current.demoSectionOverrides?.[id];
+      dragRef.current = {
+        id,
+        el: sectionEl,
+        startX: e.clientX,
+        startY: e.clientY,
+        baseDx: ov?.dx || 0,
+        baseDy: ov?.dy || 0,
+        slideW: wrapRect.width,
+        slideH: wrapRect.height,
+      };
+      sectionEl.style.cursor = 'grabbing';
+      window.addEventListener('mousemove', onDragMove);
+      window.addEventListener('mouseup', onDragEnd);
+    };
+
+    const onDragMove = (e: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      const dxPct = d.baseDx + ((e.clientX - d.startX) / d.slideW) * 100;
+      const dyPct = d.baseDy + ((e.clientY - d.startY) / d.slideH) * 100;
+      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%)`;
+      d.el.style.transition = 'none';
+      // Re-anchor toolbar
+      const r = d.el.getBoundingClientRect();
+      const wr = root.getBoundingClientRect();
+      setSectionToolbar((s) =>
+        s ? { ...s, x: r.left - wr.left + r.width / 2, y: r.top - wr.top } : s,
+      );
+    };
+
+    const onDragEnd = (e: MouseEvent) => {
+      const d = dragRef.current;
+      window.removeEventListener('mousemove', onDragMove);
+      window.removeEventListener('mouseup', onDragEnd);
+      if (!d) return;
+      d.el.style.cursor = '';
+      const dx = d.baseDx + ((e.clientX - d.startX) / d.slideW) * 100;
+      const dy = d.baseDy + ((e.clientY - d.startY) / d.slideH) * 100;
+      const next = { ...(slideRef.current.demoSectionOverrides || {}) };
+      next[d.id] = { ...next[d.id], dx, dy };
+      onUpdate({ demoSectionOverrides: next });
+      dragRef.current = null;
     };
 
     const onDoubleClick = (e: MouseEvent) => {
