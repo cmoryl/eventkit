@@ -174,9 +174,51 @@ Plan a deck that fully exploits this template's visual system (rich layouts, var
 === END TEMPLATE ===\n`;
 }
 
+/**
+ * Detect when the user pasted pre-structured slide content (e.g. "Slide 1: ...", "Slide 2: ...").
+ * When detected we tell the model to render those slides VERBATIM and override slideCount.
+ */
+function detectPrestructuredSlides(topic: string): { count: number; blocks: string[] } | null {
+  if (!topic) return null;
+  // Match "Slide 1:", "Slide 1 -", "Slide 1." etc. at start of a line
+  const re = /^\s*Slide\s+(\d+)\s*[:\-–.]/gim;
+  const matches: { idx: number; num: number }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(topic)) !== null) {
+    matches.push({ idx: m.index, num: parseInt(m[1], 10) });
+  }
+  if (matches.length < 2) return null;
+  const blocks: string[] = [];
+  for (let i = 0; i < matches.length; i++) {
+    const start = matches[i].idx;
+    const end = i + 1 < matches.length ? matches[i + 1].idx : topic.length;
+    blocks.push(topic.slice(start, end).trim());
+  }
+  return { count: matches.length, blocks };
+}
+
 async function planDeck(req: DeckRequest, apiKey: string): Promise<DeckOutline> {
   const src = req.source;
   const tplBlock = buildTemplateBlock(req.template);
+  const prestructured = detectPrestructuredSlides(req.topic);
+  if (prestructured) {
+    // Force slide count to match what the user actually wrote.
+    req = { ...req, slideCount: prestructured.count };
+  }
+  const verbatimBlock = prestructured
+    ? `\n\n=== PRE-STRUCTURED USER CONTENT (${prestructured.count} slides) ===
+The user has authored every slide explicitly below. You MUST:
+- Produce EXACTLY ${prestructured.count} slides — one per "Slide N:" block, in order.
+- Preserve ALL bullets, sub-bullets, stats, headings, and quoted text VERBATIM (do not summarize, condense, rewrite, or drop lines).
+- Map each slide's content into the most appropriate rich layout (comparison for before/after, kpi_grid/metrics for numeric outcomes, bullets/two_column for narrative, quote for speaker-style narrative).
+- Lift section headings inside a slide (e.g. "Business Impact", "Quantified Outcomes") into a two_column or sub-section, never discard them.
+- The 5-bullet / 12-word style cap DOES NOT APPLY here — fidelity to the user's content is the priority.
+- For "Speaker Notes" / narrative slides, put the prose into the slide's notes AND show key takeaways as bullets/quote on the slide.
+
+User-authored slides:
+${prestructured.blocks.map((b) => `---\n${b}`).join("\n")}
+=== END PRE-STRUCTURED USER CONTENT ===\n`
+    : "";
   const sourceBlock = src
     ? `\n\n=== SOURCE DOCUMENT ${src.fileName ? `(${src.fileName})` : ""} ===
 Influence: ${src.influence ?? 70}/100
