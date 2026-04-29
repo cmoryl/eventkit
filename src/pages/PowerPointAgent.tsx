@@ -536,6 +536,11 @@ const PowerPointAgent: React.FC = () => {
         },
       ]);
 
+      // Auto-switch into the full Presentation Studio (Editor tab) so the user lands on
+      // an editable view of the freshly generated deck. The chat agent stays available
+      // as a sidebar inside the editor for refinements.
+      setActiveTab("editor");
+
       // Archive the outline so it isn't lost. Best-effort — never block the UX.
       if (user && deck.outline) {
         supabase
@@ -1153,7 +1158,8 @@ const PowerPointAgent: React.FC = () => {
         </footer>
       )}
 
-      {/* Editor tab — full-page (inline) slide editor, prefilled with the most recent agent-generated outline */}
+      {/* Editor tab — full-page (inline) Presentation Studio with the chat agent
+           docked on the left as a sidebar so the user can keep refining the deck. */}
       <SlideEditor
         inline
         isOpen={activeTab === "editor"}
@@ -1162,6 +1168,95 @@ const PowerPointAgent: React.FC = () => {
         assetName={history.find((h) => h.deck)?.deck?.title || "New Presentation"}
         brand={(globalBrands.find((b) => b.id === selectedBrandId) || activeBrand) as any || null}
         initialSlides={editorInitialSlides}
+        sidebar={
+          <div className="flex flex-col h-full">
+            <div className="px-4 py-3 border-b bg-card/60 flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <Bot className="h-4 w-4 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold truncate">AI Agent</h3>
+                  <p className="text-[11px] text-muted-foreground truncate">Refine your deck — ask anything</p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1"
+                onClick={() => setActiveTab("agent")}
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Chat
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+              {history.length === 0 && (
+                <div className="text-xs text-muted-foreground text-center py-8 px-2">
+                  Start chatting with the agent to refine slides, swap layouts, or generate a new deck.
+                </div>
+              )}
+              {history.map((item, i) => (
+                <div key={i} className={`flex ${item.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[92%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+                      item.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted/60 border border-border/60"
+                    }`}
+                  >
+                    <p
+                      className="whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{
+                        __html: item.content
+                          .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+                          .replace(/\n/g, "<br/>"),
+                      }}
+                    />
+                    {item.deck?.downloadUrl && (
+                      <a
+                        href={item.deck.downloadUrl}
+                        download={item.deck.filename}
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] underline opacity-90 hover:opacity-100"
+                      >
+                        <Download className="h-3 w-3" /> {item.deck.filename}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {isGenerating && (
+                <div className="flex justify-start">
+                  <div className="bg-muted/60 border rounded-xl px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span>Working on it…</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <form
+              onSubmit={(e) => { e.preventDefault(); planOutline(); }}
+              className="border-t p-3 space-y-2 bg-card/60 shrink-0"
+            >
+              <textarea
+                value={topic}
+                onChange={(e) => setTopic(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); planOutline(); }
+                }}
+                rows={2}
+                placeholder="Refine slides, swap layouts, add a section…"
+                className="w-full resize-none rounded-lg border bg-background px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={isGenerating}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="w-full gap-1.5"
+                disabled={!topic.trim() || isGenerating}
+              >
+                {isGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <><Send className="h-3.5 w-3.5" /> Send</>}
+              </Button>
+            </form>
+          </div>
+        }
       />
 
       <BrandHubImportModal
