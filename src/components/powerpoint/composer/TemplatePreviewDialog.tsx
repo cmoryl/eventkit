@@ -2254,7 +2254,13 @@ export const SlideMock: React.FC<{
                     style={{ color: t.palette.accent }}
                   >
                     <span className="inline-block h-1 w-1 rounded-full" style={{ background: t.palette.accent }} />
-                    {m.location}
+                    <Editable
+                      ariaLabel={`Team member ${i + 1} location`}
+                      editing={editing}
+                      value={m.location}
+                      onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, location: v } : member)) }))}
+                      className="inline-block"
+                    />
                   </div>
                 )}
                 {m.focus && (
@@ -2262,7 +2268,13 @@ export const SlideMock: React.FC<{
                     className="relative mt-2 pt-2 text-[10px] italic leading-snug border-t"
                     style={{ color: muted, borderColor: subtleBorder }}
                   >
-                    "{m.focus}"
+                    “<Editable
+                      ariaLabel={`Team member ${i + 1} focus`}
+                      editing={editing}
+                      value={m.focus}
+                      multiline
+                      onChange={(v) => update((c) => ({ ...c, team: c.team.map((member, idx) => (idx === i ? { ...member, focus: v } : member)) }))}
+                    />”
                   </div>
                 )}
               </div>
@@ -2280,7 +2292,15 @@ export const SlideMock: React.FC<{
               Pricing
             </span>
           </div>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight">Simple, scalable plans</h3>
+          <Editable
+            as="div"
+            ariaLabel="Pricing heading"
+            editing={editing}
+            value={headingFor("pricing", "Simple, scalable plans")}
+            onChange={(v) => updateHeading("pricing", v)}
+            className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
+            style={{ color: t.palette.text }}
+          />
           <div className="mt-6 grid grid-cols-3 gap-3 flex-1">
             {content.pricing.map((p, i) => (
               <div
@@ -2300,7 +2320,12 @@ export const SlideMock: React.FC<{
                   </div>
                 )}
                 <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                  {p.name}
+                  <Editable
+                    ariaLabel={`Pricing ${i + 1} plan name`}
+                    editing={editing}
+                    value={p.name}
+                    onChange={(v) => update((c) => ({ ...c, pricing: c.pricing.map((tier, idx) => (idx === i ? { ...tier, name: v } : tier)) }))}
+                  />
                 </div>
                 <div className="mt-2 flex items-baseline gap-1.5">
                   <span
