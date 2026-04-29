@@ -42,7 +42,7 @@ interface Props {
 
 const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
   const { toast } = useToast();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
   const [outputVolume, setOutputVolume] = useState(0);
