@@ -144,17 +144,23 @@ NARRATIVE & LAYOUT RULES
   agenda, kpi_grid, metrics, timeline, comparison, process, chart, team, image_hero, quote, section, two_column, bullets, stat
 - Never use the same layout 3 times in a row. Avoid using "bullets" more than ~25% of the time.
 - Insert "section" dividers every 4-6 slides to break up the deck.
-- Always include speaker notes (1-3 sentences per slide).
+- Always include speaker notes (1-3 sentences per slide) in the 'notes' field — this is REQUIRED, never omit it.
 
-CONTENT QUALITY
-- Concise text. Max 5 bullets/slide, max 12 words/bullet.
+CONTENT FIDELITY (MOST IMPORTANT)
+- When the user provides source material, an outline, or pre-structured slides, PRESERVE EVERY bullet, stat, percentage, dollar amount, and heading they wrote — do not summarize, paraphrase, condense, drop, or merge items.
+- If a slide has 8 bullets in the source, return all 8 bullets — never trim to "fit" a layout.
+- If the user wrote "Cost ↓ 20–40%, CSAT ↑ 10–25%, AHT ↓ 15–30%, FCR ↑ 15–25%, 3–5x scalability" that is FIVE distinct kpis/metrics — return all five.
+- Headings inside a slide ("Business Impact", "Quantified Outcomes", "RESULTING GAP") must be preserved as section subheadings, two_column headings, or KPI sub-labels — never discarded.
+- For exploratory or topic-only requests (no source content), keep bullets concise: aim for 3-5 bullets at ~12 words each, but go longer if the topic demands it.
+
+OTHER QUALITY RULES
 - KPIs and stats should feel real (numbers + units + sublabels), not "00%".
 - Agenda items must have a step number, a short title, and ideally a duration.
 - Timelines: 4-6 milestones, each with a date/quarter and a deliverable line.
-- Comparisons: 3-4 contrast points per side, parallel phrasing.
+- Comparisons: 3-6 contrast points per side, parallel phrasing.
 - Process: 3-5 steps with verbs as titles.
 - Team: 3-6 plausible roles with initials and 1-line focus.
-- For "chart" slides, return a chart spec with 4-7 data points.
+- For "chart" slides, return a chart spec with 4-7 data points using REAL numbers from the source if present.
 
 Match the requested template's palette, fonts, and visual mood. The renderer will style every slide using the deck palette + fonts you return.`;
 
