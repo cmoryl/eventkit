@@ -204,8 +204,13 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       const ov = sectionOverrides[id];
       const dx = ov?.dx || 0;
       const dy = ov?.dy || 0;
-      el.style.transform = dx || dy ? `translate(${dx}%, ${dy}%)` : '';
-      el.style.transition = dragRef.current?.id === id ? 'none' : 'transform 120ms ease-out';
+      const sx = ov?.sx ?? 1;
+      const sy = ov?.sy ?? 1;
+      const hasT = dx || dy || sx !== 1 || sy !== 1;
+      el.style.transform = hasT ? `translate(${dx}%, ${dy}%) scale(${sx}, ${sy})` : '';
+      el.style.transformOrigin = 'top left';
+      el.style.transition =
+        dragRef.current?.id === id || resizeRef.current?.id === id ? 'none' : 'transform 120ms ease-out';
       if (ov?.hidden) el.style.display = 'none';
       else if (el.style.display === 'none' && !overrides[el.getAttribute('data-slide-shape') || '']?.hidden) el.style.display = '';
     });
