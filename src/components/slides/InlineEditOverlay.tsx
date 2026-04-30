@@ -717,6 +717,41 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
         </div>
       )}
 
+      {/* Resize handles — 8 around the section bounds. */}
+      {sectionToolbar && (() => {
+        const HS = 10; // handle size in px
+        const handles: Array<{
+          h: 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
+          x: number;
+          y: number;
+          cursor: string;
+        }> = [
+          { h: 'nw', x: sectionToolbar.left,                          y: sectionToolbar.top,                            cursor: 'nwse-resize' },
+          { h: 'n',  x: sectionToolbar.left + sectionToolbar.width/2, y: sectionToolbar.top,                            cursor: 'ns-resize' },
+          { h: 'ne', x: sectionToolbar.left + sectionToolbar.width,   y: sectionToolbar.top,                            cursor: 'nesw-resize' },
+          { h: 'w',  x: sectionToolbar.left,                          y: sectionToolbar.top + sectionToolbar.height/2,  cursor: 'ew-resize' },
+          { h: 'e',  x: sectionToolbar.left + sectionToolbar.width,   y: sectionToolbar.top + sectionToolbar.height/2,  cursor: 'ew-resize' },
+          { h: 'sw', x: sectionToolbar.left,                          y: sectionToolbar.top + sectionToolbar.height,    cursor: 'nesw-resize' },
+          { h: 's',  x: sectionToolbar.left + sectionToolbar.width/2, y: sectionToolbar.top + sectionToolbar.height,    cursor: 'ns-resize' },
+          { h: 'se', x: sectionToolbar.left + sectionToolbar.width,   y: sectionToolbar.top + sectionToolbar.height,    cursor: 'nwse-resize' },
+        ];
+        return handles.map(({ h, x, y, cursor }) => (
+          <div
+            key={h}
+            className="absolute z-50 bg-background border-2 border-primary rounded-sm shadow"
+            style={{
+              left: x - HS / 2,
+              top: y - HS / 2,
+              width: HS,
+              height: HS,
+              cursor,
+            }}
+            onMouseDown={(e) => startResize(e, h)}
+            title="Drag to resize · Shift = uniform"
+          />
+        ));
+      })()}
+
       {sectionToolbar && (
         <div
           className="absolute z-50 flex items-center gap-1 rounded-lg border bg-background/95 backdrop-blur px-2 py-1.5 shadow-lg"
