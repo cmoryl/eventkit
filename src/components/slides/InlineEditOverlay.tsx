@@ -47,6 +47,11 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     id: string;
     x: number;
     y: number;
+    /** Bounding rect of section in wrapper-local coords — drives handle positions */
+    left: number;
+    top: number;
+    width: number;
+    height: number;
   } | null>(null);
 
   const dragRef = useRef<{
@@ -58,6 +63,19 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     baseDy: number;
     slideW: number;
     slideH: number;
+  } | null>(null);
+
+  const resizeRef = useRef<{
+    id: string;
+    el: HTMLElement;
+    handle: 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w';
+    startX: number;
+    startY: number;
+    baseSx: number;
+    baseSy: number;
+    /** Natural (unscaled) width/height in px at drag start */
+    naturalW: number;
+    naturalH: number;
   } | null>(null);
 
   /* ----------------------------------------------------------------------
