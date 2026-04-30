@@ -83,6 +83,8 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       if (next && onDemoContentChange) onDemoContentChange(next);
     };
     const bgImage = (slide as any).bgImage as string | undefined;
+    const bgTint = (slide as any).bgTint as string | undefined;
+    const bgTintOpacity = ((slide as any).bgTintOpacity ?? 0) as number;
     return (
       <div className="absolute inset-0 demo-mock-fill">
         {bgImage && (
@@ -103,6 +105,13 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.55))' }}
             />
           </>
+        )}
+        {bgTint && bgTintOpacity > 0 && (
+          <div
+            aria-hidden
+            className="absolute inset-0 pointer-events-none"
+            style={{ backgroundColor: bgTint, opacity: bgTintOpacity, mixBlendMode: 'multiply' }}
+          />
         )}
         <SlideMock
           template={slide.demoTemplate}
