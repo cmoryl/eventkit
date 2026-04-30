@@ -44,6 +44,8 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     color: string;
   } | null>(null);
 
+  const [swapOpen, setSwapOpen] = useState(false);
+
   const [sectionToolbar, setSectionToolbar] = useState<{
     id: string;
     x: number;
