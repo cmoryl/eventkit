@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.proxy-brandhub-file]
 verify_jwt = false
+
+[functions.generate-slide-graphic]
+verify_jwt = false
