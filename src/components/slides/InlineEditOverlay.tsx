@@ -405,6 +405,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       // Click outside any shape/section closes toolbars
       setShapeToolbar(null);
       setSectionToolbar(null);
+      setSwapOpen(false);
       document.querySelectorAll<HTMLElement>('[data-shape-selected], [data-section-selected]').forEach((n) => {
         n.removeAttribute('data-shape-selected');
         n.removeAttribute('data-section-selected');
