@@ -4,12 +4,14 @@ import { ImagePlus, Palette, Plus, Replace, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
 import type { SlideData } from './slideTypes';
 
 type Props = {
   slide: SlideData;
   onContentChange: (nextOrUpdater: any) => void;
   onTemplateChange: (nextOrUpdater: any) => void;
+  onSlideChange?: (patch: Partial<SlideData>) => void;
 };
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
