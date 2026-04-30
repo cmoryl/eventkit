@@ -342,6 +342,10 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           id,
           x: rect.left - wrapRect.left + rect.width / 2,
           y: rect.top - wrapRect.top,
+          left: rect.left - wrapRect.left,
+          top: rect.top - wrapRect.top,
+          width: rect.width,
+          height: rect.height,
         });
         document.querySelectorAll<HTMLElement>('[data-section-selected]').forEach((n) => {
           n.removeAttribute('data-section-selected');
