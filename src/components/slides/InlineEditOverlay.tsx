@@ -549,6 +549,72 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     updateSection(id, { dx: (cur.dx || 0) + dx, dy: (cur.dy || 0) + dy });
   };
 
+  /** Begin a free-rotation drag from the rotation handle above the section. */
+  const startRotate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!sectionToolbar) return;
+    const root = wrapperRef.current;
+    if (!root) return;
+    const el = root.querySelector<HTMLElement>(
+      `[data-slide-section="${sectionToolbar.id}"]`,
+    );
+    if (!el) return;
+
+    const id = sectionToolbar.id;
+    const ov = slideRef.current.demoSectionOverrides?.[id] || {};
+    const baseRot = ov.rotate || 0;
+
+    // Pivot = center of the rendered section in viewport coords
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const startAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+
+    const apply = (ev: MouseEvent, commit: boolean) => {
+      const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
+      let next = baseRot + (ang - startAngle);
+      if (ev.shiftKey) next = Math.round(next / 15) * 15; // snap
+      next = ((next + 180) % 360 + 360) % 360 - 180;       // normalize
+
+      const cur = slideRef.current.demoSectionOverrides?.[id] || {};
+      const dxPct = cur.dx || 0;
+      const dyPct = cur.dy || 0;
+      const sx = cur.sx ?? 1;
+      const sy = cur.sy ?? 1;
+      el.style.transformOrigin = 'center center';
+      el.style.transform = `translate(${dxPct}%, ${dyPct}%) rotate(${next}deg) scale(${sx}, ${sy})`;
+      el.style.transition = 'none';
+
+      const r = el.getBoundingClientRect();
+      const wr = root.getBoundingClientRect();
+      setSectionToolbar((s) =>
+        s
+          ? {
+              ...s,
+              x: r.left - wr.left + r.width / 2,
+              y: r.top - wr.top,
+              left: r.left - wr.left,
+              top: r.top - wr.top,
+              width: r.width,
+              height: r.height,
+            }
+          : s,
+      );
+
+      if (commit) updateSection(id, { rotate: next });
+    };
+
+    const onMove = (ev: MouseEvent) => apply(ev, false);
+    const onUp = (ev: MouseEvent) => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      apply(ev, true);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   /** Begin a resize drag from one of the 8 handles around the selected section. */
   const startResize = (
     e: React.MouseEvent,
