@@ -57,7 +57,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     const prev: Snap = {};
     const cur = slideRef.current as any;
     for (const k of Object.keys(updates)) {
-      prev[k as keyof SlideData] = cur[k];
+      (prev as any)[k] = cur[k];
     }
     undoStackRef.current.push(prev);
     if (undoStackRef.current.length > 100) undoStackRef.current.shift();
@@ -73,7 +73,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     const inverse: Snap = {};
     const cur = slideRef.current as any;
     for (const k of Object.keys(snap)) {
-      inverse[k as keyof SlideData] = cur[k];
+      (inverse as any)[k] = cur[k];
     }
     redoStackRef.current.push(inverse);
     bumpHistory();
@@ -86,7 +86,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     const inverse: Snap = {};
     const cur = slideRef.current as any;
     for (const k of Object.keys(snap)) {
-      inverse[k as keyof SlideData] = cur[k];
+      (inverse as any)[k] = cur[k];
     }
     undoStackRef.current.push(inverse);
     bumpHistory();
