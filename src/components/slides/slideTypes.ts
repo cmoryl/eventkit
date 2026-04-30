@@ -236,6 +236,28 @@ export interface SlideData {
   bgTint?: string;
   /** Tint overlay opacity 0-1 — defaults to 0 (off). */
   bgTintOpacity?: number;
+  /**
+   * Free-floating text boxes overlaid on top of any slide.
+   * Positions are stored in percent (0-100) of slide width/height so they
+   * stay correct across zoom levels and exports.
+   */
+  textBoxes?: Array<{
+    id: string;
+    text: string;
+    /** Center X in % of slide width. */
+    xPct: number;
+    /** Center Y in % of slide height. */
+    yPct: number;
+    /** Width in % of slide width. */
+    wPct: number;
+    /** Font size in pixels at slide native resolution (1280px wide). */
+    fontSize: number;
+    color: string;
+    bg?: string;
+    align?: 'left' | 'center' | 'right';
+    weight?: 400 | 500 | 600 | 700 | 800;
+    italic?: boolean;
+  }>;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
