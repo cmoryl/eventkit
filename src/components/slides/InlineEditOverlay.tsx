@@ -507,6 +507,58 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     };
   }, [enabled, onUpdate]);
 
+  /* ----------------------------------------------------------------------
+   * KEYBOARD FINE-TUNING — when a section is selected, Left/Right arrows
+   * rotate it by the current snap increment. Modifiers:
+   *   - Alt  = fine (1°)
+   *   - Shift = coarse (90°)
+   *   - default = current rotateSnap value
+   * Up/Down arrows are reserved for future scale tweaks; we ignore them
+   * here so they still scroll the page when no section is selected.
+   * -------------------------------------------------------------------- */
+  useEffect(() => {
+    if (!enabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!sectionToolbar) return;
+      // Don't intercept while typing in an editable field or input
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT')) return;
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault();
+      const step = e.altKey ? 1 : e.shiftKey ? 90 : (rotateSnapRef.current || 15);
+      const dir = e.key === 'ArrowRight' ? 1 : -1;
+      const cur = slideRef.current.demoSectionOverrides?.[sectionToolbar.id] || {};
+      let next = (cur.rotate || 0) + dir * step;
+      next = ((next + 180) % 360 + 360) % 360 - 180; // normalize
+      updateSection(sectionToolbar.id, { rotate: next });
+
+      // Re-anchor toolbar after the transform updates next frame
+      requestAnimationFrame(() => {
+        const root = wrapperRef.current;
+        if (!root) return;
+        const el = root.querySelector<HTMLElement>(`[data-slide-section="${sectionToolbar.id}"]`);
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        const wr = root.getBoundingClientRect();
+        setSectionToolbar((s) =>
+          s
+            ? {
+                ...s,
+                x: r.left - wr.left + r.width / 2,
+                y: r.top - wr.top,
+                left: r.left - wr.left,
+                top: r.top - wr.top,
+                width: r.width,
+                height: r.height,
+              }
+            : s,
+        );
+      });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [enabled, sectionToolbar, onUpdate]);
+
   const onPickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
