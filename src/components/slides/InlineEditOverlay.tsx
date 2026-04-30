@@ -619,8 +619,9 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       const cur = slideRef.current.demoSectionOverrides?.[r.id] || {};
       const dxPct = cur.dx || 0;
       const dyPct = cur.dy || 0;
-      r.el.style.transformOrigin = 'top left';
-      r.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
+      const rot = cur.rotate || 0;
+      r.el.style.transformOrigin = 'center center';
+      r.el.style.transform = `translate(${dxPct}%, ${dyPct}%) rotate(${rot}deg) scale(${sx}, ${sy})`;
       r.el.style.transition = 'none';
 
       // Re-anchor toolbar + handles to the new bounding rect
