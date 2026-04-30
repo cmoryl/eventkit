@@ -950,6 +950,40 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         onChange={onPickImage}
       />
 
+      {/* Floating Undo/Redo widget — top-left of the slide. */}
+      {enabled && (
+        <div
+          className="absolute z-50 top-2 left-2 flex items-center gap-0.5 rounded-lg border bg-background/90 backdrop-blur px-1 py-1 shadow-md"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="text-[11px] w-7 h-7 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-foreground"
+            title="Undo (Ctrl/Cmd+Z)"
+            disabled={!canUndo}
+            onClick={undo}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 10h10a8 8 0 0 1 8 8v2" />
+              <polyline points="9 4 3 10 9 16" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="text-[11px] w-7 h-7 rounded hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-foreground"
+            title="Redo (Ctrl/Cmd+Shift+Z)"
+            disabled={!canRedo}
+            onClick={redo}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10H11a8 8 0 0 0-8 8v2" />
+              <polyline points="15 4 21 10 15 16" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {shapeToolbar && (
         <div
           className="absolute z-50 flex items-center gap-2 rounded-lg border bg-background/95 backdrop-blur px-2 py-1.5 shadow-lg"
