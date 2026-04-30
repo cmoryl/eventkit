@@ -929,6 +929,22 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
         </div>
       )}
 
+      {shapeToolbar && swapOpen && (
+        <GraphicSwapPopover
+          anchorX={shapeToolbar.x}
+          anchorY={shapeToolbar.y - 4}
+          accent={shapeToolbar.color}
+          bg={(slide as any).bgColor}
+          secondary={(slide as any).demoTemplate?.palette?.secondary}
+          onApply={(payload, scope) => {
+            applySwap(shapeToolbar.id, payload, scope);
+            setSwapOpen(false);
+            setShapeToolbar(null);
+          }}
+          onClose={() => setSwapOpen(false)}
+        />
+      )}
+
       {/* Resize handles — 8 around the section bounds. */}
       {sectionToolbar && (() => {
         const HS = 10; // handle size in px
