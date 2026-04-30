@@ -31,7 +31,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 const MiniInput = (props: React.ComponentProps<typeof Input>) => <Input {...props} className="h-7 text-xs" />;
 const MiniText = (props: React.ComponentProps<typeof Textarea>) => <Textarea {...props} className="min-h-[68px] text-xs" />;
 
-export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChange }: Props) {
+export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChange, onSlideChange }: Props) {
   const content = slide.demoContent as any;
   const template = slide.demoTemplate as any;
   const kind = slide.demoKind;
