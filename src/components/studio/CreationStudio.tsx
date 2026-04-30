@@ -920,6 +920,16 @@ export const CreationStudio: React.FC = () => {
           setGeneratedImages(prev => ({ ...prev, ...newImages }));
         }}
       />
+
+      {/* BrandHub Import Modal */}
+      <BrandHubImportModal
+        isOpen={showBrandHubImport}
+        onClose={() => setShowBrandHubImport(false)}
+        onBrandImported={() => {
+          setShowBrandHubImport(false);
+          loadBrands({ selectNewest: true });
+        }}
+      />
     </div>
     </StyleAnchorProvider>
   );
