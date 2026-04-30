@@ -541,6 +541,114 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     updateSection(id, { dx: (cur.dx || 0) + dx, dy: (cur.dy || 0) + dy });
   };
 
+  /** Begin a resize drag from one of the 8 handles around the selected section. */
+  const startResize = (
+    e: React.MouseEvent,
+    handle: 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w',
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!sectionToolbar) return;
+    const root = wrapperRef.current;
+    if (!root) return;
+    const el = root.querySelector<HTMLElement>(
+      `[data-slide-section="${sectionToolbar.id}"]`,
+    );
+    if (!el) return;
+
+    const ov = slideRef.current.demoSectionOverrides?.[sectionToolbar.id] || {};
+    const baseSx = ov.sx ?? 1;
+    const baseSy = ov.sy ?? 1;
+    // Natural (unscaled) dims: undo the current scale on rendered size.
+    const rect = el.getBoundingClientRect();
+    const naturalW = rect.width / baseSx;
+    const naturalH = rect.height / baseSy;
+
+    resizeRef.current = {
+      id: sectionToolbar.id,
+      el,
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseSx,
+      baseSy,
+      naturalW,
+      naturalH,
+    };
+
+    const onMove = (ev: MouseEvent) => {
+      const r = resizeRef.current;
+      if (!r) return;
+      const dx = ev.clientX - r.startX;
+      const dy = ev.clientY - r.startY;
+      let sx = r.baseSx;
+      let sy = r.baseSy;
+
+      // Sign per handle (which side of the box is being dragged).
+      const east = r.handle.includes('e');
+      const west = r.handle.includes('w');
+      const south = r.handle.includes('s');
+      const north = r.handle.includes('n');
+
+      if (east) sx = r.baseSx + dx / r.naturalW;
+      if (west) sx = r.baseSx - dx / r.naturalW;
+      if (south) sy = r.baseSy + dy / r.naturalH;
+      if (north) sy = r.baseSy - dy / r.naturalH;
+
+      // Shift = uniform scale (preserve aspect ratio from the dominant axis)
+      if (ev.shiftKey && (east || west) && (north || south)) {
+        const uniform = Math.max(sx, sy);
+        sx = uniform;
+        sy = uniform;
+      } else if (ev.shiftKey) {
+        if (east || west) sy = r.baseSy * (sx / r.baseSx);
+        if (north || south) sx = r.baseSx * (sy / r.baseSy);
+      }
+
+      sx = Math.max(0.2, Math.min(4, sx));
+      sy = Math.max(0.2, Math.min(4, sy));
+
+      const cur = slideRef.current.demoSectionOverrides?.[r.id] || {};
+      const dxPct = cur.dx || 0;
+      const dyPct = cur.dy || 0;
+      r.el.style.transformOrigin = 'top left';
+      r.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
+      r.el.style.transition = 'none';
+
+      // Re-anchor toolbar + handles to the new bounding rect
+      const newRect = r.el.getBoundingClientRect();
+      const wr = root.getBoundingClientRect();
+      setSectionToolbar((s) =>
+        s
+          ? {
+              ...s,
+              x: newRect.left - wr.left + newRect.width / 2,
+              y: newRect.top - wr.top,
+              left: newRect.left - wr.left,
+              top: newRect.top - wr.top,
+              width: newRect.width,
+              height: newRect.height,
+            }
+          : s,
+      );
+    };
+
+    const onUp = () => {
+      const r = resizeRef.current;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (!r) return;
+      const finalRect = r.el.getBoundingClientRect();
+      const sx = Math.max(0.2, Math.min(4, finalRect.width / r.naturalW));
+      const sy = Math.max(0.2, Math.min(4, finalRect.height / r.naturalH));
+      updateSection(r.id, { sx, sy });
+      resizeRef.current = null;
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   return (
     <div className="relative w-full h-full">
       <div ref={wrapperRef} className="contents">
