@@ -160,6 +160,37 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           el.style.background = ov.color;
         }
       }
+
+      // SVG / image swap — replace the shape's visible content with the
+      // chosen library SVG or AI-generated image. Cached via data-* sentinel
+      // so we don't re-inject DOM on every render.
+      const swapSig =
+        (ov?.svg ? `svg:${ov.svg.length}:${ov.svg.slice(0, 40)}` : '') +
+        (ov?.imageUrl ? `img:${ov.imageUrl.slice(0, 80)}` : '');
+      if (swapSig && el.getAttribute('data-shape-swap') !== swapSig) {
+        // Stash the original ONCE so reset can restore it
+        if (!el.hasAttribute('data-shape-original')) {
+          el.setAttribute('data-shape-original', el.innerHTML);
+        }
+        el.style.background = '';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.overflow = 'hidden';
+        if (ov?.imageUrl) {
+          el.innerHTML = `<img src="${ov.imageUrl}" alt="" style="width:100%;height:100%;object-fit:contain;display:block" />`;
+        } else if (ov?.svg) {
+          // SVG already styles itself to fill 100% via the wrap() helper.
+          el.innerHTML = ov.svg;
+        }
+        el.setAttribute('data-shape-swap', swapSig);
+      } else if (!swapSig && el.hasAttribute('data-shape-swap')) {
+        // Override removed → restore original markup
+        const orig = el.getAttribute('data-shape-original');
+        if (orig !== null) el.innerHTML = orig;
+        el.removeAttribute('data-shape-swap');
+        el.removeAttribute('data-shape-original');
+      }
     });
 
     /* ------------------------------------------------------------------
