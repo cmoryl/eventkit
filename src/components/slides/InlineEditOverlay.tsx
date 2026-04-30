@@ -1158,6 +1158,33 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
           onClick={(e) => e.stopPropagation()}
         >
           <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground pr-1">Text</span>
+          <select
+            value=""
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!v) return;
+              const presets: Record<string, Partial<NonNullable<SlideData['textBoxes']>[number]>> = {
+                heading:    { fontSize: 72, weight: 800, italic: false, align: 'left',   bg: undefined },
+                subheading: { fontSize: 44, weight: 600, italic: false, align: 'left',   bg: undefined },
+                body:       { fontSize: 22, weight: 400, italic: false, align: 'left',   bg: undefined },
+                callout:    { fontSize: 28, weight: 700, italic: false, align: 'center', bg: 'rgba(0,0,0,0.55)' },
+                caption:    { fontSize: 16, weight: 500, italic: true,  align: 'left',   bg: undefined },
+                eyebrow:    { fontSize: 14, weight: 700, italic: false, align: 'left',   bg: undefined },
+              };
+              if (presets[v]) updateTextBox(selectedTb.id, presets[v]);
+              e.currentTarget.value = '';
+            }}
+            className="h-6 rounded border bg-background text-[11px] text-foreground px-1 cursor-pointer"
+            title="Apply text style preset"
+          >
+            <option value="">Style…</option>
+            <option value="heading">Heading</option>
+            <option value="subheading">Subheading</option>
+            <option value="body">Body</option>
+            <option value="callout">Callout</option>
+            <option value="caption">Caption</option>
+            <option value="eyebrow">Eyebrow</option>
+          </select>
           <input
             type="color"
             value={selectedTb.color}
