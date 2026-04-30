@@ -937,8 +937,99 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     window.addEventListener('mouseup', onUp);
   };
 
+  /* ----------------------------------------------------------------------
+   * FREE-FLOATING TEXT BOXES — overlay layer above any slide content.
+   * Positions/sizes are stored in % so they survive zoom + export.
+   * -------------------------------------------------------------------- */
+  const textBoxes = (slide as any).textBoxes as SlideData['textBoxes'] | undefined;
+  const [selectedTextBoxId, setSelectedTextBoxId] = useState<string | null>(null);
+  const [editingTextBoxId, setEditingTextBoxId] = useState<string | null>(null);
+  const tbDragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect; orig: { xPct: number; yPct: number; wPct: number; fontSize: number } } | null>(null);
+
+  const updateTextBox = (id: string, patch: Partial<NonNullable<SlideData['textBoxes']>[number]>) => {
+    const list = (slideRef.current.textBoxes || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
+    onUpdate({ textBoxes: list } as Partial<SlideData>);
+  };
+  const removeTextBox = (id: string) => {
+    const list = (slideRef.current.textBoxes || []).filter((t) => t.id !== id);
+    onUpdate({ textBoxes: list } as Partial<SlideData>);
+    if (selectedTextBoxId === id) setSelectedTextBoxId(null);
+    if (editingTextBoxId === id) setEditingTextBoxId(null);
+  };
+  const addTextBox = () => {
+    const id = `tb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const next = [
+      ...((slideRef.current.textBoxes || []) as NonNullable<SlideData['textBoxes']>),
+      { id, text: 'New text', xPct: 50, yPct: 50, wPct: 40, fontSize: 36, color: '#ffffff', bg: 'rgba(0,0,0,0.35)', align: 'center' as const, weight: 600 as const },
+    ];
+    onUpdate({ textBoxes: next } as Partial<SlideData>);
+    setSelectedTextBoxId(id);
+  };
+
+  // Pointer-driven move/resize for text boxes — uses the wrapper rect as the
+  // coordinate space so % values stay correct at any zoom level.
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const drag = tbDragRef.current;
+      if (!drag) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (drag.mode === 'move') {
+        const xPct = Math.max(0, Math.min(100, drag.orig.xPct + (dx / drag.rect.width) * 100));
+        const yPct = Math.max(0, Math.min(100, drag.orig.yPct + (dy / drag.rect.height) * 100));
+        updateTextBox(drag.id, { xPct, yPct });
+      } else {
+        const wPct = Math.max(8, Math.min(100, drag.orig.wPct + (dx / drag.rect.width) * 200));
+        const fontSize = Math.max(10, Math.min(200, drag.orig.fontSize + dy * 0.4));
+        updateTextBox(drag.id, { wPct, fontSize });
+      }
+    };
+    const onUp = () => { tbDragRef.current = null; };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const startTbDrag = (e: React.PointerEvent, id: string, mode: 'move' | 'resize') => {
+    if (editingTextBoxId === id) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const root = wrapperRef.current?.parentElement;
+    if (!root) return;
+    const tb = (slideRef.current.textBoxes || []).find((t) => t.id === id);
+    if (!tb) return;
+    tbDragRef.current = {
+      id, mode,
+      startX: e.clientX, startY: e.clientY,
+      rect: root.getBoundingClientRect(),
+      orig: { xPct: tb.xPct, yPct: tb.yPct, wPct: tb.wPct, fontSize: tb.fontSize },
+    };
+  };
+
+  // Delete key removes the selected (non-editing) text box.
+  useEffect(() => {
+    if (!enabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (!selectedTextBoxId || editingTextBoxId) return;
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+      removeTextBox(selectedTextBoxId);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTextBoxId, editingTextBoxId, enabled]);
+
+  const selectedTb = textBoxes?.find((t) => t.id === selectedTextBoxId) || null;
+
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full" onMouseDown={() => { setSelectedTextBoxId(null); setEditingTextBoxId(null); }}>
       <div ref={wrapperRef} className="contents">
         {children}
       </div>
@@ -950,7 +1041,70 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         onChange={onPickImage}
       />
 
-      {/* Floating Undo/Redo widget — top-left of the slide. */}
+      {/* Text-box overlay layer (renders above slide content, below toolbars). */}
+      {textBoxes && textBoxes.length > 0 && (
+        <div className="absolute inset-0 z-30 pointer-events-none">
+          {textBoxes.map((tb) => {
+            const isSelected = tb.id === selectedTextBoxId;
+            const isEditing = tb.id === editingTextBoxId;
+            return (
+              <div
+                key={tb.id}
+                className="absolute pointer-events-auto"
+                style={{
+                  left: `${tb.xPct}%`,
+                  top: `${tb.yPct}%`,
+                  width: `${tb.wPct}%`,
+                  transform: 'translate(-50%, -50%)',
+                  outline: isSelected ? '2px solid hsl(var(--primary))' : 'none',
+                  outlineOffset: 2,
+                  cursor: isEditing ? 'text' : 'move',
+                }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => { setSelectedTextBoxId(tb.id); if (!isEditing) startTbDrag(e, tb.id, 'move'); }}
+                onDoubleClick={(e) => { e.stopPropagation(); setEditingTextBoxId(tb.id); setSelectedTextBoxId(tb.id); }}
+              >
+                <div
+                  contentEditable={isEditing && enabled}
+                  suppressContentEditableWarning
+                  spellCheck={false}
+                  onBlur={(e) => {
+                    const next = e.currentTarget.textContent || '';
+                    if (next !== tb.text) updateTextBox(tb.id, { text: next });
+                    setEditingTextBoxId(null);
+                  }}
+                  style={{
+                    fontSize: `clamp(8px, ${(tb.fontSize / 1280) * 100}cqw, 400px)` as string,
+                    color: tb.color,
+                    background: tb.bg,
+                    textAlign: tb.align || 'left',
+                    fontWeight: tb.weight || 600,
+                    fontStyle: tb.italic ? 'italic' : 'normal',
+                    padding: '0.25em 0.5em',
+                    borderRadius: 6,
+                    lineHeight: 1.2,
+                    outline: 'none',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    userSelect: isEditing ? 'text' : 'none',
+                  }}
+                >
+                  {tb.text}
+                </div>
+                {isSelected && !isEditing && (
+                  <div
+                    className="absolute -bottom-1.5 -right-1.5 w-3 h-3 rounded-sm bg-primary border border-background cursor-nwse-resize"
+                    onPointerDown={(e) => startTbDrag(e, tb.id, 'resize')}
+                    title="Drag to resize"
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Floating Undo/Redo + Add Text widget — top-left of the slide. */}
       {enabled && (
         <div
           className="absolute z-50 top-2 left-2 flex items-center gap-0.5 rounded-lg border bg-background/90 backdrop-blur px-1 py-1 shadow-md"
@@ -981,8 +1135,104 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
               <polyline points="15 4 21 10 15 16" />
             </svg>
           </button>
+          <div className="w-px h-5 bg-border mx-0.5" />
+          <button
+            type="button"
+            className="text-[11px] h-7 px-2 rounded hover:bg-muted flex items-center gap-1 text-foreground font-medium"
+            title="Add text box (double-click to edit)"
+            onClick={addTextBox}
+          >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 7V5h16v2" /><path d="M9 19h6" /><path d="M12 5v14" />
+            </svg>
+            Text
+          </button>
         </div>
       )}
+
+      {/* Selected text-box formatting toolbar */}
+      {enabled && selectedTb && !editingTextBoxId && (
+        <div
+          className="absolute z-50 top-2 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-lg border bg-background/95 backdrop-blur px-2 py-1.5 shadow-lg"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground pr-1">Text</span>
+          <input
+            type="color"
+            value={selectedTb.color}
+            onChange={(e) => updateTextBox(selectedTb.id, { color: e.target.value })}
+            className="h-6 w-6 rounded border cursor-pointer"
+            title="Text color"
+          />
+          <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            BG
+            <input
+              type="color"
+              value={(selectedTb.bg && selectedTb.bg.startsWith('#')) ? selectedTb.bg : '#000000'}
+              onChange={(e) => updateTextBox(selectedTb.id, { bg: e.target.value })}
+              className="h-6 w-6 rounded border cursor-pointer"
+              title="Background color"
+            />
+          </label>
+          <button
+            type="button"
+            className="text-[11px] px-1.5 py-0.5 rounded border hover:bg-muted"
+            title="Toggle background"
+            onClick={() => updateTextBox(selectedTb.id, { bg: selectedTb.bg ? undefined : 'rgba(0,0,0,0.35)' })}
+          >
+            {selectedTb.bg ? 'BG on' : 'BG off'}
+          </button>
+          <div className="flex items-center gap-0.5">
+            {(['left', 'center', 'right'] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                className={`text-[11px] w-6 h-6 rounded border hover:bg-muted ${selectedTb.align === a ? 'bg-primary/15 border-primary text-primary' : ''}`}
+                title={`Align ${a}`}
+                onClick={() => updateTextBox(selectedTb.id, { align: a })}
+              >
+                {a === 'left' ? '⯇' : a === 'center' ? '≡' : '⯈'}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className={`text-[11px] w-6 h-6 rounded border hover:bg-muted font-bold ${(selectedTb.weight || 600) >= 700 ? 'bg-primary/15 border-primary text-primary' : ''}`}
+            title="Bold"
+            onClick={() => updateTextBox(selectedTb.id, { weight: (selectedTb.weight || 600) >= 700 ? 500 : 700 })}
+          >B</button>
+          <button
+            type="button"
+            className={`text-[11px] w-6 h-6 rounded border hover:bg-muted italic ${selectedTb.italic ? 'bg-primary/15 border-primary text-primary' : ''}`}
+            title="Italic"
+            onClick={() => updateTextBox(selectedTb.id, { italic: !selectedTb.italic })}
+          >I</button>
+          <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            Size
+            <input
+              type="number"
+              min={10}
+              max={200}
+              value={Math.round(selectedTb.fontSize)}
+              onChange={(e) => updateTextBox(selectedTb.id, { fontSize: Math.max(10, Math.min(200, Number(e.target.value) || 36)) })}
+              className="w-12 h-6 rounded border bg-background px-1 text-[11px] text-foreground"
+            />
+          </label>
+          <button
+            type="button"
+            className="text-[11px] px-2 py-0.5 rounded border hover:bg-muted"
+            onClick={() => setEditingTextBoxId(selectedTb.id)}
+          >Edit</button>
+          <button
+            type="button"
+            className="text-[11px] px-1.5 py-0.5 rounded hover:bg-destructive/10 text-destructive"
+            title="Delete (Del)"
+            onClick={() => removeTextBox(selectedTb.id)}
+          >✕</button>
+        </div>
+      )}
+
 
       {shapeToolbar && (
         <div
