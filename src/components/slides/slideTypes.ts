@@ -198,7 +198,17 @@ export interface SlideData {
    * accent bars, cards, badges) without leaving the editor.
    *   { "orb-tl": { color: "#ff0", hidden: false } }
    */
-  demoOverrides?: Record<string, { color?: string; hidden?: boolean }>;
+  demoOverrides?: Record<
+    string,
+    {
+      color?: string;
+      hidden?: boolean;
+      /** Replace the shape with an inline SVG (string markup) — used by curated graphic library. */
+      svg?: string;
+      /** Replace the shape with an image (data URL or https URL) — used by AI generations. */
+      imageUrl?: string;
+    }
+  >;
   /**
    * Per-section overrides for demo-mock slides — keyed by `data-slide-section` id.
    * Lets users move (translate %), hide, or duplicate entire sections like stat
