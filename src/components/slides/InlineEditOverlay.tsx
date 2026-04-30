@@ -30,12 +30,95 @@ interface Props {
  * Shape markers — auto-tagged on demo-mock slides via heuristic, then keyed
  * into slide.demoOverrides[id] = { color, hidden }.
  */
-export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }: Props) {
+export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true, children }: Props) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingImageTargetRef = useRef<string | null>(null);
   const slideRef = useRef(slide);
   slideRef.current = slide;
+
+  /* ----------------------------------------------------------------------
+   * UNDO / REDO — every onUpdate() called from within this overlay first
+   * snapshots the previous values of the keys being changed onto an undo
+   * stack. Industry-standard shortcuts:
+   *   - Cmd/Ctrl + Z       → undo
+   *   - Cmd/Ctrl + Shift+Z → redo
+   *   - Ctrl + Y           → redo (Windows convention)
+   * Stack is capped at 100 entries.
+   * -------------------------------------------------------------------- */
+  type Snap = Partial<SlideData>;
+  const undoStackRef = useRef<Snap[]>([]);
+  const redoStackRef = useRef<Snap[]>([]);
+  const [historyTick, setHistoryTick] = useState(0);
+  const bumpHistory = () => setHistoryTick((t) => t + 1);
+
+  const onUpdate = React.useCallback((updates: Partial<SlideData>) => {
+    // Snapshot the *current* values for the keys about to change
+    const prev: Snap = {};
+    const cur = slideRef.current as any;
+    for (const k of Object.keys(updates)) {
+      prev[k as keyof SlideData] = cur[k];
+    }
+    undoStackRef.current.push(prev);
+    if (undoStackRef.current.length > 100) undoStackRef.current.shift();
+    redoStackRef.current = [];
+    bumpHistory();
+    rawOnUpdate(updates);
+  }, [rawOnUpdate]);
+
+  const undo = React.useCallback(() => {
+    const snap = undoStackRef.current.pop();
+    if (!snap) return;
+    // Save inverse for redo
+    const inverse: Snap = {};
+    const cur = slideRef.current as any;
+    for (const k of Object.keys(snap)) {
+      inverse[k as keyof SlideData] = cur[k];
+    }
+    redoStackRef.current.push(inverse);
+    bumpHistory();
+    rawOnUpdate(snap);
+  }, [rawOnUpdate]);
+
+  const redo = React.useCallback(() => {
+    const snap = redoStackRef.current.pop();
+    if (!snap) return;
+    const inverse: Snap = {};
+    const cur = slideRef.current as any;
+    for (const k of Object.keys(snap)) {
+      inverse[k as keyof SlideData] = cur[k];
+    }
+    undoStackRef.current.push(inverse);
+    bumpHistory();
+    rawOnUpdate(snap);
+  }, [rawOnUpdate]);
+
+  const canUndo = undoStackRef.current.length > 0;
+  const canRedo = redoStackRef.current.length > 0;
+  // Reference historyTick so React re-renders when the stacks change
+  void historyTick;
+
+  // Global keyboard shortcuts — Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z, Ctrl+Y
+  useEffect(() => {
+    if (!enabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      // Don't intercept while typing in editable fields
+      const ae = document.activeElement as HTMLElement | null;
+      if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT')) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [enabled, undo, redo]);
 
   const [shapeToolbar, setShapeToolbar] = useState<{
     id: string;
