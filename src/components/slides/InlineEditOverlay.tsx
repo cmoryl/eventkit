@@ -398,13 +398,26 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       if (!d) return;
       const dxPct = d.baseDx + ((e.clientX - d.startX) / d.slideW) * 100;
       const dyPct = d.baseDy + ((e.clientY - d.startY) / d.slideH) * 100;
-      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%)`;
+      const ov = slideRef.current.demoSectionOverrides?.[d.id];
+      const sx = ov?.sx ?? 1;
+      const sy = ov?.sy ?? 1;
+      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
       d.el.style.transition = 'none';
       // Re-anchor toolbar
       const r = d.el.getBoundingClientRect();
       const wr = root.getBoundingClientRect();
       setSectionToolbar((s) =>
-        s ? { ...s, x: r.left - wr.left + r.width / 2, y: r.top - wr.top } : s,
+        s
+          ? {
+              ...s,
+              x: r.left - wr.left + r.width / 2,
+              y: r.top - wr.top,
+              left: r.left - wr.left,
+              top: r.top - wr.top,
+              width: r.width,
+              height: r.height,
+            }
+          : s,
       );
     };
 
