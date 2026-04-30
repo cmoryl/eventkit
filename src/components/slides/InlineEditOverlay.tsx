@@ -827,6 +827,38 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
         ));
       })()}
 
+      {/* Rotation handle — above the top-center, connected by a stem. */}
+      {sectionToolbar && (
+        <>
+          <div
+            className="absolute z-50 pointer-events-none bg-primary/70"
+            style={{
+              left: sectionToolbar.left + sectionToolbar.width / 2 - 1,
+              top: sectionToolbar.top - 28,
+              width: 2,
+              height: 22,
+            }}
+          />
+          <div
+            className="absolute z-50 bg-background border-2 border-primary rounded-full shadow flex items-center justify-center text-primary"
+            style={{
+              left: sectionToolbar.left + sectionToolbar.width / 2 - 8,
+              top: sectionToolbar.top - 36,
+              width: 16,
+              height: 16,
+              cursor: 'grab',
+            }}
+            onMouseDown={startRotate}
+            title="Drag to rotate · Shift = snap to 15°"
+          >
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 1 1-3-6.7" />
+              <polyline points="21 4 21 10 15 10" />
+            </svg>
+          </div>
+        </>
+      )}
+
       {sectionToolbar && (
         <div
           className="absolute z-50 flex items-center gap-1 rounded-lg border bg-background/95 backdrop-blur px-2 py-1.5 shadow-lg"
