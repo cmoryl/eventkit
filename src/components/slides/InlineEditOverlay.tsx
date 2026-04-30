@@ -54,6 +54,11 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     height: number;
   } | null>(null);
 
+  /** User-configurable rotation snap increment in degrees (used when Shift held). */
+  const [rotateSnap, setRotateSnap] = useState<number>(15);
+  const rotateSnapRef = useRef(rotateSnap);
+  rotateSnapRef.current = rotateSnap;
+
   const dragRef = useRef<{
     id: string;
     el: HTMLElement;
@@ -574,7 +579,8 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     const apply = (ev: MouseEvent, commit: boolean) => {
       const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
       let next = baseRot + (ang - startAngle);
-      if (ev.shiftKey) next = Math.round(next / 15) * 15; // snap
+      const snap = rotateSnapRef.current;
+      if (ev.shiftKey && snap > 0) next = Math.round(next / snap) * snap; // snap
       next = ((next + 180) % 360 + 360) % 360 - 180;       // normalize
 
       const cur = slideRef.current.demoSectionOverrides?.[id] || {};
@@ -849,7 +855,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
               cursor: 'grab',
             }}
             onMouseDown={startRotate}
-            title="Drag to rotate · Shift = snap to 15°"
+            title={`Drag to rotate · Shift = snap to ${rotateSnap}°`}
           >
             <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 12a9 9 0 1 1-3-6.7" />
@@ -883,6 +889,29 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
             <button type="button" className="text-[11px] w-6 h-6 rounded border hover:bg-muted" title="Move right"
               onClick={() => nudge(sectionToolbar.id, 2, 0)}>→</button>
           </div>
+          <label
+            className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground border rounded px-1.5 py-0.5"
+            title="Rotation snap increment (hold Shift while rotating to snap)"
+          >
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 1 1-3-6.7" />
+              <polyline points="21 4 21 10 15 10" />
+            </svg>
+            <select
+              className="bg-transparent text-foreground text-[11px] outline-none cursor-pointer"
+              value={rotateSnap}
+              onChange={(e) => setRotateSnap(parseFloat(e.target.value))}
+            >
+              <option value={1}>1°</option>
+              <option value={5}>5°</option>
+              <option value={10}>10°</option>
+              <option value={15}>15°</option>
+              <option value={22.5}>22.5°</option>
+              <option value={30}>30°</option>
+              <option value={45}>45°</option>
+              <option value={90}>90°</option>
+            </select>
+          </label>
           <button
             type="button"
             className="text-[11px] px-2 py-0.5 rounded border hover:bg-muted"
