@@ -206,7 +206,15 @@ export interface SlideData {
    */
   demoSectionOverrides?: Record<
     string,
-    { dx?: number; dy?: number; hidden?: boolean; duplicated?: number }
+    {
+      dx?: number;
+      dy?: number;
+      /** Scale multipliers (1 = 100%). sx/sy independently per axis. */
+      sx?: number;
+      sy?: number;
+      hidden?: boolean;
+      duplicated?: number;
+    }
   >;
 }
 

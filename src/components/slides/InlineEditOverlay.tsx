@@ -47,6 +47,11 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     id: string;
     x: number;
     y: number;
+    /** Bounding rect of section in wrapper-local coords — drives handle positions */
+    left: number;
+    top: number;
+    width: number;
+    height: number;
   } | null>(null);
 
   const dragRef = useRef<{
@@ -58,6 +63,19 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     baseDy: number;
     slideW: number;
     slideH: number;
+  } | null>(null);
+
+  const resizeRef = useRef<{
+    id: string;
+    el: HTMLElement;
+    handle: 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w';
+    startX: number;
+    startY: number;
+    baseSx: number;
+    baseSy: number;
+    /** Natural (unscaled) width/height in px at drag start */
+    naturalW: number;
+    naturalH: number;
   } | null>(null);
 
   /* ----------------------------------------------------------------------
@@ -186,8 +204,13 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       const ov = sectionOverrides[id];
       const dx = ov?.dx || 0;
       const dy = ov?.dy || 0;
-      el.style.transform = dx || dy ? `translate(${dx}%, ${dy}%)` : '';
-      el.style.transition = dragRef.current?.id === id ? 'none' : 'transform 120ms ease-out';
+      const sx = ov?.sx ?? 1;
+      const sy = ov?.sy ?? 1;
+      const hasT = dx || dy || sx !== 1 || sy !== 1;
+      el.style.transform = hasT ? `translate(${dx}%, ${dy}%) scale(${sx}, ${sy})` : '';
+      el.style.transformOrigin = 'top left';
+      el.style.transition =
+        dragRef.current?.id === id || resizeRef.current?.id === id ? 'none' : 'transform 120ms ease-out';
       if (ov?.hidden) el.style.display = 'none';
       else if (el.style.display === 'none' && !overrides[el.getAttribute('data-slide-shape') || '']?.hidden) el.style.display = '';
     });
@@ -319,6 +342,10 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           id,
           x: rect.left - wrapRect.left + rect.width / 2,
           y: rect.top - wrapRect.top,
+          left: rect.left - wrapRect.left,
+          top: rect.top - wrapRect.top,
+          width: rect.width,
+          height: rect.height,
         });
         document.querySelectorAll<HTMLElement>('[data-section-selected]').forEach((n) => {
           n.removeAttribute('data-section-selected');
@@ -371,13 +398,26 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       if (!d) return;
       const dxPct = d.baseDx + ((e.clientX - d.startX) / d.slideW) * 100;
       const dyPct = d.baseDy + ((e.clientY - d.startY) / d.slideH) * 100;
-      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%)`;
+      const ov = slideRef.current.demoSectionOverrides?.[d.id];
+      const sx = ov?.sx ?? 1;
+      const sy = ov?.sy ?? 1;
+      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
       d.el.style.transition = 'none';
       // Re-anchor toolbar
       const r = d.el.getBoundingClientRect();
       const wr = root.getBoundingClientRect();
       setSectionToolbar((s) =>
-        s ? { ...s, x: r.left - wr.left + r.width / 2, y: r.top - wr.top } : s,
+        s
+          ? {
+              ...s,
+              x: r.left - wr.left + r.width / 2,
+              y: r.top - wr.top,
+              left: r.left - wr.left,
+              top: r.top - wr.top,
+              width: r.width,
+              height: r.height,
+            }
+          : s,
       );
     };
 
@@ -483,7 +523,10 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     onUpdate({ demoOverrides: next });
   };
 
-  const updateSection = (id: string, patch: { dx?: number; dy?: number; hidden?: boolean }) => {
+  const updateSection = (
+    id: string,
+    patch: { dx?: number; dy?: number; sx?: number; sy?: number; hidden?: boolean },
+  ) => {
     const next = { ...(slideRef.current.demoSectionOverrides || {}) };
     next[id] = { ...next[id], ...patch };
     onUpdate({ demoSectionOverrides: next });
@@ -496,6 +539,114 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
   const nudge = (id: string, dx: number, dy: number) => {
     const cur = slideRef.current.demoSectionOverrides?.[id] || {};
     updateSection(id, { dx: (cur.dx || 0) + dx, dy: (cur.dy || 0) + dy });
+  };
+
+  /** Begin a resize drag from one of the 8 handles around the selected section. */
+  const startResize = (
+    e: React.MouseEvent,
+    handle: 'nw' | 'ne' | 'sw' | 'se' | 'n' | 's' | 'e' | 'w',
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!sectionToolbar) return;
+    const root = wrapperRef.current;
+    if (!root) return;
+    const el = root.querySelector<HTMLElement>(
+      `[data-slide-section="${sectionToolbar.id}"]`,
+    );
+    if (!el) return;
+
+    const ov = slideRef.current.demoSectionOverrides?.[sectionToolbar.id] || {};
+    const baseSx = ov.sx ?? 1;
+    const baseSy = ov.sy ?? 1;
+    // Natural (unscaled) dims: undo the current scale on rendered size.
+    const rect = el.getBoundingClientRect();
+    const naturalW = rect.width / baseSx;
+    const naturalH = rect.height / baseSy;
+
+    resizeRef.current = {
+      id: sectionToolbar.id,
+      el,
+      handle,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseSx,
+      baseSy,
+      naturalW,
+      naturalH,
+    };
+
+    const onMove = (ev: MouseEvent) => {
+      const r = resizeRef.current;
+      if (!r) return;
+      const dx = ev.clientX - r.startX;
+      const dy = ev.clientY - r.startY;
+      let sx = r.baseSx;
+      let sy = r.baseSy;
+
+      // Sign per handle (which side of the box is being dragged).
+      const east = r.handle.includes('e');
+      const west = r.handle.includes('w');
+      const south = r.handle.includes('s');
+      const north = r.handle.includes('n');
+
+      if (east) sx = r.baseSx + dx / r.naturalW;
+      if (west) sx = r.baseSx - dx / r.naturalW;
+      if (south) sy = r.baseSy + dy / r.naturalH;
+      if (north) sy = r.baseSy - dy / r.naturalH;
+
+      // Shift = uniform scale (preserve aspect ratio from the dominant axis)
+      if (ev.shiftKey && (east || west) && (north || south)) {
+        const uniform = Math.max(sx, sy);
+        sx = uniform;
+        sy = uniform;
+      } else if (ev.shiftKey) {
+        if (east || west) sy = r.baseSy * (sx / r.baseSx);
+        if (north || south) sx = r.baseSx * (sy / r.baseSy);
+      }
+
+      sx = Math.max(0.2, Math.min(4, sx));
+      sy = Math.max(0.2, Math.min(4, sy));
+
+      const cur = slideRef.current.demoSectionOverrides?.[r.id] || {};
+      const dxPct = cur.dx || 0;
+      const dyPct = cur.dy || 0;
+      r.el.style.transformOrigin = 'top left';
+      r.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
+      r.el.style.transition = 'none';
+
+      // Re-anchor toolbar + handles to the new bounding rect
+      const newRect = r.el.getBoundingClientRect();
+      const wr = root.getBoundingClientRect();
+      setSectionToolbar((s) =>
+        s
+          ? {
+              ...s,
+              x: newRect.left - wr.left + newRect.width / 2,
+              y: newRect.top - wr.top,
+              left: newRect.left - wr.left,
+              top: newRect.top - wr.top,
+              width: newRect.width,
+              height: newRect.height,
+            }
+          : s,
+      );
+    };
+
+    const onUp = () => {
+      const r = resizeRef.current;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (!r) return;
+      const finalRect = r.el.getBoundingClientRect();
+      const sx = Math.max(0.2, Math.min(4, finalRect.width / r.naturalW));
+      const sy = Math.max(0.2, Math.min(4, finalRect.height / r.naturalH));
+      updateSection(r.id, { sx, sy });
+      resizeRef.current = null;
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   };
 
   return (
@@ -565,6 +716,41 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           </button>
         </div>
       )}
+
+      {/* Resize handles — 8 around the section bounds. */}
+      {sectionToolbar && (() => {
+        const HS = 10; // handle size in px
+        const handles: Array<{
+          h: 'nw' | 'n' | 'ne' | 'w' | 'e' | 'sw' | 's' | 'se';
+          x: number;
+          y: number;
+          cursor: string;
+        }> = [
+          { h: 'nw', x: sectionToolbar.left,                          y: sectionToolbar.top,                            cursor: 'nwse-resize' },
+          { h: 'n',  x: sectionToolbar.left + sectionToolbar.width/2, y: sectionToolbar.top,                            cursor: 'ns-resize' },
+          { h: 'ne', x: sectionToolbar.left + sectionToolbar.width,   y: sectionToolbar.top,                            cursor: 'nesw-resize' },
+          { h: 'w',  x: sectionToolbar.left,                          y: sectionToolbar.top + sectionToolbar.height/2,  cursor: 'ew-resize' },
+          { h: 'e',  x: sectionToolbar.left + sectionToolbar.width,   y: sectionToolbar.top + sectionToolbar.height/2,  cursor: 'ew-resize' },
+          { h: 'sw', x: sectionToolbar.left,                          y: sectionToolbar.top + sectionToolbar.height,    cursor: 'nesw-resize' },
+          { h: 's',  x: sectionToolbar.left + sectionToolbar.width/2, y: sectionToolbar.top + sectionToolbar.height,    cursor: 'ns-resize' },
+          { h: 'se', x: sectionToolbar.left + sectionToolbar.width,   y: sectionToolbar.top + sectionToolbar.height,    cursor: 'nwse-resize' },
+        ];
+        return handles.map(({ h, x, y, cursor }) => (
+          <div
+            key={h}
+            className="absolute z-50 bg-background border-2 border-primary rounded-sm shadow"
+            style={{
+              left: x - HS / 2,
+              top: y - HS / 2,
+              width: HS,
+              height: HS,
+              cursor,
+            }}
+            onMouseDown={(e) => startResize(e, h)}
+            title="Drag to resize · Shift = uniform"
+          />
+        ));
+      })()}
 
       {sectionToolbar && (
         <div
