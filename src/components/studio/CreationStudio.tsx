@@ -33,6 +33,7 @@ import { assetDisplayInfo } from './StudioAssetGrid';
 import type { GoogleFontSelection } from './AssetBriefModal';
 import { checkAndSyncBrand, forceResyncBrand } from '@/services/brandAutoSync';
 import { StyleAnchorProvider } from '@/contexts/StyleAnchorContext';
+import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
