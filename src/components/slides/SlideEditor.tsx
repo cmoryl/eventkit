@@ -940,6 +940,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                     slide={activeSlide}
                     onContentChange={updateDemoDeckContent}
                     onTemplateChange={updateDemoDeckTemplate}
+                    onSlideChange={(patch) => updateSlide(activeIndex, patch)}
                   />
                 )}
 
