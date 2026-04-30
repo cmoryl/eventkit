@@ -533,7 +533,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
 
   const updateSection = (
     id: string,
-    patch: { dx?: number; dy?: number; sx?: number; sy?: number; hidden?: boolean },
+    patch: { dx?: number; dy?: number; sx?: number; sy?: number; rotate?: number; hidden?: boolean },
   ) => {
     const next = { ...(slideRef.current.demoSectionOverrides || {}) };
     next[id] = { ...next[id], ...patch };
