@@ -82,8 +82,28 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
       const next = typeof updater === 'function' ? updater(slide.demoContent) : updater;
       if (next && onDemoContentChange) onDemoContentChange(next);
     };
+    const bgImage = (slide as any).bgImage as string | undefined;
     return (
       <div className="absolute inset-0 demo-mock-fill">
+        {bgImage && (
+          <>
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                backgroundImage: `url("${bgImage}")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: (slide as any).bgImageOpacity ?? 0.35,
+              }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.55))' }}
+            />
+          </>
+        )}
         <SlideMock
           template={slide.demoTemplate}
           content={slide.demoContent}

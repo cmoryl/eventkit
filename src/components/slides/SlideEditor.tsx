@@ -236,12 +236,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setSlides(prev => prev.map((s, i) => {
         if (i !== slideIndex) return s;
         if (s.layout === 'demo-mock' && s.demoContent) {
+          // Demo-mock templates have no photo slot — paint the dropped image as
+          // a full-bleed background instead so it's actually visible.
           const nextContent = {
             ...s.demoContent,
             imagery: [dataUrl, ...(s.demoContent.imagery ?? []).slice(1)],
           };
           return {
             ...s,
+            bgImage: dataUrl,
+            bgImageOpacity: s.bgImageOpacity ?? 0.35,
             demoContent: nextContent,
             imageUrl: dataUrl,
             images: nextContent.imagery,
@@ -257,6 +261,32 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       }));
     };
     reader.readAsDataURL(file);
+  }, []);
+
+  /** Insert dropped image(s) as new full-image slide(s) right after the given index. */
+  const insertImageFilesAsSlides = useCallback(async (files: File[], afterIndex: number) => {
+    const newSlides = await Promise.all(
+      files.map(file =>
+        new Promise<SlideData>(resolve => {
+          const r = new FileReader();
+          r.onload = () => resolve({
+            id: uuidv4(),
+            layout: 'full-image',
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            variant: 'default',
+            imageUrl: r.result as string,
+            images: [r.result as string],
+          });
+          r.readAsDataURL(file);
+        }),
+      ),
+    );
+    setSlides(prev => {
+      const next = [...prev];
+      next.splice(afterIndex + 1, 0, ...newSlides);
+      return next;
+    });
+    return newSlides;
   }, []);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
@@ -295,35 +325,29 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       }
     }
 
+    // Shift+drop forces "insert as new slide(s) after the current one" behavior
+    // — the default is to apply the dropped image to the currently-active slide.
+    const insertAsNew = e.shiftKey;
+
     if (imageFiles.length === 1) {
-      loadImageFile(imageFiles[0], activeIndex);
-      toast.success('Image added to slide');
+      if (insertAsNew) {
+        await insertImageFilesAsSlides(imageFiles, activeIndex);
+        toast.success('Added image as new slide (Shift+drop)');
+      } else {
+        loadImageFile(imageFiles[0], activeIndex);
+        toast.success('Image added to slide');
+      }
     } else if (imageFiles.length > 1) {
-      loadImageFile(imageFiles[0], activeIndex);
-      const extras = await Promise.all(
-        imageFiles.slice(1).map(file =>
-          new Promise<SlideData>(resolve => {
-            const r = new FileReader();
-            r.onload = () => resolve({
-              id: uuidv4(),
-              layout: 'full-image',
-              title: file.name.replace(/\.[^/.]+$/, ''),
-              variant: 'default',
-              imageUrl: r.result as string,
-              images: [r.result as string],
-            });
-            r.readAsDataURL(file);
-          })
-        )
-      );
-      setSlides(prev => {
-        const next = [...prev];
-        next.splice(activeIndex + 1, 0, ...extras);
-        return next;
-      });
-      toast.success(`Added ${imageFiles.length} images as slides`);
+      if (insertAsNew) {
+        await insertImageFilesAsSlides(imageFiles, activeIndex);
+        toast.success(`Added ${imageFiles.length} images as new slides (Shift+drop)`);
+      } else {
+        loadImageFile(imageFiles[0], activeIndex);
+        await insertImageFilesAsSlides(imageFiles.slice(1), activeIndex);
+        toast.success(`Added ${imageFiles.length} images as slides`);
+      }
     }
-  }, [activeIndex, loadImageFile]);
+  }, [activeIndex, loadImageFile, insertImageFilesAsSlides]);
 
   const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
     if (!e.dataTransfer.types.includes('Files')) return;
@@ -338,18 +362,22 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     }
   }, []);
 
-  const handleThumbFileDrop = useCallback((index: number) => (e: React.DragEvent) => {
+  const handleThumbFileDrop = useCallback((index: number) => async (e: React.DragEvent) => {
     if (!e.dataTransfer.types.includes('Files')) return;
     e.preventDefault();
     e.stopPropagation();
     setThumbFileOver(null);
     const file = e.dataTransfer.files[0];
-    if (file?.type.startsWith('image/')) {
+    if (!file?.type.startsWith('image/')) return;
+    if (e.shiftKey) {
+      await insertImageFilesAsSlides([file], index);
+      toast.success('Added image as new slide (Shift+drop)');
+    } else {
       loadImageFile(file, index);
       setActiveIndex(index);
       toast.success('Image added to slide');
     }
-  }, [loadImageFile]);
+  }, [loadImageFile, insertImageFilesAsSlides]);
 
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
     setSlides(newSlides);

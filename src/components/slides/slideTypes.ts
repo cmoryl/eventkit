@@ -228,6 +228,10 @@ export interface SlideData {
       duplicated?: number;
     }
   >;
+  /** Optional full-bleed background image overlaid behind a demo-mock slide (data URL or https URL). */
+  bgImage?: string;
+  /** Background image opacity 0-1 — defaults to 0.35 so foreground stays readable. */
+  bgImageOpacity?: number;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
