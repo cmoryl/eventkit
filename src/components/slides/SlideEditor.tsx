@@ -236,12 +236,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setSlides(prev => prev.map((s, i) => {
         if (i !== slideIndex) return s;
         if (s.layout === 'demo-mock' && s.demoContent) {
+          // Demo-mock templates have no photo slot — paint the dropped image as
+          // a full-bleed background instead so it's actually visible.
           const nextContent = {
             ...s.demoContent,
             imagery: [dataUrl, ...(s.demoContent.imagery ?? []).slice(1)],
           };
           return {
             ...s,
+            bgImage: dataUrl,
+            bgImageOpacity: s.bgImageOpacity ?? 0.35,
             demoContent: nextContent,
             imageUrl: dataUrl,
             images: nextContent.imagery,
@@ -257,6 +261,32 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       }));
     };
     reader.readAsDataURL(file);
+  }, []);
+
+  /** Insert dropped image(s) as new full-image slide(s) right after the given index. */
+  const insertImageFilesAsSlides = useCallback(async (files: File[], afterIndex: number) => {
+    const newSlides = await Promise.all(
+      files.map(file =>
+        new Promise<SlideData>(resolve => {
+          const r = new FileReader();
+          r.onload = () => resolve({
+            id: uuidv4(),
+            layout: 'full-image',
+            title: file.name.replace(/\.[^/.]+$/, ''),
+            variant: 'default',
+            imageUrl: r.result as string,
+            images: [r.result as string],
+          });
+          r.readAsDataURL(file);
+        }),
+      ),
+    );
+    setSlides(prev => {
+      const next = [...prev];
+      next.splice(afterIndex + 1, 0, ...newSlides);
+      return next;
+    });
+    return newSlides;
   }, []);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
