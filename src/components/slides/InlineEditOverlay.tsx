@@ -855,7 +855,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
               cursor: 'grab',
             }}
             onMouseDown={startRotate}
-            title="Drag to rotate · Shift = snap to 15°"
+            title={`Drag to rotate · Shift = snap to ${rotateSnap}°`}
           >
             <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 12a9 9 0 1 1-3-6.7" />
