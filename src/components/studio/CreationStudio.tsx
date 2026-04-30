@@ -677,6 +677,7 @@ export const CreationStudio: React.FC = () => {
         onSelectBrand={setSelectedBrand}
         onCreateBrand={() => navigate('/admin?tab=brands')}
         onResyncBrand={handleResyncBrand}
+        onImportFromBrandHub={() => setShowBrandHubImport(true)}
         isSyncing={isBrandSyncing}
       />
       
