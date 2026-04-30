@@ -139,6 +139,15 @@ export const BrandSelector: React.FC<BrandSelectorProps> = ({
                     {isSyncing ? 'Syncing...' : 'Re-sync from BrandHub'}
                   </button>
                 )}
+                {onImportFromBrandHub && (
+                  <button
+                    onClick={() => { onImportFromBrandHub(); setIsOpen(false); }}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg text-sm text-violet-500 hover:bg-violet-500/10 transition-all"
+                  >
+                    <Link2 className="w-4 h-4" />
+                    Import from BrandHub
+                  </button>
+                )}
                 <button
                   onClick={() => { onCreateBrand(); setIsOpen(false); }}
                   className="w-full flex items-center gap-2 p-2 rounded-lg text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
