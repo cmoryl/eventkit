@@ -579,7 +579,8 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     const apply = (ev: MouseEvent, commit: boolean) => {
       const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
       let next = baseRot + (ang - startAngle);
-      if (ev.shiftKey) next = Math.round(next / 15) * 15; // snap
+      const snap = rotateSnapRef.current;
+      if (ev.shiftKey && snap > 0) next = Math.round(next / snap) * snap; // snap
       next = ((next + 180) % 360 + 360) % 360 - 180;       // normalize
 
       const cur = slideRef.current.demoSectionOverrides?.[id] || {};
