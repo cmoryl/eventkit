@@ -362,18 +362,22 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     }
   }, []);
 
-  const handleThumbFileDrop = useCallback((index: number) => (e: React.DragEvent) => {
+  const handleThumbFileDrop = useCallback((index: number) => async (e: React.DragEvent) => {
     if (!e.dataTransfer.types.includes('Files')) return;
     e.preventDefault();
     e.stopPropagation();
     setThumbFileOver(null);
     const file = e.dataTransfer.files[0];
-    if (file?.type.startsWith('image/')) {
+    if (!file?.type.startsWith('image/')) return;
+    if (e.shiftKey) {
+      await insertImageFilesAsSlides([file], index);
+      toast.success('Added image as new slide (Shift+drop)');
+    } else {
       loadImageFile(file, index);
       setActiveIndex(index);
       toast.success('Image added to slide');
     }
-  }, [loadImageFile]);
+  }, [loadImageFile, insertImageFilesAsSlides]);
 
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
     setSlides(newSlides);
