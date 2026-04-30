@@ -614,9 +614,46 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     }
   };
 
-  const updateShape = (id: string, patch: { color?: string; hidden?: boolean }) => {
+  const updateShape = (
+    id: string,
+    patch: { color?: string; hidden?: boolean; svg?: string; imageUrl?: string },
+  ) => {
     const next = { ...(slideRef.current.demoOverrides || {}) };
     next[id] = { ...next[id], ...patch };
+    onUpdate({ demoOverrides: next });
+  };
+
+  /**
+   * Apply a graphic swap to one shape, or to every detected decorative shape
+   * on the slide ("all" scope from the swap popover).
+   */
+  const applySwap = (
+    activeId: string,
+    payload: { svg?: string; imageUrl?: string },
+    scope: 'this' | 'all',
+  ) => {
+    if (scope === 'this') {
+      updateShape(activeId, payload);
+      return;
+    }
+    const root = wrapperRef.current;
+    if (!root) {
+      updateShape(activeId, payload);
+      return;
+    }
+    const next = { ...(slideRef.current.demoOverrides || {}) };
+    // Swap every detected decorative shape EXCEPT pure backgrounds
+    // (orbs/grids that span the full slide). Heuristic: skip elements
+    // whose own bbox is >= 70% of the slide on either axis.
+    const wrapRect = root.getBoundingClientRect();
+    root.querySelectorAll<HTMLElement>('[data-slide-shape]').forEach((el) => {
+      const id = el.getAttribute('data-slide-shape');
+      if (!id) return;
+      const r = el.getBoundingClientRect();
+      const tooBig = r.width / wrapRect.width > 0.7 || r.height / wrapRect.height > 0.7;
+      if (tooBig) return;
+      next[id] = { ...next[id], ...payload };
+    });
     onUpdate({ demoOverrides: next });
   };
 
