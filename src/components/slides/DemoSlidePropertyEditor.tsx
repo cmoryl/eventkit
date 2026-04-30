@@ -404,6 +404,70 @@ export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChan
     </Section>
   );
 
+  const bgTint = ((slide as any).bgTint as string | undefined) ?? template.palette?.accent ?? template.palette?.bg ?? '#000000';
+  const bgTintOpacity = ((slide as any).bgTintOpacity ?? 0) as number;
+  const tintEnabled = bgTintOpacity > 0;
+  const paletteSwatches = (['accent', 'secondary', 'bg', 'text'] as const)
+    .map((k) => template.palette?.[k])
+    .filter(Boolean) as string[];
+
+  const renderBackgroundTint = () => (
+    <Section title="Background tint">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[11px] text-muted-foreground">
+          {tintEnabled ? `On · ${Math.round(bgTintOpacity * 100)}%` : 'Off'}
+        </span>
+        {tintEnabled && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs gap-1"
+            onClick={() => onSlideChange?.({ bgTintOpacity: 0 } as Partial<SlideData>)}
+          >
+            <Trash2 className="h-3 w-3" /> Clear
+          </Button>
+        )}
+      </div>
+      <div className="flex gap-1.5">
+        <input
+          type="color"
+          value={bgTint}
+          onChange={(e) => onSlideChange?.({ bgTint: e.target.value, bgTintOpacity: bgTintOpacity || 0.4 } as Partial<SlideData>)}
+          className="h-7 w-10 rounded border border-border bg-background"
+        />
+        <MiniInput
+          value={bgTint}
+          onChange={(e) => onSlideChange?.({ bgTint: e.target.value, bgTintOpacity: bgTintOpacity || 0.4 } as Partial<SlideData>)}
+          placeholder="#000000"
+        />
+      </div>
+      {paletteSwatches.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {paletteSwatches.map((c) => (
+            <button
+              key={c}
+              type="button"
+              title={`Use ${c}`}
+              onClick={() => onSlideChange?.({ bgTint: c, bgTintOpacity: bgTintOpacity || 0.4 } as Partial<SlideData>)}
+              className="h-6 w-6 rounded border border-border"
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      )}
+      <Field label={`Strength · ${Math.round(bgTintOpacity * 100)}%`}>
+        <Slider
+          value={[Math.round(bgTintOpacity * 100)]}
+          min={0}
+          max={100}
+          step={1}
+          onValueChange={([v]) => onSlideChange?.({ bgTint, bgTintOpacity: v / 100 } as Partial<SlideData>)}
+        />
+      </Field>
+      <p className="text-[10px] text-muted-foreground">Multiplies over the slide background to match your theme — works with or without an image.</p>
+    </Section>
+  );
+
   return (
     <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
       <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
@@ -413,6 +477,7 @@ export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChan
       {renderSharedText()}
       {renderPalette()}
       {renderBackgroundImage()}
+      {renderBackgroundTint()}
       {renderImagery()}
       {['cards', 'section', 'feature-split'].includes(kind || '') && renderCards()}
       {kind === 'agenda' && renderAgenda()}
