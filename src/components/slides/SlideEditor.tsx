@@ -290,10 +290,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, []);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
+    // Always preventDefault so the browser shows a "copy" cursor instead of "no-drop".
+    // Some browsers don't expose dataTransfer.types reliably during dragover, so we
+    // accept the dragover unconditionally and filter file vs. non-file in onDrop.
     e.preventDefault();
     e.stopPropagation();
-    setCanvasFileOver(true);
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    // Only highlight when files are involved (this part is safe — empty types just
+    // means no highlight, but the drop is still permitted).
+    if (e.dataTransfer.types.includes('Files')) {
+      setCanvasFileOver(true);
+    }
   }, []);
 
   const handleCanvasDragLeave = useCallback((e: React.DragEvent) => {
@@ -350,10 +357,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, [activeIndex, loadImageFile, insertImageFilesAsSlides]);
 
   const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
     e.preventDefault();
     e.stopPropagation();
-    setThumbFileOver(index);
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    if (e.dataTransfer.types.includes('Files')) {
+      setThumbFileOver(index);
+    }
   }, []);
 
   const handleThumbFileDragLeave = useCallback((e: React.DragEvent) => {
