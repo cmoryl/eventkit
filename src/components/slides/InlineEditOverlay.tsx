@@ -407,7 +407,9 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       const ov = slideRef.current.demoSectionOverrides?.[d.id];
       const sx = ov?.sx ?? 1;
       const sy = ov?.sy ?? 1;
-      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
+      const rot = ov?.rotate || 0;
+      d.el.style.transformOrigin = 'center center';
+      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%) rotate(${rot}deg) scale(${sx}, ${sy})`;
       d.el.style.transition = 'none';
       // Re-anchor toolbar
       const r = d.el.getBoundingClientRect();
