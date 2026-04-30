@@ -333,6 +333,77 @@ export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChan
     </Section>
   );
 
+  const bgImage = (slide as any).bgImage as string | undefined;
+  const bgImageOpacity = ((slide as any).bgImageOpacity ?? 0.35) as number;
+
+  const renderBackgroundImage = () => (
+    <Section title="Background image">
+      {bgImage ? (
+        <div className="space-y-2">
+          <div className="relative rounded-md overflow-hidden border border-border">
+            <img src={bgImage} alt="Slide background" className="h-24 w-full object-cover" />
+          </div>
+          <Field label={`Opacity · ${Math.round(bgImageOpacity * 100)}%`}>
+            <Slider
+              value={[Math.round(bgImageOpacity * 100)]}
+              min={0}
+              max={100}
+              step={1}
+              onValueChange={([v]) => onSlideChange?.({ bgImageOpacity: v / 100 } as Partial<SlideData>)}
+            />
+          </Field>
+          <div className="flex gap-1.5">
+            <label className="flex-1 cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  e.target.value = '';
+                  readImage(file, (dataUrl) => onSlideChange?.({ bgImage: dataUrl } as Partial<SlideData>));
+                }}
+              />
+              <Button size="sm" variant="outline" className="h-7 w-full text-xs gap-1" asChild>
+                <span><Replace className="h-3 w-3" /> Replace</span>
+              </Button>
+            </label>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs gap-1"
+              onClick={() => onSlideChange?.({ bgImage: undefined } as Partial<SlideData>)}
+            >
+              <Trash2 className="h-3 w-3" /> Remove
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground">Tip: drag an image onto the slide to set background. Shift+drop inserts a new slide instead.</p>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          <p className="text-[11px] text-muted-foreground">Drop an image onto the slide, or upload one below.</p>
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                e.target.value = '';
+                readImage(file, (dataUrl) => onSlideChange?.({ bgImage: dataUrl, bgImageOpacity: bgImageOpacity } as Partial<SlideData>));
+              }}
+            />
+            <Button size="sm" variant="outline" className="h-7 w-full text-xs gap-1" asChild>
+              <span><ImagePlus className="h-3 w-3" /> Upload background</span>
+            </Button>
+          </label>
+        </div>
+      )}
+    </Section>
+  );
+
   return (
     <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-3">
       <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
@@ -341,6 +412,7 @@ export function DemoSlidePropertyEditor({ slide, onContentChange, onTemplateChan
       </div>
       {renderSharedText()}
       {renderPalette()}
+      {renderBackgroundImage()}
       {renderImagery()}
       {['cards', 'section', 'feature-split'].includes(kind || '') && renderCards()}
       {kind === 'agenda' && renderAgenda()}
