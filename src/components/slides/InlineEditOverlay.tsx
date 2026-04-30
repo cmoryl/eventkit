@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { SlideData } from './slideTypes';
+import { GraphicSwapPopover } from './GraphicSwapPopover';
 
 interface Props {
   slide: SlideData;
@@ -42,6 +43,8 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     y: number;
     color: string;
   } | null>(null);
+
+  const [swapOpen, setSwapOpen] = useState(false);
 
   const [sectionToolbar, setSectionToolbar] = useState<{
     id: string;
@@ -159,6 +162,37 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
         } else {
           el.style.background = ov.color;
         }
+      }
+
+      // SVG / image swap — replace the shape's visible content with the
+      // chosen library SVG or AI-generated image. Cached via data-* sentinel
+      // so we don't re-inject DOM on every render.
+      const swapSig =
+        (ov?.svg ? `svg:${ov.svg.length}:${ov.svg.slice(0, 40)}` : '') +
+        (ov?.imageUrl ? `img:${ov.imageUrl.slice(0, 80)}` : '');
+      if (swapSig && el.getAttribute('data-shape-swap') !== swapSig) {
+        // Stash the original ONCE so reset can restore it
+        if (!el.hasAttribute('data-shape-original')) {
+          el.setAttribute('data-shape-original', el.innerHTML);
+        }
+        el.style.background = '';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.overflow = 'hidden';
+        if (ov?.imageUrl) {
+          el.innerHTML = `<img src="${ov.imageUrl}" alt="" style="width:100%;height:100%;object-fit:contain;display:block" />`;
+        } else if (ov?.svg) {
+          // SVG already styles itself to fill 100% via the wrap() helper.
+          el.innerHTML = ov.svg;
+        }
+        el.setAttribute('data-shape-swap', swapSig);
+      } else if (!swapSig && el.hasAttribute('data-shape-swap')) {
+        // Override removed → restore original markup
+        const orig = el.getAttribute('data-shape-original');
+        if (orig !== null) el.innerHTML = orig;
+        el.removeAttribute('data-shape-swap');
+        el.removeAttribute('data-shape-original');
       }
     });
 
@@ -371,6 +405,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       // Click outside any shape/section closes toolbars
       setShapeToolbar(null);
       setSectionToolbar(null);
+      setSwapOpen(false);
       document.querySelectorAll<HTMLElement>('[data-shape-selected], [data-section-selected]').forEach((n) => {
         n.removeAttribute('data-shape-selected');
         n.removeAttribute('data-section-selected');
@@ -582,9 +617,46 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     }
   };
 
-  const updateShape = (id: string, patch: { color?: string; hidden?: boolean }) => {
+  const updateShape = (
+    id: string,
+    patch: { color?: string; hidden?: boolean; svg?: string; imageUrl?: string },
+  ) => {
     const next = { ...(slideRef.current.demoOverrides || {}) };
     next[id] = { ...next[id], ...patch };
+    onUpdate({ demoOverrides: next });
+  };
+
+  /**
+   * Apply a graphic swap to one shape, or to every detected decorative shape
+   * on the slide ("all" scope from the swap popover).
+   */
+  const applySwap = (
+    activeId: string,
+    payload: { svg?: string; imageUrl?: string },
+    scope: 'this' | 'all',
+  ) => {
+    if (scope === 'this') {
+      updateShape(activeId, payload);
+      return;
+    }
+    const root = wrapperRef.current;
+    if (!root) {
+      updateShape(activeId, payload);
+      return;
+    }
+    const next = { ...(slideRef.current.demoOverrides || {}) };
+    // Swap every detected decorative shape EXCEPT pure backgrounds
+    // (orbs/grids that span the full slide). Heuristic: skip elements
+    // whose own bbox is >= 70% of the slide on either axis.
+    const wrapRect = root.getBoundingClientRect();
+    root.querySelectorAll<HTMLElement>('[data-slide-shape]').forEach((el) => {
+      const id = el.getAttribute('data-slide-shape');
+      if (!id) return;
+      const r = el.getBoundingClientRect();
+      const tooBig = r.width / wrapRect.width > 0.7 || r.height / wrapRect.height > 0.7;
+      if (tooBig) return;
+      next[id] = { ...next[id], ...payload };
+    });
     onUpdate({ demoOverrides: next });
   };
 
@@ -822,6 +894,14 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           </label>
           <button
             type="button"
+            className="text-[11px] px-2 py-0.5 rounded border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-medium"
+            title="Swap with a library graphic or generate one with AI"
+            onClick={() => setSwapOpen((v) => !v)}
+          >
+            ✦ Swap
+          </button>
+          <button
+            type="button"
             className="text-[11px] px-2 py-0.5 rounded border hover:bg-muted"
             onClick={() => updateShape(shapeToolbar.id, { hidden: true })}
           >
@@ -848,6 +928,22 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
             ✕
           </button>
         </div>
+      )}
+
+      {shapeToolbar && swapOpen && (
+        <GraphicSwapPopover
+          anchorX={shapeToolbar.x}
+          anchorY={shapeToolbar.y - 4}
+          accent={shapeToolbar.color}
+          bg={(slide as any).bgColor}
+          secondary={(slide as any).demoTemplate?.palette?.secondary}
+          onApply={(payload, scope) => {
+            applySwap(shapeToolbar.id, payload, scope);
+            setSwapOpen(false);
+            setShapeToolbar(null);
+          }}
+          onClose={() => setSwapOpen(false)}
+        />
       )}
 
       {/* Resize handles — 8 around the section bounds. */}
