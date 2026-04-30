@@ -206,9 +206,15 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       const dy = ov?.dy || 0;
       const sx = ov?.sx ?? 1;
       const sy = ov?.sy ?? 1;
-      const hasT = dx || dy || sx !== 1 || sy !== 1;
-      el.style.transform = hasT ? `translate(${dx}%, ${dy}%) scale(${sx}, ${sy})` : '';
-      el.style.transformOrigin = 'top left';
+      const rot = ov?.rotate || 0;
+      const hasT = dx || dy || sx !== 1 || sy !== 1 || rot;
+      el.style.transform = hasT
+        ? `translate(${dx}%, ${dy}%) rotate(${rot}deg) scale(${sx}, ${sy})`
+        : '';
+      // Center origin keeps rotation visually pivoted on the section,
+      // and translate(%) is relative to element size regardless of origin so
+      // drag math (% of slide) and resize math (bounding rect deltas) still hold.
+      el.style.transformOrigin = 'center center';
       el.style.transition =
         dragRef.current?.id === id || resizeRef.current?.id === id ? 'none' : 'transform 120ms ease-out';
       if (ov?.hidden) el.style.display = 'none';
@@ -401,7 +407,9 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       const ov = slideRef.current.demoSectionOverrides?.[d.id];
       const sx = ov?.sx ?? 1;
       const sy = ov?.sy ?? 1;
-      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
+      const rot = ov?.rotate || 0;
+      d.el.style.transformOrigin = 'center center';
+      d.el.style.transform = `translate(${dxPct}%, ${dyPct}%) rotate(${rot}deg) scale(${sx}, ${sy})`;
       d.el.style.transition = 'none';
       // Re-anchor toolbar
       const r = d.el.getBoundingClientRect();
@@ -525,7 +533,7 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
 
   const updateSection = (
     id: string,
-    patch: { dx?: number; dy?: number; sx?: number; sy?: number; hidden?: boolean },
+    patch: { dx?: number; dy?: number; sx?: number; sy?: number; rotate?: number; hidden?: boolean },
   ) => {
     const next = { ...(slideRef.current.demoSectionOverrides || {}) };
     next[id] = { ...next[id], ...patch };
@@ -539,6 +547,72 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
   const nudge = (id: string, dx: number, dy: number) => {
     const cur = slideRef.current.demoSectionOverrides?.[id] || {};
     updateSection(id, { dx: (cur.dx || 0) + dx, dy: (cur.dy || 0) + dy });
+  };
+
+  /** Begin a free-rotation drag from the rotation handle above the section. */
+  const startRotate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!sectionToolbar) return;
+    const root = wrapperRef.current;
+    if (!root) return;
+    const el = root.querySelector<HTMLElement>(
+      `[data-slide-section="${sectionToolbar.id}"]`,
+    );
+    if (!el) return;
+
+    const id = sectionToolbar.id;
+    const ov = slideRef.current.demoSectionOverrides?.[id] || {};
+    const baseRot = ov.rotate || 0;
+
+    // Pivot = center of the rendered section in viewport coords
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const startAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+
+    const apply = (ev: MouseEvent, commit: boolean) => {
+      const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
+      let next = baseRot + (ang - startAngle);
+      if (ev.shiftKey) next = Math.round(next / 15) * 15; // snap
+      next = ((next + 180) % 360 + 360) % 360 - 180;       // normalize
+
+      const cur = slideRef.current.demoSectionOverrides?.[id] || {};
+      const dxPct = cur.dx || 0;
+      const dyPct = cur.dy || 0;
+      const sx = cur.sx ?? 1;
+      const sy = cur.sy ?? 1;
+      el.style.transformOrigin = 'center center';
+      el.style.transform = `translate(${dxPct}%, ${dyPct}%) rotate(${next}deg) scale(${sx}, ${sy})`;
+      el.style.transition = 'none';
+
+      const r = el.getBoundingClientRect();
+      const wr = root.getBoundingClientRect();
+      setSectionToolbar((s) =>
+        s
+          ? {
+              ...s,
+              x: r.left - wr.left + r.width / 2,
+              y: r.top - wr.top,
+              left: r.left - wr.left,
+              top: r.top - wr.top,
+              width: r.width,
+              height: r.height,
+            }
+          : s,
+      );
+
+      if (commit) updateSection(id, { rotate: next });
+    };
+
+    const onMove = (ev: MouseEvent) => apply(ev, false);
+    const onUp = (ev: MouseEvent) => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      apply(ev, true);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   };
 
   /** Begin a resize drag from one of the 8 handles around the selected section. */
@@ -611,8 +685,9 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
       const cur = slideRef.current.demoSectionOverrides?.[r.id] || {};
       const dxPct = cur.dx || 0;
       const dyPct = cur.dy || 0;
-      r.el.style.transformOrigin = 'top left';
-      r.el.style.transform = `translate(${dxPct}%, ${dyPct}%) scale(${sx}, ${sy})`;
+      const rot = cur.rotate || 0;
+      r.el.style.transformOrigin = 'center center';
+      r.el.style.transform = `translate(${dxPct}%, ${dyPct}%) rotate(${rot}deg) scale(${sx}, ${sy})`;
       r.el.style.transition = 'none';
 
       // Re-anchor toolbar + handles to the new bounding rect
@@ -751,6 +826,38 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           />
         ));
       })()}
+
+      {/* Rotation handle — above the top-center, connected by a stem. */}
+      {sectionToolbar && (
+        <>
+          <div
+            className="absolute z-50 pointer-events-none bg-primary/70"
+            style={{
+              left: sectionToolbar.left + sectionToolbar.width / 2 - 1,
+              top: sectionToolbar.top - 28,
+              width: 2,
+              height: 22,
+            }}
+          />
+          <div
+            className="absolute z-50 bg-background border-2 border-primary rounded-full shadow flex items-center justify-center text-primary"
+            style={{
+              left: sectionToolbar.left + sectionToolbar.width / 2 - 8,
+              top: sectionToolbar.top - 36,
+              width: 16,
+              height: 16,
+              cursor: 'grab',
+            }}
+            onMouseDown={startRotate}
+            title="Drag to rotate · Shift = snap to 15°"
+          >
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 12a9 9 0 1 1-3-6.7" />
+              <polyline points="21 4 21 10 15 10" />
+            </svg>
+          </div>
+        </>
+      )}
 
       {sectionToolbar && (
         <div

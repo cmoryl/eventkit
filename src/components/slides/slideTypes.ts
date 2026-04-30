@@ -212,6 +212,8 @@ export interface SlideData {
       /** Scale multipliers (1 = 100%). sx/sy independently per axis. */
       sx?: number;
       sy?: number;
+      /** Rotation in degrees, applied around the section center. */
+      rotate?: number;
       hidden?: boolean;
       duplicated?: number;
     }
