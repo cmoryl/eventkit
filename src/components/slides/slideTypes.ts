@@ -232,6 +232,10 @@ export interface SlideData {
   bgImage?: string;
   /** Background image opacity 0-1 — defaults to 0.35 so foreground stays readable. */
   bgImageOpacity?: number;
+  /** Optional solid color tint overlaid behind demo-mock cards (hex, e.g. "#0a0a0a"). */
+  bgTint?: string;
+  /** Tint overlay opacity 0-1 — defaults to 0 (off). */
+  bgTintOpacity?: number;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
