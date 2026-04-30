@@ -893,6 +893,14 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
           </label>
           <button
             type="button"
+            className="text-[11px] px-2 py-0.5 rounded border border-primary/40 bg-primary/10 hover:bg-primary/20 text-primary font-medium"
+            title="Swap with a library graphic or generate one with AI"
+            onClick={() => setSwapOpen((v) => !v)}
+          >
+            ✦ Swap
+          </button>
+          <button
+            type="button"
             className="text-[11px] px-2 py-0.5 rounded border hover:bg-muted"
             onClick={() => updateShape(shapeToolbar.id, { hidden: true })}
           >
