@@ -54,6 +54,11 @@ export function InlineEditOverlay({ slide, onUpdate, enabled = true, children }:
     height: number;
   } | null>(null);
 
+  /** User-configurable rotation snap increment in degrees (used when Shift held). */
+  const [rotateSnap, setRotateSnap] = useState<number>(15);
+  const rotateSnapRef = useRef(rotateSnap);
+  rotateSnapRef.current = rotateSnap;
+
   const dragRef = useRef<{
     id: string;
     el: HTMLElement;
