@@ -357,10 +357,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, [activeIndex, loadImageFile, insertImageFilesAsSlides]);
 
   const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
     e.preventDefault();
     e.stopPropagation();
-    setThumbFileOver(index);
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    if (e.dataTransfer.types.includes('Files')) {
+      setThumbFileOver(index);
+    }
   }, []);
 
   const handleThumbFileDragLeave = useCallback((e: React.DragEvent) => {
