@@ -30,6 +30,38 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
   const [importedHubBrand, setImportedHubBrand] = useState<Record<string, unknown> | null>(null);
   const [importedEventData, setImportedEventData] = useState<Record<string, unknown> | null>(null);
 
+  type RecentImport = { url: string; name: string; kind: 'brand' | 'event' | 'product' | 'share' | 'token' | 'slug'; slug?: string; ts: number };
+  const RECENTS_KEY = 'brandhub-recent-imports';
+  const loadRecents = (): RecentImport[] => {
+    try {
+      const raw = localStorage.getItem(RECENTS_KEY);
+      return raw ? (JSON.parse(raw) as RecentImport[]).slice(0, 6) : [];
+    } catch { return []; }
+  };
+  const [recents, setRecents] = useState<RecentImport[]>([]);
+  useEffect(() => { if (isOpen) setRecents(loadRecents()); }, [isOpen]);
+
+  const pushRecent = useCallback((url: string, name: string) => {
+    const detected = detectLinkKind(url);
+    if (detected.kind === 'empty' || detected.kind === 'invalid') return;
+    const entry: RecentImport = {
+      url: url.trim(),
+      name: name || 'Imported Brand',
+      kind: detected.kind,
+      slug: detected.slug,
+      ts: Date.now(),
+    };
+    const next = [entry, ...loadRecents().filter(r => r.url !== entry.url)].slice(0, 6);
+    try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setRecents(next);
+  }, []);
+
+  const removeRecent = (url: string) => {
+    const next = loadRecents().filter(r => r.url !== url);
+    try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setRecents(next);
+  };
+
   const extractTokenOrSlug = (url: string): { shareToken?: string; slug?: string } | null => {
     const trimmed = url.trim();
 
