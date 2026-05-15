@@ -1470,7 +1470,7 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
                       <Input
                         value={brandHubUrl}
                         onChange={(e) => setBrandHubUrl(e.target.value)}
-                        placeholder="https://brandhubcreator.lovable.app/share/..."
+                        placeholder="https://gasalleystudios.dev/brand/... or brandhubcreator.lovable.app/share/..."
                         className="flex-1"
                         disabled={isImportingFromHub}
                       />
