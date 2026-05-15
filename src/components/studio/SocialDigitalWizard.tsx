@@ -127,6 +127,8 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
   const [audience, setAudience] = useState('');
   const [vibe, setVibe] = useState('');
   const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
+  const [referenceImages, setReferenceImages] = useState<{ name: string; dataUrl: string }[]>([]);
+  const [referenceDocs, setReferenceDocs] = useState<{ name: string; size: number; text?: string }[]>([]);
   const [showBatch, setShowBatch] = useState(false);
 
   // Preview / export state
