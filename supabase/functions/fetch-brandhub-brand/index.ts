@@ -6,16 +6,44 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRANDHUB_API_URL =
-  "https://nhxaijbyqfkkhhoornzy.supabase.co/functions/v1/get-shared-brand";
-const BRANDHUB_REST_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1";
-const BRANDHUB_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
+type HubSourceId = "brandhub" | "gasalley";
 
-const brandHubHeaders = {
-  apikey: BRANDHUB_ANON_KEY,
-  Authorization: `Bearer ${BRANDHUB_ANON_KEY}`,
+interface HubConfig {
+  apiUrl: string;
+  restUrl: string;
+  anonKey: string;
+  headers: Record<string, string>;
+}
+
+const HUB_CONFIGS: Record<HubSourceId, HubConfig> = {
+  brandhub: (() => {
+    const anonKey =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
+    return {
+      apiUrl: "https://nhxaijbyqfkkhhoornzy.supabase.co/functions/v1/get-shared-brand",
+      restUrl: "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1",
+      anonKey,
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+    };
+  })(),
+  gasalley: (() => {
+    const anonKey =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHFsbnNhcWZlemx0YWVnbGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzY0NDYsImV4cCI6MjA5MTg1MjQ0Nn0.3M8oe-ZIp-Fkrb_vNZXxOJENUs5lphOntEoLFihId6U";
+    return {
+      apiUrl: "https://wbxqlnsaqfezltaeglko.supabase.co/functions/v1/get-shared-brand",
+      restUrl: "https://wbxqlnsaqfezltaeglko.supabase.co/rest/v1",
+      anonKey,
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+    };
+  })(),
 };
+
+function getHub(id: unknown): HubConfig {
+  if (typeof id === "string" && id in HUB_CONFIGS) {
+    return HUB_CONFIGS[id as HubSourceId];
+  }
+  return HUB_CONFIGS.brandhub;
+}
 
 function json(status: number, payload: unknown) {
   return new Response(JSON.stringify(payload), {
