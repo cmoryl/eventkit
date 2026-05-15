@@ -920,6 +920,8 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
         projectLogoOverride={projectLogoOverride}
         assetDisplayInfo={assetDisplayInfo}
         onImagesGenerated={onImagesGenerated}
+        referenceImages={referenceImages.map(i => i.dataUrl)}
+        referenceNotes={referenceNotes}
       />
     </div>
   );
