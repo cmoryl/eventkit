@@ -585,11 +585,26 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
                     )}
                   </div>
 
-                  {/* Status icon */}
-                  <div className="flex-shrink-0">
+                  {/* Status icon / per-asset retry */}
+                  <div className="flex-shrink-0 flex items-center gap-1">
                     {result.status === 'complete' && <Check className="h-5 w-5 text-primary" />}
-                    {result.status === 'error' && <AlertCircle className="h-5 w-5 text-destructive" />}
                     {result.status === 'generating' && <Loader2 className="h-5 w-5 text-primary animate-spin" />}
+                    {result.status === 'error' && (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          disabled={isRunning}
+                          onClick={() => retryOne(result.assetType)}
+                          title="Retry this asset only"
+                        >
+                          <RotateCw className="h-3.5 w-3.5 mr-1" />
+                          Retry
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               );
