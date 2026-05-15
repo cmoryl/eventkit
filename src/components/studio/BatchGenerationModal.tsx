@@ -17,16 +17,41 @@ import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } fro
 import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
 
+type ErrorKind = 'timeout' | 'rate_limit' | 'quota' | 'auth' | 'network' | 'invalid_input' | 'api';
+
 interface BatchAssetResult {
   assetType: string;
   assetName: string;
   status: 'pending' | 'generating' | 'complete' | 'error';
   imageUrl?: string;
   error?: string;
+  errorKind?: ErrorKind;
   startedAt?: number;
   finishedAt?: number;
   durationMs?: number;
 }
+
+const ERROR_KIND_LABEL: Record<ErrorKind, string> = {
+  timeout: 'Timed out',
+  rate_limit: 'Rate limit hit',
+  quota: 'AI credits exhausted',
+  auth: 'Authentication error',
+  network: 'Network error',
+  invalid_input: 'Invalid input',
+  api: 'AI service error',
+};
+
+const classifyError = (raw: string | undefined): ErrorKind => {
+  const msg = (raw || '').toLowerCase();
+  if (!msg) return 'api';
+  if (msg.includes('timed out') || msg.includes('timeout')) return 'timeout';
+  if (msg.includes('429') || msg.includes('rate limit') || msg.includes('too many requests')) return 'rate_limit';
+  if (msg.includes('402') || msg.includes('quota') || msg.includes('credits') || msg.includes('payment')) return 'quota';
+  if (msg.includes('401') || msg.includes('403') || msg.includes('unauthor') || msg.includes('forbidden')) return 'auth';
+  if (msg.includes('network') || msg.includes('fetch failed') || msg.includes('econnreset') || msg.includes('failed to fetch')) return 'network';
+  if (msg.includes('invalid') || msg.includes('safety') || msg.includes('blocked')) return 'invalid_input';
+  return 'api';
+};
 
 interface BatchGenerationModalProps {
   isOpen: boolean;
