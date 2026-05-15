@@ -589,7 +589,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
           </DialogTitle>
           {!importedHubBrand && (
             <DialogDescription>
-              Browse brands, events &amp; products from BrandHub — or paste any share URL to import.
+              Browse brands, events &amp; products from Gas Alley Studios / BrandHub — or paste any share URL.
             </DialogDescription>
           )}
         </DialogHeader>
