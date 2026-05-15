@@ -823,6 +823,7 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
 
     const shareToken = shareMatch?.[1];
     const slug = !shareMatch ? slugMatch?.[1] : undefined;
+    const hubSource: 'gasalley' | 'brandhub' = /gasalleystudios\.(dev|com)/.test(trimmed) ? 'gasalley' : 'brandhub';
 
     if (!shareToken && !slug) {
       toast.error('Paste a Gas Alley Studios or BrandHub brand, event, product, or share URL');
@@ -830,11 +831,11 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
     }
 
     setIsImportingFromHub(true);
-    toast.info('Fetching brand from BrandHub...', { duration: 3000 });
+    toast.info(`Fetching brand from ${hubSource === 'gasalley' ? 'Gas Alley Studios' : 'BrandHub'}...`, { duration: 3000 });
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
-        body: { shareToken, slug }
+        body: { shareToken, slug, hubSource }
       });
 
       if (data?.success === false) {
