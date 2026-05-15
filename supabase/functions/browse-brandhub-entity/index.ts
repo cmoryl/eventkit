@@ -9,9 +9,27 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRANDHUB_REST_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1";
-const BRANDHUB_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
+type HubSourceId = "brandhub" | "gasalley";
+
+const HUB_CONFIGS: Record<HubSourceId, { restUrl: string; anonKey: string }> = {
+  brandhub: {
+    restUrl: "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1",
+    anonKey:
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk",
+  },
+  gasalley: {
+    restUrl: "https://wbxqlnsaqfezltaeglko.supabase.co/rest/v1",
+    anonKey:
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHFsbnNhcWZlemx0YWVnbGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzY0NDYsImV4cCI6MjA5MTg1MjQ0Nn0.3M8oe-ZIp-Fkrb_vNZXxOJENUs5lphOntEoLFihId6U",
+  },
+};
+
+function getHub(id: unknown) {
+  if (typeof id === "string" && id in HUB_CONFIGS) {
+    return HUB_CONFIGS[id as HubSourceId];
+  }
+  return HUB_CONFIGS.brandhub;
+}
 
 type Entity = "brand" | "event" | "product";
 
@@ -39,13 +57,17 @@ interface BrowseRequest {
   parentBrandId?: string;
   // Only return entities flagged is_public=true (default true).
   publicOnly?: boolean;
+  hubSource?: HubSourceId;
 }
 
-async function brandHubFetch(path: string): Promise<unknown[]> {
-  const res = await fetch(`${BRANDHUB_REST_URL}/${path}`, {
+async function brandHubFetch(
+  path: string,
+  hub: { restUrl: string; anonKey: string },
+): Promise<unknown[]> {
+  const res = await fetch(`${hub.restUrl}/${path}`, {
     headers: {
-      apikey: BRANDHUB_ANON_KEY,
-      Authorization: `Bearer ${BRANDHUB_ANON_KEY}`,
+      apikey: hub.anonKey,
+      Authorization: `Bearer ${hub.anonKey}`,
       "Content-Type": "application/json",
     },
   });
@@ -58,12 +80,16 @@ async function brandHubFetch(path: string): Promise<unknown[]> {
   return Array.isArray(rows) ? rows : [];
 }
 
-async function resolveParentBrandId(req: BrowseRequest): Promise<string | null> {
+async function resolveParentBrandId(
+  req: BrowseRequest,
+  hub: { restUrl: string; anonKey: string },
+): Promise<string | null> {
   if (req.parentBrandId) return req.parentBrandId;
 
   if (req.parentBrandShareToken) {
     const rows = await brandHubFetch(
       `brands?share_token=eq.${encodeURIComponent(req.parentBrandShareToken)}&select=id&limit=1`,
+      hub,
     );
     if (rows.length && (rows[0] as Record<string, unknown>).id) {
       return String((rows[0] as Record<string, unknown>).id);
@@ -72,6 +98,7 @@ async function resolveParentBrandId(req: BrowseRequest): Promise<string | null> 
   if (req.parentBrandSlug) {
     const rows = await brandHubFetch(
       `brands?slug=eq.${encodeURIComponent(req.parentBrandSlug)}&select=id&limit=1`,
+      hub,
     );
     if (rows.length && (rows[0] as Record<string, unknown>).id) {
       return String((rows[0] as Record<string, unknown>).id);
@@ -123,6 +150,7 @@ async function browseEntity(
   entity: Entity,
   req: BrowseRequest,
   parentBrandId: string | null,
+  hub: { restUrl: string; anonKey: string },
 ): Promise<ReturnType<typeof toCard>[]> {
   const table = TABLE_FOR[entity];
   const publicOnly = req.publicOnly !== false;
@@ -144,7 +172,7 @@ async function browseEntity(
     filters.push(`parent_brand_id=eq.${parentBrandId}`);
   }
 
-  const rows = await brandHubFetch(`${table}?${filters.join("&")}`);
+  const rows = await brandHubFetch(`${table}?${filters.join("&")}`, hub);
   return rows.map((r) => toCard(r as Record<string, unknown>, entity));
 }
 
@@ -156,8 +184,9 @@ serve(async (req) => {
   try {
     const body = (await req.json().catch(() => ({}))) as BrowseRequest;
     const entity = body.entity ?? "all";
+    const hub = getHub(body.hubSource);
 
-    const parentBrandId = await resolveParentBrandId(body);
+    const parentBrandId = await resolveParentBrandId(body, hub);
 
     const targets: Entity[] =
       entity === "all" ? ["brand", "event", "product"] : [entity as Entity];
@@ -166,7 +195,7 @@ serve(async (req) => {
       return json(400, { success: false, error: "Invalid entity" });
     }
 
-    const results = await Promise.all(targets.map((t) => browseEntity(t, body, parentBrandId)));
+    const results = await Promise.all(targets.map((t) => browseEntity(t, body, parentBrandId, hub)));
     const flat = results.flat();
 
     return json(200, {

@@ -31,6 +31,8 @@ interface BrandHubGalleryProps {
   /** Optional scoping to a parent brand's universe (for events/products). */
   parentBrandShareToken?: string;
   parentBrandSlug?: string;
+  /** Which BrandHub backend to query. Defaults to 'brandhub'. */
+  hubSource?: 'brandhub' | 'gasalley';
 }
 
 const TAB_META: Record<
@@ -48,6 +50,7 @@ export const BrandHubGallery: React.FC<BrandHubGalleryProps> = ({
   defaultEntity = 'brand',
   parentBrandShareToken,
   parentBrandSlug,
+  hubSource = 'brandhub',
 }) => {
   const [activeTab, setActiveTab] = useState<EntityFilter>(defaultEntity);
   const [items, setItems] = useState<BrandCard[]>([]);
@@ -71,6 +74,7 @@ export const BrandHubGallery: React.FC<BrandHubGalleryProps> = ({
           offset: 0,
           parentBrandShareToken,
           parentBrandSlug,
+          hubSource,
         },
       });
 
@@ -86,7 +90,7 @@ export const BrandHubGallery: React.FC<BrandHubGalleryProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, debouncedSearch, parentBrandShareToken, parentBrandSlug]);
+  }, [activeTab, debouncedSearch, parentBrandShareToken, parentBrandSlug, hubSource]);
 
   useEffect(() => {
     load();

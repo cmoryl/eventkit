@@ -6,16 +6,44 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRANDHUB_API_URL =
-  "https://nhxaijbyqfkkhhoornzy.supabase.co/functions/v1/get-shared-brand";
-const BRANDHUB_REST_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1";
-const BRANDHUB_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
+type HubSourceId = "brandhub" | "gasalley";
 
-const brandHubHeaders = {
-  apikey: BRANDHUB_ANON_KEY,
-  Authorization: `Bearer ${BRANDHUB_ANON_KEY}`,
+interface HubConfig {
+  apiUrl: string;
+  restUrl: string;
+  anonKey: string;
+  headers: Record<string, string>;
+}
+
+const HUB_CONFIGS: Record<HubSourceId, HubConfig> = {
+  brandhub: (() => {
+    const anonKey =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
+    return {
+      apiUrl: "https://nhxaijbyqfkkhhoornzy.supabase.co/functions/v1/get-shared-brand",
+      restUrl: "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1",
+      anonKey,
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+    };
+  })(),
+  gasalley: (() => {
+    const anonKey =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHFsbnNhcWZlemx0YWVnbGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzY0NDYsImV4cCI6MjA5MTg1MjQ0Nn0.3M8oe-ZIp-Fkrb_vNZXxOJENUs5lphOntEoLFihId6U";
+    return {
+      apiUrl: "https://wbxqlnsaqfezltaeglko.supabase.co/functions/v1/get-shared-brand",
+      restUrl: "https://wbxqlnsaqfezltaeglko.supabase.co/rest/v1",
+      anonKey,
+      headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
+    };
+  })(),
 };
+
+function getHub(id: unknown): HubConfig {
+  if (typeof id === "string" && id in HUB_CONFIGS) {
+    return HUB_CONFIGS[id as HubSourceId];
+  }
+  return HUB_CONFIGS.brandhub;
+}
 
 function json(status: number, payload: unknown) {
   return new Response(JSON.stringify(payload), {
@@ -30,7 +58,8 @@ serve(async (req) => {
   }
 
   try {
-    const { shareToken, slug, includeEvent } = await req.json();
+    const { shareToken, slug, includeEvent, hubSource } = await req.json();
+    const hub = getHub(hubSource);
 
     if (!shareToken && !slug) {
       return json(200, {
@@ -43,7 +72,7 @@ serve(async (req) => {
 
     // If slug provided, try to resolve via BrandHub REST API (brands table, then events/products table)
     if (!resolvedToken && slug) {
-      const directResult = await resolveBrandHubSlug(slug);
+      const directResult = await resolveBrandHubSlug(slug, hub);
       if (directResult.resolvedToken) {
         resolvedToken = directResult.resolvedToken;
       } else if (directResult.response) {
@@ -56,11 +85,11 @@ serve(async (req) => {
       resolvedToken = slug;
     }
 
-    console.log("Fetching brand from BrandHub with token:", resolvedToken);
+    console.log("Fetching brand from hub", hubSource || "brandhub", "with token:", resolvedToken);
 
-    const response = await fetch(BRANDHUB_API_URL, {
+    const response = await fetch(hub.apiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...hub.headers },
       body: JSON.stringify({
         shareToken: resolvedToken,
         includeEvent: includeEvent ?? true,
@@ -73,15 +102,15 @@ serve(async (req) => {
       // Users often paste/type product or event slugs (e.g. "dataforce") into the token field.
       // If the share endpoint rejects it, treat the token as a slug and resolve live tables.
       if (shareToken && !slug) {
-        const fallbackResult = await resolveBrandHubSlug(shareToken);
+        const fallbackResult = await resolveBrandHubSlug(shareToken, hub);
         if (
           fallbackResult.resolvedToken &&
           fallbackResult.resolvedToken !== shareToken
         ) {
           resolvedToken = fallbackResult.resolvedToken;
-          const retry = await fetch(BRANDHUB_API_URL, {
+          const retry = await fetch(hub.apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...hub.headers },
             body: JSON.stringify({
               shareToken: resolvedToken,
               includeEvent: includeEvent ?? true,
@@ -345,13 +374,14 @@ async function normalizeSharedBrandResponse(
 
 async function resolveBrandHubSlug(
   slug: string,
+  hub: HubConfig,
 ): Promise<{ resolvedToken?: string; response?: Response }> {
   const encodedSlug = encodeURIComponent(slug);
   console.log("Resolving BrandHub slug:", slug);
 
   const brandRes = await fetch(
-    `${BRANDHUB_REST_URL}/brands?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,share_token,guide_data&limit=1`,
-    { headers: brandHubHeaders },
+    `${hub.restUrl}/brands?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,share_token,guide_data&limit=1`,
+    { headers: hub.headers },
   );
   if (brandRes.ok) {
     const brands = await brandRes.json();
@@ -371,8 +401,8 @@ async function resolveBrandHubSlug(
   for (const table of ["events", "products"] as const) {
     console.log(`Trying ${table} table for slug:`, slug);
     const res = await fetch(
-      `${BRANDHUB_REST_URL}/${table}?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,parent_brand_id,guide_data&limit=1`,
-      { headers: brandHubHeaders },
+      `${hub.restUrl}/${table}?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,parent_brand_id,guide_data&limit=1`,
+      { headers: hub.headers },
     );
     if (!res.ok) continue;
 
@@ -395,8 +425,8 @@ async function resolveBrandHubSlug(
 
     if (entityData.parent_brand_id) {
       const parentRes = await fetch(
-        `${BRANDHUB_REST_URL}/brands?id=eq.${encodeURIComponent(entityData.parent_brand_id)}&select=share_token&limit=1`,
-        { headers: brandHubHeaders },
+        `${hub.restUrl}/brands?id=eq.${encodeURIComponent(entityData.parent_brand_id)}&select=share_token&limit=1`,
+        { headers: hub.headers },
       );
       if (parentRes.ok) {
         const parents = await parentRes.json();
