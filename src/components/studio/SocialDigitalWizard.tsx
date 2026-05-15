@@ -310,6 +310,8 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
     setAudience('');
     setVibe('');
     setSelectedNetworks([]);
+    setReferenceImages([]);
+    setReferenceDocs([]);
     setCaptions({});
   };
 
