@@ -63,6 +63,8 @@ interface BatchGenerationModalProps {
   projectLogoOverride?: string | null;
   assetDisplayInfo: Record<string, { name: string; description: string; dimensions?: string }>;
   onImagesGenerated: (results: Record<string, string>) => void;
+  referenceImages?: string[]; // base64 data URLs
+  referenceNotes?: string; // extracted text / filenames from uploaded docs
 }
 
 // Max concurrent generations to avoid rate limits
@@ -78,6 +80,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   projectLogoOverride,
   assetDisplayInfo,
   onImagesGenerated,
+  referenceImages,
+  referenceNotes,
 }) => {
   const { activeBrand } = useActiveBrand();
   const styleAnchor = useStyleAnchor();
