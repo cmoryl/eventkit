@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Sparkles, Loader2, Check, AlertCircle, Pause, Play, 
-  Download, ChevronDown, ChevronUp, Image as ImageIcon
+  Download, ChevronDown, ChevronUp, Image as ImageIcon, RotateCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
