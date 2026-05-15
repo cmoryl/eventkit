@@ -30,6 +30,33 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
   const [importedHubBrand, setImportedHubBrand] = useState<Record<string, unknown> | null>(null);
   const [importedEventData, setImportedEventData] = useState<Record<string, unknown> | null>(null);
 
+  type HubSourceId = 'gasalley' | 'brandhub';
+  const HUB_SOURCES: Record<HubSourceId, { id: HubSourceId; name: string; host: string; entityPath: (kind: 'brand' | 'event' | 'product', slug: string) => string }> = {
+    gasalley: {
+      id: 'gasalley',
+      name: 'Gas Alley Studios',
+      host: 'gasalleystudios.dev',
+      entityPath: (kind, slug) => `https://gasalleystudios.dev/${kind}/${slug}`,
+    },
+    brandhub: {
+      id: 'brandhub',
+      name: 'BrandHub Creator',
+      host: 'brandhubcreator.lovable.app',
+      entityPath: (kind, slug) => `https://brandhubcreator.lovable.app/${kind}/${slug}`,
+    },
+  };
+  const HUB_SOURCE_KEY = 'brandhub-import-source';
+  const [hubSource, setHubSource] = useState<HubSourceId>(() => {
+    try {
+      const stored = localStorage.getItem(HUB_SOURCE_KEY) as HubSourceId | null;
+      return stored && HUB_SOURCES[stored] ? stored : 'gasalley';
+    } catch { return 'gasalley'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(HUB_SOURCE_KEY, hubSource); } catch { /* ignore */ }
+  }, [hubSource]);
+  const activeHub = HUB_SOURCES[hubSource];
+
   type RecentImport = { url: string; name: string; kind: 'brand' | 'event' | 'product' | 'share' | 'token' | 'slug'; slug?: string; ts: number };
   const RECENTS_KEY = 'brandhub-recent-imports';
   const loadRecents = (): RecentImport[] => {
@@ -486,7 +513,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
     if (token) {
       setShareUrl(token);
     } else if (slug) {
-      setShareUrl(`https://brandhubcreator.lovable.app/event/${slug}`);
+      setShareUrl(activeHub.entityPath('event', slug));
     }
     // Auto-trigger import
     setTimeout(() => {
@@ -523,7 +550,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       // Re-use existing import logic by calling handleImport indirectly
       // Set URL and trigger normal flow
       if (parsed.shareToken) setShareUrl(parsed.shareToken);
-      else if (parsed.slug) setShareUrl(`https://brandhubcreator.lovable.app/event/${parsed.slug}`);
+      else if (parsed.slug) setShareUrl(activeHub.entityPath('event', parsed.slug));
 
       // Process the data same as handleImport
       await processImportedBrand(data);
@@ -658,7 +685,33 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
               </Button>
             </>
           ) : (
-            <Tabs defaultValue="browse" className="w-full">
+            <>
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-1.5">Importing from</div>
+                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-muted/40 border border-border">
+                  {(Object.values(HUB_SOURCES)).map((src) => {
+                    const active = hubSource === src.id;
+                    return (
+                      <button
+                        key={src.id}
+                        type="button"
+                        onClick={() => setHubSource(src.id)}
+                        disabled={isImporting}
+                        className={`text-left px-3 py-2 rounded-md transition-colors ${
+                          active
+                            ? 'bg-background border border-border shadow-sm'
+                            : 'hover:bg-background/50 border border-transparent'
+                        }`}
+                      >
+                        <div className={`text-xs font-semibold ${active ? 'text-foreground' : 'text-muted-foreground'}`}>{src.name}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{src.host}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Tabs defaultValue="browse" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="browse" className="gap-1.5">
                   <Grid3X3 className="h-3.5 w-3.5" />
@@ -685,11 +738,11 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                   <Input
                     value={shareUrl}
                     onChange={(e) => setShareUrl(e.target.value)}
-                    placeholder="https://gasalleystudios.dev/brand/your-brand or /product/your-product"
+                    placeholder={`https://${activeHub.host}/brand/your-brand or /product/your-product`}
                     disabled={isImporting}
                   />
                   <p className="text-xs text-muted-foreground mt-1.5">
-                    Paste a Gas Alley Studios or BrandHub brand, event, or product URL — or a share token
+                    Paste a {activeHub.name} brand, event, or product URL — or a share token
                   </p>
 
                   {linkPreview.kind !== 'empty' && (
@@ -777,6 +830,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                 </div>
               </TabsContent>
             </Tabs>
+            </>
           )}
         </div>
       </DialogContent>
