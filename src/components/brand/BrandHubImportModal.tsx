@@ -725,6 +725,8 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
 
               <TabsContent value="browse" className="mt-3">
                 <BrandHubGallery
+                  key={hubSource}
+                  hubSource={hubSource}
                   onSelectBrand={handleGallerySelect}
                   isImporting={isImporting}
                 />
