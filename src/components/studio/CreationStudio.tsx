@@ -779,77 +779,94 @@ export const CreationStudio: React.FC = () => {
       />
 
       <div className="flex flex-col lg:flex-row">
-        {/* Sidebar - Categories */}
-        <StudioSidebar
-          studio={studio}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-        
+        {/* Sidebar - Categories (hidden in wizard mode) */}
+        {studio.id !== 'social-digital' && (
+          <StudioSidebar
+            studio={studio}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+        )}
+
         {/* Main Content */}
         <main className="flex-1 p-3 sm:p-6 min-w-0">
-          {/* Category Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <span>{studio.shortName}</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-foreground font-medium">
-                {activeCategory === 'all' 
-                  ? 'All Assets' 
-                  : studio.categories.find(c => c.id === activeCategory)?.name}
-              </span>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">
-                  {activeCategory === 'all' 
-                    ? 'All Asset Types' 
-                    : studio.categories.find(c => c.id === activeCategory)?.name}
-                </h2>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {activeCategory === 'all'
-                    ? studio.description
-                    : studio.categories.find(c => c.id === activeCategory)?.description}
-                </p>
+          {studio.id === 'social-digital' ? (
+            <SocialDigitalWizard
+              brand={selectedBrand}
+              studioGradient={studio.gradient}
+              projectLogoOverride={projectLogoOverride}
+              batchGeneratedImages={batchGeneratedImages}
+              onImagesGenerated={(newImages) => {
+                setBatchGeneratedImages(prev => ({ ...prev, ...newImages }));
+                setGeneratedImages(prev => ({ ...prev, ...newImages }));
+              }}
+            />
+          ) : (
+            <>
+              {/* Category Header */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <span>{studio.shortName}</span>
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="text-foreground font-medium">
+                    {activeCategory === 'all' 
+                      ? 'All Assets' 
+                      : studio.categories.find(c => c.id === activeCategory)?.name}
+                  </span>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold">
+                      {activeCategory === 'all' 
+                        ? 'All Asset Types' 
+                        : studio.categories.find(c => c.id === activeCategory)?.name}
+                    </h2>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {activeCategory === 'all'
+                        ? studio.description
+                        : studio.categories.find(c => c.id === activeCategory)?.description}
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} 
+                    size="sm"
+                    onClick={() => setShowBatchGeneration(true)}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate All
+                  </Button>
+                </div>
               </div>
               
-              <Button 
-                className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} 
-                size="sm"
-                onClick={() => setShowBatchGeneration(true)}
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate All
-              </Button>
-            </div>
-          </div>
-          
-          {/* Asset Grid */}
-          <StudioAssetGrid
-            assetTypes={filteredAssetTypes}
-            brand={selectedBrand}
-            viewMode={viewMode}
-            selectedAssets={selectedAssets}
-            onSelectAsset={(id) => {
-              setSelectedAssets(prev => 
-                prev.includes(id) 
-                  ? prev.filter(a => a !== id)
-                  : [...prev, id]
-              );
-            }}
-            studioGradient={studio.gradient}
-            projectLogoOverride={projectLogoOverride}
-            projectFontSelection={projectFontSelection}
-            batchGeneratedImages={batchGeneratedImages}
-          />
+              {/* Asset Grid */}
+              <StudioAssetGrid
+                assetTypes={filteredAssetTypes}
+                brand={selectedBrand}
+                viewMode={viewMode}
+                selectedAssets={selectedAssets}
+                onSelectAsset={(id) => {
+                  setSelectedAssets(prev => 
+                    prev.includes(id) 
+                      ? prev.filter(a => a !== id)
+                      : [...prev, id]
+                  );
+                }}
+                studioGradient={studio.gradient}
+                projectLogoOverride={projectLogoOverride}
+                projectFontSelection={projectFontSelection}
+                batchGeneratedImages={batchGeneratedImages}
+              />
 
-          {/* AI Reference Chat */}
-          <StudioReferenceChat
-            studioType={studio.id}
-            studioName={studio.name}
-            studioGradient={studio.gradient}
-          />
+              {/* AI Reference Chat */}
+              <StudioReferenceChat
+                studioType={studio.id}
+                studioName={studio.name}
+                studioGradient={studio.gradient}
+              />
+            </>
+          )}
         </main>
 
         {/* Brands Panel - hidden on small screens */}
