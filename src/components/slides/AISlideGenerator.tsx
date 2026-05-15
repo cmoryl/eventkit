@@ -17,8 +17,6 @@ const LOVABLE_MODELS = [
   { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
   { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
   { value: 'google/gemini-3-pro-preview', label: 'Gemini 3 Pro' },
-  { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini' },
-  { value: 'openai/gpt-5', label: 'GPT-5' },
 ];
 
 const GOOGLE_MODELS = [
@@ -61,6 +59,14 @@ interface AISlideGeneratorProps {
   brandName?: string;
   brandId?: string;
   brandImagery?: BrandHubImagery;
+  /** Style anchors picked from the brand's BrandHub asset library. */
+  referenceFiles?: Array<{
+    url: string;
+    name: string;
+    category: string;
+    sectionLabel: string;
+    sourceName: string;
+  }>;
 }
 
 export function AISlideGenerator({
@@ -70,6 +76,7 @@ export function AISlideGenerator({
   brandName,
   brandId,
   brandImagery,
+  referenceFiles,
 }: AISlideGeneratorProps) {
   const [topic, setTopic] = useState('');
   const [slideCount, setSlideCount] = useState('6');
@@ -194,6 +201,16 @@ export function AISlideGenerator({
           brandHubOnly: brandHubOnly && hasBrandHubAssets,
           approvedImagery: brandHubOnly && hasBrandHubAssets ? filteredImagery : undefined,
           approvedCategories: brandHubOnly && hasBrandHubAssets ? Array.from(selectedCategories) : undefined,
+          // Style references picked from the BrandHub assets library
+          references: referenceFiles && referenceFiles.length
+            ? referenceFiles.map((r) => ({
+                url: r.url,
+                name: r.name,
+                category: r.category,
+                sectionLabel: r.sectionLabel,
+                sourceName: r.sourceName,
+              }))
+            : undefined,
           // Content-aware features
           enableInfographics,
           imageMatchMode,
@@ -354,6 +371,40 @@ export function AISlideGenerator({
                 ? 'Describe what the deck is about — AI invents the content.'
                 : 'Paste your actual notes/outline/copy — AI structures and lays it out.'}
             </p>
+          </div>
+
+          {/* Deck type presets */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Quick start — deck type</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Pitch Deck', prompt: 'Startup pitch deck covering problem, solution, market size, traction, team, and funding ask' },
+                { label: 'Board Update', prompt: 'Quarterly board update covering financial highlights, strategic priorities, operational health, and Q&A' },
+                { label: 'Sales Proposal', prompt: 'B2B sales proposal covering client challenges, our solution, ROI, implementation timeline, and pricing' },
+                { label: 'Product Launch', prompt: 'Product launch deck covering the problem, product overview, key features, beta results, market opportunity, and launch plan' },
+                { label: 'OKR Review', prompt: 'Quarterly OKR review covering key results scored, highlights, misses, learnings, and next quarter objectives' },
+                { label: 'Go-To-Market', prompt: 'Go-to-market strategy covering target segments, GTM motion, channels and messaging, launch timeline, and success metrics' },
+                { label: 'Case Study', prompt: 'Customer case study covering the challenge, our approach, results achieved, and customer testimonial' },
+                { label: 'Annual Review', prompt: 'Annual company review covering year in numbers, financial growth, product milestones, team growth, and goals for next year' },
+                { label: 'Competitive Analysis', prompt: 'Competitive analysis covering market landscape, head-to-head comparison, win rates, our advantages, and strategic response' },
+                { label: 'Project Status', prompt: 'Project status update covering completion percentage, milestone progress, risks, blockers, and next steps' },
+                { label: 'Workshop', prompt: 'Hands-on workshop deck covering learning objectives, methodology, exercises, and takeaways' },
+                { label: 'Data Story', prompt: 'Data-driven narrative deck covering headline numbers, trend analysis, segment breakdown, and key insights' },
+              ].map(({ label, prompt }) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={() => {
+                    setTopic(prompt);
+                    setBriefMode('topic');
+                  }}
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-background hover:bg-primary/10 hover:border-primary/40 hover:text-foreground text-muted-foreground transition-colors disabled:opacity-40"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Topic input — always shown (used as title hint in content mode) */}

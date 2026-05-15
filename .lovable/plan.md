@@ -1,68 +1,104 @@
+## Goal
 
+Add a live **Conversational AI voice agent** to `/agent/powerpoint` so you can talk to it like a phone call — speak naturally, it replies in a real voice, you can interrupt mid-sentence, and it can optionally act on your deck (fill the topic, set tone, toggle brand, trigger generation).
 
-# Achieving Consistent Renderings Across Assets
+## What you'll see
 
-## The Problem
+A new floating **"Talk to agent"** panel on the PowerPoint page (bottom-right, glassmorphic, dark mode). Click the mic orb → grants microphone → connects to ElevenLabs → starts a live conversation. While connected:
 
-Currently, each asset generation is essentially independent — the AI receives brand context and style instructions but generates each design from scratch with no shared visual "DNA." This leads to:
-- Different color treatments, gradients, and compositions across assets
-- Inconsistent typography rendering and layout styles
-- No visual thread connecting a banner to a badge to a social post
-- The Master Style Director exists but its output isn't reliably injected into every generation call
+- A pulsing orb shows agent state: idle / listening / thinking / speaking
+- Live transcript of what you said and what the agent said scrolls below
+- Volume meter for input/output
+- "End call" button to disconnect
 
-## Root Causes
+The agent is briefed with the current page state (active brand, selected PDF source, selected pages, current topic/audience/slide-count form values) so it answers in context.
 
-1. **Master Style Direction is underutilized** — `masterStyleDirector.ts` generates a unified direction but it's not wired into the single-asset `AssetGenerationCanvas` flow, only batch generation
-2. **No style seed image** — each generation starts from zero visual context; there's no "anchor image" to reference
-3. **Variation prompts diverge** — the 4 variations use different style suffixes ("modern minimalist," "bold dynamic," etc.) which push renders apart rather than keeping them cohesive
-4. **No shared visual reference** — the AI has no way to see what other assets in the kit look like
+## Setup steps (one-time, in ElevenLabs dashboard)
 
-## Plan
+You'll need to do this part — Lovable can't create the agent for you:
 
-### 1. Wire Master Style Direction into single-asset generation
-- In `AssetGenerationCanvas.tsx`, call `generateMasterStyleDirection()` once when the studio opens (or reuse a cached result)
-- Inject the `buildMasterDirectionPromptBlock()` output into every generation prompt, both initial and regeneration
-- Cache the direction per event+brand combo so it's instant on subsequent assets
+1. Sign up at elevenlabs.io (free tier covers ~10 min/month of conversation)
+2. Go to **Conversational AI → Agents → Create Agent**
+3. Paste the system prompt we provide ("You are EventKIT's PowerPoint deck design assistant…")
+4. Pick a voice (Sarah / George / Brian — or any from their library)
+5. **Enable "Overrides"** → check `firstMessage` and `prompt` (so we can inject your deck context per session)
+6. **Add client tools** (if you want voice-controlled actions):
+   - `setTopic(topic: string)`
+   - `setAudience(audience: string)`
+   - `setSlideCount(count: number)`
+   - `setTone(tone: string)`
+   - `toggleBrandStyle(enabled: boolean)`
+   - `generateDeck()` — triggers the existing Generate button
+7. Copy the **Agent ID** and **API Key** — paste them into Lovable when prompted
 
-### 2. Add "Style Anchor" — first generated asset becomes the visual reference
-- After the first successful asset generation in a session, store its image URL as a "style anchor"
-- Pass this anchor image as a `STYLE REFERENCE` to all subsequent generations with the instruction: "Match the exact visual treatment, color application, and composition style of this reference"
-- Store the anchor in a React context (`StyleAnchorContext`) so it persists across studio navigations
-- Allow users to manually pick which generated image becomes the anchor via a "Pin as Style Anchor" button
+## Build steps
 
-### 3. Tighten variation prompts for cohesion
-- Change the 4 variation suffixes from divergent styles to minor composition tweaks within the same style: "layout variant A: centered hero," "layout variant B: asymmetric," etc.
-- Keep color treatment, typography, and mood identical across all 4 — only vary spatial arrangement
-- This ensures all variations feel like siblings, not cousins
+### 1. Secrets + edge function
+- Request `ELEVENLABS_API_KEY` and `ELEVENLABS_POWERPOINT_AGENT_ID` as Lovable Cloud secrets
+- New edge function `elevenlabs-conversation-token`: server-side, requires auth, calls ElevenLabs `/v1/convai/conversation/token` and returns a short-lived WebRTC token. Keeps the API key off the client.
 
-### 4. Inject style anchor into batch generation
-- Update `BatchGenerationModal.tsx` to generate the first asset, use it as the style anchor, then pass it as a reference image to all subsequent batch items
-- This creates a "chain of consistency" — each asset references the same visual anchor
+### 2. Install SDK
+- `bun add @elevenlabs/react`
 
-### 5. Add a "Consistency Score" indicator (optional UX polish)
-- After generation, show a small badge indicating whether the Master Style Direction was applied
-- Display "Kit-consistent" when the anchor image was used as a reference
+### 3. New component: `src/components/powerpoint/VoiceAgentPanel.tsx`
+- Uses `useConversation` hook from `@elevenlabs/react`
+- Floating panel, dark glassmorphic, animated mic orb (Framer Motion pulse synced to `getOutputVolume()`)
+- Handles mic permission with friendly prompt
+- Wires `clientTools` to setters passed in as props (setTopic, setAudience, setSlideCount, setTone, setUseBrand, triggerGenerate)
+- Uses `overrides.agent.firstMessage` to greet you with current context: *"Hi — I see you're working on a deck with the Acme brand and 4 PDF reference pages selected. What should we build?"*
+- Uses `overrides.agent.prompt` to inject live deck state every session
+- Shows scrolling transcript using `onMessage` events (`user_transcript`, `agent_response`)
+- Toast on errors (rate limit, mic denied, quota exhausted)
 
-## Technical Details
+### 4. Wire into PowerPointAgent.tsx
+- Render `<VoiceAgentPanel />` at the bottom of the page
+- Pass current state + setters as props
+- Pass a `triggerGenerate` callback that calls the existing handle-submit logic
 
-**Files to create:**
-- `src/contexts/StyleAnchorContext.tsx` — React context storing the current style anchor image URL and master direction
+### 5. Memory
+- Save a memory entry documenting the ElevenLabs voice agent integration so future sessions don't reinvent it
 
-**Files to modify:**
-- `src/components/studio/AssetGenerationCanvas.tsx` — integrate master direction + style anchor into generation calls; tighten variation prompts; add "Pin as Style Anchor" button
-- `src/components/studio/BatchGenerationModal.tsx` — chain first result as anchor for remaining batch items
-- `src/components/studio/CreationStudio.tsx` — wrap with `StyleAnchorProvider`
-- `supabase/functions/generate-image/index.ts` — accept and use `masterDirection` field in the request body to prepend to prompts
-- `supabase/functions/_shared/prompt-builder.ts` — add helper to merge master direction block into the full prompt
+## Technical details
 
-**Data flow:**
 ```text
-Studio opens → generateMasterStyleDirection() → cache result
-    ↓
-User generates Asset A → master direction injected into prompt → result stored as style anchor
-    ↓
-User generates Asset B → master direction + Asset A image as STYLE REFERENCE → visually consistent
-    ↓
-Batch generation → Asset 1 generated → becomes anchor → Assets 2-N reference it
+┌──────────────────┐    WebRTC     ┌─────────────────────┐
+│  VoiceAgentPanel │◄─────────────►│  ElevenLabs Convai  │
+│  (browser)       │   audio+text  │  (managed agent)    │
+└────────┬─────────┘               └─────────────────────┘
+         │                                   ▲
+         │ clientTools                       │ short-lived token
+         │ (setTopic, setSlideCount,         │
+         │  generateDeck, ...)               │
+         ▼                                   │
+┌──────────────────┐    invoke    ┌─────────────────────┐
+│  PowerPointAgent │              │  edge function:     │
+│  (form + deck)   │              │  elevenlabs-conv-   │
+└──────────────────┘              │  token              │
+                                  │  (uses              │
+                                  │   ELEVENLABS_API_KEY)│
+                                  └─────────────────────┘
 ```
 
+- Connection type: **WebRTC** (lower latency than WebSocket, ~300ms)
+- Server location: default global (we can switch to `eu-residency` if needed)
+- Token endpoint requires Supabase JWT — no anonymous access
+- Mic permission requested only when user clicks the orb (not on page load)
+
+## Cost expectation
+
+ElevenLabs Conversational AI: roughly **$0.08–0.10 per minute** of live conversation on the paid plan. Free tier gives ~10 min/month to test.
+
+## Out of scope (can add later)
+
+- Persisting transcripts to Supabase (currently in-memory per session)
+- Voice-driven slide-by-slide editing inside a generated deck
+- Multi-language support (default English; ElevenLabs supports 30+)
+- Switching voices from inside the app (do it in ElevenLabs dashboard for now)
+
+## What I'll need from you after approval
+
+1. Confirm you've created the agent in ElevenLabs and have the **Agent ID** ready
+2. Have your **ElevenLabs API key** ready to paste when Lovable prompts for it
+3. Decide: enable voice-controlled actions (tool-calling) — yes or just discussion?
+
+If you want, I can also ship a simpler "voice replies on text chat" version first (cheaper, no ElevenLabs agent setup needed) and layer the full Conversational AI on top later. Just say the word.

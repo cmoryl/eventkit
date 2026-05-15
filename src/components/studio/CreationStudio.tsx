@@ -33,6 +33,8 @@ import { assetDisplayInfo } from './StudioAssetGrid';
 import type { GoogleFontSelection } from './AssetBriefModal';
 import { checkAndSyncBrand, forceResyncBrand } from '@/services/brandAutoSync';
 import { StyleAnchorProvider } from '@/contexts/StyleAnchorContext';
+import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
+import { SocialDigitalWizard } from './SocialDigitalWizard';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
@@ -75,6 +77,7 @@ export const CreationStudio: React.FC = () => {
   const [showBatchGeneration, setShowBatchGeneration] = useState(false);
   const [batchGeneratedImages, setBatchGeneratedImages] = useState<Record<string, string>>({});
   const [isBrandSyncing, setIsBrandSyncing] = useState(false);
+  const [showBrandHubImport, setShowBrandHubImport] = useState(false);
   
   // Auto-save state
   const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>('idle');
@@ -106,102 +109,111 @@ export const CreationStudio: React.FC = () => {
     }
   }, [studioId, navigate]);
 
-  // Load user's brands
-  useEffect(() => {
-    const loadBrands = async () => {
-      if (!user) {
-        setIsLoading(false);
+  // Load user's brands (callable so we can refresh after a BrandHub import)
+  const loadBrands = useCallback(async (opts?: { selectNewest?: boolean }) => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('brands')
+        .select('*, brand_styles(*)')
+        .eq('user_id', user.id)
+        .order('is_default', { ascending: false });
+
+      if (error) throw error;
+
+      const transformedBrands: Brand[] = (data || []).map(brand => {
+        const rawStyle = brand.brand_styles?.[0];
+        return {
+          id: brand.id,
+          user_id: brand.user_id,
+          name: brand.name,
+          description: brand.description || undefined,
+          logo_url: brand.logo_url || undefined,
+          logo_monochrome_url: brand.logo_monochrome_url || undefined,
+          logo_reversed_url: brand.logo_reversed_url || undefined,
+          is_default: brand.is_default,
+          created_at: brand.created_at,
+          updated_at: brand.updated_at,
+          styles: rawStyle ? {
+            id: rawStyle.id,
+            brand_id: rawStyle.brand_id,
+            primary_color: rawStyle.primary_color || undefined,
+            secondary_color: rawStyle.secondary_color || undefined,
+            accent_color: rawStyle.accent_color || undefined,
+            color_palette: Array.isArray(rawStyle.color_palette) ? rawStyle.color_palette as any[] : [],
+            heading_font: rawStyle.heading_font || undefined,
+            body_font: rawStyle.body_font || undefined,
+            accent_font: rawStyle.accent_font || undefined,
+            typography_scale: typeof rawStyle.typography_scale === 'object' ? rawStyle.typography_scale as Record<string, unknown> : {},
+            brand_voice: rawStyle.brand_voice || [],
+            tone_keywords: rawStyle.tone_keywords || [],
+            writing_style: rawStyle.writing_style || undefined,
+            mood_keywords: rawStyle.mood_keywords || [],
+            imagery_style: rawStyle.imagery_style || undefined,
+            pattern_style: rawStyle.pattern_style || undefined,
+            icon_style: rawStyle.icon_style || undefined,
+            target_audience: rawStyle.target_audience || undefined,
+            cultural_context: rawStyle.cultural_context || undefined,
+            industry: rawStyle.industry || undefined,
+            print_color_mode: (rawStyle.print_color_mode as 'CMYK' | 'RGB' | 'Pantone') || 'CMYK',
+            preferred_render_engine: rawStyle.preferred_render_engine || undefined,
+            custom_prompts: typeof rawStyle.custom_prompts === 'object' ? rawStyle.custom_prompts as Record<string, string> : {},
+            created_at: rawStyle.created_at,
+            updated_at: rawStyle.updated_at,
+          } : undefined,
+        };
+      });
+
+      setBrands(transformedBrands);
+
+      if (opts?.selectNewest && transformedBrands.length > 0) {
+        // After an import, prefer the most recently created brand.
+        const newest = [...transformedBrands].sort((a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )[0];
+        if (newest) {
+          setSelectedBrand(newest);
+          sessionStorage.setItem('active-brand-id', newest.id);
+        }
         return;
       }
-      
-      try {
-        const { data, error } = await supabase
-          .from('brands')
-          .select('*, brand_styles(*)')
+
+      // Priority: sessionStorage > profile persisted brand > is_default > first brand
+      const sessionBrandId = sessionStorage.getItem('active-brand-id');
+      const sessionBrand = sessionBrandId ? transformedBrands.find(b => b.id === sessionBrandId) : null;
+
+      if (sessionBrand) {
+        setSelectedBrand(sessionBrand);
+      } else {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('applied_brand_id')
           .eq('user_id', user.id)
-          .order('is_default', { ascending: false });
-        
-        if (error) throw error;
-        
-        // Transform data to match Brand type with proper type handling
-        const transformedBrands: Brand[] = (data || []).map(brand => {
-          const rawStyle = brand.brand_styles?.[0];
-          return {
-            id: brand.id,
-            user_id: brand.user_id,
-            name: brand.name,
-            description: brand.description || undefined,
-            logo_url: brand.logo_url || undefined,
-            logo_monochrome_url: brand.logo_monochrome_url || undefined,
-            logo_reversed_url: brand.logo_reversed_url || undefined,
-            is_default: brand.is_default,
-            created_at: brand.created_at,
-            updated_at: brand.updated_at,
-            styles: rawStyle ? {
-              id: rawStyle.id,
-              brand_id: rawStyle.brand_id,
-              primary_color: rawStyle.primary_color || undefined,
-              secondary_color: rawStyle.secondary_color || undefined,
-              accent_color: rawStyle.accent_color || undefined,
-              color_palette: Array.isArray(rawStyle.color_palette) ? rawStyle.color_palette as any[] : [],
-              heading_font: rawStyle.heading_font || undefined,
-              body_font: rawStyle.body_font || undefined,
-              accent_font: rawStyle.accent_font || undefined,
-              typography_scale: typeof rawStyle.typography_scale === 'object' ? rawStyle.typography_scale as Record<string, unknown> : {},
-              brand_voice: rawStyle.brand_voice || [],
-              tone_keywords: rawStyle.tone_keywords || [],
-              writing_style: rawStyle.writing_style || undefined,
-              mood_keywords: rawStyle.mood_keywords || [],
-              imagery_style: rawStyle.imagery_style || undefined,
-              pattern_style: rawStyle.pattern_style || undefined,
-              icon_style: rawStyle.icon_style || undefined,
-              target_audience: rawStyle.target_audience || undefined,
-              cultural_context: rawStyle.cultural_context || undefined,
-              industry: rawStyle.industry || undefined,
-              print_color_mode: (rawStyle.print_color_mode as 'CMYK' | 'RGB' | 'Pantone') || 'CMYK',
-              preferred_render_engine: rawStyle.preferred_render_engine || undefined,
-              custom_prompts: typeof rawStyle.custom_prompts === 'object' ? rawStyle.custom_prompts as Record<string, string> : {},
-              created_at: rawStyle.created_at,
-              updated_at: rawStyle.updated_at
-            } : undefined
-          };
-        });
-        
-        setBrands(transformedBrands);
-        
-        // Priority: sessionStorage > profile persisted brand > is_default > first brand
-        const sessionBrandId = sessionStorage.getItem('active-brand-id');
-        const sessionBrand = sessionBrandId ? transformedBrands.find(b => b.id === sessionBrandId) : null;
-        
-        if (sessionBrand) {
-          setSelectedBrand(sessionBrand);
-        } else {
-          // Check profile for persisted brand
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('applied_brand_id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          const persistedBrand = profileData?.applied_brand_id 
-            ? transformedBrands.find(b => b.id === profileData.applied_brand_id) 
-            : null;
-          
-          const brandToUse = persistedBrand || transformedBrands.find(b => b.is_default) || transformedBrands[0];
-          if (brandToUse) {
-            setSelectedBrand(brandToUse);
-            sessionStorage.setItem('active-brand-id', brandToUse.id);
-          }
+          .maybeSingle();
+
+        const persistedBrand = profileData?.applied_brand_id
+          ? transformedBrands.find(b => b.id === profileData.applied_brand_id)
+          : null;
+
+        const brandToUse = persistedBrand || transformedBrands.find(b => b.is_default) || transformedBrands[0];
+        if (brandToUse) {
+          setSelectedBrand(brandToUse);
+          sessionStorage.setItem('active-brand-id', brandToUse.id);
         }
-      } catch (error) {
-        console.error('Error loading brands:', error);
-      } finally {
-        setIsLoading(false);
       }
-    };
-    
-    loadBrands();
+    } catch (error) {
+      console.error('Error loading brands:', error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    loadBrands();
+  }, [loadBrands]);
 
   // Auto-sync BrandHub brands on studio load
   useEffect(() => {
@@ -666,6 +678,7 @@ export const CreationStudio: React.FC = () => {
         onSelectBrand={setSelectedBrand}
         onCreateBrand={() => navigate('/admin?tab=brands')}
         onResyncBrand={handleResyncBrand}
+        onImportFromBrandHub={() => setShowBrandHubImport(true)}
         isSyncing={isBrandSyncing}
       />
       
@@ -686,23 +699,22 @@ export const CreationStudio: React.FC = () => {
       
       <div className="hidden sm:flex items-center gap-1 bg-muted/50 rounded-lg p-1">
         <Button
-          variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+          variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className={`h-8 w-8 ${viewMode === 'grid' ? 'bg-foreground/15 text-foreground' : 'text-foreground/70 hover:text-foreground hover:bg-foreground/10'}`}
           onClick={() => setViewMode('grid')}
         >
           <Grid className="h-4 w-4" />
         </Button>
         <Button
-          variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+          variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className={`h-8 w-8 ${viewMode === 'list' ? 'bg-foreground/15 text-foreground' : 'text-foreground/70 hover:text-foreground hover:bg-foreground/10'}`}
           onClick={() => setViewMode('list')}
         >
           <List className="h-4 w-4" />
         </Button>
       </div>
-      
       <Button
         variant="outline"
         size="sm"
@@ -714,10 +726,10 @@ export const CreationStudio: React.FC = () => {
       </Button>
 
       <Button
-        variant={showAccessibility ? 'secondary' : 'outline'}
+        variant="outline"
         size="sm"
         onClick={() => setShowAccessibility(!showAccessibility)}
-        className="hidden lg:flex"
+        className={`hidden lg:flex ${showAccessibility ? 'bg-foreground/15 text-foreground border-foreground/20' : 'text-foreground/90'}`}
         title="Accessibility Analysis"
       >
         <Accessibility className="h-4 w-4 mr-2" />
@@ -725,9 +737,9 @@ export const CreationStudio: React.FC = () => {
       </Button>
 
       <Button
-        variant={showBrandsPanel ? 'secondary' : 'outline'}
+        variant="outline"
         size="icon"
-        className="h-8 w-8 hidden md:flex"
+        className={`h-8 w-8 hidden md:flex ${showBrandsPanel ? 'bg-foreground/15 text-foreground border-foreground/20' : 'text-foreground/80 hover:text-foreground'}`}
         onClick={() => setShowBrandsPanel(!showBrandsPanel)}
         title={showBrandsPanel ? 'Hide Brands Panel' : 'Show Brands Panel'}
       >
@@ -767,77 +779,94 @@ export const CreationStudio: React.FC = () => {
       />
 
       <div className="flex flex-col lg:flex-row">
-        {/* Sidebar - Categories */}
-        <StudioSidebar
-          studio={studio}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-        
+        {/* Sidebar - Categories (hidden in wizard mode) */}
+        {studio.id !== 'social-digital' && (
+          <StudioSidebar
+            studio={studio}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+        )}
+
         {/* Main Content */}
         <main className="flex-1 p-3 sm:p-6 min-w-0">
-          {/* Category Header */}
-          <div className="mb-6">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-              <span>{studio.shortName}</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-foreground font-medium">
-                {activeCategory === 'all' 
-                  ? 'All Assets' 
-                  : studio.categories.find(c => c.id === activeCategory)?.name}
-              </span>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold">
-                  {activeCategory === 'all' 
-                    ? 'All Asset Types' 
-                    : studio.categories.find(c => c.id === activeCategory)?.name}
-                </h2>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  {activeCategory === 'all'
-                    ? studio.description
-                    : studio.categories.find(c => c.id === activeCategory)?.description}
-                </p>
+          {studio.id === 'social-digital' ? (
+            <SocialDigitalWizard
+              brand={selectedBrand}
+              studioGradient={studio.gradient}
+              projectLogoOverride={projectLogoOverride}
+              batchGeneratedImages={batchGeneratedImages}
+              onImagesGenerated={(newImages) => {
+                setBatchGeneratedImages(prev => ({ ...prev, ...newImages }));
+                setGeneratedImages(prev => ({ ...prev, ...newImages }));
+              }}
+            />
+          ) : (
+            <>
+              {/* Category Header */}
+              <div className="mb-6">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <span>{studio.shortName}</span>
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="text-foreground font-medium">
+                    {activeCategory === 'all' 
+                      ? 'All Assets' 
+                      : studio.categories.find(c => c.id === activeCategory)?.name}
+                  </span>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold">
+                      {activeCategory === 'all' 
+                        ? 'All Asset Types' 
+                        : studio.categories.find(c => c.id === activeCategory)?.name}
+                    </h2>
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {activeCategory === 'all'
+                        ? studio.description
+                        : studio.categories.find(c => c.id === activeCategory)?.description}
+                    </p>
+                  </div>
+                  
+                  <Button 
+                    className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} 
+                    size="sm"
+                    onClick={() => setShowBatchGeneration(true)}
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate All
+                  </Button>
+                </div>
               </div>
               
-              <Button 
-                className={`bg-gradient-to-r ${studio.gradient} flex-shrink-0`} 
-                size="sm"
-                onClick={() => setShowBatchGeneration(true)}
-              >
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate All
-              </Button>
-            </div>
-          </div>
-          
-          {/* Asset Grid */}
-          <StudioAssetGrid
-            assetTypes={filteredAssetTypes}
-            brand={selectedBrand}
-            viewMode={viewMode}
-            selectedAssets={selectedAssets}
-            onSelectAsset={(id) => {
-              setSelectedAssets(prev => 
-                prev.includes(id) 
-                  ? prev.filter(a => a !== id)
-                  : [...prev, id]
-              );
-            }}
-            studioGradient={studio.gradient}
-            projectLogoOverride={projectLogoOverride}
-            projectFontSelection={projectFontSelection}
-            batchGeneratedImages={batchGeneratedImages}
-          />
+              {/* Asset Grid */}
+              <StudioAssetGrid
+                assetTypes={filteredAssetTypes}
+                brand={selectedBrand}
+                viewMode={viewMode}
+                selectedAssets={selectedAssets}
+                onSelectAsset={(id) => {
+                  setSelectedAssets(prev => 
+                    prev.includes(id) 
+                      ? prev.filter(a => a !== id)
+                      : [...prev, id]
+                  );
+                }}
+                studioGradient={studio.gradient}
+                projectLogoOverride={projectLogoOverride}
+                projectFontSelection={projectFontSelection}
+                batchGeneratedImages={batchGeneratedImages}
+              />
 
-          {/* AI Reference Chat */}
-          <StudioReferenceChat
-            studioType={studio.id}
-            studioName={studio.name}
-            studioGradient={studio.gradient}
-          />
+              {/* AI Reference Chat */}
+              <StudioReferenceChat
+                studioType={studio.id}
+                studioName={studio.name}
+                studioGradient={studio.gradient}
+              />
+            </>
+          )}
         </main>
 
         {/* Brands Panel - hidden on small screens */}
@@ -907,6 +936,16 @@ export const CreationStudio: React.FC = () => {
         onImagesGenerated={(newImages) => {
           setBatchGeneratedImages(prev => ({ ...prev, ...newImages }));
           setGeneratedImages(prev => ({ ...prev, ...newImages }));
+        }}
+      />
+
+      {/* BrandHub Import Modal */}
+      <BrandHubImportModal
+        isOpen={showBrandHubImport}
+        onClose={() => setShowBrandHubImport(false)}
+        onBrandImported={() => {
+          setShowBrandHubImport(false);
+          loadBrands({ selectNewest: true });
         }}
       />
     </div>

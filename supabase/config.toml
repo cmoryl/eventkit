@@ -6,20 +6,12 @@ verify_jwt = false
 [functions.generate-venue-preview]
 verify_jwt = false
 
-[functions.verify-admin]
+
+[functions.elevenlabs-conversation-token]
 verify_jwt = false
 
-[functions.refine-prompt]
+[functions.proxy-brandhub-file]
 verify_jwt = false
 
-[functions.seed-prompt-templates]
-verify_jwt = false
-
-[functions.validate-api-key]
-verify_jwt = false
-
-[functions.studio-chat]
-verify_jwt = false
-
-[functions.generate-slides]
+[functions.generate-slide-graphic]
 verify_jwt = false

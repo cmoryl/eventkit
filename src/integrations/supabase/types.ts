@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_prompt_presets: {
+        Row: {
+          agent_key: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          prompt: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          agent_key?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          prompt: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          agent_key?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          prompt?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ai_feedback: {
         Row: {
           created_at: string
@@ -405,6 +438,93 @@ export type Database = {
           logo_url?: string | null
           name?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deck_outlines: {
+        Row: {
+          brand_id: string | null
+          created_at: string
+          download_url: string | null
+          filename: string | null
+          id: string
+          outline: Json
+          source_kind: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_id?: string | null
+          created_at?: string
+          download_url?: string | null
+          filename?: string | null
+          id?: string
+          outline: Json
+          source_kind?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_id?: string | null
+          created_at?: string
+          download_url?: string | null
+          filename?: string | null
+          id?: string
+          outline?: Json
+          source_kind?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deck_templates: {
+        Row: {
+          content: Json
+          created_at: string
+          description: string | null
+          id: string
+          is_shared: boolean
+          name: string
+          palette: Json
+          source_kind: string
+          theme_prompt: string | null
+          thumbnail: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          name: string
+          palette?: Json
+          source_kind: string
+          theme_prompt?: string | null
+          thumbnail?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_shared?: boolean
+          name?: string
+          palette?: Json
+          source_kind?: string
+          theme_prompt?: string | null
+          thumbnail?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

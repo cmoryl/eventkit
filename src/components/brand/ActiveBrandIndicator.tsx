@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { BrandHubImportModal } from './BrandHubImportModal';
 import { BrandEventSelector } from './BrandEventSelector';
+import { BrandHubProductSelector } from './BrandHubProductSelector';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,6 +33,7 @@ interface Brand {
   name: string;
   logo_url?: string;
   is_default: boolean;
+  brandhub_share_token?: string | null;
   styles?: BrandColors;
 }
 
@@ -232,9 +234,12 @@ export const ActiveBrandIndicator: React.FC<ActiveBrandIndicatorProps> = ({
             )}
           </div>
 
-        {/* Event Selector for active brand */}
-        <div className="px-3 py-1.5 border-b border-border">
+        {/* Event + Product selectors for active brand */}
+        <div className="px-3 py-1.5 border-b border-border flex items-center gap-2 flex-wrap">
           <BrandEventSelector activeBrandId={activeBrand.id} />
+          <BrandHubProductSelector
+            parentBrandShareToken={activeBrand.brandhub_share_token || null}
+          />
         </div>
 
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2, FileText
+import { useNavigate } from 'react-router-dom';
+import {
+  Sparkles, Zap, Palette, Download, ArrowRight, CheckCircle2, FileText, Presentation
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AssetShowcase } from './AssetShowcase';
@@ -64,11 +65,12 @@ const steps = [
   { step: '03', title: 'Generate & Download', description: 'AI creates your complete design kit instantly' },
 ];
 
-export const LandingPage: React.FC<LandingPageProps> = ({ 
+export const LandingPage: React.FC<LandingPageProps> = ({
   onGetStarted,
   isAuthenticated = false,
   onAssetClick
 }) => {
+  const navigate = useNavigate();
   const { user, signOut, isAuthenticated: isLoggedIn } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [heroContent, setHeroContent] = useState<HeroContent>(defaultHeroContent);
@@ -490,13 +492,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             <nav className="flex items-center gap-6 text-sm">
-              <button 
+              <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >
                 Home
               </button>
-              <button 
+              <button
+                onClick={() => navigate('/slides')}
+                className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Presentation className="w-3.5 h-3.5" />
+                Slide Builder
+              </button>
+              <button
                 onClick={onGetStarted}
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { ScaledSlide } from './ScaledSlide';
 
-export type SlideTransition = 'none' | 'fade' | 'slide' | 'zoom' | 'flip';
+export type SlideTransition = 'none' | 'fade' | 'slide' | 'zoom' | 'flip' | 'cube' | 'dissolve' | 'push' | 'cover';
 
 const transitionVariants: Record<SlideTransition, { initial: any; animate: any; exit: any }> = {
   none: {
@@ -29,6 +29,26 @@ const transitionVariants: Record<SlideTransition, { initial: any; animate: any; 
     initial: { rotateY: 90, opacity: 0 },
     animate: { rotateY: 0, opacity: 1 },
     exit: { rotateY: -90, opacity: 0 },
+  },
+  cube: {
+    initial: { rotateY: 90, x: '50%', opacity: 0, transformOrigin: 'left center' },
+    animate: { rotateY: 0, x: 0, opacity: 1 },
+    exit: { rotateY: -90, x: '-50%', opacity: 0, transformOrigin: 'right center' },
+  },
+  dissolve: {
+    initial: { opacity: 0, filter: 'blur(24px)' },
+    animate: { opacity: 1, filter: 'blur(0px)' },
+    exit: { opacity: 0, filter: 'blur(24px)' },
+  },
+  push: {
+    initial: { y: '100%', opacity: 0 },
+    animate: { y: 0, opacity: 1 },
+    exit: { y: '-100%', opacity: 0 },
+  },
+  cover: {
+    initial: { x: '100%', scale: 1, opacity: 1 },
+    animate: { x: 0, scale: 1, opacity: 1 },
+    exit: { x: 0, scale: 0.92, opacity: 0.4 },
   },
 };
 
@@ -100,15 +120,35 @@ export function PresentationMode({ children, slideCount, activeIndex, onIndexCha
   }, [handleKeyDown]);
 
   const tv = transitionVariants[transition];
-  const slideInitial = transition === 'slide'
-    ? { x: direction > 0 ? '100%' : '-100%', opacity: 0 }
-    : tv.initial;
-  const slideExit = transition === 'slide'
-    ? { x: direction > 0 ? '-100%' : '100%', opacity: 0 }
-    : tv.exit;
+  let slideInitial = tv.initial;
+  let slideExit = tv.exit;
+  if (transition === 'slide' || transition === 'cover') {
+    slideInitial = { x: direction > 0 ? '100%' : '-100%', opacity: transition === 'cover' ? 1 : 0 };
+    slideExit = transition === 'cover'
+      ? { x: 0, scale: 0.92, opacity: 0.4 }
+      : { x: direction > 0 ? '-100%' : '100%', opacity: 0 };
+  } else if (transition === 'push') {
+    slideInitial = { y: direction > 0 ? '100%' : '-100%', opacity: 0 };
+    slideExit = { y: direction > 0 ? '-100%' : '100%', opacity: 0 };
+  } else if (transition === 'cube') {
+    slideInitial = {
+      rotateY: direction > 0 ? 90 : -90,
+      x: direction > 0 ? '50%' : '-50%',
+      opacity: 0,
+      transformOrigin: direction > 0 ? 'left center' : 'right center',
+    };
+    slideExit = {
+      rotateY: direction > 0 ? -90 : 90,
+      x: direction > 0 ? '-50%' : '50%',
+      opacity: 0,
+      transformOrigin: direction > 0 ? 'right center' : 'left center',
+    };
+  }
+
+  const needsPerspective = transition === 'flip' || transition === 'cube';
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden" style={{ perspective: transition === 'flip' ? 1200 : undefined }}>
+    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden" style={{ perspective: needsPerspective ? 1400 : undefined }}>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={activeIndex}
