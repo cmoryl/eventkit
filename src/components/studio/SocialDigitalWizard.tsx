@@ -25,6 +25,9 @@ import {
   RefreshCw,
   Loader2,
   RotateCcw,
+  Upload,
+  FileText,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -124,6 +127,8 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
   const [audience, setAudience] = useState('');
   const [vibe, setVibe] = useState('');
   const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
+  const [referenceImages, setReferenceImages] = useState<{ name: string; dataUrl: string }[]>([]);
+  const [referenceDocs, setReferenceDocs] = useState<{ name: string; size: number; text?: string }[]>([]);
   const [showBatch, setShowBatch] = useState(false);
 
   // Preview / export state
@@ -176,6 +181,79 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
     return true;
   };
 
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+
+  const readFileAsText = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = () => reject(r.error);
+      r.readAsText(file);
+    });
+
+  const handleReferenceUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const MAX_IMG_BYTES = 8 * 1024 * 1024; // 8MB per image
+    const MAX_DOC_BYTES = 5 * 1024 * 1024;
+    const newImages: { name: string; dataUrl: string }[] = [];
+    const newDocs: { name: string; size: number; text?: string }[] = [];
+    for (const file of Array.from(files)) {
+      try {
+        if (file.type.startsWith('image/')) {
+          if (file.size > MAX_IMG_BYTES) {
+            toast.error(`${file.name} is over 8MB — skipped`);
+            continue;
+          }
+          const dataUrl = await readFileAsDataUrl(file);
+          newImages.push({ name: file.name, dataUrl });
+        } else {
+          if (file.size > MAX_DOC_BYTES) {
+            toast.error(`${file.name} is over 5MB — skipped`);
+            continue;
+          }
+          // Try to read text-based docs inline; binary docs (pdf/docx) just get the filename hint
+          const isTextLike = /\.(txt|md|markdown|csv|json|html?|rtf)$/i.test(file.name) ||
+            file.type.startsWith('text/');
+          let text: string | undefined;
+          if (isTextLike) {
+            text = (await readFileAsText(file)).slice(0, 8000);
+          }
+          newDocs.push({ name: file.name, size: file.size, text });
+        }
+      } catch (err) {
+        console.error('Reference upload failed for', file.name, err);
+        toast.error(`Could not read ${file.name}`);
+      }
+    }
+    if (newImages.length) setReferenceImages(prev => [...prev, ...newImages]);
+    if (newDocs.length) setReferenceDocs(prev => [...prev, ...newDocs]);
+  };
+
+  const removeReferenceImage = (idx: number) =>
+    setReferenceImages(prev => prev.filter((_, i) => i !== idx));
+  const removeReferenceDoc = (idx: number) =>
+    setReferenceDocs(prev => prev.filter((_, i) => i !== idx));
+
+  const referenceNotes = useMemo(() => {
+    const parts: string[] = [];
+    if (referenceDocs.length) {
+      parts.push('Reference documents:');
+      referenceDocs.forEach(d => {
+        parts.push(`- ${d.name}${d.text ? `:\n${d.text}` : ''}`);
+      });
+    }
+    if (referenceImages.length) {
+      parts.push(`Reference images attached: ${referenceImages.map(i => i.name).join(', ')}`);
+    }
+    return parts.join('\n');
+  }, [referenceDocs, referenceImages]);
+
   const fetchCaptions = useCallback(async () => {
     if (!assetItems.length) return;
     setLoadingCaptions(true);
@@ -187,6 +265,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
           audience,
           vibe,
           brandName: brand?.name,
+          referenceNotes: referenceNotes || undefined,
           assets: assetItems.map(i => ({
             key: i.key,
             network: i.networkName,
@@ -222,7 +301,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
     } finally {
       setLoadingCaptions(false);
     }
-  }, [assetItems, campaignName, keyMessage, audience, vibe, brand?.name]);
+  }, [assetItems, campaignName, keyMessage, audience, vibe, brand?.name, referenceNotes]);
 
   const reset = () => {
     setStep(1);
@@ -231,6 +310,8 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
     setAudience('');
     setVibe('');
     setSelectedNetworks([]);
+    setReferenceImages([]);
+    setReferenceDocs([]);
     setCaptions({});
   };
 
@@ -437,6 +518,73 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Reference uploads */}
+              <div className="space-y-2">
+                <Label>Reference images & documents (optional)</Label>
+                <p className="text-xs text-muted-foreground -mt-1">
+                  Upload moodboards, past creative, briefs, or product shots so generations match the right look and message.
+                </p>
+                <label
+                  htmlFor="ref-upload"
+                  className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors text-sm text-muted-foreground"
+                >
+                  <Upload className="h-4 w-4" />
+                  Click to upload images (PNG/JPG/WebP) or documents (PDF, DOCX, TXT, MD)
+                </label>
+                <input
+                  id="ref-upload"
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.txt,.md,.markdown,.rtf,.csv,.json"
+                  className="hidden"
+                  onChange={e => {
+                    handleReferenceUpload(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+
+                {referenceImages.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-1">
+                    {referenceImages.map((img, idx) => (
+                      <div key={`${img.name}-${idx}`} className="relative group rounded-lg overflow-hidden border border-border bg-muted aspect-square">
+                        <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeReferenceImage(idx)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {referenceDocs.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    {referenceDocs.map((doc, idx) => (
+                      <div key={`${doc.name}-${idx}`} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-muted/40 text-sm">
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="flex-1 truncate">{doc.name}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {(doc.size / 1024).toFixed(0)} KB{doc.text ? ' · text read' : ''}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeReferenceDoc(idx)}
+                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Remove"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {!brand && (
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-sm text-amber-600 dark:text-amber-400">
                   Tip: pick a brand from the top bar so generations stay on-brand.
@@ -772,6 +920,8 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
         projectLogoOverride={projectLogoOverride}
         assetDisplayInfo={assetDisplayInfo}
         onImagesGenerated={onImagesGenerated}
+        referenceImages={referenceImages.map(i => i.dataUrl)}
+        referenceNotes={referenceNotes}
       />
     </div>
   );

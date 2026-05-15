@@ -63,6 +63,8 @@ interface BatchGenerationModalProps {
   projectLogoOverride?: string | null;
   assetDisplayInfo: Record<string, { name: string; description: string; dimensions?: string }>;
   onImagesGenerated: (results: Record<string, string>) => void;
+  referenceImages?: string[]; // base64 data URLs
+  referenceNotes?: string; // extracted text / filenames from uploaded docs
 }
 
 // Max concurrent generations to avoid rate limits
@@ -78,6 +80,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   projectLogoOverride,
   assetDisplayInfo,
   onImagesGenerated,
+  referenceImages,
+  referenceNotes,
 }) => {
   const { activeBrand } = useActiveBrand();
   const styleAnchor = useStyleAnchor();
@@ -168,6 +172,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           eventName,
           masterDirection: masterDirectionBlock || undefined,
           styleAnchorImage: anchorUrl || undefined,
+          referenceImages: referenceImages && referenceImages.length > 0 ? referenceImages : undefined,
+          referenceNotes: referenceNotes || undefined,
           brandContext: effectiveBrand ? {
             brandName: effectiveBrand.name,
             primaryColor: effectiveBrand.styles?.primary_color,
@@ -207,7 +213,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     } catch (err: any) {
       return { error: err.message || 'Generation failed' };
     }
-  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo]);
+  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo, referenceImages, referenceNotes]);
 
   // Wrap a promise so it never hangs the UI longer than `ms`.
   const withTimeout = <T,>(p: Promise<T>, ms: number, label: string): Promise<T> =>
