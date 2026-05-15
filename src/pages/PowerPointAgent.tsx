@@ -1262,6 +1262,15 @@ const PowerPointAgent: React.FC = () => {
       {history.length > 0 && activeTab === "agent" && (
         <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0 z-20 relative">
           <div className="max-w-6xl mx-auto px-6 py-3 space-y-2">
+            <BrandAssetsPreview
+              logoUrl={useBrand ? selectedBrand?.logo_url : null}
+              brandName={useBrand ? selectedBrand?.name : null}
+              coverImageUrl={coverImageUrl}
+              onCoverImageChange={setCoverImageFile}
+              logoCorner={logoCorner}
+              setLogoCorner={setLogoCorner}
+              disabled={isGenerating}
+            />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
