@@ -57,13 +57,17 @@ interface BrowseRequest {
   parentBrandId?: string;
   // Only return entities flagged is_public=true (default true).
   publicOnly?: boolean;
+  hubSource?: HubSourceId;
 }
 
-async function brandHubFetch(path: string): Promise<unknown[]> {
-  const res = await fetch(`${BRANDHUB_REST_URL}/${path}`, {
+async function brandHubFetch(
+  path: string,
+  hub: { restUrl: string; anonKey: string },
+): Promise<unknown[]> {
+  const res = await fetch(`${hub.restUrl}/${path}`, {
     headers: {
-      apikey: BRANDHUB_ANON_KEY,
-      Authorization: `Bearer ${BRANDHUB_ANON_KEY}`,
+      apikey: hub.anonKey,
+      Authorization: `Bearer ${hub.anonKey}`,
       "Content-Type": "application/json",
     },
   });
@@ -76,12 +80,16 @@ async function brandHubFetch(path: string): Promise<unknown[]> {
   return Array.isArray(rows) ? rows : [];
 }
 
-async function resolveParentBrandId(req: BrowseRequest): Promise<string | null> {
+async function resolveParentBrandId(
+  req: BrowseRequest,
+  hub: { restUrl: string; anonKey: string },
+): Promise<string | null> {
   if (req.parentBrandId) return req.parentBrandId;
 
   if (req.parentBrandShareToken) {
     const rows = await brandHubFetch(
       `brands?share_token=eq.${encodeURIComponent(req.parentBrandShareToken)}&select=id&limit=1`,
+      hub,
     );
     if (rows.length && (rows[0] as Record<string, unknown>).id) {
       return String((rows[0] as Record<string, unknown>).id);
@@ -90,6 +98,7 @@ async function resolveParentBrandId(req: BrowseRequest): Promise<string | null> 
   if (req.parentBrandSlug) {
     const rows = await brandHubFetch(
       `brands?slug=eq.${encodeURIComponent(req.parentBrandSlug)}&select=id&limit=1`,
+      hub,
     );
     if (rows.length && (rows[0] as Record<string, unknown>).id) {
       return String((rows[0] as Record<string, unknown>).id);
