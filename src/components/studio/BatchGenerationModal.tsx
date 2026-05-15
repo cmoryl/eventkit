@@ -329,7 +329,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-        onClick={(e) => e.target === e.currentTarget && !isRunning && handleClose()}
+        onClick={(e) => e.target === e.currentTarget && handleClose()}
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
@@ -349,7 +349,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
                 {effectiveLogoUrl && ' · Logo applied'}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClose} disabled={isRunning}>
+            <Button variant="ghost" size="icon" onClick={handleClose} title={isRunning ? 'Cancel and close' : 'Close'}>
               <X className="h-4 w-4" />
             </Button>
           </div>
