@@ -387,67 +387,103 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
             </Button>
           </div>
 
-          {/* Progress */}
-          {isRunning && (
+          {/* Progress — visible whenever there's any activity or completion */}
+          {(isRunning || settledCount > 0) && (
             <div className="px-5 pt-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {completedCount}/{totalCount} complete
-                  {errorCount > 0 && <span className="text-destructive ml-2">({errorCount} failed)</span>}
+                  <span className="font-medium text-foreground">{completedCount}</span>
+                  /{totalCount} complete
+                  {generatingCount > 0 && (
+                    <span className="ml-2 text-primary">· {generatingCount} generating</span>
+                  )}
+                  {errorCount > 0 && (
+                    <span className="ml-2 text-destructive">· {errorCount} failed</span>
+                  )}
                 </span>
-                <span className="font-medium">{Math.round(progressPct)}%</span>
+                <span className="font-medium tabular-nums">{Math.round(progressPct)}%</span>
               </div>
               <Progress value={progressPct} className="h-2" />
+              {isRunning && etaSeconds > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  ~{formatDuration(etaSeconds * 1000)} remaining
+                  {avgDurationMs > 0 && ` · avg ${formatDuration(avgDurationMs)}/asset`}
+                </p>
+              )}
             </div>
           )}
 
           {/* Asset list */}
           <div className="flex-1 overflow-y-auto p-5 space-y-2">
-            {results.map((result) => (
-              <div 
-                key={result.assetType}
-                className={cn(
-                  "flex items-center gap-3 p-3 rounded-xl border transition-all",
-                  result.status === 'complete' && "border-primary/30 bg-primary/5",
-                  result.status === 'generating' && "border-primary/50 bg-primary/10 animate-pulse",
-                  result.status === 'error' && "border-destructive/30 bg-destructive/5",
-                  result.status === 'pending' && "border-border bg-muted/30"
-                )}
-              >
-                {/* Thumbnail */}
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                  {result.imageUrl ? (
-                    <img src={result.imageUrl} alt={result.assetName} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      {result.status === 'generating' ? (
-                        <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                      ) : (
-                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+            {results.map((result) => {
+              const elapsedMs = result.status === 'generating' && result.startedAt
+                ? Date.now() - result.startedAt
+                : result.durationMs || 0;
+              return (
+                <div 
+                  key={result.assetType}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border transition-all",
+                    result.status === 'complete' && "border-primary/30 bg-primary/5",
+                    result.status === 'generating' && "border-primary/50 bg-primary/10",
+                    result.status === 'error' && "border-destructive/30 bg-destructive/5",
+                    result.status === 'pending' && "border-border bg-muted/30"
+                  )}
+                >
+                  {/* Thumbnail */}
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0 relative">
+                    {result.imageUrl ? (
+                      <img src={result.imageUrl} alt={result.assetName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        {result.status === 'generating' ? (
+                          <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                        ) : (
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-sm truncate">{result.assetName}</p>
+                      {elapsedMs > 0 && (
+                        <span className={cn(
+                          "text-[11px] tabular-nums flex-shrink-0",
+                          result.status === 'generating' ? "text-primary" : "text-muted-foreground"
+                        )}>
+                          {formatDuration(elapsedMs)}
+                        </span>
                       )}
                     </div>
-                  )}
-                </div>
+                    <p className={cn(
+                      "text-xs truncate",
+                      result.status === 'error' ? "text-destructive" : "text-muted-foreground"
+                    )}>
+                      {result.status === 'generating' && 'Rendering design…'}
+                      {result.status === 'pending' && 'Queued'}
+                      {result.status === 'complete' && 'Ready'}
+                      {result.status === 'error' && (result.error || 'Failed')}
+                    </p>
+                    {/* Indeterminate per-asset bar while generating */}
+                    {result.status === 'generating' && (
+                      <div className="mt-1.5 h-1 w-full bg-primary/10 rounded-full overflow-hidden">
+                        <div className="h-full w-1/3 bg-gradient-to-r from-transparent via-primary to-transparent animate-[shimmer_1.4s_ease-in-out_infinite]" />
+                      </div>
+                    )}
+                  </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm truncate">{result.assetName}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {result.status === 'generating' && 'Generating...'}
-                    {result.status === 'pending' && 'Waiting...'}
-                    {result.status === 'complete' && 'Done'}
-                    {result.status === 'error' && (result.error || 'Failed')}
-                  </p>
+                  {/* Status icon */}
+                  <div className="flex-shrink-0">
+                    {result.status === 'complete' && <Check className="h-5 w-5 text-primary" />}
+                    {result.status === 'error' && <AlertCircle className="h-5 w-5 text-destructive" />}
+                    {result.status === 'generating' && <Loader2 className="h-5 w-5 text-primary animate-spin" />}
+                  </div>
                 </div>
-
-                {/* Status icon */}
-                <div className="flex-shrink-0">
-                  {result.status === 'complete' && <Check className="h-5 w-5 text-primary" />}
-                  {result.status === 'error' && <AlertCircle className="h-5 w-5 text-destructive" />}
-                  {result.status === 'generating' && <Loader2 className="h-5 w-5 text-primary animate-spin" />}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Footer */}
