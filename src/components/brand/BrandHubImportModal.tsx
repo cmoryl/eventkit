@@ -738,11 +738,11 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                   <Input
                     value={shareUrl}
                     onChange={(e) => setShareUrl(e.target.value)}
-                    placeholder="https://gasalleystudios.dev/brand/your-brand or /product/your-product"
+                    placeholder={`https://${activeHub.host}/brand/your-brand or /product/your-product`}
                     disabled={isImporting}
                   />
                   <p className="text-xs text-muted-foreground mt-1.5">
-                    Paste a Gas Alley Studios or BrandHub brand, event, or product URL — or a share token
+                    Paste a {activeHub.name} brand, event, or product URL — or a share token
                   </p>
 
                   {linkPreview.kind !== 'empty' && (
