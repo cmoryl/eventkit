@@ -316,6 +316,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       // Update results
       const finishedAt = Date.now();
       const newImages: Record<string, string> = {};
+      const batchFailures: { name: string; kind: ErrorKind; error: string }[] = [];
       setResults(prev => prev.map(r => {
         const result = batchResults.find(br => {
           if (br.status === 'fulfilled') return br.value.assetType === r.assetType;
@@ -328,10 +329,19 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
             newImages[val.assetType] = val.imageUrl;
             return { ...r, status: 'complete' as const, imageUrl: val.imageUrl, finishedAt, durationMs };
           }
-          return { ...r, status: 'error' as const, error: val.error, finishedAt, durationMs };
+          const errorKind = classifyError(val.error);
+          batchFailures.push({ name: r.assetName, kind: errorKind, error: val.error || 'Unknown error' });
+          return { ...r, status: 'error' as const, error: val.error, errorKind, finishedAt, durationMs };
         }
         return r;
       }));
+
+      // Per-asset failure toasts so the user immediately sees which one + why
+      batchFailures.forEach(({ name, kind, error }) => {
+        toast.error(`${name}: ${ERROR_KIND_LABEL[kind]}`, {
+          description: error.length > 160 ? error.slice(0, 160) + '…' : error,
+        });
+      });
 
       // Push partial results immediately
       if (Object.keys(newImages).length > 0) {
@@ -355,7 +365,19 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
     setIsRunning(false);
     if (!abortRef.current) {
-      toast.success('Batch generation complete!');
+      // Read latest results from state at completion via a setter callback
+      setResults(prev => {
+        const ok = prev.filter(r => r.status === 'complete').length;
+        const failed = prev.filter(r => r.status === 'error').length;
+        if (failed === 0) {
+          toast.success(`Batch generation complete — ${ok} asset${ok === 1 ? '' : 's'} ready`);
+        } else if (ok === 0) {
+          toast.error(`Batch failed — all ${failed} asset${failed === 1 ? '' : 's'} errored. Use Retry failed to try again.`);
+        } else {
+          toast.warning(`Batch finished — ${ok} succeeded, ${failed} failed. Use Retry failed to retry.`);
+        }
+        return prev;
+      });
     }
   }, [results, effectiveBrand, generateOne, onImagesGenerated]);
 
