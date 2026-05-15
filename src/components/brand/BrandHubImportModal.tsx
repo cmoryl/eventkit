@@ -550,7 +550,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       // Re-use existing import logic by calling handleImport indirectly
       // Set URL and trigger normal flow
       if (parsed.shareToken) setShareUrl(parsed.shareToken);
-      else if (parsed.slug) setShareUrl(`https://brandhubcreator.lovable.app/event/${parsed.slug}`);
+      else if (parsed.slug) setShareUrl(activeHub.entityPath('event', parsed.slug));
 
       // Process the data same as handleImport
       await processImportedBrand(data);
