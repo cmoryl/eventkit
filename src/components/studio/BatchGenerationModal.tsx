@@ -248,7 +248,11 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
       const batchResults = await Promise.allSettled(
         batch.map(async (assetType) => {
-          const res = await generateOne(assetType, batchAnchorUrl || undefined, batchMasterDirectionBlock || undefined);
+          const res = await withTimeout(
+            generateOne(assetType, batchAnchorUrl || undefined, batchMasterDirectionBlock || undefined),
+            120_000,
+            `Generation for ${assetType}`
+          ).catch((err: any) => ({ error: err?.message || 'Generation timed out' }));
           return { assetType, ...res };
         })
       );
