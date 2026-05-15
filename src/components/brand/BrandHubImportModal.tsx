@@ -464,6 +464,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       setImportedHubBrand(hubBrand as Record<string, unknown>);
       setImportedEventData(data.hasEventData ? data.event : null);
       toast.success(`"${brandName}" imported from BrandHub`);
+      pushRecent(shareUrl, brandName);
       onBrandImported();
     } catch (error) {
       console.error('BrandHub import error:', error);
