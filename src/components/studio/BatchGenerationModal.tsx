@@ -548,11 +548,29 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
               <>
                 <p className="text-xs text-muted-foreground">
                   {completedCount > 0 
-                    ? `${completedCount} generated · ${totalCount - completedCount - errorCount} remaining`
+                    ? `${completedCount} generated · ${totalCount - completedCount - errorCount} remaining${errorCount > 0 ? ` · ${errorCount} failed` : ''}`
                     : `Ready to generate ${totalCount} assets`}
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleClose}>Cancel</Button>
+                  {errorCount > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Reset failed rows to pending so startBatch picks them up
+                        setResults(prev => prev.map(r =>
+                          r.status === 'error'
+                            ? { ...r, status: 'pending' as const, error: undefined, errorKind: undefined, durationMs: undefined, startedAt: undefined, finishedAt: undefined }
+                            : r
+                        ));
+                        // Defer startBatch to next tick so state is applied
+                        setTimeout(() => startBatch(), 0);
+                      }}
+                    >
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Retry {errorCount} failed
+                    </Button>
+                  )}
                   <Button 
                     onClick={startBatch} 
                     className={`bg-gradient-to-r ${studioGradient}`}
