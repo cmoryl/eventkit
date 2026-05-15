@@ -154,6 +154,26 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     }
   }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo]);
 
+  // Wrap a promise so it never hangs the UI longer than `ms`.
+  const withTimeout = <T,>(p: Promise<T>, ms: number, label: string): Promise<T> =>
+    Promise.race([
+      p,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
+      ),
+    ]);
+
+  // Safety net: if results all settled but isRunning never flipped (e.g. an
+  // unhandled hang inside the loop), release the UI so the user can close.
+  useEffect(() => {
+    if (!isRunning) return;
+    if (results.length === 0) return;
+    const stillWorking = results.some(r => r.status === 'pending' || r.status === 'generating');
+    if (!stillWorking) {
+      setIsRunning(false);
+    }
+  }, [results, isRunning]);
+
   const startBatch = useCallback(async () => {
     if (!effectiveBrand) {
       toast.error('Please select a brand first');
@@ -227,8 +247,12 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       ));
 
       const batchResults = await Promise.allSettled(
-        batch.map(async (assetType) => {
-          const res = await generateOne(assetType, batchAnchorUrl || undefined, batchMasterDirectionBlock || undefined);
+        batch.map(async (assetType): Promise<{ assetType: string; imageUrl?: string; error?: string }> => {
+          const res = await withTimeout(
+            generateOne(assetType, batchAnchorUrl || undefined, batchMasterDirectionBlock || undefined),
+            120_000,
+            `Generation for ${assetType}`
+          ).catch((err: any) => ({ error: err?.message || 'Generation timed out' } as { imageUrl?: string; error?: string }));
           return { assetType, ...res };
         })
       );
@@ -305,7 +329,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-        onClick={(e) => e.target === e.currentTarget && !isRunning && handleClose()}
+        onClick={(e) => e.target === e.currentTarget && handleClose()}
       >
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
@@ -325,7 +349,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
                 {effectiveLogoUrl && ' · Logo applied'}
               </p>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClose} disabled={isRunning}>
+            <Button variant="ghost" size="icon" onClick={handleClose} title={isRunning ? 'Cancel and close' : 'Close'}>
               <X className="h-4 w-4" />
             </Button>
           </div>
