@@ -77,8 +77,6 @@ export function useRealtimeProgress({ sessionId, enabled = true }: UseRealtimePr
           filter: `session_id=eq.${sessionId}`,
         },
         (payload) => {
-          console.log('Realtime progress update:', payload);
-          
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             setProgress(payload.new as RealtimeProgressData);
           } else if (payload.eventType === 'DELETE') {
@@ -87,17 +85,14 @@ export function useRealtimeProgress({ sessionId, enabled = true }: UseRealtimePr
         }
       )
       .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
         setIsSubscribed(status === 'SUBSCRIBED');
-        
         if (status === 'CHANNEL_ERROR') {
           setError('Failed to subscribe to realtime updates');
         }
       });
 
     return () => {
-      console.log('Unsubscribing from progress channel');
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channel).catch(() => {});
       setIsSubscribed(false);
     };
   }, [sessionId, enabled, fetchProgress]);
