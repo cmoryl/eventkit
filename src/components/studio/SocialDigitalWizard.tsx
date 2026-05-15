@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
@@ -18,6 +18,11 @@ import {
   Image as ImageIcon,
   Target,
   ListChecks,
+  Eye,
+  Download,
+  Copy,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +32,9 @@ import { cn } from '@/lib/utils';
 import { Brand } from '@/types/studio.types';
 import { BatchGenerationModal } from './BatchGenerationModal';
 import { assetDisplayInfo } from './StudioAssetGrid';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import JSZip from 'jszip';
 
 interface SocialDigitalWizardProps {
   brand: Brand | null;
@@ -41,7 +49,6 @@ interface NetworkOption {
   name: string;
   icon: React.ElementType;
   color: string;
-  /** Asset types to produce when this network is selected */
   assetTypes: string[];
 }
 
@@ -62,8 +69,30 @@ const STEPS = [
   { id: 1, label: 'Brief', icon: Target },
   { id: 2, label: 'Networks', icon: Globe },
   { id: 3, label: 'Review', icon: ListChecks },
-  { id: 4, label: 'Generate & Export', icon: Sparkles },
+  { id: 4, label: 'Generate', icon: Sparkles },
+  { id: 5, label: 'Preview & Export', icon: Eye },
 ];
+
+interface CaptionData {
+  headline: string;
+  caption: string;
+  hashtags: string[];
+  cta: string;
+}
+
+// Networks selected -> ordered asset items keyed per (network, assetType).
+// We deliberately key per-network so the same assetType can appear under
+// multiple networks with their own copy.
+interface AssetItem {
+  key: string;          // `${networkId}::${assetType}`
+  networkId: string;
+  networkName: string;
+  assetType: string;
+  assetName: string;
+  dimensions?: string;
+  /** Asset types share generated images (sized identically) */
+  imageKey: string;
+}
 
 export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
   brand,
@@ -80,13 +109,41 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
   const [selectedNetworks, setSelectedNetworks] = useState<string[]>([]);
   const [showBatch, setShowBatch] = useState(false);
 
-  const selectedAssetTypes = useMemo(() => {
-    const set = new Set<string>();
+  // Preview / export state
+  const [captions, setCaptions] = useState<Record<string, CaptionData>>({});
+  const [loadingCaptions, setLoadingCaptions] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const assetItems: AssetItem[] = useMemo(() => {
+    const items: AssetItem[] = [];
     NETWORKS.filter(n => selectedNetworks.includes(n.id)).forEach(n => {
-      n.assetTypes.forEach(t => set.add(t));
+      n.assetTypes.forEach(t => {
+        const info = assetDisplayInfo[t];
+        items.push({
+          key: `${n.id}::${t}`,
+          networkId: n.id,
+          networkName: n.name,
+          assetType: t,
+          assetName: info?.name || t,
+          dimensions: info?.dimensions,
+          imageKey: t,
+        });
+      });
     });
-    return Array.from(set);
+    return items;
   }, [selectedNetworks]);
+
+  const uniqueAssetTypes = useMemo(
+    () => Array.from(new Set(assetItems.map(i => i.assetType))),
+    [assetItems]
+  );
+
+  const generatedCount = useMemo(
+    () => uniqueAssetTypes.filter(t => batchGeneratedImages[t]).length,
+    [uniqueAssetTypes, batchGeneratedImages]
+  );
+
+  const allGenerated = uniqueAssetTypes.length > 0 && generatedCount === uniqueAssetTypes.length;
 
   const toggleNetwork = (id: string) => {
     setSelectedNetworks(prev =>
@@ -97,12 +154,140 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
   const canAdvance = () => {
     if (step === 1) return campaignName.trim().length > 0 && keyMessage.trim().length > 0;
     if (step === 2) return selectedNetworks.length > 0;
-    if (step === 3) return selectedAssetTypes.length > 0;
+    if (step === 3) return uniqueAssetTypes.length > 0;
+    if (step === 4) return allGenerated;
     return true;
   };
 
-  const next = () => setStep(s => Math.min(4, s + 1));
+  const fetchCaptions = useCallback(async () => {
+    if (!assetItems.length) return;
+    setLoadingCaptions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-social-captions', {
+        body: {
+          campaignName,
+          keyMessage,
+          audience,
+          vibe,
+          brandName: brand?.name,
+          assets: assetItems.map(i => ({
+            key: i.key,
+            network: i.networkName,
+            assetType: i.assetType,
+            assetName: i.assetName,
+          })),
+        },
+      });
+      if (error) throw error;
+      const next: Record<string, CaptionData> = {};
+      const incoming = (data?.captions || {}) as Record<string, CaptionData>;
+      for (const item of assetItems) {
+        next[item.key] = incoming[item.key] || {
+          headline: campaignName,
+          caption: keyMessage,
+          hashtags: [],
+          cta: '',
+        };
+      }
+      setCaptions(next);
+    } catch (e) {
+      console.error('Caption generation failed:', e);
+      toast.error('Could not generate captions. Showing fallbacks.');
+      const fallback: Record<string, CaptionData> = {};
+      for (const item of assetItems) {
+        fallback[item.key] = {
+          headline: campaignName,
+          caption: keyMessage,
+          hashtags: [],
+          cta: '',
+        };
+      }
+      setCaptions(fallback);
+    } finally {
+      setLoadingCaptions(false);
+    }
+  }, [assetItems, campaignName, keyMessage, audience, vibe, brand?.name]);
+
+  const next = async () => {
+    // Entering preview step → fetch captions if missing
+    if (step === 4) {
+      if (!Object.keys(captions).length) {
+        await fetchCaptions();
+      }
+    }
+    setStep(s => Math.min(5, s + 1));
+  };
   const back = () => setStep(s => Math.max(1, s - 1));
+
+  const updateCaption = (key: string, patch: Partial<CaptionData>) => {
+    setCaptions(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+  };
+
+  const copyCaption = async (key: string) => {
+    const c = captions[key];
+    if (!c) return;
+    const text = [c.headline, '', c.caption, '', c.hashtags.join(' '), c.cta].filter(Boolean).join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard');
+    } catch {
+      toast.error('Copy failed');
+    }
+  };
+
+  const exportZip = async () => {
+    setExporting(true);
+    try {
+      const zip = new JSZip();
+      const grouped: Record<string, AssetItem[]> = {};
+      assetItems.forEach(i => {
+        (grouped[i.networkName] ||= []).push(i);
+      });
+
+      for (const [networkName, items] of Object.entries(grouped)) {
+        const folder = zip.folder(networkName) || zip;
+        for (const item of items) {
+          const url = batchGeneratedImages[item.imageKey];
+          if (url) {
+            try {
+              const blob = await fetch(url).then(r => r.blob());
+              const ext = blob.type.includes('png') ? 'png' : 'jpg';
+              folder.file(`${item.assetType}.${ext}`, blob);
+            } catch (e) {
+              console.error('Failed to fetch image for', item.key, e);
+            }
+          }
+          const c = captions[item.key];
+          if (c) {
+            const text = `${item.assetName}\n${'='.repeat(item.assetName.length)}\n\n${c.headline}\n\n${c.caption}\n\n${c.hashtags.join(' ')}\n\n${c.cta}`.trim();
+            folder.file(`${item.assetType}.txt`, text);
+          }
+        }
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(campaignName || 'social-campaign').replace(/\s+/g, '-').toLowerCase()}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Exported ZIP with images and captions');
+    } catch (e) {
+      console.error('Export failed:', e);
+      toast.error('Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const itemsByNetwork = useMemo(() => {
+    const map: Record<string, AssetItem[]> = {};
+    assetItems.forEach(i => {
+      (map[i.networkName] ||= []).push(i);
+    });
+    return map;
+  }, [assetItems]);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -257,7 +442,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
               </div>
               <div className="flex items-center justify-between pt-2">
                 <span className="text-sm text-muted-foreground">
-                  {selectedNetworks.length} selected · {selectedAssetTypes.length} unique asset{selectedAssetTypes.length === 1 ? '' : 's'}
+                  {selectedNetworks.length} selected · {assetItems.length} post{assetItems.length === 1 ? '' : 's'}
                 </span>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="sm" onClick={() => setSelectedNetworks([])}>
@@ -276,26 +461,30 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
               <div>
                 <h2 className="text-2xl font-bold">Review your queue</h2>
                 <p className="text-muted-foreground text-sm mt-1">
-                  We'll bulk generate {selectedAssetTypes.length} on-brand asset{selectedAssetTypes.length === 1 ? '' : 's'}.
+                  We'll bulk generate {uniqueAssetTypes.length} unique asset size{uniqueAssetTypes.length === 1 ? '' : 's'} ({assetItems.length} total post{assetItems.length === 1 ? '' : 's'}).
                 </p>
               </div>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {selectedAssetTypes.map(t => {
-                  const info = assetDisplayInfo[t];
-                  return (
-                    <div key={t} className="p-3 rounded-lg border border-border bg-background flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                        <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{info?.name || t}</div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {info?.dimensions || 'Auto size'}
+              <div className="space-y-4">
+                {Object.entries(itemsByNetwork).map(([networkName, items]) => (
+                  <div key={networkName}>
+                    <h3 className="text-sm font-semibold text-muted-foreground mb-2">{networkName}</h3>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                      {items.map(item => (
+                        <div key={item.key} className="p-3 rounded-lg border border-border bg-background flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate">{item.assetName}</div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              {item.dimensions || 'Auto size'}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
               <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm space-y-1">
                 <div><span className="text-muted-foreground">Campaign:</span> <span className="font-medium">{campaignName || '—'}</span></div>
@@ -316,10 +505,9 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
                 <Sparkles className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">Ready to generate</h2>
+                <h2 className="text-2xl font-bold">Generate your assets</h2>
                 <p className="text-muted-foreground text-sm mt-2 max-w-md mx-auto">
-                  We'll create {selectedAssetTypes.length} asset{selectedAssetTypes.length === 1 ? '' : 's'} across {selectedNetworks.length} network{selectedNetworks.length === 1 ? '' : 's'}.
-                  When done, download them all as a ZIP.
+                  We'll create {uniqueAssetTypes.length} unique asset size{uniqueAssetTypes.length === 1 ? '' : 's'} for {selectedNetworks.length} network{selectedNetworks.length === 1 ? '' : 's'}.
                 </p>
               </div>
               <Button
@@ -328,12 +516,163 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
                 onClick={() => setShowBatch(true)}
               >
                 <Sparkles className="h-4 w-4 mr-2" />
-                Bulk Generate & Export
+                {generatedCount > 0 ? 'Continue Generating' : 'Bulk Generate'}
               </Button>
-              {Object.keys(batchGeneratedImages).length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {Object.keys(batchGeneratedImages).length} asset{Object.keys(batchGeneratedImages).length === 1 ? '' : 's'} already generated.
-                </p>
+              <div className="text-xs text-muted-foreground">
+                {generatedCount} of {uniqueAssetTypes.length} generated
+              </div>
+              {allGenerated && (
+                <div className="mx-auto max-w-sm p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-sm text-emerald-600 dark:text-emerald-400">
+                  All assets ready — click Next to preview each post with copy.
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <h2 className="text-2xl font-bold">Preview every post</h2>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Final visual + platform-tailored copy for each network. Edit any field before exporting.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={fetchCaptions}
+                    disabled={loadingCaptions}
+                  >
+                    {loadingCaptions ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                    )}
+                    Regenerate copy
+                  </Button>
+                  <Button
+                    size="sm"
+                    className={cn('bg-gradient-to-r', studioGradient)}
+                    onClick={exportZip}
+                    disabled={exporting}
+                  >
+                    {exporting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    Export ZIP
+                  </Button>
+                </div>
+              </div>
+
+              {loadingCaptions && !Object.keys(captions).length ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">
+                  <Loader2 className="h-6 w-6 mx-auto mb-3 animate-spin" />
+                  Writing platform-native copy…
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {Object.entries(itemsByNetwork).map(([networkName, items]) => {
+                    const network = NETWORKS.find(n => n.name === networkName);
+                    const NetIcon = network?.icon || Globe;
+                    return (
+                      <section key={networkName}>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={cn(
+                            'w-8 h-8 rounded-lg bg-gradient-to-br flex items-center justify-center',
+                            network?.color
+                          )}>
+                            <NetIcon className="h-4 w-4 text-white" />
+                          </div>
+                          <h3 className="text-lg font-semibold">{networkName}</h3>
+                          <span className="text-xs text-muted-foreground">
+                            {items.length} post{items.length === 1 ? '' : 's'}
+                          </span>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          {items.map(item => {
+                            const imgUrl = batchGeneratedImages[item.imageKey];
+                            const c = captions[item.key];
+                            return (
+                              <div key={item.key} className="rounded-xl border border-border bg-background overflow-hidden">
+                                <div className="aspect-video bg-muted flex items-center justify-center relative">
+                                  {imgUrl ? (
+                                    <img
+                                      src={imgUrl}
+                                      alt={item.assetName}
+                                      className="w-full h-full object-contain"
+                                    />
+                                  ) : (
+                                    <div className="text-xs text-muted-foreground flex flex-col items-center gap-1">
+                                      <ImageIcon className="h-6 w-6" />
+                                      Not generated yet
+                                    </div>
+                                  )}
+                                  <div className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-medium rounded bg-background/80 backdrop-blur border border-border">
+                                    {item.assetName} · {item.dimensions || 'auto'}
+                                  </div>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Headline</Label>
+                                    <Input
+                                      value={c?.headline || ''}
+                                      onChange={e => updateCaption(item.key, { headline: e.target.value })}
+                                      className="h-8 text-sm"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs text-muted-foreground">Caption</Label>
+                                    <Textarea
+                                      rows={3}
+                                      value={c?.caption || ''}
+                                      onChange={e => updateCaption(item.key, { caption: e.target.value })}
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="space-y-1">
+                                      <Label className="text-xs text-muted-foreground">Hashtags</Label>
+                                      <Input
+                                        value={c?.hashtags?.join(' ') || ''}
+                                        onChange={e => updateCaption(item.key, {
+                                          hashtags: e.target.value.split(/\s+/).filter(Boolean),
+                                        })}
+                                        className="h-8 text-sm"
+                                        placeholder="#brand #event"
+                                      />
+                                    </div>
+                                    <div className="space-y-1">
+                                      <Label className="text-xs text-muted-foreground">CTA</Label>
+                                      <Input
+                                        value={c?.cta || ''}
+                                        onChange={e => updateCaption(item.key, { cta: e.target.value })}
+                                        className="h-8 text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex justify-end">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => copyCaption(item.key)}
+                                    >
+                                      <Copy className="h-3.5 w-3.5 mr-1.5" />
+                                      Copy text
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    );
+                  })}
+                </div>
               )}
             </div>
           )}
@@ -350,14 +689,23 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        {step < 4 && (
+        {step < 5 && (
           <Button
             onClick={next}
-            disabled={!canAdvance()}
+            disabled={!canAdvance() || loadingCaptions}
             className={cn('bg-gradient-to-r', studioGradient)}
           >
-            Next
-            <ChevronRight className="h-4 w-4 ml-2" />
+            {step === 4 && loadingCaptions ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Preparing preview…
+              </>
+            ) : (
+              <>
+                {step === 4 ? 'Preview Posts' : 'Next'}
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -366,7 +714,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
       <BatchGenerationModal
         isOpen={showBatch}
         onClose={() => setShowBatch(false)}
-        assetTypes={selectedAssetTypes}
+        assetTypes={uniqueAssetTypes}
         brand={brand}
         eventName={campaignName || brand?.name || 'Your Campaign'}
         studioGradient={studioGradient}
