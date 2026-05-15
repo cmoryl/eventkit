@@ -816,21 +816,25 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
       return;
     }
 
-    const urlPattern = /brandhubcreator\.lovable\.app\/share\/([a-zA-Z0-9-]+)/;
-    const match = brandHubUrl.match(urlPattern);
-    
-    if (!match) {
-      toast.error('Invalid BrandHub share URL');
+    const HOST_PATTERN = /(?:brandhubcreator\.lovable\.app|gasalleystudios\.dev|gasalleystudios\.com|lovableproject\.com|lovable\.app)/;
+    const trimmed = brandHubUrl.trim();
+    const shareMatch = trimmed.match(new RegExp(`${HOST_PATTERN.source}\\/share\\/([a-zA-Z0-9-]+)`));
+    const slugMatch = trimmed.match(new RegExp(`${HOST_PATTERN.source}\\/(?:brand|event|product)\\/([a-zA-Z0-9-]+)`));
+
+    const shareToken = shareMatch?.[1];
+    const slug = !shareMatch ? slugMatch?.[1] : undefined;
+
+    if (!shareToken && !slug) {
+      toast.error('Paste a Gas Alley Studios or BrandHub brand, event, product, or share URL');
       return;
     }
 
-    const shareToken = match[1];
     setIsImportingFromHub(true);
-    toast.info('Fetching brand from BrandHub Creator...', { duration: 3000 });
+    toast.info('Fetching brand from BrandHub...', { duration: 3000 });
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
-        body: { shareToken }
+        body: { shareToken, slug }
       });
 
       if (data?.success === false) {
