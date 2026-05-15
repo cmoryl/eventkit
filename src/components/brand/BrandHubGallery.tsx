@@ -31,6 +31,8 @@ interface BrandHubGalleryProps {
   /** Optional scoping to a parent brand's universe (for events/products). */
   parentBrandShareToken?: string;
   parentBrandSlug?: string;
+  /** Which BrandHub backend to query. Defaults to 'brandhub'. */
+  hubSource?: 'brandhub' | 'gasalley';
 }
 
 const TAB_META: Record<
