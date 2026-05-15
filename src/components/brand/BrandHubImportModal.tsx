@@ -830,6 +830,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                 </div>
               </TabsContent>
             </Tabs>
+            </>
           )}
         </div>
       </DialogContent>
