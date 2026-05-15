@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, Loader2, Grid3X3, Link } from 'lucide-react';
+import { Link2, Loader2, Grid3X3, Link, Palette, Calendar, Package, HelpCircle, AlertCircle } from 'lucide-react';
 import { BrandImportSummary } from './BrandImportSummary';
 import { BrandHubGallery } from './BrandHubGallery';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -54,6 +54,23 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
     }
     return null;
   };
+
+  type LinkKind = 'brand' | 'event' | 'product' | 'share' | 'token' | 'slug' | 'invalid' | 'empty';
+  const detectLinkKind = (url: string): { kind: LinkKind; slug?: string; host?: string } => {
+    const trimmed = url.trim();
+    if (!trimmed) return { kind: 'empty' };
+    const HOST_PATTERN = /(?:brandhubcreator\.lovable\.app|gasalleystudios\.dev|gasalleystudios\.com|lovableproject\.com|lovable\.app)/;
+    const hostMatch = trimmed.match(HOST_PATTERN);
+    const host = hostMatch?.[0];
+    const entity = trimmed.match(new RegExp(`${HOST_PATTERN.source}\\/(brand|event|product)\\/([a-zA-Z0-9-]+)`));
+    if (entity) return { kind: entity[1] as 'brand' | 'event' | 'product', slug: entity[2], host };
+    if (new RegExp(`${HOST_PATTERN.source}\\/share\\/([a-zA-Z0-9-]+)`).test(trimmed)) return { kind: 'share', host };
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) return { kind: 'token' };
+    if (/^[a-zA-Z0-9-]{4,}$/.test(trimmed)) return { kind: 'slug', slug: trimmed };
+    return { kind: 'invalid' };
+  };
+
+  const linkPreview = React.useMemo(() => detectLinkKind(shareUrl), [shareUrl]);
 
   const handleImport = async () => {
     if (!user) {
@@ -640,6 +657,22 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                   <p className="text-xs text-muted-foreground mt-1.5">
                     Paste a Gas Alley Studios or BrandHub brand, event, or product URL — or a share token
                   </p>
+
+                  {linkPreview.kind !== 'empty' && (
+                    <div className={`mt-2 flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs ${
+                      linkPreview.kind === 'invalid'
+                        ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                        : 'border-border bg-muted/40 text-foreground'
+                    }`}>
+                      {linkPreview.kind === 'brand' && <><Palette className="h-3.5 w-3.5 text-violet-400" /><span><span className="font-medium">Brand</span> detected{linkPreview.slug && <> · <span className="text-muted-foreground">{linkPreview.slug}</span></>}</span></>}
+                      {linkPreview.kind === 'event' && <><Calendar className="h-3.5 w-3.5 text-blue-400" /><span><span className="font-medium">Event</span> detected{linkPreview.slug && <> · <span className="text-muted-foreground">{linkPreview.slug}</span></>}</span></>}
+                      {linkPreview.kind === 'product' && <><Package className="h-3.5 w-3.5 text-emerald-400" /><span><span className="font-medium">Product</span> detected{linkPreview.slug && <> · <span className="text-muted-foreground">{linkPreview.slug}</span></>}</span></>}
+                      {linkPreview.kind === 'share' && <><Link2 className="h-3.5 w-3.5 text-violet-400" /><span><span className="font-medium">Share link</span> — type resolved on import</span></>}
+                      {linkPreview.kind === 'token' && <><HelpCircle className="h-3.5 w-3.5 text-muted-foreground" /><span><span className="font-medium">Share token</span> — type resolved on import</span></>}
+                      {linkPreview.kind === 'slug' && <><HelpCircle className="h-3.5 w-3.5 text-muted-foreground" /><span><span className="font-medium">Slug</span> — type resolved on import</span></>}
+                      {linkPreview.kind === 'invalid' && <><AlertCircle className="h-3.5 w-3.5" /><span>Unrecognized URL — paste a brand, event, product, or share link</span></>}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
