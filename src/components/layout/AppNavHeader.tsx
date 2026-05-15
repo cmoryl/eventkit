@@ -208,10 +208,10 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                   ))}
 
                   <button
-                    onClick={() => navigate('/slides')}
+                    onClick={() => navigate('/agent/powerpoint?tab=editor')}
                     className={cn(
                       "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mt-2",
-                      isActivePath('/slides') ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                      isActivePath('/agent/powerpoint') ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
                     )}
                   >
                     <Presentation className="w-4 h-4" />
@@ -355,8 +355,8 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
               </div>
 
               <NavButton
-                onClick={() => navigate('/slides')}
-                isActive={isActivePath('/slides')}
+                onClick={() => navigate('/agent/powerpoint?tab=editor')}
+                isActive={isActivePath('/agent/powerpoint')}
               >
                 <Presentation className="w-4 h-4 mr-1.5" />
                 Slides

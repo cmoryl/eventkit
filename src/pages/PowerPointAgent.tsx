@@ -123,6 +123,16 @@ const PowerPointAgent: React.FC = () => {
   // When set, takes priority over the AI-derived editorInitialSlides.
   const [templateStarterSlides, setTemplateStarterSlides] = useState<SlideData[] | null>(null);
 
+  // Stable key for SlideEditor — changes when a new AI deck or template starter is loaded,
+  // forcing a remount so initialSlides are picked up rather than the stale state.
+  const editorKey = useMemo(() => {
+    if (templateStarterSlides && templateStarterSlides.length > 0) {
+      return `template-${templateStarterSlides[0]?.title ?? ''}-${templateStarterSlides.length}`;
+    }
+    const lastDeck = [...history].reverse().find((h) => h.deck?.outline)?.deck;
+    return lastDeck?.downloadUrl ?? 'blank';
+  }, [history, templateStarterSlides]);
+
   // Convert the most recent built deck's outline into SlideData[] for the inline SlideEditor.
   // Uses the shared outlineToThemedSlides converter so AI-generated decks inherit the same
   // demo theme look-and-feel (TransPerfect orbs, Modern Dark mesh, etc.) as the gallery templates,
@@ -1328,6 +1338,7 @@ const PowerPointAgent: React.FC = () => {
       {/* Editor tab — full-page (inline) Presentation Studio with the chat agent
            docked on the left as a sidebar so the user can keep refining the deck. */}
       <SlideEditor
+        key={editorKey}
         inline
         isOpen={activeTab === "editor"}
         onClose={() => setActiveTab("agent")}

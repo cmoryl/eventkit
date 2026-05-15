@@ -208,7 +208,7 @@ export const DeckPreview: React.FC<Props> = ({ outline: initial, downloadUrl: in
       if (error) {
         const status = (error as { context?: { status?: number } }).context?.status;
         toast({
-          title: status === 402 ? "AI credits exhausted" : status === 429 ? "Rate limited" : "AI edit failed",
+          title: status === 401 ? "Sign in required" : status === 402 ? "AI credits exhausted" : status === 429 ? "Rate limited" : "AI edit failed",
           description: error.message,
           variant: "destructive",
         });
