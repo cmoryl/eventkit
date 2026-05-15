@@ -172,6 +172,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           eventName,
           masterDirection: masterDirectionBlock || undefined,
           styleAnchorImage: anchorUrl || undefined,
+          referenceImages: referenceImages && referenceImages.length > 0 ? referenceImages : undefined,
+          referenceNotes: referenceNotes || undefined,
           brandContext: effectiveBrand ? {
             brandName: effectiveBrand.name,
             primaryColor: effectiveBrand.styles?.primary_color,
