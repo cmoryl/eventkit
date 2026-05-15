@@ -244,9 +244,10 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
       const batch = pending.slice(i, i + MAX_CONCURRENT);
 
-      // Mark generating
+      // Mark generating + stamp start time
+      const startedAt = Date.now();
       setResults(prev => prev.map(r => 
-        batch.includes(r.assetType) ? { ...r, status: 'generating' as const } : r
+        batch.includes(r.assetType) ? { ...r, status: 'generating' as const, startedAt, finishedAt: undefined, durationMs: undefined } : r
       ));
 
       const batchResults = await Promise.allSettled(
@@ -261,6 +262,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       );
 
       // Update results
+      const finishedAt = Date.now();
       const newImages: Record<string, string> = {};
       setResults(prev => prev.map(r => {
         const result = batchResults.find(br => {
@@ -269,11 +271,12 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
         });
         if (result && result.status === 'fulfilled') {
           const val = result.value;
+          const durationMs = r.startedAt ? finishedAt - r.startedAt : undefined;
           if (val.imageUrl) {
             newImages[val.assetType] = val.imageUrl;
-            return { ...r, status: 'complete' as const, imageUrl: val.imageUrl };
+            return { ...r, status: 'complete' as const, imageUrl: val.imageUrl, finishedAt, durationMs };
           }
-          return { ...r, status: 'error' as const, error: val.error };
+          return { ...r, status: 'error' as const, error: val.error, finishedAt, durationMs };
         }
         return r;
       }));
