@@ -301,7 +301,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
     } finally {
       setLoadingCaptions(false);
     }
-  }, [assetItems, campaignName, keyMessage, audience, vibe, brand?.name]);
+  }, [assetItems, campaignName, keyMessage, audience, vibe, brand?.name, referenceNotes]);
 
   const reset = () => {
     setStep(1);
