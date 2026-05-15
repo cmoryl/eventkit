@@ -111,6 +111,20 @@ const PowerPointAgent: React.FC = () => {
   const [pasteText, setPasteText] = useState("");
   const [parallaxMode, setParallaxMode] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  // Brand assets preview — local-only confirmation before generation.
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [logoCorner, setLogoCorner] = useState<import("@/components/powerpoint/composer/BrandAssetsPreview").LogoCorner>("top-right");
+  // Manage the object URL lifecycle so we don't leak blobs across uploads.
+  useEffect(() => {
+    if (!coverImageFile) {
+      setCoverImageUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverImageFile);
+    setCoverImageUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverImageFile]);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get("tab") === "editor" ? "editor" : "agent") as "agent" | "editor";
   const setActiveTab = useCallback((t: "agent" | "editor") => {
