@@ -23,6 +23,9 @@ interface BatchAssetResult {
   status: 'pending' | 'generating' | 'complete' | 'error';
   imageUrl?: string;
   error?: string;
+  startedAt?: number;
+  finishedAt?: number;
+  durationMs?: number;
 }
 
 interface BatchGenerationModalProps {
