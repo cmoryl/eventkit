@@ -30,6 +30,33 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
   const [importedHubBrand, setImportedHubBrand] = useState<Record<string, unknown> | null>(null);
   const [importedEventData, setImportedEventData] = useState<Record<string, unknown> | null>(null);
 
+  type HubSourceId = 'gasalley' | 'brandhub';
+  const HUB_SOURCES: Record<HubSourceId, { id: HubSourceId; name: string; host: string; entityPath: (kind: 'brand' | 'event' | 'product', slug: string) => string }> = {
+    gasalley: {
+      id: 'gasalley',
+      name: 'Gas Alley Studios',
+      host: 'gasalleystudios.dev',
+      entityPath: (kind, slug) => `https://gasalleystudios.dev/${kind}/${slug}`,
+    },
+    brandhub: {
+      id: 'brandhub',
+      name: 'BrandHub Creator',
+      host: 'brandhubcreator.lovable.app',
+      entityPath: (kind, slug) => `https://brandhubcreator.lovable.app/${kind}/${slug}`,
+    },
+  };
+  const HUB_SOURCE_KEY = 'brandhub-import-source';
+  const [hubSource, setHubSource] = useState<HubSourceId>(() => {
+    try {
+      const stored = localStorage.getItem(HUB_SOURCE_KEY) as HubSourceId | null;
+      return stored && HUB_SOURCES[stored] ? stored : 'gasalley';
+    } catch { return 'gasalley'; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(HUB_SOURCE_KEY, hubSource); } catch { /* ignore */ }
+  }, [hubSource]);
+  const activeHub = HUB_SOURCES[hubSource];
+
   type RecentImport = { url: string; name: string; kind: 'brand' | 'event' | 'product' | 'share' | 'token' | 'slug'; slug?: string; ts: number };
   const RECENTS_KEY = 'brandhub-recent-imports';
   const loadRecents = (): RecentImport[] => {
