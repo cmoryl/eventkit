@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Sparkles, Loader2, Check, AlertCircle, Pause, Play, 
-  Download, ChevronDown, ChevronUp, Image as ImageIcon
+  Download, ChevronDown, ChevronUp, Image as ImageIcon, RotateCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -381,6 +381,60 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     }
   }, [results, effectiveBrand, generateOne, onImagesGenerated]);
 
+  // Retry a single failed asset without rerunning the whole batch.
+  const retryOne = useCallback(async (assetType: string) => {
+    if (!effectiveBrand) {
+      toast.error('Please select a brand first');
+      return;
+    }
+    const target = results.find(r => r.assetType === assetType);
+    if (!target) return;
+
+    // Build master direction block (reuse anchor's if present)
+    let masterDirectionBlock = '';
+    if (styleAnchor.hasMasterDirection && styleAnchor.masterDirection) {
+      masterDirectionBlock = buildMasterDirectionPromptBlock(styleAnchor.masterDirection);
+    }
+    const anchorUrl = styleAnchor.anchorImageUrl || undefined;
+
+    const startedAt = Date.now();
+    setResults(prev => prev.map(r =>
+      r.assetType === assetType
+        ? { ...r, status: 'generating' as const, error: undefined, errorKind: undefined, startedAt, finishedAt: undefined, durationMs: undefined }
+        : r
+    ));
+
+    const res = await withTimeout(
+      generateOne(assetType, anchorUrl, masterDirectionBlock || undefined),
+      120_000,
+      `Generation for ${assetType}`
+    ).catch((err: any) => ({ error: err?.message || 'Generation timed out' } as { imageUrl?: string; error?: string }));
+
+    const finishedAt = Date.now();
+    const durationMs = finishedAt - startedAt;
+
+    if (res.imageUrl) {
+      const url = res.imageUrl;
+      setResults(prev => prev.map(r =>
+        r.assetType === assetType
+          ? { ...r, status: 'complete' as const, imageUrl: url, finishedAt, durationMs }
+          : r
+      ));
+      onImagesGenerated({ [assetType]: url });
+      toast.success(`${target.assetName} regenerated`);
+    } else {
+      const errorKind = classifyError(res.error);
+      setResults(prev => prev.map(r =>
+        r.assetType === assetType
+          ? { ...r, status: 'error' as const, error: res.error, errorKind, finishedAt, durationMs }
+          : r
+      ));
+      toast.error(`${target.assetName}: ${ERROR_KIND_LABEL[errorKind]}`, {
+        description: (res.error || '').slice(0, 160),
+      });
+    }
+  }, [effectiveBrand, results, styleAnchor, generateOne, onImagesGenerated]);
+
   const handlePauseResume = () => {
     isPausedRef.current = !isPausedRef.current;
     setIsPaused(p => !p);
@@ -531,11 +585,26 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
                     )}
                   </div>
 
-                  {/* Status icon */}
-                  <div className="flex-shrink-0">
+                  {/* Status icon / per-asset retry */}
+                  <div className="flex-shrink-0 flex items-center gap-1">
                     {result.status === 'complete' && <Check className="h-5 w-5 text-primary" />}
-                    {result.status === 'error' && <AlertCircle className="h-5 w-5 text-destructive" />}
                     {result.status === 'generating' && <Loader2 className="h-5 w-5 text-primary animate-spin" />}
+                    {result.status === 'error' && (
+                      <>
+                        <AlertCircle className="h-5 w-5 text-destructive" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-xs"
+                          disabled={isRunning}
+                          onClick={() => retryOne(result.assetType)}
+                          title="Retry this asset only"
+                        >
+                          <RotateCw className="h-3.5 w-3.5 mr-1" />
+                          Retry
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               );
