@@ -849,18 +849,19 @@ export const BrandStyleEditor: React.FC<BrandStyleEditorProps> = ({
       if (data?.brand) {
         const extractedColors = applyBrandHubData(data.brand);
         
-        // Save the link for future syncs
+        // Save the link for future syncs (prefer resolved token from edge function)
+        const resolvedToken = (data as { resolvedToken?: string })?.resolvedToken || shareToken || slug || '';
         const now = new Date().toISOString();
         await supabase
           .from('brands')
           .update({ 
-            brandhub_share_token: shareToken,
+            brandhub_share_token: resolvedToken,
             brandhub_last_synced: now,
             brandhub_auto_sync: false
           })
           .eq('id', brand.id);
         
-        setLinkedToken(shareToken);
+        setLinkedToken(resolvedToken);
         setLastSynced(now);
         
         // Record comprehensive brand + event data to AI knowledge
