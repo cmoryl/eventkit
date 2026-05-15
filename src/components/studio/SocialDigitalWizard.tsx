@@ -459,7 +459,73 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
             </button>
           </div>
         )}
-      </div>
+              </div>
+
+              {/* Reference uploads */}
+              <div className="space-y-2">
+                <Label>Reference images & documents (optional)</Label>
+                <p className="text-xs text-muted-foreground -mt-1">
+                  Upload moodboards, past creative, briefs, or product shots so generations match the right look and message.
+                </p>
+                <label
+                  htmlFor="ref-upload"
+                  className="flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 cursor-pointer transition-colors text-sm text-muted-foreground"
+                >
+                  <Upload className="h-4 w-4" />
+                  Click to upload images (PNG/JPG/WebP) or documents (PDF, DOCX, TXT, MD)
+                </label>
+                <input
+                  id="ref-upload"
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.txt,.md,.markdown,.rtf,.csv,.json"
+                  className="hidden"
+                  onChange={e => {
+                    handleReferenceUpload(e.target.files);
+                    e.target.value = '';
+                  }}
+                />
+
+                {referenceImages.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-1">
+                    {referenceImages.map((img, idx) => (
+                      <div key={`${img.name}-${idx}`} className="relative group rounded-lg overflow-hidden border border-border bg-muted aspect-square">
+                        <img src={img.dataUrl} alt={img.name} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeReferenceImage(idx)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {referenceDocs.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    {referenceDocs.map((doc, idx) => (
+                      <div key={`${doc.name}-${idx}`} className="flex items-center gap-2 p-2 rounded-lg border border-border bg-muted/40 text-sm">
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="flex-1 truncate">{doc.name}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {(doc.size / 1024).toFixed(0)} KB{doc.text ? ' · text read' : ''}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeReferenceDoc(idx)}
+                          className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                          title="Remove"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
       {/* Step content */}
       <AnimatePresence mode="wait">
