@@ -32,23 +32,26 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
 
   const extractTokenOrSlug = (url: string): { shareToken?: string; slug?: string } | null => {
     const trimmed = url.trim();
-    // Support share URL: brandhubcreator.lovable.app/share/TOKEN
-    const sharePattern = /brandhubcreator\.lovable\.app\/share\/([a-zA-Z0-9-]+)/;
+
+    // Hosts that serve BrandHub content (Gas Alley Studios, BrandHub Creator, Lovable previews)
+    const HOST_PATTERN = /(?:brandhubcreator\.lovable\.app|gasalleystudios\.dev|gasalleystudios\.com|lovableproject\.com|lovable\.app)/;
+
+    // Share URL: <host>/share/TOKEN
+    const sharePattern = new RegExp(`${HOST_PATTERN.source}\\/share\\/([a-zA-Z0-9-]+)`);
     const shareMatch = trimmed.match(sharePattern);
     if (shareMatch) return { shareToken: shareMatch[1] };
 
-    // Support event/product URLs: brandhubcreator.lovable.app/event/SLUG or /product/SLUG
-    const slugPattern = /brandhubcreator\.lovable\.app\/(?:event|product)\/([a-zA-Z0-9-]+)/;
+    // Entity URL: <host>/(brand|event|product)/SLUG
+    const slugPattern = new RegExp(`${HOST_PATTERN.source}\\/(?:brand|event|product)\\/([a-zA-Z0-9-]+)`);
     const slugMatch = trimmed.match(slugPattern);
     if (slugMatch) return { slug: slugMatch[1] };
 
-    // Also support the Lovable project preview URL pattern
-    const previewPattern = /lovableproject\.com\/(?:event|product)\/([a-zA-Z0-9-]+)/;
-    const previewMatch = trimmed.match(previewPattern);
-    if (previewMatch) return { slug: previewMatch[1] };
-
-    // If it looks like a bare token (UUID-like)
-    if (/^[a-zA-Z0-9-]{8,}$/.test(trimmed)) return { shareToken: trimmed };
+    // Bare token (UUID-like) or bare slug
+    if (/^[a-zA-Z0-9-]{4,}$/.test(trimmed)) {
+      // UUID-shaped → token, otherwise treat as slug (resolver tries both)
+      const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+      return looksLikeUuid ? { shareToken: trimmed } : { slug: trimmed };
+    }
     return null;
   };
 
