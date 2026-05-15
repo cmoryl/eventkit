@@ -150,6 +150,7 @@ async function browseEntity(
   entity: Entity,
   req: BrowseRequest,
   parentBrandId: string | null,
+  hub: { restUrl: string; anonKey: string },
 ): Promise<ReturnType<typeof toCard>[]> {
   const table = TABLE_FOR[entity];
   const publicOnly = req.publicOnly !== false;
@@ -171,7 +172,7 @@ async function browseEntity(
     filters.push(`parent_brand_id=eq.${parentBrandId}`);
   }
 
-  const rows = await brandHubFetch(`${table}?${filters.join("&")}`);
+  const rows = await brandHubFetch(`${table}?${filters.join("&")}`, hub);
   return rows.map((r) => toCard(r as Record<string, unknown>, entity));
 }
 
@@ -183,8 +184,9 @@ serve(async (req) => {
   try {
     const body = (await req.json().catch(() => ({}))) as BrowseRequest;
     const entity = body.entity ?? "all";
+    const hub = getHub(body.hubSource);
 
-    const parentBrandId = await resolveParentBrandId(body);
+    const parentBrandId = await resolveParentBrandId(body, hub);
 
     const targets: Entity[] =
       entity === "all" ? ["brand", "event", "product"] : [entity as Entity];
@@ -193,7 +195,7 @@ serve(async (req) => {
       return json(400, { success: false, error: "Invalid entity" });
     }
 
-    const results = await Promise.all(targets.map((t) => browseEntity(t, body, parentBrandId)));
+    const results = await Promise.all(targets.map((t) => browseEntity(t, body, parentBrandId, hub)));
     const flat = results.flat();
 
     return json(200, {
