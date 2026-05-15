@@ -374,6 +374,7 @@ async function normalizeSharedBrandResponse(
 
 async function resolveBrandHubSlug(
   slug: string,
+  hub: HubConfig,
 ): Promise<{ resolvedToken?: string; response?: Response }> {
   const encodedSlug = encodeURIComponent(slug);
   console.log("Resolving BrandHub slug:", slug);
