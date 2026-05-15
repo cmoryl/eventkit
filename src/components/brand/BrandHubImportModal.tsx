@@ -513,7 +513,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
     if (token) {
       setShareUrl(token);
     } else if (slug) {
-      setShareUrl(`https://brandhubcreator.lovable.app/event/${slug}`);
+      setShareUrl(activeHub.entityPath('event', slug));
     }
     // Auto-trigger import
     setTimeout(() => {
