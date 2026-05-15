@@ -534,7 +534,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
 
     try {
       const { data, error } = await supabase.functions.invoke('fetch-brandhub-brand', {
-        body: { shareToken: parsed.shareToken, slug: parsed.slug }
+        body: { shareToken: parsed.shareToken, slug: parsed.slug, hubSource }
       });
 
       if (data?.success === false || error) {
