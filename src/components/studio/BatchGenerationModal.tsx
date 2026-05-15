@@ -213,7 +213,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     } catch (err: any) {
       return { error: err.message || 'Generation failed' };
     }
-  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo]);
+  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo, referenceImages, referenceNotes]);
 
   // Wrap a promise so it never hangs the UI longer than `ms`.
   const withTimeout = <T,>(p: Promise<T>, ms: number, label: string): Promise<T> =>
