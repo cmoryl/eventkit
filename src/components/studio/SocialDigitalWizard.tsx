@@ -459,6 +459,8 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
             </button>
           </div>
         )}
+      </div>
+
       {/* Step content */}
       <AnimatePresence mode="wait">
         <motion.div
