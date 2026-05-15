@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, Loader2, Grid3X3, Link, Palette, Calendar, Package, HelpCircle, AlertCircle } from 'lucide-react';
+import { Link2, Loader2, Grid3X3, Link, Palette, Calendar, Package, HelpCircle, AlertCircle, History, X } from 'lucide-react';
 import { BrandImportSummary } from './BrandImportSummary';
 import { BrandHubGallery } from './BrandHubGallery';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -29,6 +29,38 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
   const [importedBrandName, setImportedBrandName] = useState<string | null>(null);
   const [importedHubBrand, setImportedHubBrand] = useState<Record<string, unknown> | null>(null);
   const [importedEventData, setImportedEventData] = useState<Record<string, unknown> | null>(null);
+
+  type RecentImport = { url: string; name: string; kind: 'brand' | 'event' | 'product' | 'share' | 'token' | 'slug'; slug?: string; ts: number };
+  const RECENTS_KEY = 'brandhub-recent-imports';
+  const loadRecents = (): RecentImport[] => {
+    try {
+      const raw = localStorage.getItem(RECENTS_KEY);
+      return raw ? (JSON.parse(raw) as RecentImport[]).slice(0, 6) : [];
+    } catch { return []; }
+  };
+  const [recents, setRecents] = useState<RecentImport[]>([]);
+  useEffect(() => { if (isOpen) setRecents(loadRecents()); }, [isOpen]);
+
+  const pushRecent = useCallback((url: string, name: string) => {
+    const detected = detectLinkKind(url);
+    if (detected.kind === 'empty' || detected.kind === 'invalid') return;
+    const entry: RecentImport = {
+      url: url.trim(),
+      name: name || 'Imported Brand',
+      kind: detected.kind,
+      slug: detected.slug,
+      ts: Date.now(),
+    };
+    const next = [entry, ...loadRecents().filter(r => r.url !== entry.url)].slice(0, 6);
+    try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setRecents(next);
+  }, []);
+
+  const removeRecent = (url: string) => {
+    const next = loadRecents().filter(r => r.url !== url);
+    try { localStorage.setItem(RECENTS_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+    setRecents(next);
+  };
 
   const extractTokenOrSlug = (url: string): { shareToken?: string; slug?: string } | null => {
     const trimmed = url.trim();
@@ -432,6 +464,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
       setImportedHubBrand(hubBrand as Record<string, unknown>);
       setImportedEventData(data.hasEventData ? data.event : null);
       toast.success(`"${brandName}" imported from BrandHub`);
+      pushRecent(shareUrl, brandName);
       onBrandImported();
     } catch (error) {
       console.error('BrandHub import error:', error);
@@ -591,6 +624,7 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
     setImportedHubBrand(hubBrand);
     setImportedEventData(data.hasEventData ? (data.event as Record<string, unknown>) : null);
     toast.success(`"${brandName}" imported from BrandHub`);
+    pushRecent(shareUrl, brandName);
     onBrandImported();
   };
 
@@ -674,6 +708,50 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                     </div>
                   )}
                 </div>
+
+                {recents.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-muted-foreground">
+                      <History className="h-3.5 w-3.5" />
+                      Recent imports
+                    </div>
+                    <div className="space-y-1">
+                      {recents.map((r) => {
+                        const Icon = r.kind === 'brand' ? Palette
+                          : r.kind === 'event' ? Calendar
+                          : r.kind === 'product' ? Package
+                          : Link2;
+                        return (
+                          <div
+                            key={r.url}
+                            className="group flex items-center gap-2 rounded-md border border-border bg-muted/30 hover:bg-muted/60 transition-colors px-2.5 py-1.5 text-xs"
+                          >
+                            <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            <button
+                              type="button"
+                              onClick={() => setShareUrl(r.url)}
+                              className="flex-1 min-w-0 text-left"
+                              disabled={isImporting}
+                            >
+                              <div className="font-medium truncate">{r.name}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">
+                                {r.kind} {r.slug ? `· ${r.slug}` : ''}
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeRecent(r.url)}
+                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+                              aria-label="Remove from recents"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-2">
                   <Button
