@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Link2, Loader2, Grid3X3, Link, Palette, Calendar, Package, HelpCircle, AlertCircle } from 'lucide-react';
+import { Link2, Loader2, Grid3X3, Link, Palette, Calendar, Package, HelpCircle, AlertCircle, History, X } from 'lucide-react';
 import { BrandImportSummary } from './BrandImportSummary';
 import { BrandHubGallery } from './BrandHubGallery';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
