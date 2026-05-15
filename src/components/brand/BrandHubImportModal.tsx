@@ -55,6 +55,23 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
     return null;
   };
 
+  type LinkKind = 'brand' | 'event' | 'product' | 'share' | 'token' | 'slug' | 'invalid' | 'empty';
+  const detectLinkKind = (url: string): { kind: LinkKind; slug?: string; host?: string } => {
+    const trimmed = url.trim();
+    if (!trimmed) return { kind: 'empty' };
+    const HOST_PATTERN = /(?:brandhubcreator\.lovable\.app|gasalleystudios\.dev|gasalleystudios\.com|lovableproject\.com|lovable\.app)/;
+    const hostMatch = trimmed.match(HOST_PATTERN);
+    const host = hostMatch?.[0];
+    const entity = trimmed.match(new RegExp(`${HOST_PATTERN.source}\\/(brand|event|product)\\/([a-zA-Z0-9-]+)`));
+    if (entity) return { kind: entity[1] as 'brand' | 'event' | 'product', slug: entity[2], host };
+    if (new RegExp(`${HOST_PATTERN.source}\\/share\\/([a-zA-Z0-9-]+)`).test(trimmed)) return { kind: 'share', host };
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed)) return { kind: 'token' };
+    if (/^[a-zA-Z0-9-]{4,}$/.test(trimmed)) return { kind: 'slug', slug: trimmed };
+    return { kind: 'invalid' };
+  };
+
+  const linkPreview = React.useMemo(() => detectLinkKind(shareUrl), [shareUrl]);
+
   const handleImport = async () => {
     if (!user) {
       toast.error('Please sign in to import brands');
