@@ -380,8 +380,8 @@ async function resolveBrandHubSlug(
   console.log("Resolving BrandHub slug:", slug);
 
   const brandRes = await fetch(
-    `${BRANDHUB_REST_URL}/brands?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,share_token,guide_data&limit=1`,
-    { headers: brandHubHeaders },
+    `${hub.restUrl}/brands?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,share_token,guide_data&limit=1`,
+    { headers: hub.headers },
   );
   if (brandRes.ok) {
     const brands = await brandRes.json();
@@ -401,8 +401,8 @@ async function resolveBrandHubSlug(
   for (const table of ["events", "products"] as const) {
     console.log(`Trying ${table} table for slug:`, slug);
     const res = await fetch(
-      `${BRANDHUB_REST_URL}/${table}?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,parent_brand_id,guide_data&limit=1`,
-      { headers: brandHubHeaders },
+      `${hub.restUrl}/${table}?slug=eq.${encodedSlug}&is_public=eq.true&select=id,name,slug,parent_brand_id,guide_data&limit=1`,
+      { headers: hub.headers },
     );
     if (!res.ok) continue;
 
@@ -425,8 +425,8 @@ async function resolveBrandHubSlug(
 
     if (entityData.parent_brand_id) {
       const parentRes = await fetch(
-        `${BRANDHUB_REST_URL}/brands?id=eq.${encodeURIComponent(entityData.parent_brand_id)}&select=share_token&limit=1`,
-        { headers: brandHubHeaders },
+        `${hub.restUrl}/brands?id=eq.${encodeURIComponent(entityData.parent_brand_id)}&select=share_token&limit=1`,
+        { headers: hub.headers },
       );
       if (parentRes.ok) {
         const parents = await parentRes.json();
