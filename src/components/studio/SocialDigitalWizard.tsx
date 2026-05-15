@@ -11,6 +11,7 @@ import {
   Twitter,
   Youtube,
   Music2,
+  Headphones,
   Mail,
   Video,
   Smartphone,
@@ -23,6 +24,7 @@ import {
   Copy,
   RefreshCw,
   Loader2,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,7 +61,7 @@ const NETWORKS: NetworkOption[] = [
   { id: 'twitter', name: 'X / Twitter', icon: Twitter, color: 'from-slate-700 to-slate-900', assetTypes: ['TWITTER_HEADER', 'SOCIAL_POST'] },
   { id: 'youtube', name: 'YouTube', icon: Youtube, color: 'from-red-500 to-red-700', assetTypes: ['YOUTUBE_THUMBNAIL'] },
   { id: 'tiktok', name: 'TikTok', icon: Music2, color: 'from-rose-500 to-cyan-500', assetTypes: ['SOCIAL_STORY'] },
-  { id: 'podcast', name: 'Podcast', icon: Music2, color: 'from-amber-500 to-orange-600', assetTypes: ['PODCAST_COVER'] },
+  { id: 'podcast', name: 'Podcast', icon: Headphones, color: 'from-amber-500 to-orange-600', assetTypes: ['PODCAST_COVER'] },
   { id: 'email', name: 'Email', icon: Mail, color: 'from-emerald-500 to-teal-600', assetTypes: ['EMAIL_HEADER'] },
   { id: 'zoom', name: 'Zoom / Webinar', icon: Video, color: 'from-sky-500 to-indigo-600', assetTypes: ['ZOOM_BACKGROUND'] },
   { id: 'app', name: 'App / Web', icon: Smartphone, color: 'from-violet-500 to-fuchsia-500', assetTypes: ['APP_ICON', 'FAVICON', 'EVENT_APP_SPLASH'] },
@@ -79,6 +81,21 @@ interface CaptionData {
   hashtags: string[];
   cta: string;
 }
+
+// Preview aspect-ratio style per asset type (width / height)
+const ASSET_ASPECT: Record<string, React.CSSProperties> = {
+  SOCIAL_POST:       { aspectRatio: '1 / 1' },
+  PODCAST_COVER:     { aspectRatio: '1 / 1' },
+  APP_ICON:          { aspectRatio: '1 / 1' },
+  FAVICON:           { aspectRatio: '1 / 1' },
+  SOCIAL_STORY:      { aspectRatio: '9 / 16', maxHeight: 320 },
+  EVENT_APP_SPLASH:  { aspectRatio: '9 / 16', maxHeight: 320 },
+  YOUTUBE_THUMBNAIL: { aspectRatio: '16 / 9' },
+  ZOOM_BACKGROUND:   { aspectRatio: '16 / 9' },
+  LINKEDIN_BANNER:   { aspectRatio: '4 / 1' },
+  TWITTER_HEADER:    { aspectRatio: '3 / 1' },
+  EMAIL_HEADER:      { aspectRatio: '3 / 1' },
+};
 
 // Networks selected -> ordered asset items keyed per (network, assetType).
 // We deliberately key per-network so the same assetType can appear under
@@ -192,15 +209,14 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
       setCaptions(next);
     } catch (e) {
       console.error('Caption generation failed:', e);
-      toast.error('Could not generate captions. Showing fallbacks.');
+      const status = (e as any)?.context?.status ?? (e as any)?.status;
+      if (status === 401) toast.error('Sign in to generate captions');
+      else if (status === 429) toast.error('Rate limited — try again shortly');
+      else if (status === 402) toast.error('AI credits exhausted');
+      else toast.error('Could not generate captions. Showing fallbacks.');
       const fallback: Record<string, CaptionData> = {};
       for (const item of assetItems) {
-        fallback[item.key] = {
-          headline: campaignName,
-          caption: keyMessage,
-          hashtags: [],
-          cta: '',
-        };
+        fallback[item.key] = { headline: campaignName, caption: keyMessage, hashtags: [], cta: '' };
       }
       setCaptions(fallback);
     } finally {
@@ -208,16 +224,30 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
     }
   }, [assetItems, campaignName, keyMessage, audience, vibe, brand?.name]);
 
+  const reset = () => {
+    setStep(1);
+    setCampaignName('');
+    setKeyMessage('');
+    setAudience('');
+    setVibe('');
+    setSelectedNetworks([]);
+    setCaptions({});
+  };
+
   const next = async () => {
-    // Entering preview step → fetch captions if missing
     if (step === 4) {
-      if (!Object.keys(captions).length) {
-        await fetchCaptions();
-      }
+      // Always re-fetch captions when entering preview so brief changes are reflected
+      await fetchCaptions();
     }
     setStep(s => Math.min(5, s + 1));
   };
-  const back = () => setStep(s => Math.max(1, s - 1));
+
+  const back = () => {
+    // Clear captions when going back past the generate step so they're
+    // re-generated with the (possibly edited) brief on next advance.
+    if (step === 5) setCaptions({});
+    setStep(s => Math.max(1, s - 1));
+  };
 
   const updateCaption = (key: string, patch: Partial<CaptionData>) => {
     setCaptions(prev => ({ ...prev, [key]: { ...prev[key], ...patch } }));
@@ -330,6 +360,18 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
             );
           })}
         </div>
+        {step > 1 && (
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={reset}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Start over
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Step content */}
@@ -598,7 +640,10 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
                             const c = captions[item.key];
                             return (
                               <div key={item.key} className="rounded-xl border border-border bg-background overflow-hidden">
-                                <div className="aspect-video bg-muted flex items-center justify-center relative">
+                                <div
+                                  className="bg-muted flex items-center justify-center relative w-full overflow-hidden"
+                                  style={ASSET_ASPECT[item.assetType] ?? { aspectRatio: '16 / 9' }}
+                                >
                                   {imgUrl ? (
                                     <img
                                       src={imgUrl}
