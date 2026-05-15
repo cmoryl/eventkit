@@ -50,6 +50,7 @@ export const BrandHubGallery: React.FC<BrandHubGalleryProps> = ({
   defaultEntity = 'brand',
   parentBrandShareToken,
   parentBrandSlug,
+  hubSource = 'brandhub',
 }) => {
   const [activeTab, setActiveTab] = useState<EntityFilter>(defaultEntity);
   const [items, setItems] = useState<BrandCard[]>([]);
@@ -73,6 +74,7 @@ export const BrandHubGallery: React.FC<BrandHubGalleryProps> = ({
           offset: 0,
           parentBrandShareToken,
           parentBrandSlug,
+          hubSource,
         },
       });
 
@@ -88,7 +90,7 @@ export const BrandHubGallery: React.FC<BrandHubGalleryProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, debouncedSearch, parentBrandShareToken, parentBrandSlug]);
+  }, [activeTab, debouncedSearch, parentBrandShareToken, parentBrandSlug, hubSource]);
 
   useEffect(() => {
     load();
