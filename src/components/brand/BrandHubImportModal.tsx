@@ -709,6 +709,50 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                   )}
                 </div>
 
+                {recents.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-muted-foreground">
+                      <History className="h-3.5 w-3.5" />
+                      Recent imports
+                    </div>
+                    <div className="space-y-1">
+                      {recents.map((r) => {
+                        const Icon = r.kind === 'brand' ? Palette
+                          : r.kind === 'event' ? Calendar
+                          : r.kind === 'product' ? Package
+                          : Link2;
+                        return (
+                          <div
+                            key={r.url}
+                            className="group flex items-center gap-2 rounded-md border border-border bg-muted/30 hover:bg-muted/60 transition-colors px-2.5 py-1.5 text-xs"
+                          >
+                            <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                            <button
+                              type="button"
+                              onClick={() => setShareUrl(r.url)}
+                              className="flex-1 min-w-0 text-left"
+                              disabled={isImporting}
+                            >
+                              <div className="font-medium truncate">{r.name}</div>
+                              <div className="text-[10px] text-muted-foreground truncate">
+                                {r.kind} {r.slug ? `· ${r.slug}` : ''}
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeRecent(r.url)}
+                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+                              aria-label="Remove from recents"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Button
                     onClick={handleImport}
