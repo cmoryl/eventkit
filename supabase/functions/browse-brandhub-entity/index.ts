@@ -9,9 +9,27 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRANDHUB_REST_URL = "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1";
-const BRANDHUB_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk";
+type HubSourceId = "brandhub" | "gasalley";
+
+const HUB_CONFIGS: Record<HubSourceId, { restUrl: string; anonKey: string }> = {
+  brandhub: {
+    restUrl: "https://nhxaijbyqfkkhhoornzy.supabase.co/rest/v1",
+    anonKey:
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oeGFpamJ5cWZra2hob29ybnp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2NDU0ODYsImV4cCI6MjA4MzIyMTQ4Nn0.Uw6QPHoOo_15FWCfnSAZYyGZNEr-XlZ8NrVyLlcuiWk",
+  },
+  gasalley: {
+    restUrl: "https://wbxqlnsaqfezltaeglko.supabase.co/rest/v1",
+    anonKey:
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndieHFsbnNhcWZlemx0YWVnbGtvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzY0NDYsImV4cCI6MjA5MTg1MjQ0Nn0.3M8oe-ZIp-Fkrb_vNZXxOJENUs5lphOntEoLFihId6U",
+  },
+};
+
+function getHub(id: unknown) {
+  if (typeof id === "string" && id in HUB_CONFIGS) {
+    return HUB_CONFIGS[id as HubSourceId];
+  }
+  return HUB_CONFIGS.brandhub;
+}
 
 type Entity = "brand" | "event" | "product";
 
