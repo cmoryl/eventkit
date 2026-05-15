@@ -274,6 +274,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
         (grouped[i.networkName] ||= []).push(i);
       });
 
+      let failedImages = 0;
       for (const [networkName, items] of Object.entries(grouped)) {
         const folder = zip.folder(networkName) || zip;
         for (const item of items) {
@@ -285,6 +286,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
               folder.file(`${item.assetType}.${ext}`, blob);
             } catch (e) {
               console.error('Failed to fetch image for', item.key, e);
+              failedImages++;
             }
           }
           const c = captions[item.key];
@@ -302,7 +304,11 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
       a.download = `${(campaignName || 'social-campaign').replace(/\s+/g, '-').toLowerCase()}.zip`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Exported ZIP with images and captions');
+      if (failedImages > 0) {
+        toast.warning(`Exported ZIP — ${failedImages} image${failedImages > 1 ? 's' : ''} could not be fetched and were skipped.`);
+      } else {
+        toast.success('Exported ZIP with images and captions');
+      }
     } catch (e) {
       console.error('Export failed:', e);
       toast.error('Export failed');

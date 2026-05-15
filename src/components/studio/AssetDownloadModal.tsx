@@ -3,11 +3,11 @@ import type { GeneratedAsset, PdfExportOptions, ColorInfo } from '../../types';
 import { AssetType } from '../../types';
 import { getAssetConfig } from '../../config/assetConfig';
 import { generatePrintReadyPdf, sanitizeFileName, printDimensionsMap } from '../../utils';
-import { 
-  Download, 
-  FileImage, 
-  FileText, 
-  Printer, 
+import {
+  Download,
+  FileImage,
+  FileText,
+  Printer,
   X,
   Check,
   Loader2,
@@ -16,6 +16,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { pushAssetsToBrandHub } from '@/services/pushToBrandHub';
+import { toast } from 'sonner';
 
 interface AssetDownloadModalProps {
   asset: GeneratedAsset;
@@ -105,6 +106,7 @@ const AssetDownloadModal: React.FC<AssetDownloadModalProps> = ({ asset, eventNam
       setTimeout(() => setExportSuccess(null), 2000);
     } catch (e) {
       console.error('PDF export failed:', e);
+      toast.error('PDF export failed. Try downloading as PNG instead.');
     } finally {
       setIsExporting(false);
     }

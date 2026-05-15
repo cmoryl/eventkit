@@ -145,6 +145,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           });
         } catch (compErr) {
           console.warn('[BatchCompositor] Logo compositing failed:', compErr);
+          toast.warning(`Logo could not be applied to ${assetType} — exported without logo overlay.`);
         }
       }
       return { imageUrl: finalUrl };
