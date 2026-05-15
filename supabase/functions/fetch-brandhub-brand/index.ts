@@ -58,7 +58,8 @@ serve(async (req) => {
   }
 
   try {
-    const { shareToken, slug, includeEvent } = await req.json();
+    const { shareToken, slug, includeEvent, hubSource } = await req.json();
+    const hub = getHub(hubSource);
 
     if (!shareToken && !slug) {
       return json(200, {
@@ -71,7 +72,7 @@ serve(async (req) => {
 
     // If slug provided, try to resolve via BrandHub REST API (brands table, then events/products table)
     if (!resolvedToken && slug) {
-      const directResult = await resolveBrandHubSlug(slug);
+      const directResult = await resolveBrandHubSlug(slug, hub);
       if (directResult.resolvedToken) {
         resolvedToken = directResult.resolvedToken;
       } else if (directResult.response) {
@@ -84,11 +85,11 @@ serve(async (req) => {
       resolvedToken = slug;
     }
 
-    console.log("Fetching brand from BrandHub with token:", resolvedToken);
+    console.log("Fetching brand from hub", hubSource || "brandhub", "with token:", resolvedToken);
 
-    const response = await fetch(BRANDHUB_API_URL, {
+    const response = await fetch(hub.apiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...hub.headers },
       body: JSON.stringify({
         shareToken: resolvedToken,
         includeEvent: includeEvent ?? true,
@@ -101,15 +102,15 @@ serve(async (req) => {
       // Users often paste/type product or event slugs (e.g. "dataforce") into the token field.
       // If the share endpoint rejects it, treat the token as a slug and resolve live tables.
       if (shareToken && !slug) {
-        const fallbackResult = await resolveBrandHubSlug(shareToken);
+        const fallbackResult = await resolveBrandHubSlug(shareToken, hub);
         if (
           fallbackResult.resolvedToken &&
           fallbackResult.resolvedToken !== shareToken
         ) {
           resolvedToken = fallbackResult.resolvedToken;
-          const retry = await fetch(BRANDHUB_API_URL, {
+          const retry = await fetch(hub.apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...hub.headers },
             body: JSON.stringify({
               shareToken: resolvedToken,
               includeEvent: includeEvent ?? true,
