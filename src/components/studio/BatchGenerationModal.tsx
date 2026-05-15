@@ -154,6 +154,26 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     }
   }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo]);
 
+  // Wrap a promise so it never hangs the UI longer than `ms`.
+  const withTimeout = <T,>(p: Promise<T>, ms: number, label: string): Promise<T> =>
+    Promise.race([
+      p,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
+      ),
+    ]);
+
+  // Safety net: if results all settled but isRunning never flipped (e.g. an
+  // unhandled hang inside the loop), release the UI so the user can close.
+  useEffect(() => {
+    if (!isRunning) return;
+    if (results.length === 0) return;
+    const stillWorking = results.some(r => r.status === 'pending' || r.status === 'generating');
+    if (!stillWorking) {
+      setIsRunning(false);
+    }
+  }, [results, isRunning]);
+
   const startBatch = useCallback(async () => {
     if (!effectiveBrand) {
       toast.error('Please select a brand first');
