@@ -685,7 +685,33 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
               </Button>
             </>
           ) : (
-            <Tabs defaultValue="browse" className="w-full">
+            <>
+              <div>
+                <div className="text-xs font-medium text-muted-foreground mb-1.5">Importing from</div>
+                <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-muted/40 border border-border">
+                  {(Object.values(HUB_SOURCES)).map((src) => {
+                    const active = hubSource === src.id;
+                    return (
+                      <button
+                        key={src.id}
+                        type="button"
+                        onClick={() => setHubSource(src.id)}
+                        disabled={isImporting}
+                        className={`text-left px-3 py-2 rounded-md transition-colors ${
+                          active
+                            ? 'bg-background border border-border shadow-sm'
+                            : 'hover:bg-background/50 border border-transparent'
+                        }`}
+                      >
+                        <div className={`text-xs font-semibold ${active ? 'text-foreground' : 'text-muted-foreground'}`}>{src.name}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{src.host}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Tabs defaultValue="browse" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="browse" className="gap-1.5">
                   <Grid3X3 className="h-3.5 w-3.5" />
