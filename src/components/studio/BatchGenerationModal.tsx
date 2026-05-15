@@ -17,16 +17,41 @@ import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } fro
 import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
 
+type ErrorKind = 'timeout' | 'rate_limit' | 'quota' | 'auth' | 'network' | 'invalid_input' | 'api';
+
 interface BatchAssetResult {
   assetType: string;
   assetName: string;
   status: 'pending' | 'generating' | 'complete' | 'error';
   imageUrl?: string;
   error?: string;
+  errorKind?: ErrorKind;
   startedAt?: number;
   finishedAt?: number;
   durationMs?: number;
 }
+
+const ERROR_KIND_LABEL: Record<ErrorKind, string> = {
+  timeout: 'Timed out',
+  rate_limit: 'Rate limit hit',
+  quota: 'AI credits exhausted',
+  auth: 'Authentication error',
+  network: 'Network error',
+  invalid_input: 'Invalid input',
+  api: 'AI service error',
+};
+
+const classifyError = (raw: string | undefined): ErrorKind => {
+  const msg = (raw || '').toLowerCase();
+  if (!msg) return 'api';
+  if (msg.includes('timed out') || msg.includes('timeout')) return 'timeout';
+  if (msg.includes('429') || msg.includes('rate limit') || msg.includes('too many requests')) return 'rate_limit';
+  if (msg.includes('402') || msg.includes('quota') || msg.includes('credits') || msg.includes('payment')) return 'quota';
+  if (msg.includes('401') || msg.includes('403') || msg.includes('unauthor') || msg.includes('forbidden')) return 'auth';
+  if (msg.includes('network') || msg.includes('fetch failed') || msg.includes('econnreset') || msg.includes('failed to fetch')) return 'network';
+  if (msg.includes('invalid') || msg.includes('safety') || msg.includes('blocked')) return 'invalid_input';
+  return 'api';
+};
 
 interface BatchGenerationModalProps {
   isOpen: boolean;
@@ -291,6 +316,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       // Update results
       const finishedAt = Date.now();
       const newImages: Record<string, string> = {};
+      const batchFailures: { name: string; kind: ErrorKind; error: string }[] = [];
       setResults(prev => prev.map(r => {
         const result = batchResults.find(br => {
           if (br.status === 'fulfilled') return br.value.assetType === r.assetType;
@@ -303,10 +329,19 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
             newImages[val.assetType] = val.imageUrl;
             return { ...r, status: 'complete' as const, imageUrl: val.imageUrl, finishedAt, durationMs };
           }
-          return { ...r, status: 'error' as const, error: val.error, finishedAt, durationMs };
+          const errorKind = classifyError(val.error);
+          batchFailures.push({ name: r.assetName, kind: errorKind, error: val.error || 'Unknown error' });
+          return { ...r, status: 'error' as const, error: val.error, errorKind, finishedAt, durationMs };
         }
         return r;
       }));
+
+      // Per-asset failure toasts so the user immediately sees which one + why
+      batchFailures.forEach(({ name, kind, error }) => {
+        toast.error(`${name}: ${ERROR_KIND_LABEL[kind]}`, {
+          description: error.length > 160 ? error.slice(0, 160) + '…' : error,
+        });
+      });
 
       // Push partial results immediately
       if (Object.keys(newImages).length > 0) {
@@ -330,7 +365,19 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
     setIsRunning(false);
     if (!abortRef.current) {
-      toast.success('Batch generation complete!');
+      // Read latest results from state at completion via a setter callback
+      setResults(prev => {
+        const ok = prev.filter(r => r.status === 'complete').length;
+        const failed = prev.filter(r => r.status === 'error').length;
+        if (failed === 0) {
+          toast.success(`Batch generation complete — ${ok} asset${ok === 1 ? '' : 's'} ready`);
+        } else if (ok === 0) {
+          toast.error(`Batch failed — all ${failed} asset${failed === 1 ? '' : 's'} errored. Use Retry failed to try again.`);
+        } else {
+          toast.warning(`Batch finished — ${ok} succeeded, ${failed} failed. Use Retry failed to retry.`);
+        }
+        return prev;
+      });
     }
   }, [results, effectiveBrand, generateOne, onImagesGenerated]);
 
@@ -458,15 +505,24 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
                         </span>
                       )}
                     </div>
-                    <p className={cn(
+                    <div className={cn(
                       "text-xs truncate",
                       result.status === 'error' ? "text-destructive" : "text-muted-foreground"
                     )}>
                       {result.status === 'generating' && 'Rendering design…'}
                       {result.status === 'pending' && 'Queued'}
                       {result.status === 'complete' && 'Ready'}
-                      {result.status === 'error' && (result.error || 'Failed')}
-                    </p>
+                      {result.status === 'error' && (
+                        <span className="flex items-center gap-1.5 truncate">
+                          <span className="px-1.5 py-0.5 rounded bg-destructive/15 text-destructive font-medium text-[10px] uppercase tracking-wide flex-shrink-0">
+                            {result.errorKind ? ERROR_KIND_LABEL[result.errorKind] : 'Error'}
+                          </span>
+                          <span className="truncate" title={result.error}>
+                            {result.error || 'Failed'}
+                          </span>
+                        </span>
+                      )}
+                    </div>
                     {/* Indeterminate per-asset bar while generating */}
                     {result.status === 'generating' && (
                       <div className="mt-1.5 h-1 w-full bg-primary/10 rounded-full overflow-hidden">
@@ -492,11 +548,29 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
               <>
                 <p className="text-xs text-muted-foreground">
                   {completedCount > 0 
-                    ? `${completedCount} generated · ${totalCount - completedCount - errorCount} remaining`
+                    ? `${completedCount} generated · ${totalCount - completedCount - errorCount} remaining${errorCount > 0 ? ` · ${errorCount} failed` : ''}`
                     : `Ready to generate ${totalCount} assets`}
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleClose}>Cancel</Button>
+                  {errorCount > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Reset failed rows to pending so startBatch picks them up
+                        setResults(prev => prev.map(r =>
+                          r.status === 'error'
+                            ? { ...r, status: 'pending' as const, error: undefined, errorKind: undefined, durationMs: undefined, startedAt: undefined, finishedAt: undefined }
+                            : r
+                        ));
+                        // Defer startBatch to next tick so state is applied
+                        setTimeout(() => startBatch(), 0);
+                      }}
+                    >
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      Retry {errorCount} failed
+                    </Button>
+                  )}
                   <Button 
                     onClick={startBatch} 
                     className={`bg-gradient-to-r ${studioGradient}`}
