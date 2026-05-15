@@ -181,6 +181,79 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
     return true;
   };
 
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = () => reject(r.error);
+      r.readAsDataURL(file);
+    });
+
+  const readFileAsText = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ''));
+      r.onerror = () => reject(r.error);
+      r.readAsText(file);
+    });
+
+  const handleReferenceUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const MAX_IMG_BYTES = 8 * 1024 * 1024; // 8MB per image
+    const MAX_DOC_BYTES = 5 * 1024 * 1024;
+    const newImages: { name: string; dataUrl: string }[] = [];
+    const newDocs: { name: string; size: number; text?: string }[] = [];
+    for (const file of Array.from(files)) {
+      try {
+        if (file.type.startsWith('image/')) {
+          if (file.size > MAX_IMG_BYTES) {
+            toast.error(`${file.name} is over 8MB — skipped`);
+            continue;
+          }
+          const dataUrl = await readFileAsDataUrl(file);
+          newImages.push({ name: file.name, dataUrl });
+        } else {
+          if (file.size > MAX_DOC_BYTES) {
+            toast.error(`${file.name} is over 5MB — skipped`);
+            continue;
+          }
+          // Try to read text-based docs inline; binary docs (pdf/docx) just get the filename hint
+          const isTextLike = /\.(txt|md|markdown|csv|json|html?|rtf)$/i.test(file.name) ||
+            file.type.startsWith('text/');
+          let text: string | undefined;
+          if (isTextLike) {
+            text = (await readFileAsText(file)).slice(0, 8000);
+          }
+          newDocs.push({ name: file.name, size: file.size, text });
+        }
+      } catch (err) {
+        console.error('Reference upload failed for', file.name, err);
+        toast.error(`Could not read ${file.name}`);
+      }
+    }
+    if (newImages.length) setReferenceImages(prev => [...prev, ...newImages]);
+    if (newDocs.length) setReferenceDocs(prev => [...prev, ...newDocs]);
+  };
+
+  const removeReferenceImage = (idx: number) =>
+    setReferenceImages(prev => prev.filter((_, i) => i !== idx));
+  const removeReferenceDoc = (idx: number) =>
+    setReferenceDocs(prev => prev.filter((_, i) => i !== idx));
+
+  const referenceNotes = useMemo(() => {
+    const parts: string[] = [];
+    if (referenceDocs.length) {
+      parts.push('Reference documents:');
+      referenceDocs.forEach(d => {
+        parts.push(`- ${d.name}${d.text ? `:\n${d.text}` : ''}`);
+      });
+    }
+    if (referenceImages.length) {
+      parts.push(`Reference images attached: ${referenceImages.map(i => i.name).join(', ')}`);
+    }
+    return parts.join('\n');
+  }, [referenceDocs, referenceImages]);
+
   const fetchCaptions = useCallback(async () => {
     if (!assetItems.length) return;
     setLoadingCaptions(true);
