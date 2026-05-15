@@ -26,6 +26,7 @@ import { TemplateGallery, ALL_DECK_TEMPLATES, type DeckTemplate } from "@/compon
 import { ModeCards, type Mode } from "@/components/powerpoint/composer/ModeCards";
 import { QuickControls } from "@/components/powerpoint/composer/QuickControls";
 import { OutlineReview } from "@/components/powerpoint/composer/OutlineReview";
+import { BrandAssetsPreview } from "@/components/powerpoint/composer/BrandAssetsPreview";
 
 import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
 import horizonBg from "@/assets/horizon-bg.png";
