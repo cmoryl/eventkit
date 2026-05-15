@@ -657,6 +657,23 @@ export const BrandHubImportModal: React.FC<BrandHubImportModalProps> = ({
                   <p className="text-xs text-muted-foreground mt-1.5">
                     Paste a Gas Alley Studios or BrandHub brand, event, or product URL — or a share token
                   </p>
+
+                  {linkPreview.kind !== 'empty' && (
+                    <div className={`mt-2 flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs ${
+                      linkPreview.kind === 'invalid'
+                        ? 'border-destructive/40 bg-destructive/10 text-destructive'
+                        : 'border-border bg-muted/40 text-foreground'
+                    }`}>
+                      {linkPreview.kind === 'brand' && <><Palette className="h-3.5 w-3.5 text-violet-400" /><span><span className="font-medium">Brand</span> detected{linkPreview.slug && <> · <span className="text-muted-foreground">{linkPreview.slug}</span></>}</span></>}
+                      {linkPreview.kind === 'event' && <><Calendar className="h-3.5 w-3.5 text-blue-400" /><span><span className="font-medium">Event</span> detected{linkPreview.slug && <> · <span className="text-muted-foreground">{linkPreview.slug}</span></>}</span></>}
+                      {linkPreview.kind === 'product' && <><Package className="h-3.5 w-3.5 text-emerald-400" /><span><span className="font-medium">Product</span> detected{linkPreview.slug && <> · <span className="text-muted-foreground">{linkPreview.slug}</span></>}</span></>}
+                      {linkPreview.kind === 'share' && <><Link2 className="h-3.5 w-3.5 text-violet-400" /><span><span className="font-medium">Share link</span> — type resolved on import</span></>}
+                      {linkPreview.kind === 'token' && <><HelpCircle className="h-3.5 w-3.5 text-muted-foreground" /><span><span className="font-medium">Share token</span> — type resolved on import</span></>}
+                      {linkPreview.kind === 'slug' && <><HelpCircle className="h-3.5 w-3.5 text-muted-foreground" /><span><span className="font-medium">Slug</span> — type resolved on import</span></>}
+                      {linkPreview.kind === 'invalid' && <><AlertCircle className="h-3.5 w-3.5" /><span>Unrecognized URL — paste a brand, event, product, or share link</span></>}
+                    </div>
+                  )}
+                </div>
                 </div>
 
                 <div className="flex gap-2">
