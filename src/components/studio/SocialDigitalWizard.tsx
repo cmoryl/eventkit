@@ -265,6 +265,7 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
           audience,
           vibe,
           brandName: brand?.name,
+          referenceNotes: referenceNotes || undefined,
           assets: assetItems.map(i => ({
             key: i.key,
             network: i.networkName,
