@@ -89,8 +89,35 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
 
   const completedCount = results.filter(r => r.status === 'complete').length;
   const errorCount = results.filter(r => r.status === 'error').length;
+  const generatingCount = results.filter(r => r.status === 'generating').length;
   const totalCount = results.length;
-  const progressPct = totalCount > 0 ? ((completedCount + errorCount) / totalCount) * 100 : 0;
+  const settledCount = completedCount + errorCount;
+  const progressPct = totalCount > 0 ? (settledCount / totalCount) * 100 : 0;
+
+  // 1Hz tick to refresh elapsed timers while generating
+  const [, setNowTick] = useState(0);
+  useEffect(() => {
+    if (!isRunning) return;
+    const id = setInterval(() => setNowTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [isRunning]);
+
+  // ETA based on average duration of completed assets
+  const avgDurationMs = (() => {
+    const done = results.filter(r => r.status === 'complete' && r.durationMs);
+    if (done.length === 0) return 0;
+    return done.reduce((s, r) => s + (r.durationMs || 0), 0) / done.length;
+  })();
+  const remainingCount = totalCount - settledCount;
+  const etaSeconds = avgDurationMs > 0 && remainingCount > 0
+    ? Math.round((avgDurationMs * Math.ceil(remainingCount / MAX_CONCURRENT)) / 1000)
+    : 0;
+
+  const formatDuration = (ms: number): string => {
+    const s = Math.max(0, Math.round(ms / 1000));
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}m ${s % 60}s`;
+  };
 
   // masterDirectionBlock is passed explicitly from startBatch to avoid reading a stale
   // styleAnchor closure — React context updates are async and won't be visible to
