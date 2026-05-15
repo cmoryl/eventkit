@@ -1094,7 +1094,19 @@ const PowerPointAgent: React.FC = () => {
                 disabled={isGenerating}
               />
 
-              {/* Step 4 — preset prompt chips (prompt mode only) */}
+              {/* Brand assets preview — confirm logo + cover before generating */}
+              <div className="max-w-3xl mx-auto w-full">
+                <BrandAssetsPreview
+                  logoUrl={useBrand ? selectedBrand?.logo_url : null}
+                  brandName={useBrand ? selectedBrand?.name : null}
+                  coverImageUrl={coverImageUrl}
+                  onCoverImageChange={setCoverImageFile}
+                  logoCorner={logoCorner}
+                  setLogoCorner={setLogoCorner}
+                  disabled={isGenerating}
+                />
+              </div>
+
               {mode === "prompt" && (
                 <div className="flex flex-wrap gap-2 justify-center max-w-3xl mx-auto pt-2">
                   {suggestions.map((s) => (
