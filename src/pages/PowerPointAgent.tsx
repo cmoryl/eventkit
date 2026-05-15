@@ -26,6 +26,7 @@ import { TemplateGallery, ALL_DECK_TEMPLATES, type DeckTemplate } from "@/compon
 import { ModeCards, type Mode } from "@/components/powerpoint/composer/ModeCards";
 import { QuickControls } from "@/components/powerpoint/composer/QuickControls";
 import { OutlineReview } from "@/components/powerpoint/composer/OutlineReview";
+import { BrandAssetsPreview } from "@/components/powerpoint/composer/BrandAssetsPreview";
 
 import { DeckPreview, type DeckOutline } from "@/components/powerpoint/DeckPreview";
 import horizonBg from "@/assets/horizon-bg.png";
@@ -111,6 +112,20 @@ const PowerPointAgent: React.FC = () => {
   const [pasteText, setPasteText] = useState("");
   const [parallaxMode, setParallaxMode] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  // Brand assets preview — local-only confirmation before generation.
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [logoCorner, setLogoCorner] = useState<import("@/components/powerpoint/composer/BrandAssetsPreview").LogoCorner>("top-right");
+  // Manage the object URL lifecycle so we don't leak blobs across uploads.
+  useEffect(() => {
+    if (!coverImageFile) {
+      setCoverImageUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(coverImageFile);
+    setCoverImageUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [coverImageFile]);
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = (searchParams.get("tab") === "editor" ? "editor" : "agent") as "agent" | "editor";
   const setActiveTab = useCallback((t: "agent" | "editor") => {
@@ -1079,7 +1094,19 @@ const PowerPointAgent: React.FC = () => {
                 disabled={isGenerating}
               />
 
-              {/* Step 4 — preset prompt chips (prompt mode only) */}
+              {/* Brand assets preview — confirm logo + cover before generating */}
+              <div className="max-w-3xl mx-auto w-full">
+                <BrandAssetsPreview
+                  logoUrl={useBrand ? selectedBrand?.logo_url : null}
+                  brandName={useBrand ? selectedBrand?.name : null}
+                  coverImageUrl={coverImageUrl}
+                  onCoverImageChange={setCoverImageFile}
+                  logoCorner={logoCorner}
+                  setLogoCorner={setLogoCorner}
+                  disabled={isGenerating}
+                />
+              </div>
+
               {mode === "prompt" && (
                 <div className="flex flex-wrap gap-2 justify-center max-w-3xl mx-auto pt-2">
                   {suggestions.map((s) => (
@@ -1235,6 +1262,15 @@ const PowerPointAgent: React.FC = () => {
       {history.length > 0 && activeTab === "agent" && (
         <footer className="border-t bg-card/60 backdrop-blur-md sticky bottom-0 z-20 relative">
           <div className="max-w-6xl mx-auto px-6 py-3 space-y-2">
+            <BrandAssetsPreview
+              logoUrl={useBrand ? selectedBrand?.logo_url : null}
+              brandName={useBrand ? selectedBrand?.name : null}
+              coverImageUrl={coverImageUrl}
+              onCoverImageChange={setCoverImageFile}
+              logoCorner={logoCorner}
+              setLogoCorner={setLogoCorner}
+              disabled={isGenerating}
+            />
             <form
               onSubmit={(e) => {
                 e.preventDefault();
