@@ -34,6 +34,7 @@ import type { GoogleFontSelection } from './AssetBriefModal';
 import { checkAndSyncBrand, forceResyncBrand } from '@/services/brandAutoSync';
 import { StyleAnchorProvider } from '@/contexts/StyleAnchorContext';
 import { BrandHubImportModal } from '@/components/brand/BrandHubImportModal';
+import { SocialDigitalWizard } from './SocialDigitalWizard';
 
 const iconMap: Record<string, React.ElementType> = {
   'Palette': Palette,
