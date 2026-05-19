@@ -16,6 +16,7 @@ interface GenerateAssetRequest {
   count?: number;
   text?: string;
   instruction?: string;
+  textType?: 'headline' | 'body' | 'cta' | 'slogan' | 'email_subject' | 'preheader' | 'description' | 'social_caption';
   logoBase64?: string;
   colorPalette?: string[];
   referenceImageBase64?: string;
@@ -36,7 +37,7 @@ serve(async (req) => {
     }
 
     const body: GenerateAssetRequest = await req.json();
-    const { type, eventName, eventDescription, eventDate, eventLocation, styleDescription, count, text, instruction, colorPalette, referenceImageBase64 } = body;
+    const { type, eventName, eventDescription, eventDate, eventLocation, styleDescription, count, text, instruction, textType, colorPalette, referenceImageBase64 } = body;
 
     let systemPrompt = "";
     let userPrompt = "";
@@ -168,20 +169,49 @@ ${styleDescription ? `Desired style/vibe: ${styleDescription}` : ''}
 Return only a JSON array like: ["#FF5733", "#33FF57", ...]`;
         break;
 
-      case 'refine_text':
-        systemPrompt = `You are a professional editor. Refine the given text according to the instruction while:
-- Maintaining the original meaning
-- Improving clarity and flow
-- Fixing any grammatical issues
-- Matching the requested tone or style
+      case 'refine_text': {
+        const typeRules: Record<string, string> = {
+          headline: `- Max 8 words; punchy and hook-first
+- No punctuation at end unless it is a question mark
+- Sentence case (not Title Case unless brand mandates it)
+- No filler words ("just", "really", "very")`,
+          body: `- Paragraphs ≤ 3 sentences; each sentence ≤ 20 words
+- Active voice; cut every passive construction
+- No jargon; replace with plain language equivalent
+- Preserve all factual details (dates, names, locations)`,
+          cta: `- 2-5 words maximum
+- Verb-first: "Register Now", "Get Tickets", "Save My Spot"
+- Imperative mood; no hedging ("click here to maybe...")
+- One clear action only`,
+          slogan: `- 3-8 words; highly memorable and brand-aligned
+- Rhythm matters — read aloud to check cadence
+- Avoid clichés; aim for fresh metaphor or wordplay
+- Timeless, not trend-dependent`,
+          email_subject: `- 6-9 words; avoid spam triggers (FREE, GUARANTEED, !!!, ALL CAPS)
+- Create urgency or curiosity without being clickbait
+- Personalisation token placeholder OK: {{first_name}}
+- ≤ 50 characters for mobile preview`,
+          preheader: `- 40-90 characters; complements subject line, does not repeat it
+- Continues the subject thought naturally
+- Avoid "View this email in your browser" style filler`,
+          description: `- 1-3 sentences; lead with the most compelling benefit
+- Include who, what, when, where if relevant
+- Professional and scannable; no fluff`,
+          social_caption: `- Platform-appropriate length (Instagram: ≤ 125 chars before cutoff; Twitter: ≤ 240; LinkedIn: ≤ 200 before "see more")
+- Conversational but on-brand
+- Hashtags come after the caption body, not embedded mid-sentence
+- End with a clear micro-CTA`,
+        };
+        const typeLabel = textType || 'general';
+        const rules = typeRules[typeLabel] || `- Improve clarity, flow, and grammar\n- Preserve original meaning and tone`;
+        systemPrompt = `You are a senior marketing copywriter specialised in event promotion. Refine the given ${typeLabel} text following these rules:
+${rules}
 
-Respond with only the refined text, no explanations.`;
-        
-        userPrompt = `Refine this text: "${text}"
-Instruction: ${instruction}
-
-Respond with only the refined text.`;
+Respond with ONLY the refined text — no explanations, no labels, no quotation marks.`;
+        userPrompt = `Text to refine: ${text}
+Refinement instruction: ${instruction || 'Improve quality while keeping the original intent.'}`;
         break;
+      }
 
       default:
         throw new Error(`Unsupported generation type: ${type}`);

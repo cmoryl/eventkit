@@ -76,10 +76,10 @@ serve(async (req) => {
         imageUrl = await generateWithOpenAI(apiKey!, prompt, config);
         break;
       case 'stability':
-        imageUrl = await generateWithStability(apiKey!, prompt, config);
+        imageUrl = await generateWithStability(apiKey!, prompt, config, context);
         break;
       case 'replicate':
-        imageUrl = await generateWithReplicate(apiKey!, prompt, config);
+        imageUrl = await generateWithReplicate(apiKey!, prompt, config, context);
         break;
       case 'midjourney':
         // Midjourney doesn't have an official API - use Replicate's Midjourney-style models
@@ -106,6 +106,26 @@ serve(async (req) => {
     );
   }
 });
+
+// Snap a pixel dimension to the nearest Stability-valid value (multiple of 64, 512–1024)
+function snapToStabilityDim(v: number): number {
+  return Math.max(512, Math.min(1024, Math.round(v / 64) * 64));
+}
+
+// Derive a Replicate-compatible aspect_ratio string from pixel dimensions
+function deriveAspectRatio(w: number, h: number): string {
+  const known: Array<[string, number]> = [
+    ["1:1", 1], ["16:9", 16/9], ["9:16", 9/16], ["4:3", 4/3], ["3:4", 3/4],
+    ["3:2", 3/2], ["2:3", 2/3], ["21:9", 21/9], ["9:21", 9/21],
+  ];
+  const target = w / h;
+  let best = "1:1", bestDiff = Infinity;
+  for (const [label, ratio] of known) {
+    const diff = Math.abs(target - ratio);
+    if (diff < bestDiff) { bestDiff = diff; best = label; }
+  }
+  return best;
+}
 
 // Validate API key by making a lightweight request to each provider
 async function validateApiKey(provider: string, apiKey?: string): Promise<{ valid: boolean; message: string }> {
@@ -299,10 +319,13 @@ async function generateWithOpenAI(
 async function generateWithStability(
   apiKey: string,
   prompt: string,
-  config?: Record<string, unknown>
+  config?: Record<string, unknown>,
+  context?: GenerateRequest["context"]
 ): Promise<string | null> {
   const engineId = (config?.model as string) || "stable-diffusion-xl-1024-v1-0";
-  
+  const width = context?.dimensions ? snapToStabilityDim(context.dimensions.width) : 1024;
+  const height = context?.dimensions ? snapToStabilityDim(context.dimensions.height) : 1024;
+
   const response = await fetch(`https://api.stability.ai/v1/generation/${engineId}/text-to-image`, {
     method: "POST",
     headers: {
@@ -315,8 +338,8 @@ async function generateWithStability(
       cfg_scale: (config?.guidanceScale as number) || 7,
       steps: (config?.steps as number) || 30,
       samples: 1,
-      width: 1024,
-      height: 1024,
+      width,
+      height,
     }),
   });
 
@@ -335,24 +358,26 @@ async function generateWithStability(
 async function generateWithReplicate(
   apiKey: string,
   prompt: string,
-  config?: Record<string, unknown>
+  config?: Record<string, unknown>,
+  context?: GenerateRequest["context"]
 ): Promise<string | null> {
-  // Use the official model identifier format for Replicate
   const modelConfig = config?.model as string || "black-forest-labs/flux-schnell";
-  
-  // For flux models, use the deployments API which is simpler
+  const aspect_ratio = context?.dimensions
+    ? deriveAspectRatio(context.dimensions.width, context.dimensions.height)
+    : "1:1";
+
   const response = await fetch("https://api.replicate.com/v1/models/" + modelConfig + "/predictions", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "Prefer": "wait", // Wait for the result instead of polling
+      "Prefer": "wait",
     },
     body: JSON.stringify({
       input: {
         prompt,
         num_outputs: 1,
-        aspect_ratio: "1:1",
+        aspect_ratio,
         output_format: "png",
       },
     }),
