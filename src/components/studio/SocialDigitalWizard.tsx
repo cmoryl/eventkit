@@ -590,9 +590,73 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
               <div>
                 <h2 className="text-2xl font-bold">Tell us about your campaign</h2>
                 <p className="text-muted-foreground text-sm mt-1">
-                  These details guide every post we generate.
+                  Start from a proven preset, or write your own brief from scratch.
                 </p>
               </div>
+
+              {/* Preset Briefs */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Quick-start presets
+                  </Label>
+                  {activePreset && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivePreset(null);
+                        setCampaignName('');
+                        setKeyMessage('');
+                        setAudience('');
+                        setVibe('');
+                        setSelectedNetworks([]);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    >
+                      <X className="h-3 w-3" /> Clear
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {PRESET_BRIEFS.map(preset => {
+                    const isActive = activePreset === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyPreset(preset)}
+                        className={cn(
+                          'group text-left rounded-xl border p-3 transition-all',
+                          isActive
+                            ? `border-primary bg-gradient-to-br ${studioGradient} text-white shadow-md`
+                            : 'border-border bg-card hover:border-primary/50 hover:bg-accent/30'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg leading-none">{preset.emoji}</span>
+                          <span className="font-semibold text-sm">{preset.label}</span>
+                        </div>
+                        <p className={cn(
+                          'text-[11px] leading-snug line-clamp-2',
+                          isActive ? 'text-white/85' : 'text-muted-foreground'
+                        )}>
+                          {preset.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Picking a preset fills the brief and recommended networks — edit anything below to customize.
+                </p>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                <div className="relative flex justify-center text-[10px] uppercase tracking-wider"><span className="bg-card px-2 text-muted-foreground">Or write your own</span></div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="campaign">Campaign / Event Name *</Label>
                 <Input
