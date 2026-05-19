@@ -23,6 +23,99 @@ interface Body {
   assets: AssetSpec[];
 }
 
+// Per-platform copy rules. Injected into the system prompt so the AI has
+// explicit, platform-native constraints for every network it may encounter.
+const PLATFORM_RULES: Record<string, string> = {
+  Instagram: `INSTAGRAM RULES:
+  • Headline: 5-7 words, hook-first, emoji optional
+  • Caption: 125-150 chars before "more" cutoff; use 2-3 line breaks for scannability
+  • Hashtags: 5-10 tags — mix branded (#EventName), niche topic, and 1-2 trending
+  • CTA: visual-action CTAs — "Save this ↓", "Tag a friend who needs this", "Link in bio 🔗"
+  • Tone: visual-first, community-driven, aspirational`,
+
+  LinkedIn: `LINKEDIN RULES:
+  • Headline: 8-12 words, value-proposition focused, NO emojis, professional language
+  • Caption: 100-200 chars before "see more"; insight-led, cite business outcomes
+  • Hashtags: 3-5 only — industry/category tags (#EventMarketing, #Leadership); no personal spam
+  • CTA: professional CTAs — "Register now", "Reserve your seat", "Learn more"
+  • Tone: thought-leadership, B2B-friendly, benefit-driven`,
+
+  "Twitter/X": `TWITTER/X RULES:
+  • Headline: 6-8 words, punchy and retweetable, no hashtags in headline
+  • Caption: 240 chars MAX (leave 25 chars for link); NO paragraph breaks; one punchy sentence
+  • Hashtags: 1-2 ONLY — one branded, one topical; more hurts engagement
+  • CTA: short and direct — "Register →", "Don't miss this", "Happening live"
+  • Tone: conversational, shareable, sense of urgency`,
+
+  TikTok: `TIKTOK RULES:
+  • Headline: 3-5 words; MUST create urgency or curiosity within the first 3 seconds
+  • Caption: 80-120 chars; casual lowercase acceptable; emoji-forward
+  • Hashtags: 8-12 tags — trending sound/challenge tags + event-specific tags
+  • CTA: participation CTAs — "Comment 👇", "Duet this", "Share with your crew 🎉"
+  • Tone: casual, Gen-Z-aware, entertainment-first, authentic over polished`,
+
+  Facebook: `FACEBOOK RULES:
+  • Headline: 6-10 words, clear and direct, question format works well
+  • Caption: 150-250 chars; conversational, story-driven, community-oriented
+  • Hashtags: 2-3 ONLY (Facebook hashtags have low reach); keep them broad
+  • CTA: community CTAs — "RSVP now", "Get your tickets", "Join us", "Bring a friend"
+  • Tone: warm, inclusive, community-first`,
+
+  YouTube: `YOUTUBE RULES:
+  • Headline: 8-12 words; keyword-rich for search; start with strongest benefit or curiosity gap
+  • Caption: 125-200 chars; describe the episode/video value; include 1-2 search keywords naturally
+  • Hashtags: 3-5 discovery tags — category, topic, brand
+  • CTA: "Subscribe for updates", "Watch the full session", "Register below"
+  • Tone: educational, value-driven, descriptive — promise what viewer will gain`,
+
+  Email: `EMAIL RULES:
+  • Headline: THIS IS THE SUBJECT LINE — 6-9 words; create urgency or curiosity; avoid spam triggers (FREE, GUARANTEED, !!!)
+  • Caption: THIS IS THE PREHEADER TEXT — 40-90 chars; complements subject, does not repeat it
+  • Hashtags: MUST BE EMPTY ARRAY [] — email has no hashtags
+  • CTA: button action text — "Register Now", "Save My Spot", "Claim Your Ticket", "See Full Agenda"
+  • Tone: professional, direct, benefit-focused; subscriber already opted in — be concise`,
+
+  Podcast: `PODCAST RULES:
+  • Headline: 6-10 words; episode-title style with curiosity-gap or outcome hook
+  • Caption: 100-200 chars; describe the episode's core value — what listener will gain or learn
+  • Hashtags: 3-5 podcast-specific tags — #podcast, #[EventName]Podcast, category tag
+  • CTA: "Subscribe and listen", "New episode out now", "Available on all platforms"
+  • Tone: conversational, intimate, knowledge-sharing — speak directly to listener`,
+};
+
+const PLATFORM_RULE_FALLBACK = `GENERAL RULES:
+  • Headline: 6-8 words, punchy and on-brand
+  • Caption: concise and clear, appropriate length for the platform
+  • Hashtags: 3-5 relevant tags
+  • CTA: "Learn more", "Register now", or "Get tickets"
+  • Tone: professional and engaging`;
+
+function buildSystemPrompt(networks: string[]): string {
+  const unique = [...new Set(networks)];
+  const ruleBlocks = unique
+    .map(n => PLATFORM_RULES[n] || `${n.toUpperCase()} RULES:\n  ${PLATFORM_RULE_FALLBACK}`)
+    .join("\n\n");
+
+  return `You are a senior social media copywriter who specialises in platform-native event marketing copy.
+
+PLATFORM-SPECIFIC REQUIREMENTS — follow these strictly for each asset's network:
+
+${ruleBlocks}
+
+OUTPUT FORMAT — return STRICT JSON only, no commentary, matching this schema exactly:
+{
+  "items": [
+    { "key": "<asset key>", "headline": "...", "caption": "...", "hashtags": ["#a","#b"], "cta": "..." }
+  ]
+}
+
+Rules for every item:
+- "key" must match the key provided in the user message exactly
+- "hashtags" must be an array of strings starting with #
+- "cta" is the single call-to-action string (button label or closing line)
+- Never add commentary outside the JSON`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -42,18 +135,8 @@ serve(async (req) => {
       });
     }
 
-    const system = `You are a senior social media copywriter. For each asset, write platform-native copy:
-- Headline (max 8 words, punchy, on the design)
-- Body / caption text (length tuned to the platform — short for Instagram/TikTok, professional for LinkedIn, conversational for Facebook, concise for X/Twitter, descriptive for YouTube/Podcast, formal subject line for Email)
-- Hashtags (3-6, relevant, no spam) where applicable
-- A single short CTA (e.g. "Register now")
-
-Return STRICT JSON only, no commentary, with shape:
-{
-  "items": [
-    { "key": "<asset key>", "headline": "...", "caption": "...", "hashtags": ["#a","#b"], "cta": "..." }
-  ]
-}`;
+    const networks = assets.map(a => a.network);
+    const system = buildSystemPrompt(networks);
 
     const user = `Campaign: ${campaignName || "Untitled"}
 Brand: ${brandName || "—"}
@@ -61,7 +144,7 @@ Key message: ${keyMessage || "—"}
 Audience: ${audience || "—"}
 Tone / vibe: ${vibe || "—"}
 
-Write copy for these assets:
+Write copy for these assets — apply the platform rules above for each network:
 ${assets.map(a => `- key=${a.key} | network=${a.network} | asset=${a.assetName}`).join("\n")}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

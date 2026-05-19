@@ -70,6 +70,56 @@ interface BatchGenerationModalProps {
 // Max concurrent generations to avoid rate limits
 const MAX_CONCURRENT = 2;
 
+/**
+ * Per-asset-type format hints injected into the generation base prompt.
+ * Covers format, orientation, safe zones, and primary design intent so the
+ * AI model receives meaningful constraints beyond just the asset name.
+ */
+const ASSET_FORMAT_HINTS: Record<string, string> = {
+  // ── Social / Digital ─────────────────────────────────────────────────────
+  SOCIAL_POST:        'Square 1:1 format. Bold visual hierarchy for mobile feed. Subject centred with clear negative space for text overlay.',
+  INSTAGRAM_POST:     'Square 1080×1080. Feed post optimised for mobile. Strong focal point, readable at thumbnail size, safe margins 60px each side.',
+  INSTAGRAM_STORY:    'Vertical 9:16 (1080×1920). Full-bleed design. Keep key content within centre 75% to avoid UI chrome at top and bottom.',
+  INSTAGRAM_REEL:     'Vertical 9:16. Attention-grabbing first frame with bold typography in the safe zone; cinematic crop.',
+  FACEBOOK_POST:      '4:5 or 1:1 format. Thumb-stopping image with strong contrast and clear event details. Facebook blue (#1877F2) accent optional.',
+  FACEBOOK_COVER:     'Wide 16:9 (851×315 effective). Brand hero image with logo safe zone on left third.',
+  LINKEDIN_POST:      'Horizontal 1.91:1 (1200×628). Professional, clean design. Text and logo in left third safe zone.',
+  LINKEDIN_BANNER:    'Wide 4:1 (1584×396). Minimal, corporate-clean. Logo left, tagline centre, no critical content in top/bottom 60px.',
+  TWITTER_POST:       'Horizontal 16:9 or 2:1. Bold headline legible at small size. Leave 5% margin from all edges.',
+  TWITTER_HEADER:     'Wide 3:1 (1500×500). Brand identity hero. Logo and name safe zone: centre third, avoid left/right 15%.',
+  TIKTOK_POST:        'Vertical 9:16. Entertainment-first composition. Hook element (text/graphic) in top 30%. Safe zone: avoid bottom 20% (UI overlay).',
+  YOUTUBE_THUMBNAIL:  '16:9 (1280×720). Close-up faces or bold graphic. High contrast. Readable text at 320px width. Avoid centre-right (YouTube watermark).',
+  YOUTUBE_BANNER:     'Ultra-wide 2560×1440 with 1546×423 safe zone centred. Brand identity, social links area on right.',
+  PODCAST_COVER:      'Square 1:1 (3000×3000 for iTunes quality). Bold, readable title at 55px thumbnail. Avoid fine detail; strong colour contrast required.',
+  EMAIL_BANNER:       'Wide 600px fixed width × 200-300px tall. Scannable in 2 seconds. CTA button hint in right third. Renders on white background.',
+  EMAIL_HEADER:       'Wide 600px × 150-250px. Brand header strip. Logo centred or left-aligned. Simple, clean — supports light/dark email clients.',
+  // ── Print / Physical ─────────────────────────────────────────────────────
+  EVENT_FLYER:        'Portrait A5/A4 print-ready. Hierarchy: event name → date/time → venue → CTA. Bleed-safe 3mm margins. 300 DPI equivalent detail.',
+  SAVE_THE_DATE:      'Portrait or landscape card. Date is the HERO element — large, centred. Minimal copy. Premium feel.',
+  INVITATION:         'Formal portrait layout. Full event details with RSVP callout. Elegant typography. Luxury paper texture acceptable.',
+  PROGRAM_COVER:      'Portrait A5. Clean, editorial. Event title + date prominent. Inside pages implied by cover design direction.',
+  BANNER:             'Wide landscape format (e.g. 6ft × 2ft). Bold headline legible at 10 metres. Minimal copy. Logo top-left.',
+  STEP_AND_REPEAT:    'Wide repeating logo pattern on dark or light background. Logos spaced 18" apart in brick pattern. Media wall style.',
+  PULL_UP_BANNER:     'Tall portrait (850mm × 2000mm). Top third: logo + tagline. Middle: key message. Bottom third: contact/CTA. Foot bleed included.',
+  TABLE_SIGN:         'Landscape A5 or tent card. Event name + table/room number prominent. Clean, hospitality-style design.',
+  NAME_TAG:           'Portrait badge (4"×3" or 3.5"×2.5"). Name area large. Company/role smaller below. Colour-coded edge stripe for role type.',
+  LANYARD:            'Narrow vertical (1"–2" wide × 36" long). Repeating brand pattern or solid with logo. Readable text at 6mm height.',
+  // ── Event Signage ────────────────────────────────────────────────────────
+  MAIN_STAGE_BACKDROP:'Wide 16:9 or custom aspect. Full-bleed brand immersion. Event name + sponsor logos at foot. No text in centre (speaker zone).',
+  DOOR_SIGNAGE:       'Portrait A4/A3. Room name + session/event info. Clean wayfinding style. High contrast for quick reading.',
+  ROOM_SIGNAGE:       'Portrait A4. Session title + time + room number. Directional arrow hint. Corporate-clean typography.',
+  WAYFINDING_SIGN:    'Landscape or portrait. Clear directional arrows. Simple map element optional. High contrast, accessibility-aware.',
+  // ── Merchandise ──────────────────────────────────────────────────────────
+  TSHIRT:             'Front chest placement on white/dark tee. Design max 30cm × 30cm print area. Screen-print compatible: max 4 colours on dark, no gradients.',
+  TSHIRT_BACK:        'Full back print area. Can be larger than front. Consider collar-safe zone (5cm from collar seam).',
+  HAT:               'Embroidery-safe design. Front panel only. Max 5cm wide. Solid fills only — no gradients or fine lines thinner than 1.5mm.',
+  HOODIE:             'Front chest left-breast OR full chest. Embroidery or screen-print; keep design under 25cm wide for DTG.',
+  // ── Digital Screens ──────────────────────────────────────────────────────
+  DIGITAL_SIGNAGE:    'Landscape 16:9 (1920×1080). Clear legibility from 3m. Large bold text (min 80pt equivalent). High contrast. No fine detail.',
+  COUNTDOWN_SCREEN:   '16:9. Timer element centred. Event name above, supporting info below. Animated feel implied in static frame.',
+  SPONSOR_SLIDE:      '16:9. Logo showcase layout. Grid of sponsor logos with tier separation. Clean white or dark background.',
+};
+
 export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   isOpen,
   onClose,
@@ -153,8 +203,16 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   // callbacks already captured in useCallback closures.
   const generateOne = useCallback(async (assetType: string, anchorUrl?: string, masterDirectionBlock?: string): Promise<{ imageUrl?: string; error?: string }> => {
     const info = assetDisplayInfo[assetType];
+    const assetLabel = info?.name || assetType;
+
+    // Build a specific base prompt: format hint → dimensions → asset description.
+    const formatHint = ASSET_FORMAT_HINTS[assetType];
+    const dimensionHint = info?.dimensions ? `Dimensions: ${info.dimensions}.` : '';
+    const descriptionHint = info?.description && info.description !== assetLabel ? info.description : '';
+    const specifics = [formatHint, dimensionHint, descriptionHint].filter(Boolean).join(' ');
+
     const prompt = compileGenerationPrompt({
-      basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: modern and brand-consistent.`,
+      basePrompt: `Create a professional ${assetLabel} for "${eventName}".${specifics ? ` ${specifics}` : ''} Style: modern and brand-consistent.`,
       context: {
         eventName,
         assetType,
