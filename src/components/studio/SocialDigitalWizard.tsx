@@ -233,6 +233,17 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
   const [referenceImages, setReferenceImages] = useState<{ name: string; dataUrl: string }[]>([]);
   const [referenceDocs, setReferenceDocs] = useState<{ name: string; size: number; text?: string }[]>([]);
   const [showBatch, setShowBatch] = useState(false);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+
+  const applyPreset = (preset: PresetBrief) => {
+    setActivePreset(preset.id);
+    setCampaignName(preset.campaignName);
+    setKeyMessage(preset.keyMessage);
+    setAudience(preset.audience);
+    setVibe(preset.vibe);
+    setSelectedNetworks(preset.networks);
+    toast.success(`Loaded "${preset.label}" preset — tweak any field to make it yours`);
+  };
 
   // Preview / export state
   const [captions, setCaptions] = useState<Record<string, CaptionData>>({});
