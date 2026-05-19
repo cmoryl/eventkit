@@ -1,18 +1,42 @@
 // Asset-specific prompt templates and configurations
 
-// Print asset categories for automatic detection
+// Print asset categories for automatic detection.
+// All types here get: 300 DPI target, CMYK-safe colors, "quality" image model,
+// and per-type print specification injected into the generation prompt.
 export const PRINT_ASSET_TYPES = new Set([
-  'NAME_TAG', 'NAME_TAG_BACK', 'MENU', 'FOLDER', 'STICKER_SHEET', 
-  'THANK_YOU_NOTE', 'BANNER', 'EVENT_SIGNAGE', 'EASEL_SIGNAGE',
+  // ── Badges & Credentials ─────────────────────────────────────────────────
+  'NAME_TAG', 'NAME_TAG_BACK', 'VIP_PASS', 'BACKSTAGE_PASS',
+  'MEDIA_CREDENTIAL', 'SECURITY_BADGE', 'PARKING_PASS',
+  // ── Apparel & Merchandise ────────────────────────────────────────────────
+  'TSHIRT', 'TSHIRT_BACK', 'TSHIRT_SLEEVE', 'HAT', 'HOODIE', 'VOLUNTEER_VEST',
+  'SWAG_BAG', 'WATER_BOTTLE', 'LANYARD', 'WRISTBAND_DESIGN',
+  'COASTER_DESIGN', 'NAPKIN_DESIGN', 'COCKTAIL_NAPKIN',
+  'STICKER_SHEET', 'MATCHBOOK', 'GIFT_BOX',
+  // ── Signage — indoor ─────────────────────────────────────────────────────
+  'BANNER', 'ROLLUP_BANNER', 'STAND_UP_PILLAR_BANNER',
+  'EVENT_SIGNAGE', 'EASEL_SIGNAGE', 'HANGING_SIGNAGE',
   'DOOR_SIGNAGE', 'ROOM_SIGNAGE', 'LOCATION_SIGNAGE', 'WIFI_SIGN',
-  'HANGING_SIGNAGE', 'OUTDOOR_SIGNAGE', 'TSHIRT', 'TSHIRT_BACK',
-  'TSHIRT_SLEEVE', 'HAT', 'SWAG_BAG', 'WATER_BOTTLE', 'LANYARD',
-  'STAND_UP_PILLAR_BANNER', 'FEATHER_FLAG', 'TEARDROP_FLAG',
-  'BACK_WALL', 'MAIN_STAGE_BACKDROP', 'REGISTRATION_COUNTER',
-  'WELCOME_COUNTER', 'TECHNOLOGY_COUNTER', 'KIOSK', 'STAIRS',
+  'A_FRAME', 'TABLE_TENT', 'TABLE_NUMBER', 'TABLE_RUNNER', 'TABLECLOTH',
+  'SPONSOR_WALL', 'SPONSOR_BANNER',
+  // ── Signage — outdoor & large format ─────────────────────────────────────
+  'OUTDOOR_SIGNAGE', 'FEATHER_FLAG', 'TEARDROP_FLAG', 'PORTABLE_BILLBOARD',
+  // ── Venue structures & wraps ─────────────────────────────────────────────
+  'BACK_WALL', 'MAIN_STAGE_BACKDROP', 'STAGE_BACKDROP', 'STEP_AND_REPEAT',
+  'REGISTRATION_BACK_WALL', 'REGISTRATION_COUNTER',
+  'WELCOME_COUNTER', 'TECHNOLOGY_COUNTER', 'KIOSK',
+  'STAIRS', 'STAIR_GRAPHICS', 'ESCALATOR_GRAPHICS',
   'GLASS_DOOR', 'GLASS_DOUBLE_DOOR', 'GLASS_ROTATING_DOOR',
-  'STEP_AND_REPEAT', 'WRISTBAND_DESIGN', 'COASTER_DESIGN', 
-  'NAPKIN_DESIGN', 'REGISTRATION_BACK_WALL'
+  'ELEVATOR_WRAP', 'COLUMN_WRAP', 'CEILING_HANGER',
+  'FLOOR_DECAL', 'WINDOW_CLING',
+  'SELFIE_FRAME', 'PHOTO_BOOTH_FRAME',
+  // ── Printed materials & stationery ───────────────────────────────────────
+  'MENU', 'BAR_MENU', 'FOLDER', 'THANK_YOU_NOTE',
+  'INVITATION', 'RSVP_CARD', 'TICKET', 'ENVELOPE',
+  'PROGRAM_BOOKLET', 'CERTIFICATE', 'EVALUATION_FORM',
+  'FLOOR_PLAN', 'SEATING_CHART',
+  'PLACE_CARD', 'DIETARY_CARD', 'CATERING_LABEL',
+  'AGENDA_HIGHLIGHTS', 'POLL_CARD', 'NETWORKING_BINGO', 'SCAVENGER_HUNT',
+  'PRESS_RELEASE', 'MEDIA_KIT', 'SPONSOR_PACKAGE', 'STYLE_GUIDE',
 ]);
 
 // Hyper-realistic environment contexts for different asset types
@@ -273,3 +297,391 @@ export function getBasePrompt(
 export function isPrintAsset(assetType: string): boolean {
   return PRINT_ASSET_TYPES.has(assetType);
 }
+
+/**
+ * Per-asset-type print specification.
+ * Injected by buildPrintRequirements so the AI understands the physical
+ * context — dimensions, method, material, bleed, safe zone — specific to
+ * each output type rather than receiving a single generic CMYK block.
+ */
+interface PrintSpec {
+  physicalSize: string;
+  printMethod: string;
+  colorConstraints: string;
+  bleed: string;
+  safeZone: string;
+  specialNotes?: string;
+}
+
+export const PRINT_SPECS: Record<string, PrintSpec> = {
+  // ── Apparel ──────────────────────────────────────────────────────────────
+  TSHIRT: {
+    physicalSize: '12" × 16" (30 × 40 cm) chest print area',
+    printMethod: 'Screen print (preferred) or DTG (Direct-to-Garment)',
+    colorConstraints: 'Screen print: max 6 spot colors — NO gradients, NO halftones finer than 45 lpi, minimum 1 mm stroke. DTG: full color OK but avoid very light colors on white fabric.',
+    bleed: 'None required — design sits within the print area',
+    safeZone: '0.5" (12 mm) clearance from sleeve seams and collar',
+    specialNotes: 'Design must hold up at wash temperatures. Solid fills preferred. Fine text min 18pt.',
+  },
+  TSHIRT_BACK: {
+    physicalSize: '14" × 17" (35 × 43 cm) back print area',
+    printMethod: 'Screen print or DTG',
+    colorConstraints: 'Same as front — screen print max 6 spot colors. Logo/sponsor rows at foot should stack clearly.',
+    bleed: 'None required',
+    safeZone: '0.5" (12 mm) from sleeve seams and collar; 1" from hem',
+    specialNotes: 'Sponsor tiers should use font size min 14pt at final print size.',
+  },
+  TSHIRT_SLEEVE: {
+    physicalSize: '3" × 3.5" (7.5 × 9 cm) sleeve print area',
+    printMethod: 'Screen print or embroidery',
+    colorConstraints: 'Screen print: max 3 spot colors. Embroidery: max 4 thread colors, min 2 mm detail.',
+    bleed: 'None required',
+    safeZone: '0.25" (6 mm) all sides',
+  },
+  HAT: {
+    physicalSize: '2.25" × 4" (5.7 × 10 cm) front panel maximum — most designs fit 2" × 3.5"',
+    printMethod: 'EMBROIDERY ONLY — this is the standard method for headwear',
+    colorConstraints: 'MAX 7 thread colors. NO photographic gradients, NO thin strokes under 2 mm, NO drop shadows or glows. All fills must be solid. Minimum letterform height 4 mm.',
+    bleed: 'None',
+    safeZone: '0.25" (6 mm) from panel edge',
+    specialNotes: 'Design will be digitized for embroidery. Complex illustrations lose detail — keep it bold and iconic.',
+  },
+  HOODIE: {
+    physicalSize: '12" × 14" (30 × 35 cm) front chest or 14" × 16" full back',
+    printMethod: 'Screen print, DTG, or embroidery (small logo only)',
+    colorConstraints: 'Screen print: max 6 spot colors. DTG: full color. Embroidery: max 7 colors, see HAT constraints.',
+    bleed: 'None required',
+    safeZone: '0.5" from seams and zip/pouch pocket edge',
+  },
+  VOLUNTEER_VEST: {
+    physicalSize: 'Front chest left: 4" × 4" (10 × 10 cm). Back: 10" × 8" (25 × 20 cm)',
+    printMethod: 'Screen print or heat transfer',
+    colorConstraints: 'Max 4 spot colors. High contrast required — vests are often safety orange/yellow.',
+    bleed: 'None',
+    safeZone: '0.5" from pocket edges',
+    specialNotes: 'Text on back must be readable at 10 m. Min 48pt at final size.',
+  },
+  LANYARD: {
+    physicalSize: '0.75"–1" wide × 36" long (20–25 mm × 91 cm). Design repeats top to bottom.',
+    printMethod: 'Dye-sublimation (dye-sub) full color — seamless repeat',
+    colorConstraints: 'Full CMYK color OK. Colours will appear slightly muted on polyester. Avoid very pale pastels.',
+    bleed: '3 mm each side (extends under stitched edge)',
+    safeZone: '4 mm from both long edges — stitching folds here',
+    specialNotes: 'Pattern must tile seamlessly. Text runs vertically — minimum 8 mm tall at final size.',
+  },
+  SWAG_BAG: {
+    physicalSize: '14" × 16" (35 × 40 cm) one-side print, cotton tote standard',
+    printMethod: 'Screen print or heat transfer',
+    colorConstraints: 'Max 5 spot colors for screen print. Avoid white — shows through cotton.',
+    bleed: 'None — design within print boundary',
+    safeZone: '0.75" from bag seams and handles',
+  },
+  WATER_BOTTLE: {
+    physicalSize: 'Wrap label: 8.5" × 3.5" (21.6 × 8.9 cm) — wraps 360° around standard 16 oz bottle',
+    printMethod: 'Digital flexographic or pressure-sensitive label',
+    colorConstraints: 'Full color CMYK. Waterproof laminate applied over print.',
+    bleed: '0.125" (3 mm) on all sides',
+    safeZone: '0.25" (6 mm) inside trim edge. Avoid placing key elements near join seam.',
+    specialNotes: 'Design wraps — left and right edges butt-join. Ensure pattern is continuous.',
+  },
+  WRISTBAND_DESIGN: {
+    physicalSize: '11" × 1" (28 × 2.5 cm) before application, stretches to fit wrist',
+    printMethod: 'Dye-sublimation (fabric wristband) or thermal (Tyvek)',
+    colorConstraints: 'Full color for fabric; black-only for Tyvek. Include event name and date — must be on every wristband.',
+    bleed: '2 mm on long edges',
+    safeZone: '3 mm from edges',
+    specialNotes: 'Consider serial number / barcode area if ticketing requires.',
+  },
+  COASTER_DESIGN: {
+    physicalSize: '3.75" × 3.75" (9.5 × 9.5 cm) circle or square, 4mm cork or cardboard',
+    printMethod: 'Digital offset (cardboard) or UV print (cork)',
+    colorConstraints: 'Full color CMYK. Matte laminate recommended.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm) inside edge',
+  },
+  NAPKIN_DESIGN: {
+    physicalSize: '4.75" × 4.75" (12 × 12 cm) cocktail napkin',
+    printMethod: '1–3 color foil stamp or digital print',
+    colorConstraints: 'Minimal color — 1–2 colors maximum for foil. Full color if digital. Design must be bold enough to read on white or coloured tissue.',
+    bleed: 'None — printed within a centered panel, not edge to edge',
+    safeZone: '0.5" from edges',
+    specialNotes: 'Design will be seen on a folded napkin under a glass — keep it simple and iconic.',
+  },
+  STICKER_SHEET: {
+    physicalSize: '8.5" × 11" sheet (US Letter) containing 4–6 individual sticker shapes',
+    printMethod: 'Digital inkjet on vinyl or paper stock, die-cut',
+    colorConstraints: 'Full color CMYK + white ink option. White ink important on clear vinyl.',
+    bleed: '0.125" bleed per individual sticker shape outside cut line',
+    safeZone: '0.0625" (1.5 mm) inside cut line per sticker',
+    specialNotes: 'Provide 3 mm gap between stickers on the sheet for clean die-cutting.',
+  },
+  // ── Badges & Credentials ─────────────────────────────────────────────────
+  NAME_TAG: {
+    physicalSize: '4" × 3" (10 × 7.5 cm) standard conference badge, landscape or portrait',
+    printMethod: 'Digital offset on 350 gsm cardstock or rigid PVC',
+    colorConstraints: 'Full color. Plastic PVC badges: colours appear more saturated — adjust accordingly.',
+    bleed: '0.125" (3 mm) all sides',
+    safeZone: '0.25" (6 mm) inside trim',
+    specialNotes: 'Leave a clear zone for name text (largest element on the badge). Lanyard hole at top center — keep 0.5" clear.',
+  },
+  NAME_TAG_BACK: {
+    physicalSize: '4" × 3" (10 × 7.5 cm) — same as front',
+    printMethod: 'Same as NAME_TAG',
+    colorConstraints: 'Usually lighter / minimal colour so QR codes scan reliably',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm). QR code min 1.5" × 1.5" with white quiet zone.',
+  },
+  VIP_PASS: {
+    physicalSize: '3.375" × 2.125" (credit-card size) or 4" × 6" (oversized laminated)',
+    printMethod: 'Offset lithography with laminate. Optional: spot UV, holographic overprint.',
+    colorConstraints: 'Full color. Holographic or metallic elements encouraged for premium feel.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm)',
+    specialNotes: 'Include "VIP ACCESS" tier mark prominently. Lanyard slot at top if 4×6 format.',
+  },
+  BACKSTAGE_PASS: {
+    physicalSize: '3.5" × 5" (9 × 12.5 cm) laminated hard pass',
+    printMethod: 'Digital offset with gloss laminate',
+    colorConstraints: 'Full color. Bold contrasting colours aid quick security identification.',
+    bleed: '0.125"',
+    safeZone: '0.25"',
+    specialNotes: 'Include ACCESS TIER clearly. Barcode / QR code area at bottom for scanning.',
+  },
+  MEDIA_CREDENTIAL: {
+    physicalSize: '4" × 6" (10 × 15 cm) laminated press pass',
+    printMethod: 'Digital offset with gloss laminate. Security features (hologram, serial number) may be required.',
+    colorConstraints: 'Full color. Press passes often use red, blue, or bright yellow for tier identification.',
+    bleed: '0.125"',
+    safeZone: '0.25"',
+  },
+  PARKING_PASS: {
+    physicalSize: '3.5" × 2" (hangtag) or 5.5" × 2.75" (dash permit)',
+    printMethod: 'Offset or digital on cardstock with reinforced hole for hanging',
+    colorConstraints: 'Full color or 2-color. High contrast — must be visible through windshield.',
+    bleed: '0.0625" (1.5 mm)',
+    safeZone: '0.125" inside trim. Hang hole: 0.5" from top edge.',
+    specialNotes: 'Include expiry date area, permit zone, and vehicle info area.',
+  },
+  SECURITY_BADGE: {
+    physicalSize: '4" × 3" hard laminate badge',
+    printMethod: 'Digital with rigid PVC and clip attachment',
+    colorConstraints: 'Bold, high-contrast colours for quick visual identification at a distance.',
+    bleed: '0.125"',
+    safeZone: '0.25"',
+  },
+  // ── Signage — retractable / indoor ───────────────────────────────────────
+  BANNER: {
+    physicalSize: '33.5" × 81" total retractable banner; print area 33" × 78" (84 × 198 cm)',
+    printMethod: 'Large-format inkjet on vinyl or fabric',
+    colorConstraints: 'Full color CMYK. Colours appear slightly muted on matte vinyl — increase saturation 10–15%.',
+    bleed: '1" (25 mm) all sides',
+    safeZone: '2" (50 mm) inside trim edge. Keep critical content above 10" from foot (hidden by stand cassette).',
+    specialNotes: 'Text must be readable at 3 m. Minimum 48pt equivalent at final print size. Strong visual hierarchy top-down.',
+  },
+  ROLLUP_BANNER: {
+    physicalSize: '33.5" × 81" — same as BANNER (retractable roll-up format)',
+    printMethod: 'Large-format inkjet on vinyl or polyester fabric',
+    colorConstraints: 'Full color. Polyester fabric: more vibrant but less sharp for fine text.',
+    bleed: '1" (25 mm) all sides',
+    safeZone: '2" (50 mm) inside trim. Bottom 8–12" folds into cassette — no content there.',
+  },
+  STAND_UP_PILLAR_BANNER: {
+    physicalSize: '24" × 72" (61 × 183 cm) or custom pillar/column format',
+    printMethod: 'Large-format inkjet on fabric or vinyl wrap',
+    colorConstraints: 'Full color CMYK',
+    bleed: '1" each side',
+    safeZone: '2" from all edges',
+    specialNotes: 'Design must work viewed from all four sides if wrapping a pillar.',
+  },
+  HANGING_SIGNAGE: {
+    physicalSize: 'Variable — common: 36" × 48" (91 × 122 cm) fabric banner',
+    printMethod: 'Dye-sublimation on polyester fabric',
+    colorConstraints: 'Full color, vibrant. Fabric is seen lit from above — high contrast needed.',
+    bleed: '1" on all sides (fabric hem allowance)',
+    safeZone: '3" inside all edges — grommets placed in corners',
+    specialNotes: 'Viewed from below at distance. Minimum 3" text height at final size. No fine detail.',
+  },
+  STEP_AND_REPEAT: {
+    physicalSize: '8 ft × 10 ft (244 × 305 cm) — standard media wall. Print spans full area.',
+    printMethod: 'Dye-sublimation on fabric or vinyl inkjet',
+    colorConstraints: 'Full color. Dark background preferred so logos read cleanly in flash photography.',
+    bleed: '2" (50 mm) all sides',
+    safeZone: '3" (75 mm) inside; logo rows should not be cut mid-repeat',
+    specialNotes: 'Logos repeat in offset brick pattern — each logo approx 12" × 8". Center row must be complete for head-height shots. No background patterns that compete with logos.',
+  },
+  MAIN_STAGE_BACKDROP: {
+    physicalSize: '20 ft × 10 ft (610 × 305 cm) typical; LED walls may be 16:9 at any size',
+    printMethod: 'Large-format dye-sublimation fabric, seamlessly joined panels',
+    colorConstraints: 'Full color. Very high brightness needed — LED screens wash out dim elements. Max contrast.',
+    bleed: '3" (75 mm) each side',
+    safeZone: '18" (45 cm) from all sides — speaker podium area centre-left/right must stay clear',
+    specialNotes: 'No text in centre (speaker obscures it). Brand name and event title at top 25% and/or bottom 15%. Viewed from 30+ m — no fine detail.',
+  },
+  BACK_WALL: {
+    physicalSize: '10 ft × 8 ft (305 × 244 cm) standard event backdrop wall',
+    printMethod: 'Dye-sublimation fabric or vinyl inkjet with frame system',
+    colorConstraints: 'Full color, high saturation',
+    bleed: '2" (50 mm)',
+    safeZone: '4" (10 cm)',
+    specialNotes: 'Designed for photography — must look premium and uncluttered in photos.',
+  },
+  FEATHER_FLAG: {
+    physicalSize: '27" × 108" flag panel (68 × 274 cm) — actual printable area varies by hardware',
+    printMethod: 'Dye-sublimation on polyester, double-sided',
+    colorConstraints: 'Full color, vibrant. Flag edges flutter — avoid critical content near vertical edges.',
+    bleed: '0.5" (12 mm)',
+    safeZone: '2" (50 mm) from all edges; 4" from the inner curved edge',
+    specialNotes: 'Design must work even when flag is moving. Bold, simple graphics only. Minimum 3" text height at final size.',
+  },
+  TEARDROP_FLAG: {
+    physicalSize: '24" × 84" (61 × 213 cm) teardrop shape',
+    printMethod: 'Dye-sublimation on polyester',
+    colorConstraints: 'Full color. Same flutter considerations as feather flags.',
+    bleed: '0.5" (12 mm) following flag contour',
+    safeZone: '2" inside the curved contour',
+    specialNotes: 'Teardrop shape means content should be centred vertically. Logo at top two-thirds.',
+  },
+  OUTDOOR_SIGNAGE: {
+    physicalSize: 'Variable — common: 24" × 36" (61 × 91 cm) or 18" × 24" (46 × 61 cm) coroplast/aluminium',
+    printMethod: 'UV-cured inkjet on corrugated plastic (coroplast) or aluminium composite',
+    colorConstraints: 'Full color. UV-resistant inks required for outdoor. Avoid very pale colours that fade.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.5" (12 mm) inside trim — outdoor signs may be viewed from stake holes',
+    specialNotes: 'Must be readable in direct sunlight at 5 m. High contrast essential.',
+  },
+  DOOR_SIGNAGE: {
+    physicalSize: '5.5" × 8.5" (A5 half-letter) or 8.5" × 11" (A4) standard door sign',
+    printMethod: 'Digital laser on 100–200 gsm cardstock, or acrylic/foamcore mount',
+    colorConstraints: 'Full color or 2-color spot. Acrylic: UV print, colours very vibrant.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm)',
+    specialNotes: 'Viewed at arm's length while standing. Minimum 24pt for key info.',
+  },
+  ROOM_SIGNAGE: {
+    physicalSize: '6" × 4" (15 × 10 cm) room name plate or 8.5" × 11" session info insert',
+    printMethod: 'Digital print on cardstock or insert into acrylic sign holder',
+    colorConstraints: 'Full color. High contrast for quick reading while walking.',
+    bleed: '0.125"',
+    safeZone: '0.25"',
+  },
+  LOCATION_SIGNAGE: {
+    physicalSize: '18" × 24" (46 × 61 cm) or 24" × 36" wayfinding sign on coroplast/foam',
+    printMethod: 'UV inkjet or digital print on foamcore with standoff mount',
+    colorConstraints: 'Full color. Bold, accessible colour contrast — WCAG AA minimum.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.5" (12 mm)',
+    specialNotes: 'Directional arrows must be visually dominant. Map elements need minimum 12pt labels. ADA-compliant colour contrast ratio ≥ 4.5:1.',
+  },
+  TABLE_TENT: {
+    physicalSize: '4" × 6" folded (10 × 15 cm each face) A-frame tent card; or 3.5" × 5" (2-up flat)',
+    printMethod: 'Digital offset on 300–350 gsm cardstock, scored and folded',
+    colorConstraints: 'Full color. Score/fold line must remain design-free for 0.25" each side.',
+    bleed: '0.125" (3 mm) outer edges',
+    safeZone: '0.25" inside outer trim; 0.125" each side of fold score line',
+  },
+  // ── Printed materials ─────────────────────────────────────────────────────
+  INVITATION: {
+    physicalSize: '5" × 7" (12.7 × 17.8 cm) flat card — most common event invitation size',
+    printMethod: 'Offset lithography or digital on 300–400 gsm premium cardstock. Optional: letterpress, foil, or emboss.',
+    colorConstraints: 'Full color or limited palette for premium feel. Avoid neon — premium stock absorbs more ink.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm)',
+    specialNotes: 'Typography is the hero — hierarchy: event name → date → venue → RSVP. Include envelope design consideration.',
+  },
+  RSVP_CARD: {
+    physicalSize: '3.5" × 5" (8.9 × 12.7 cm) response card — fits inside A2 envelope',
+    printMethod: 'Offset or digital on 300 gsm cardstock, matches invitation stock',
+    colorConstraints: 'Full color, matching invitation palette',
+    bleed: '0.125"',
+    safeZone: '0.25"',
+    specialNotes: 'Include: name field, attending Yes/No, meal choice, contact. Simple and functional.',
+  },
+  TICKET: {
+    physicalSize: '5.5" × 2.125" (14 × 5.4 cm) standard event ticket with 0.75" tear-off stub',
+    printMethod: 'Offset or digital on 80–100 lb cardstock or Tyvek',
+    colorConstraints: 'Full color. Include sequential numbering and barcode/QR areas in the design.',
+    bleed: '0.0625" (1.5 mm)',
+    safeZone: '0.125" from perforation line and outer edges',
+    specialNotes: 'Perforation line at 0.75" from right edge creates tear-off stub. Keep critical design content LEFT of stub. Include venue, date, seat/section areas.',
+  },
+  ENVELOPE: {
+    physicalSize: 'A2 (4.375" × 5.75"), A7 (5.25" × 7.25"), or 9" × 12" flat envelope — match invitation size',
+    printMethod: 'Offset on 24 lb bond or 70 lb text stock',
+    colorConstraints: 'Usually lighter print — heavy ink coverage on envelope flaps may crack. Liner print can be full coverage.',
+    bleed: '0.125" outer edges',
+    safeZone: '0.25" inside trim. USPS clear zone: no print in bottom 0.625" × right 4.75".',
+    specialNotes: 'Return address top-left. No print in postal indicia area (top-right). Liner pattern does not interfere with outer USPS zones.',
+  },
+  PROGRAM_BOOKLET: {
+    physicalSize: '5.5" × 8.5" (A5 half-letter) or 8.5" × 11" cover, saddle-stitched booklet',
+    printMethod: 'Offset or digital on 80 lb text (body) and 100 lb cover cardstock',
+    colorConstraints: 'Full color cover; body may be 1-color (B&W) or 4-color. Bleed on cover only.',
+    bleed: '0.125" cover only',
+    safeZone: '0.375" inside all edges. Spine gutter: 0.25" extra inside margin.',
+    specialNotes: 'Design the cover as the primary brand moment. Inside pages: functional layout, grid-based, readable at arm's length.',
+  },
+  CERTIFICATE: {
+    physicalSize: '8.5" × 11" (A4) landscape or portrait — standard frame-ready',
+    printMethod: 'Digital or offset on 80–100 lb premium cardstock. Optional: gold foil seal, emboss.',
+    colorConstraints: 'Full color or elegant 2-tone. Premium matte stock mutes colours slightly — increase vibrancy.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.5" (12 mm) inside trim',
+    specialNotes: 'Wide open space for recipient name (largest element). Include: issued-by line, date, signature line, official seal area. Elegant and formal — often framed.',
+  },
+  MENU: {
+    physicalSize: '4.25" × 11" (10.8 × 28 cm) single-fold card, or 8.5" × 11" trifold',
+    printMethod: 'Offset or digital on 100–130 lb cover cardstock with matte laminate',
+    colorConstraints: 'Full color. Matte laminate reduces glare from candlelight/ambient dining light.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm)',
+    specialNotes: 'Hierarchy: meal title → courses → dietary key. Font must be readable in low dining-room light — minimum 10pt body text at final size.',
+  },
+  PLACE_CARD: {
+    physicalSize: '3.5" × 2" folded (8.9 × 5 cm each face) tent card',
+    printMethod: 'Digital on 250–350 gsm cardstock, pre-scored for folding',
+    colorConstraints: 'Full color or elegant 2-color',
+    bleed: '0.0625" (1.5 mm)',
+    safeZone: '0.125" inside each face',
+    specialNotes: 'Primarily a vessel for guest name. Keep background elegant and uncluttered.',
+  },
+  FLOOR_DECAL: {
+    physicalSize: 'Variable — common 24" × 24" (61 × 61 cm) or custom contour cut shape',
+    printMethod: 'UV-cured inkjet on anti-slip vinyl laminate with aggressive floor adhesive',
+    colorConstraints: 'Full color. Anti-slip laminate adds slight texture — avoid very fine text.',
+    bleed: '0.25" (6 mm) for contour-cut shapes',
+    safeZone: '0.5" (12 mm) inside contour',
+    specialNotes: 'High-traffic floor use: must withstand cleaning solvents. No fine text under 1" height — scuffing will obscure it. Viewed from standing height.',
+  },
+  WINDOW_CLING: {
+    physicalSize: 'Variable — common 12" × 12" (30 × 30 cm) or 24" × 36" (61 × 91 cm)',
+    printMethod: 'Inkjet or UV on static-cling vinyl (no adhesive — static hold)',
+    colorConstraints: 'Full color. Glass is translucent — design appears reversed on opposite side. Print "front-face" for outside viewing.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm)',
+    specialNotes: 'Light passes through — avoid solid dark backgrounds on clear cling. Perforated cling allows two-way visibility.',
+  },
+  FLOOR_PLAN: {
+    physicalSize: '18" × 24" (46 × 61 cm) or 24" × 36" (61 × 91 cm) displayed on easel or wall mount',
+    printMethod: 'Wide-format inkjet on premium matte paper or foamcore mount',
+    colorConstraints: 'Full color with clear colour-coding for zones. Use distinct colours that photoprint accurately.',
+    bleed: '0.125"',
+    safeZone: '0.5" inside trim',
+    specialNotes: 'Legend must be legible at arm's length (min 10pt). Scale indicator required. Emergency exits, restrooms, and registration marked clearly.',
+  },
+  SEATING_CHART: {
+    physicalSize: '24" × 36" (61 × 91 cm) or 30" × 40" (76 × 102 cm) displayed on easel',
+    printMethod: 'Wide-format inkjet on matte paper or mounted print',
+    colorConstraints: 'Full color. Table numbers must be high contrast and readable at 3 m.',
+    bleed: '0.125"',
+    safeZone: '0.5" inside trim',
+    specialNotes: 'Guest names in alphabetical order beneath their table. Table diagram must distinguish shape (round/rectangular). Elegant design — this is displayed at a gala entrance.',
+  },
+  AGENDA_HIGHLIGHTS: {
+    physicalSize: '4" × 6" (10 × 15 cm) flat card — tucks inside lanyard holder',
+    printMethod: 'Digital on 200–250 gsm cardstock',
+    colorConstraints: 'Full color or 2-color. High contrast — read in poor conference lighting.',
+    bleed: '0.0625" (1.5 mm)',
+    safeZone: '0.125" inside trim',
+    specialNotes: 'Include key timings in large, bold type. Must be fully legible at arm's length.',
+  },
+};

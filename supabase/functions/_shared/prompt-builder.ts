@@ -1,7 +1,7 @@
 // Prompt building utilities for AI generation
 import type { BrandContext, ImageAnalysis, VenueIntelligence, PromptTemplate } from "./types.ts";
 import { getLocationCulturalContext } from "./location-context.ts";
-import { getBasePrompt, isPrintAsset } from "./asset-prompts.ts";
+import { getBasePrompt, isPrintAsset, PRINT_SPECS } from "./asset-prompts.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 export interface LogoAnalysis {
@@ -596,38 +596,53 @@ ${imageAnalysis.avoidElements?.map(a => `- DO NOT use: ${a}`).join('\n') || '- A
 }
 
 /**
- * Build print requirements instructions
+ * Build print requirements instructions.
+ * When assetType is supplied the output includes asset-specific physical
+ * dimensions, print method, color constraints, bleed, and safe zone so the
+ * AI generates artwork correctly prepared for that exact production context.
  */
-export function buildPrintRequirements(isPrint: boolean, targetDPI: number): string {
+export function buildPrintRequirements(isPrint: boolean, targetDPI: number, assetType?: string): string {
   if (!isPrint) return '';
-  
-  return `
-PRINT PRODUCTION REQUIREMENTS - CRITICAL:
-This asset is destined for professional print production. You MUST ensure:
 
+  const spec = assetType ? PRINT_SPECS[assetType] : undefined;
+
+  const specBlock = spec ? `
+ASSET-SPECIFIC PRODUCTION SPEC — ${assetType}:
+• Physical size: ${spec.physicalSize}
+• Print method: ${spec.printMethod}
+• Color constraints: ${spec.colorConstraints}
+• Bleed: ${spec.bleed}
+• Safe zone (critical content clearance): ${spec.safeZone}${spec.specialNotes ? `
+• Special notes: ${spec.specialNotes}` : ''}
+` : '';
+
+  return `
+PRINT PRODUCTION REQUIREMENTS — CRITICAL:
+This asset will be professionally printed. Follow every rule below without exception.
+${specBlock}
+UNIVERSAL PRINT RULES:
 COLOR & FIDELITY:
-- Use CMYK-safe colors only - avoid neon/fluorescent colors that won't print accurately
-- Prefer rich, saturated colors that reproduce well in print
-- No RGB-only colors like pure blue (#0000FF) - these shift dramatically in print
-- Use appropriate contrast for print reproduction (screens appear brighter than print)
+- Use CMYK-safe colors only — avoid neon/fluorescent colors that shift in print
+- No pure RGB primaries (e.g. #0000FF) — they shift dramatically when converted to CMYK
+- Screens appear 20–30% brighter than print — increase contrast and saturation accordingly
+- Rich blacks for large text blocks: approx C:60 M:40 Y:40 K:100
 
 RESOLUTION & CLARITY:
-- Generate at maximum possible resolution (${targetDPI}+ DPI equivalent quality)
-- All text must be crisp, sharp, and anti-aliased for clean print edges
-- Fine details must be clear enough to survive print production
-- Avoid compression artifacts or noise - clean, professional output
+- Generate at maximum resolution (${targetDPI}+ DPI equivalent quality)
+- All text: crisp, sharp, anti-aliased edges — no blur or softness
+- Fine details must survive the print process — if it looks marginal on screen, drop it
+- Zero compression artifacts — clean, production-ready output
 
-LAYOUT FOR PRINT:
-- Keep critical content (text, logos) away from edges (safe zone)
-- Extend backgrounds fully to edges for bleed area trimming
-- Text should be large enough to read at print size
-- High contrast between text and backgrounds
+LAYOUT:
+- Backgrounds MUST extend fully to (and beyond) the bleed edge
+- All critical content — text, logos, key graphics — MUST stay inside the safe zone
+- Text must be large enough to read at final printed size, not screen preview size
+- High contrast between text and all backgrounds
 
-PROFESSIONAL PRINT AESTHETIC:
-- Think like a print production designer
-- Textures and gradients should be smooth, not banded
-- Solid colors should be perfectly solid
-- This will be produced by professional print vendors`;
+PRINT AESTHETIC:
+- Gradients: smooth, no banding — use maximum quality gradient rendering
+- Solid fills: perfectly solid, no noise or texture unless intentional
+- This file will go directly to a print vendor — professional output only`;
 }
 
 /**

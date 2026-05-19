@@ -284,7 +284,7 @@ PHOTOREALISTIC RENDERING - CRITICAL:
     const targetDPI = body.printDPI || (isPrint ? 300 : 150);
     // Print assets demand crisp text and fine detail — always use quality model regardless of caller preference
     const effectiveImageModel: ImageModelTier = isPrint ? 'quality' : (imageModel as ImageModelTier);
-    const printRequirements = buildPrintRequirements(isPrint, targetDPI);
+    const printRequirements = buildPrintRequirements(isPrint, targetDPI, assetType);
 
     // BUILD FULL PROMPT — prefixed with Master Wrapper
     let masterWrapper = buildMasterWrapper();
