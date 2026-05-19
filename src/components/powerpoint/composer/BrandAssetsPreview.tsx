@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Image as ImageIcon, Upload, X, Info } from "lucide-react";
+import { toast } from "sonner";
 
 export type LogoCorner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
@@ -49,15 +50,12 @@ export const BrandAssetsPreview: React.FC<Props> = ({
     const f = e.target.files?.[0];
     if (!f) return;
     if (!/^image\/(png|jpe?g|gif|webp|bmp|tiff)$/i.test(f.type)) {
-      // soft validation — match the skill's supported mimes
-      alert(
-        `"${f.name}" isn't a supported image type. Use PNG, JPEG, GIF, WebP, BMP, or TIFF.`,
-      );
+      toast.error(`"${f.name}" isn't a supported image type. Use PNG, JPEG, GIF, WebP, BMP, or TIFF.`);
       e.target.value = "";
       return;
     }
     if (f.size > 15 * 1024 * 1024) {
-      alert(`"${f.name}" is over the 15 MB limit. Compress or resize first.`);
+      toast.error(`"${f.name}" is over the 15 MB limit. Compress or resize first.`);
       e.target.value = "";
       return;
     }

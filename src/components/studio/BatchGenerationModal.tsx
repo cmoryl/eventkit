@@ -280,7 +280,6 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
       if (dir) {
         styleAnchor.setMasterDirection(dir);
         batchMasterDirectionBlock = buildMasterDirectionPromptBlock(dir);
-        console.log('[BatchGen] Master style direction generated');
       }
     }
 
@@ -358,7 +357,6 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           if (firstUrl) {
             batchAnchorUrl = firstUrl;
             styleAnchor.setAnchorImage(firstUrl, Object.keys(newImages)[0]);
-            console.log('[BatchGen] First result set as style anchor');
           }
         }
       }
