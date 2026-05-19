@@ -78,6 +78,109 @@ const STEPS = [
   { id: 5, label: 'Preview & Export', icon: Eye },
 ];
 
+interface PresetBrief {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+  campaignName: string;
+  keyMessage: string;
+  audience: string;
+  vibe: string;
+  networks: string[];
+}
+
+const PRESET_BRIEFS: PresetBrief[] = [
+  {
+    id: 'product-launch',
+    label: 'Product Launch',
+    emoji: '🚀',
+    description: 'Reveal a new product across hero networks',
+    campaignName: 'Spring Product Launch',
+    keyMessage: 'Meet the next generation of [Product] — built to make your day faster, smarter, and more beautiful.',
+    audience: 'Early adopters & existing customers, ages 25-45',
+    vibe: 'Bold, premium, confident',
+    networks: ['instagram', 'linkedin', 'twitter', 'youtube'],
+  },
+  {
+    id: 'event-promo',
+    label: 'Event Promo',
+    emoji: '🎟️',
+    description: 'Drive RSVPs for a live or virtual event',
+    campaignName: 'Annual Summit 2026',
+    keyMessage: 'Join 2,000+ industry leaders for two days of keynotes, workshops, and unforgettable networking.',
+    audience: 'Professionals & decision makers in the industry',
+    vibe: 'Energetic, inspiring, exclusive',
+    networks: ['instagram', 'linkedin', 'facebook', 'email'],
+  },
+  {
+    id: 'webinar',
+    label: 'Webinar / Workshop',
+    emoji: '🎙️',
+    description: 'Register attendees for an online session',
+    campaignName: 'Live Workshop: Scale Your Brand',
+    keyMessage: 'A free 45-minute masterclass with actionable playbooks you can apply the same day.',
+    audience: 'Founders, marketers, and operators',
+    vibe: 'Smart, helpful, approachable',
+    networks: ['linkedin', 'email', 'zoom', 'twitter'],
+  },
+  {
+    id: 'sale-promo',
+    label: 'Sale / Promo',
+    emoji: '🔥',
+    description: 'Limited-time offer with strong CTAs',
+    campaignName: 'Black Friday Sale',
+    keyMessage: 'Up to 40% off everything — three days only. Stock up before it\'s gone.',
+    audience: 'Existing customers and warm leads',
+    vibe: 'Urgent, punchy, high-contrast',
+    networks: ['instagram', 'facebook', 'email', 'tiktok'],
+  },
+  {
+    id: 'brand-awareness',
+    label: 'Brand Awareness',
+    emoji: '✨',
+    description: 'Tell your story and grow reach',
+    campaignName: 'Who We Are',
+    keyMessage: 'We help [audience] achieve [outcome] — without the usual headaches.',
+    audience: 'New audiences discovering the brand',
+    vibe: 'Warm, authentic, story-driven',
+    networks: ['instagram', 'tiktok', 'linkedin', 'youtube'],
+  },
+  {
+    id: 'podcast-ep',
+    label: 'Podcast Episode',
+    emoji: '🎧',
+    description: 'Announce a new episode across channels',
+    campaignName: 'New Episode: [Guest Name]',
+    keyMessage: 'A candid conversation about building, scaling, and the lessons no one talks about.',
+    audience: 'Curious listeners & industry insiders',
+    vibe: 'Conversational, intimate, intelligent',
+    networks: ['instagram', 'twitter', 'linkedin', 'podcast'],
+  },
+  {
+    id: 'recruitment',
+    label: 'Hiring / Recruiting',
+    emoji: '💼',
+    description: 'Attract top-tier candidates',
+    campaignName: 'We\'re Hiring',
+    keyMessage: 'Join a team that ships fast, cares deeply, and is rewriting the rules of [industry].',
+    audience: 'Senior talent in design, engineering & growth',
+    vibe: 'Confident, human, ambitious',
+    networks: ['linkedin', 'twitter', 'instagram'],
+  },
+  {
+    id: 'community',
+    label: 'Community / UGC',
+    emoji: '💬',
+    description: 'Celebrate customers and creators',
+    campaignName: 'Made by Our Community',
+    keyMessage: 'Real stories from real people using [Product] in ways we never imagined.',
+    audience: 'Brand fans, creators, and community members',
+    vibe: 'Playful, celebratory, human',
+    networks: ['instagram', 'tiktok', 'twitter'],
+  },
+];
+
 interface CaptionData {
   headline: string;
   caption: string;
@@ -130,6 +233,17 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
   const [referenceImages, setReferenceImages] = useState<{ name: string; dataUrl: string }[]>([]);
   const [referenceDocs, setReferenceDocs] = useState<{ name: string; size: number; text?: string }[]>([]);
   const [showBatch, setShowBatch] = useState(false);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+
+  const applyPreset = (preset: PresetBrief) => {
+    setActivePreset(preset.id);
+    setCampaignName(preset.campaignName);
+    setKeyMessage(preset.keyMessage);
+    setAudience(preset.audience);
+    setVibe(preset.vibe);
+    setSelectedNetworks(preset.networks);
+    toast.success(`Loaded "${preset.label}" preset — tweak any field to make it yours`);
+  };
 
   // Preview / export state
   const [captions, setCaptions] = useState<Record<string, CaptionData>>({});
@@ -476,9 +590,73 @@ export const SocialDigitalWizard: React.FC<SocialDigitalWizardProps> = ({
               <div>
                 <h2 className="text-2xl font-bold">Tell us about your campaign</h2>
                 <p className="text-muted-foreground text-sm mt-1">
-                  These details guide every post we generate.
+                  Start from a proven preset, or write your own brief from scratch.
                 </p>
               </div>
+
+              {/* Preset Briefs */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    Quick-start presets
+                  </Label>
+                  {activePreset && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActivePreset(null);
+                        setCampaignName('');
+                        setKeyMessage('');
+                        setAudience('');
+                        setVibe('');
+                        setSelectedNetworks([]);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                    >
+                      <X className="h-3 w-3" /> Clear
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  {PRESET_BRIEFS.map(preset => {
+                    const isActive = activePreset === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyPreset(preset)}
+                        className={cn(
+                          'group text-left rounded-xl border p-3 transition-all',
+                          isActive
+                            ? `border-primary bg-gradient-to-br ${studioGradient} text-white shadow-md`
+                            : 'border-border bg-card hover:border-primary/50 hover:bg-accent/30'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg leading-none">{preset.emoji}</span>
+                          <span className="font-semibold text-sm">{preset.label}</span>
+                        </div>
+                        <p className={cn(
+                          'text-[11px] leading-snug line-clamp-2',
+                          isActive ? 'text-white/85' : 'text-muted-foreground'
+                        )}>
+                          {preset.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Picking a preset fills the brief and recommended networks — edit anything below to customize.
+                </p>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border" /></div>
+                <div className="relative flex justify-center text-[10px] uppercase tracking-wider"><span className="bg-card px-2 text-muted-foreground">Or write your own</span></div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="campaign">Campaign / Event Name *</Label>
                 <Input
