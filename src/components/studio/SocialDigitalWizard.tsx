@@ -78,6 +78,109 @@ const STEPS = [
   { id: 5, label: 'Preview & Export', icon: Eye },
 ];
 
+interface PresetBrief {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string;
+  campaignName: string;
+  keyMessage: string;
+  audience: string;
+  vibe: string;
+  networks: string[];
+}
+
+const PRESET_BRIEFS: PresetBrief[] = [
+  {
+    id: 'product-launch',
+    label: 'Product Launch',
+    emoji: '🚀',
+    description: 'Reveal a new product across hero networks',
+    campaignName: 'Spring Product Launch',
+    keyMessage: 'Meet the next generation of [Product] — built to make your day faster, smarter, and more beautiful.',
+    audience: 'Early adopters & existing customers, ages 25-45',
+    vibe: 'Bold, premium, confident',
+    networks: ['instagram', 'linkedin', 'twitter', 'youtube'],
+  },
+  {
+    id: 'event-promo',
+    label: 'Event Promo',
+    emoji: '🎟️',
+    description: 'Drive RSVPs for a live or virtual event',
+    campaignName: 'Annual Summit 2026',
+    keyMessage: 'Join 2,000+ industry leaders for two days of keynotes, workshops, and unforgettable networking.',
+    audience: 'Professionals & decision makers in the industry',
+    vibe: 'Energetic, inspiring, exclusive',
+    networks: ['instagram', 'linkedin', 'facebook', 'email'],
+  },
+  {
+    id: 'webinar',
+    label: 'Webinar / Workshop',
+    emoji: '🎙️',
+    description: 'Register attendees for an online session',
+    campaignName: 'Live Workshop: Scale Your Brand',
+    keyMessage: 'A free 45-minute masterclass with actionable playbooks you can apply the same day.',
+    audience: 'Founders, marketers, and operators',
+    vibe: 'Smart, helpful, approachable',
+    networks: ['linkedin', 'email', 'zoom', 'twitter'],
+  },
+  {
+    id: 'sale-promo',
+    label: 'Sale / Promo',
+    emoji: '🔥',
+    description: 'Limited-time offer with strong CTAs',
+    campaignName: 'Black Friday Sale',
+    keyMessage: 'Up to 40% off everything — three days only. Stock up before it\'s gone.',
+    audience: 'Existing customers and warm leads',
+    vibe: 'Urgent, punchy, high-contrast',
+    networks: ['instagram', 'facebook', 'email', 'tiktok'],
+  },
+  {
+    id: 'brand-awareness',
+    label: 'Brand Awareness',
+    emoji: '✨',
+    description: 'Tell your story and grow reach',
+    campaignName: 'Who We Are',
+    keyMessage: 'We help [audience] achieve [outcome] — without the usual headaches.',
+    audience: 'New audiences discovering the brand',
+    vibe: 'Warm, authentic, story-driven',
+    networks: ['instagram', 'tiktok', 'linkedin', 'youtube'],
+  },
+  {
+    id: 'podcast-ep',
+    label: 'Podcast Episode',
+    emoji: '🎧',
+    description: 'Announce a new episode across channels',
+    campaignName: 'New Episode: [Guest Name]',
+    keyMessage: 'A candid conversation about building, scaling, and the lessons no one talks about.',
+    audience: 'Curious listeners & industry insiders',
+    vibe: 'Conversational, intimate, intelligent',
+    networks: ['instagram', 'twitter', 'linkedin', 'podcast'],
+  },
+  {
+    id: 'recruitment',
+    label: 'Hiring / Recruiting',
+    emoji: '💼',
+    description: 'Attract top-tier candidates',
+    campaignName: 'We\'re Hiring',
+    keyMessage: 'Join a team that ships fast, cares deeply, and is rewriting the rules of [industry].',
+    audience: 'Senior talent in design, engineering & growth',
+    vibe: 'Confident, human, ambitious',
+    networks: ['linkedin', 'twitter', 'instagram'],
+  },
+  {
+    id: 'community',
+    label: 'Community / UGC',
+    emoji: '💬',
+    description: 'Celebrate customers and creators',
+    campaignName: 'Made by Our Community',
+    keyMessage: 'Real stories from real people using [Product] in ways we never imagined.',
+    audience: 'Brand fans, creators, and community members',
+    vibe: 'Playful, celebratory, human',
+    networks: ['instagram', 'tiktok', 'twitter'],
+  },
+];
+
 interface CaptionData {
   headline: string;
   caption: string;
