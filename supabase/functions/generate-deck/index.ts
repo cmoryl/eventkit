@@ -63,6 +63,11 @@ interface DeckRequest {
   source?: ExtractedSource;
   prebuiltOutline?: DeckOutline;
   planOnly?: boolean;
+  /** Base64 data URL of a user-supplied cover image; applied as the title/closing slide background. */
+  coverImageDataUrl?: string;
+  /** Public URL of the brand logo; fetched server-side and stamped onto every content slide. */
+  logoUrl?: string;
+  logoCorner?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
 }
 
 interface SlideChartSpec {
@@ -565,7 +570,14 @@ async function resolveSlideImages(outline: DeckOutline, apiKey: string): Promise
 // ============================================================================
 // PPTX BUILDER
 // ============================================================================
-function buildPptx(outline: DeckOutline, templateImages: Record<string, string> = {}, slideImages: Array<string | undefined> = []): Promise<ArrayBuffer> {
+function buildPptx(
+  outline: DeckOutline,
+  templateImages: Record<string, string> = {},
+  slideImages: Array<string | undefined> = [],
+  coverImageDataUrl?: string,
+  logoDataUrl?: string,
+  logoCorner: "top-left" | "top-right" | "bottom-left" | "bottom-right" = "top-right",
+): Promise<ArrayBuffer> {
   const pptx = new PptxGenJS();
   pptx.layout = "LAYOUT_WIDE";
   pptx.title = outline.title;
@@ -599,6 +611,8 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
   const SURFACE = isDarkBg ? "1A1F2E" : "F4F2EE"; // card surface
 
   const bgFor = (layout: string): string | undefined => {
+    // User-supplied cover image takes precedence over template images for title/closing.
+    if (coverImageDataUrl && (layout === "title" || layout === "closing")) return coverImageDataUrl;
     if (!templateImages || Object.keys(templateImages).length === 0) return undefined;
     switch (layout) {
       case "title":
@@ -609,6 +623,30 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
       case "stat": return templateImages.card;
       default: return undefined;
     }
+  };
+
+  // Logo stamp — applied to every content slide (not title / section / closing / image_hero).
+  const LOGO_W = 1.5;
+  const LOGO_H = 0.4;
+  const logoPos = (() => {
+    const xLeft = PAD;
+    const xRight = W - PAD - LOGO_W;
+    const yTop = PAD;
+    const yBottom = H - 0.5 - LOGO_H; // above the footer
+    switch (logoCorner) {
+      case "top-left":     return { x: xLeft,  y: yTop };
+      case "top-right":    return { x: xRight, y: yTop };
+      case "bottom-left":  return { x: xLeft,  y: yBottom };
+      default:             return { x: xRight, y: yBottom }; // bottom-right
+    }
+  })();
+  const addLogoStamp = (slide: any) => {
+    if (!logoDataUrl) return;
+    slide.addImage({
+      data: logoDataUrl,
+      x: logoPos.x, y: logoPos.y, w: LOGO_W, h: LOGO_H,
+      sizing: { type: "contain", x: logoPos.x, y: logoPos.y, w: LOGO_W, h: LOGO_H },
+    });
   };
 
   const paintBackground = (slide: any, image?: string, color?: string) => {
@@ -644,8 +682,9 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
     const slideImg = slideImages[idx];
     const slideTitle = orPh(s.title, ph.title);
 
-    // Footer (skip on title/closing/image_hero)
-    if (idx > 0 && !["title", "closing", "image_hero", "section"].includes(s.layout)) {
+    // Footer + logo stamp (skip on title/closing/image_hero)
+    const isContentSlide = !["title", "closing", "image_hero", "section"].includes(s.layout);
+    if (idx > 0 && isContentSlide) {
       slide.addText(`${idx + 1} / ${outline.slides.length}`, {
         x: W - 1.2, y: H - 0.4, w: 0.8, h: 0.3,
         fontSize: 9, color: MUTED, fontFace: bodyFont, align: "right",
@@ -655,6 +694,7 @@ function buildPptx(outline: DeckOutline, templateImages: Record<string, string> 
         fontSize: 9, color: MUTED, fontFace: bodyFont,
       });
     }
+    if (isContentSlide) addLogoStamp(slide);
 
     switch (s.layout) {
       // ────────────────────────── TITLE ──────────────────────────
@@ -1344,9 +1384,15 @@ Deno.serve(async (req: Request) => {
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const templateImages = await loadTemplateImages(body.templateId);
+    const [templateImages, logoDataUrl] = await Promise.all([
+      loadTemplateImages(body.templateId),
+      body.logoUrl ? fetchAsDataUrl(body.logoUrl) : Promise.resolve(undefined),
+    ]);
     const slideImages = await resolveSlideImages(outline, LOVABLE_API_KEY);
-    const pptxBuffer = await buildPptx(outline, templateImages, slideImages);
+    const pptxBuffer = await buildPptx(
+      outline, templateImages, slideImages,
+      body.coverImageDataUrl, logoDataUrl ?? undefined, body.logoCorner,
+    );
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
     const safeName = outline.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase().slice(0, 40) || "deck";

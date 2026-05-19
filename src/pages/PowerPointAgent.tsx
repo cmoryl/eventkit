@@ -532,7 +532,7 @@ const PowerPointAgent: React.FC = () => {
   /**
    * Build the shared body sent to generate-deck. Used for both planning and final build.
    */
-  const buildInvokePayload = (finalTopic: string, opts: { planOnly?: boolean; prebuiltOutline?: DeckOutline } = {}) => {
+  const buildInvokePayload = async (finalTopic: string, opts: { planOnly?: boolean; prebuiltOutline?: DeckOutline } = {}) => {
     const fullOutline = extractedSource?.extracted?.outline || [];
     const filteredOutline = fullOutline.filter((_: any, i: number) => selectedSections.has(i));
 
@@ -580,6 +580,9 @@ const PowerPointAgent: React.FC = () => {
         }
       : undefined;
 
+    const coverImageDataUrl = coverImageFile ? await fileToBase64(coverImageFile) : undefined;
+    const logoUrl = (useBrand && selectedBrand?.logo_url) ? selectedBrand.logo_url : undefined;
+
     return {
       topic: finalTopic,
       audience: audience || undefined,
@@ -597,6 +600,9 @@ const PowerPointAgent: React.FC = () => {
       source: sourcePayload,
       planOnly: opts.planOnly || undefined,
       prebuiltOutline: opts.prebuiltOutline,
+      coverImageDataUrl: coverImageDataUrl || undefined,
+      logoUrl: logoUrl || undefined,
+      logoCorner: (coverImageDataUrl || logoUrl) ? logoCorner : undefined,
     };
   };
 
@@ -610,7 +616,7 @@ const PowerPointAgent: React.FC = () => {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
-        body: buildInvokePayload(finalTopic, { planOnly: true }),
+        body: await buildInvokePayload(finalTopic, { planOnly: true }),
       });
       if (error) {
         const status = (error as { context?: { status?: number } }).context?.status;
@@ -663,7 +669,7 @@ const PowerPointAgent: React.FC = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-deck", {
-        body: buildInvokePayload(finalTopic, { prebuiltOutline: opts.prebuiltOutline }),
+        body: await buildInvokePayload(finalTopic, { prebuiltOutline: opts.prebuiltOutline }),
       });
 
       if (error) {
