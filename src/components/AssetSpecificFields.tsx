@@ -2132,6 +2132,342 @@ const AssetSpecificFields: React.FC<AssetSpecificFieldsProps> = ({
           </div>
         );
 
+      // ═══════════════════════════════════════════════════════════════════════
+      // CREDENTIALS (expanded)
+      // ═══════════════════════════════════════════════════════════════════════
+      case AssetType.BackstagePass:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Backstage Pass</h4>
+            <input type="text" name="name" value={customContent.name || ''} onChange={onChange} placeholder="Pass Holder Name" className={inputClassName} />
+            <input type="text" name="role" value={customContent.role || ''} onChange={onChange} placeholder="Role (e.g., Artist, Crew, Production)" className={inputClassName} />
+            <input type="text" name="accessZones" value={customContent.accessZones || ''} onChange={onChange} placeholder="Access Zones (e.g., Stage, Green Room, Load-In)" className={inputClassName} />
+            <input type="text" name="validDates" value={customContent.validDates || ''} onChange={onChange} placeholder="Valid Dates / Day" className={inputClassName} />
+          </div>
+        );
+
+      case AssetType.MediaCredential:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Media Credential</h4>
+            <input type="text" name="name" value={customContent.name || ''} onChange={onChange} placeholder="Journalist / Photographer Name" className={inputClassName} />
+            <input type="text" name="outlet" value={customContent.outlet || ''} onChange={onChange} placeholder="Media Outlet / Publication" className={inputClassName} />
+            <select name="credentialType" value={customContent.credentialType || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Credential Type</option>
+              <option value="press">Press</option>
+              <option value="photo">Photo</option>
+              <option value="video">Video / Broadcast</option>
+              <option value="podcast">Podcast / Audio</option>
+            </select>
+            <input type="text" name="validDates" value={customContent.validDates || ''} onChange={onChange} placeholder="Valid Dates" className={inputClassName} />
+          </div>
+        );
+
+      case AssetType.SecurityBadge:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Security Badge</h4>
+            <input type="text" name="name" value={customContent.name || ''} onChange={onChange} placeholder="Officer Name" className={inputClassName} />
+            <input type="text" name="badgeNumber" value={customContent.badgeNumber || ''} onChange={onChange} placeholder="Badge / ID Number" className={inputClassName} />
+            <select name="clearanceLevel" value={customContent.clearanceLevel || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Clearance Level</option>
+              <option value="general">General Security</option>
+              <option value="venue">Venue Security</option>
+              <option value="vip-detail">VIP Detail</option>
+              <option value="supervisor">Supervisor</option>
+            </select>
+            <input type="text" name="assignedZone" value={customContent.assignedZone || ''} onChange={onChange} placeholder="Assigned Zone / Area" className={inputClassName} />
+          </div>
+        );
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // PRINT STATIONERY (expanded)
+      // ═══════════════════════════════════════════════════════════════════════
+      case AssetType.TableTent:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Table Tent / Tent Card</h4>
+            <input type="text" name="frontTitle" value={customContent.frontTitle || ''} onChange={onChange} placeholder="Front Title (e.g., Session Name)" className={inputClassName} />
+            <input type="text" name="sessionTime" value={customContent.sessionTime || ''} onChange={onChange} placeholder="Time / Room" className={inputClassName} />
+            <input type="text" name="speakerName" value={customContent.speakerName || ''} onChange={onChange} placeholder="Speaker / Presenter" className={inputClassName} />
+            <textarea name="backContent" value={customContent.backContent || ''} onChange={onChange} placeholder="Back panel content (schedule, map, notes...)" rows={2} className={inputClassName + ' resize-none'} />
+          </div>
+        );
+
+      case AssetType.ProgramBooklet:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Program Booklet</h4>
+            <input type="text" name="bookletTitle" value={customContent.bookletTitle || ''} onChange={onChange} placeholder="Booklet Title (e.g., Conference Program)" className={inputClassName} />
+            <input type="text" name="dateRange" value={customContent.dateRange || ''} onChange={onChange} placeholder="Date Range" className={inputClassName} />
+            <textarea name="sections" value={customContent.sections || ''} onChange={onChange} placeholder="Sections (one per line)&#10;Welcome Message&#10;Agenda&#10;Speaker Bios&#10;Sponsor Directory" rows={4} className={inputClassName + ' resize-none'} />
+            <select name="pageCount" value={customContent.pageCount || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Estimated Pages</option>
+              <option value="8">8 pages</option>
+              <option value="12">12 pages</option>
+              <option value="16">16 pages</option>
+              <option value="24">24 pages</option>
+              <option value="32">32+ pages</option>
+            </select>
+          </div>
+        );
+
+      case AssetType.FloorPlan:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Floor Plan</h4>
+            <input type="text" name="venueName" value={customContent.venueName || ''} onChange={onChange} placeholder="Venue / Floor Name" className={inputClassName} />
+            <textarea name="roomLabels" value={customContent.roomLabels || ''} onChange={onChange} placeholder="Rooms / Zones (one per line)&#10;Main Stage — capacity 500&#10;Breakout A — 80 seats&#10;Registration Lobby&#10;Catering Area" rows={4} className={inputClassName + ' resize-none'} />
+            <input type="text" name="totalCapacity" value={customContent.totalCapacity || ''} onChange={onChange} placeholder="Total Capacity" className={inputClassName} />
+            <select name="orientation" value={customContent.orientation || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Orientation</option>
+              <option value="landscape">Landscape (A3)</option>
+              <option value="portrait">Portrait (A3)</option>
+              <option value="landscape-a2">Landscape (A2 — large venue)</option>
+            </select>
+          </div>
+        );
+
+      case AssetType.SeatingChart:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Seating Chart</h4>
+            <input type="text" name="totalTables" value={customContent.totalTables || ''} onChange={onChange} placeholder="Number of Tables" className={inputClassName} />
+            <input type="text" name="seatsPerTable" value={customContent.seatsPerTable || ''} onChange={onChange} placeholder="Seats Per Table (e.g., 8–10)" className={inputClassName} />
+            <select name="tableStyle" value={customContent.tableStyle || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Table Style</option>
+              <option value="round">Round</option>
+              <option value="rectangle">Rectangular / Banquet</option>
+              <option value="mixed">Mixed</option>
+            </select>
+            <textarea name="guestNotes" value={customContent.guestNotes || ''} onChange={onChange} placeholder="Notable guests / VIP table positions (optional)" rows={2} className={inputClassName + ' resize-none'} />
+          </div>
+        );
+
+      case AssetType.AgendaHighlights:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Agenda Highlights Card</h4>
+            <input type="text" name="dayLabel" value={customContent.dayLabel || ''} onChange={onChange} placeholder="Day Label (e.g., Day 1 — Tuesday, March 15)" className={inputClassName} />
+            <textarea name="sessions" value={customContent.sessions || ''} onChange={onChange} placeholder="Key sessions (one per line)&#10;9:00 AM — Opening Keynote: Jane Doe&#10;11:00 AM — Workshop: AI in Events&#10;2:00 PM — Panel: The Future of Hybrid" rows={5} className={inputClassName + ' resize-none'} />
+            <input type="text" name="highlightedSession" value={customContent.highlightedSession || ''} onChange={onChange} placeholder="Hero / Featured Session (bolded)" className={inputClassName} />
+          </div>
+        );
+
+      case AssetType.SessionEvaluation:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Session Evaluation Form</h4>
+            <input type="text" name="sessionTitle" value={customContent.sessionTitle || ''} onChange={onChange} placeholder="Session Title" className={inputClassName} />
+            <input type="text" name="speakerName" value={customContent.speakerName || ''} onChange={onChange} placeholder="Speaker / Facilitator Name" className={inputClassName} />
+            <textarea name="ratingCategories" value={customContent.ratingCategories || ''} onChange={onChange} placeholder="Rating categories (one per line)&#10;Content quality&#10;Speaker delivery&#10;Relevance to my role&#10;Overall satisfaction" rows={4} className={inputClassName + ' resize-none'} />
+            <select name="ratingScale" value={customContent.ratingScale || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Rating Scale</option>
+              <option value="1-5-stars">1–5 Stars</option>
+              <option value="1-5-likert">Likert (Strongly Disagree → Agree)</option>
+              <option value="nps">NPS (0–10)</option>
+            </select>
+          </div>
+        );
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // CATERING / TABLE (expanded)
+      // ═══════════════════════════════════════════════════════════════════════
+      case AssetType.CateringLabel:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Catering Label</h4>
+            <input type="text" name="dishName" value={customContent.dishName || ''} onChange={onChange} placeholder="Dish Name" className={inputClassName} />
+            <input type="text" name="allergens" value={customContent.allergens || ''} onChange={onChange} placeholder="Allergens (e.g., GF, V, Contains Nuts)" className={inputClassName} />
+            <input type="text" name="courseStation" value={customContent.courseStation || ''} onChange={onChange} placeholder="Course / Station (e.g., Mains, Dessert, Station 3)" className={inputClassName} />
+          </div>
+        );
+
+      case AssetType.DietaryCard:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Dietary Indicator Card</h4>
+            <select name="dietaryType" value={customContent.dietaryType || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Dietary Type</option>
+              <option value="gf">Gluten-Free (GF)</option>
+              <option value="v">Vegetarian (V)</option>
+              <option value="vg">Vegan (VG)</option>
+              <option value="h">Halal (H)</option>
+              <option value="k">Kosher (K)</option>
+              <option value="df">Dairy-Free (DF)</option>
+              <option value="nut-free">Nut-Free</option>
+              <option value="custom">Custom</option>
+            </select>
+            <input type="text" name="customLabel" value={customContent.customLabel || ''} onChange={onChange} placeholder="Custom label (if not in list above)" className={inputClassName} />
+            <input type="text" name="dishName" value={customContent.dishName || ''} onChange={onChange} placeholder="Dish Name (optional)" className={inputClassName} />
+          </div>
+        );
+
+      case AssetType.CoasterDesign:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Coaster Design</h4>
+            <input type="text" name="brandText" value={customContent.brandText || ''} onChange={onChange} placeholder="Brand / Event Name" className={inputClassName} />
+            <input type="text" name="taglineOrHashtag" value={customContent.taglineOrHashtag || ''} onChange={onChange} placeholder="Tagline or Hashtag" className={inputClassName} />
+            <select name="coasterShape" value={customContent.coasterShape || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Shape</option>
+              <option value="round">Round (90mm)</option>
+              <option value="square">Square (95mm)</option>
+              <option value="die-cut">Die-Cut / Custom</option>
+            </select>
+            <select name="coasterFinish" value={customContent.coasterFinish || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Finish</option>
+              <option value="matte">Matte</option>
+              <option value="gloss">Gloss</option>
+              <option value="cork-back">Cork-backed</option>
+            </select>
+          </div>
+        );
+
+      case AssetType.CocktailNapkin:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Cocktail Napkin</h4>
+            <input type="text" name="napkinText" value={customContent.napkinText || ''} onChange={onChange} placeholder="Text / Logo to print" className={inputClassName} />
+            <select name="colorCount" value={customContent.colorCount || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Ink Colors</option>
+              <option value="1">1 color</option>
+              <option value="2">2 colors</option>
+              <option value="foil">Foil / Metallic</option>
+            </select>
+            <select name="napkinSize" value={customContent.napkinSize || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Size</option>
+              <option value="cocktail">Cocktail (240×240mm)</option>
+              <option value="lunch">Lunch (330×330mm)</option>
+              <option value="dinner">Dinner (400×400mm)</option>
+            </select>
+          </div>
+        );
+
+      case AssetType.MatchbookDesign:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Matchbook Design</h4>
+            <input type="text" name="coverText" value={customContent.coverText || ''} onChange={onChange} placeholder="Cover Text (event name / brand)" className={inputClassName} />
+            <input type="text" name="insideText" value={customContent.insideText || ''} onChange={onChange} placeholder="Inside Flap Text (date, venue, hashtag)" className={inputClassName} />
+            <select name="matchCount" value={customContent.matchCount || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Matchbook Size</option>
+              <option value="20">Standard (20 matches)</option>
+              <option value="30">Large (30 matches)</option>
+            </select>
+          </div>
+        );
+
+      case AssetType.GiftBoxPackaging:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Gift Box / Packaging</h4>
+            <input type="text" name="giftTitle" value={customContent.giftTitle || ''} onChange={onChange} placeholder="Box Title / Brand Name" className={inputClassName} />
+            <input type="text" name="recipientHint" value={customContent.recipientHint || ''} onChange={onChange} placeholder="Recipient (e.g., Speakers, Sponsors, VIP)" className={inputClassName} />
+            <textarea name="messageInside" value={customContent.messageInside || ''} onChange={onChange} placeholder="Inside lid message or note" rows={2} className={inputClassName + ' resize-none'} />
+            <select name="boxFinish" value={customContent.boxFinish || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Lid Finish</option>
+              <option value="matte-white">Matte White</option>
+              <option value="matte-black">Matte Black</option>
+              <option value="kraft">Kraft / Natural</option>
+              <option value="custom-color">Custom Brand Color</option>
+            </select>
+          </div>
+        );
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // LARGE-FORMAT / VENUE SURFACES (expanded)
+      // ═══════════════════════════════════════════════════════════════════════
+      case AssetType.FloorDecal:
+      case AssetType.WindowCling:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">
+              {assetType === AssetType.FloorDecal ? 'Floor Decal' : 'Window Cling'}
+            </h4>
+            <input type="text" name="mainText" value={customContent.mainText || ''} onChange={onChange} placeholder="Main Text / Message" className={inputClassName} />
+            <select name="arrowDirection" value={customContent.arrowDirection || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Arrow Direction</option>
+              <option value="none">No Arrow</option>
+              <option value="left">← Left</option>
+              <option value="right">→ Right</option>
+              <option value="up">↑ Ahead</option>
+              <option value="down">↓ Below</option>
+            </select>
+            <select name="shape" value={customContent.shape || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Shape</option>
+              <option value="round-600">Round 600mm</option>
+              <option value="round-900">Round 900mm</option>
+              <option value="round-1200">Round 1200mm</option>
+              <option value="rectangle">Rectangle / Custom</option>
+            </select>
+          </div>
+        );
+
+      case AssetType.ElevatorWrap:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Elevator Wrap</h4>
+            <input type="text" name="mainMessage" value={customContent.mainMessage || ''} onChange={onChange} placeholder="Main Message / Headline" className={inputClassName} />
+            <input type="text" name="subMessage" value={customContent.subMessage || ''} onChange={onChange} placeholder="Supporting Text (floor, date, session)" className={inputClassName} />
+            <select name="visualStyle" value={customContent.visualStyle || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Visual Style</option>
+              <option value="full-bleed-photo">Full-bleed photorealistic</option>
+              <option value="brand-pattern">Brand pattern / geometric</option>
+              <option value="gradient">Gradient + typography</option>
+            </select>
+            <input type="text" name="panelDimensions" value={customContent.panelDimensions || ''} onChange={onChange} placeholder="Panel dimensions if known (e.g., 900mm × 2100mm)" className={inputClassName} />
+          </div>
+        );
+
+      case AssetType.ColumnWrap:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Column Wrap</h4>
+            <input type="text" name="columnText" value={customContent.columnText || ''} onChange={onChange} placeholder="Text / Message on column" className={inputClassName} />
+            <select name="wrapStyle" value={customContent.wrapStyle || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Wrap Style</option>
+              <option value="brand-pattern">Repeating brand pattern</option>
+              <option value="full-graphic">Full environmental graphic</option>
+              <option value="solid-logo">Solid color + logo</option>
+            </select>
+            <input type="text" name="columnHeight" value={customContent.columnHeight || ''} onChange={onChange} placeholder="Column height (e.g., 2400mm)" className={inputClassName} />
+            <input type="text" name="columnCircumference" value={customContent.columnCircumference || ''} onChange={onChange} placeholder="Column circumference (e.g., 600mm)" className={inputClassName} />
+          </div>
+        );
+
+      case AssetType.AFrameSign:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">A-Frame Sign</h4>
+            <input type="text" name="headline" value={customContent.headline || ''} onChange={onChange} placeholder="Headline (e.g., Welcome to TechSummit)" className={inputClassName} />
+            <input type="text" name="bodyText" value={customContent.bodyText || ''} onChange={onChange} placeholder="Supporting info (session, direction, QR)" className={inputClassName} />
+            <select name="arrowDirection" value={customContent.arrowDirection || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Direction Arrow</option>
+              <option value="none">No Arrow</option>
+              <option value="left">← Left</option>
+              <option value="right">→ Right</option>
+              <option value="straight">↑ Straight Ahead</option>
+            </select>
+          </div>
+        );
+
+      case AssetType.PortableBillboard:
+        return (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">Portable Billboard</h4>
+            <input type="text" name="headline" value={customContent.headline || ''} onChange={onChange} placeholder="Headline (legible at 20m)" className={inputClassName} />
+            <input type="text" name="subline" value={customContent.subline || ''} onChange={onChange} placeholder="Subline / Date / Venue" className={inputClassName} />
+            <input type="text" name="cta" value={customContent.cta || ''} onChange={onChange} placeholder="Call to Action (e.g., Register at example.com)" className={inputClassName} />
+            <select name="billboardSize" value={customContent.billboardSize || ''} onChange={onChange} className={inputClassName}>
+              <option value="">Size</option>
+              <option value="6x4ft">6ft × 4ft</option>
+              <option value="2x1.5m">2m × 1.5m</option>
+              <option value="3x2m">3m × 2m</option>
+            </select>
+          </div>
+        );
+
       default:
         return null;
     }
