@@ -28,22 +28,31 @@ interface CompositeOptions {
 export function positionFromAssetType(assetType: string): LogoPosition {
   const t = assetType.toUpperCase();
 
-  // Centered types
-  if (['APP_ICON', 'FAVICON', 'COASTER_DESIGN', 'EVENT_APP_SPLASH', 'WRISTBAND_DESIGN'].includes(t)) return 'center';
+  // Centered types — small merchandise and architectural wraps
+  if (['APP_ICON', 'FAVICON', 'COASTER_DESIGN', 'NAPKIN_DESIGN', 'COCKTAIL_NAPKIN',
+       'EVENT_APP_SPLASH', 'WRISTBAND_DESIGN', 'MATCHBOOK_DESIGN', 'GIFT_BOX_PACKAGING',
+       'COLUMN_WRAP', 'ELEVATOR_WRAP'].includes(t)) return 'center';
 
   // Bottom types
   if (['SOCIAL_POST', 'PHOTO_BOOTH_FRAME', 'THANK_YOU_NOTE', 'ZOOM_BACKGROUND'].includes(t)) return 'bottom-right';
-  if (['TABLE_TENT', 'PLACE_CARD', 'TABLE_NUMBER', 'CATERING_LABEL', 'DIETARY_CARD', 'FLOOR_DECAL', 'NAME_TAG_BACK'].includes(t)) return 'bottom-center';
+  if (['TABLE_TENT', 'PLACE_CARD', 'TABLE_NUMBER', 'CATERING_LABEL', 'DIETARY_CARD',
+       'FLOOR_DECAL', 'NAME_TAG_BACK', 'SESSION_EVALUATION', 'AGENDA_HIGHLIGHTS',
+       'PROGRAM_BOOKLET', 'FLOOR_PLAN', 'SEATING_CHART'].includes(t)) return 'bottom-center';
 
-  // Right types
+  // Top-right
   if (['LINKEDIN_BANNER', 'TWITTER_HEADER'].includes(t)) return 'top-right';
 
   // Bottom-right corner (presentations, webinar)
   if (['PRESENTATION_SLIDE', 'WEBINAR_SLIDE', 'LIVE_STREAM_OVERLAY'].includes(t)) return 'bottom-right';
 
+  // Additional top-center signage types not caught by pattern matching
+  if (['A_FRAME_SIGN', 'WINDOW_CLING', 'SPONSOR_WALL', 'STAIR_GRAPHICS',
+       'PORTABLE_BILLBOARD'].includes(t)) return 'top-center';
+
   // Default: top-center for most signage, banners, badges
   if (t.includes('BADGE') || t.includes('CREDENTIAL') || t.includes('PASS') || t.includes('TAG')) return 'top-center';
   if (t.includes('BANNER') || t.includes('SIGNAGE') || t.includes('FLAG')) return 'top-center';
+  if (t.includes('WRAP') || t.includes('DECAL') || t.includes('CLING')) return 'top-center';
 
   return 'top-left';
 }
@@ -52,7 +61,14 @@ export function positionFromAssetType(assetType: string): LogoPosition {
 export function scaleFromAssetType(assetType: string): number {
   const t = assetType.toUpperCase();
   if (['APP_ICON', 'FAVICON'].includes(t)) return 0.7;
-  if (['COASTER_DESIGN', 'NAPKIN_DESIGN', 'EVENT_APP_SPLASH'].includes(t)) return 0.35;
+  if (['COASTER_DESIGN', 'NAPKIN_DESIGN', 'COCKTAIL_NAPKIN', 'EVENT_APP_SPLASH',
+       'MATCHBOOK_DESIGN'].includes(t)) return 0.35;
+  if (['GIFT_BOX_PACKAGING'].includes(t)) return 0.3;
+  if (['SESSION_EVALUATION', 'AGENDA_HIGHLIGHTS', 'FLOOR_PLAN', 'SEATING_CHART'].includes(t)) return 0.1;
+  if (['PROGRAM_BOOKLET'].includes(t)) return 0.15;
+  if (['STAIR_GRAPHICS', 'COLUMN_WRAP', 'ELEVATOR_WRAP', 'WINDOW_CLING'].includes(t)) return 0.22;
+  if (['PORTABLE_BILLBOARD', 'A_FRAME_SIGN'].includes(t)) return 0.22;
+  if (['SPONSOR_WALL'].includes(t)) return 0.28;
   if (t.includes('STEP_AND_REPEAT')) return 0.12;
   if (t.includes('BACKDROP') || t.includes('BACK_WALL')) return 0.3;
   if (t.includes('BANNER') || t.includes('COUNTER') || t.includes('KIOSK')) return 0.22;
