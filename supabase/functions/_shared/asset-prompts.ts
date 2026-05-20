@@ -12,11 +12,12 @@ export const PRINT_ASSET_TYPES = new Set([
   'SWAG_BAG', 'WATER_BOTTLE', 'LANYARD', 'WRISTBAND_DESIGN',
   'COASTER_DESIGN', 'NAPKIN_DESIGN', 'COCKTAIL_NAPKIN',
   'STICKER_SHEET', 'MATCHBOOK', 'GIFT_BOX',
+  'MATCHBOOK_DESIGN', 'GIFT_BOX_PACKAGING', // canonical enum values
   // ── Signage — indoor ─────────────────────────────────────────────────────
   'BANNER', 'ROLLUP_BANNER', 'STAND_UP_PILLAR_BANNER',
   'EVENT_SIGNAGE', 'EASEL_SIGNAGE', 'HANGING_SIGNAGE',
   'DOOR_SIGNAGE', 'ROOM_SIGNAGE', 'LOCATION_SIGNAGE', 'WIFI_SIGN',
-  'A_FRAME', 'TABLE_TENT', 'TABLE_NUMBER', 'TABLE_RUNNER', 'TABLECLOTH',
+  'A_FRAME', 'A_FRAME_SIGN', 'TABLE_TENT', 'TABLE_NUMBER', 'TABLE_RUNNER', 'TABLECLOTH',
   'SPONSOR_WALL', 'SPONSOR_BANNER',
   // ── Signage — outdoor & large format ─────────────────────────────────────
   'OUTDOOR_SIGNAGE', 'FEATHER_FLAG', 'TEARDROP_FLAG', 'PORTABLE_BILLBOARD',
@@ -31,11 +32,11 @@ export const PRINT_ASSET_TYPES = new Set([
   'SELFIE_FRAME', 'PHOTO_BOOTH_FRAME',
   // ── Printed materials & stationery ───────────────────────────────────────
   'MENU', 'BAR_MENU', 'FOLDER', 'THANK_YOU_NOTE',
-  'INVITATION', 'RSVP_CARD', 'TICKET', 'ENVELOPE',
+  'INVITATION', 'INVITATION_CARD', 'RSVP_CARD', 'TICKET', 'TICKET_DESIGN', 'ENVELOPE',
   'PROGRAM_BOOKLET', 'CERTIFICATE', 'EVALUATION_FORM',
   'FLOOR_PLAN', 'SEATING_CHART',
   'PLACE_CARD', 'DIETARY_CARD', 'CATERING_LABEL',
-  'AGENDA_HIGHLIGHTS', 'POLL_CARD', 'NETWORKING_BINGO', 'SCAVENGER_HUNT',
+  'AGENDA_HIGHLIGHTS', 'SESSION_EVALUATION', 'POLL_CARD', 'NETWORKING_BINGO', 'SCAVENGER_HUNT',
   'PRESS_RELEASE', 'MEDIA_KIT', 'SPONSOR_PACKAGE', 'STYLE_GUIDE',
 ]);
 
@@ -58,8 +59,10 @@ export const HYPERREALISTIC_CONTEXTS: Record<string, string> = {
   NAPKIN_DESIGN: "Photorealistic product photography of elegant cocktail napkins fanned out on a marble table at a gala dinner. Candlelight ambiance. The napkin design features",
   COCKTAIL_NAPKIN: "Photorealistic product photography of a cocktail napkin under a crystal glass at an upscale bar. Moody lighting. The napkin shows",
   GIFT_BOX: "Photorealistic product photography of a premium branded gift box with ribbon, on a luxurious surface with tissue paper visible. The box design features",
+  GIFT_BOX_PACKAGING: "Photorealistic product photography of a premium branded gift box with ribbon, on a luxurious surface with tissue paper visible. The box design features",
   STICKER_SHEET: "Photorealistic product photography of die-cut stickers partially peeled from their backing sheet, scattered on a creative workspace desk. The stickers show",
   MATCHBOOK: "Photorealistic product photography of branded matchbooks on a restaurant table, one slightly open. Warm ambient lighting. The matchbook design shows",
+  MATCHBOOK_DESIGN: "Photorealistic product photography of branded matchbooks on a restaurant table, one slightly open. Warm ambient lighting. The matchbook design shows",
   
   // === BADGES & CREDENTIALS ===
   NAME_TAG: "Photorealistic product photography of a premium name badge with lanyard, laying on a conference registration desk with event materials around it. The badge design features",
@@ -93,6 +96,7 @@ export const HYPERREALISTIC_CONTEXTS: Record<string, string> = {
   FEATHER_FLAG: "Photorealistic 3D render of a tall feather flag on a windy day outside an event venue with grass and blue sky. Motion blur on flag edge. The flag displays",
   TEARDROP_FLAG: "Photorealistic 3D render of teardrop promotional flags flanking a venue entrance with people entering. The flags show",
   A_FRAME: "Photorealistic 3D render of an A-frame sandwich board sign on a sidewalk outside a venue with pedestrians passing. The sign shows",
+  A_FRAME_SIGN: "Photorealistic 3D render of an A-frame sandwich board sign on a sidewalk outside a venue with pedestrians passing. The sign shows",
   PORTABLE_BILLBOARD: "Photorealistic 3D render of a portable billboard on wheels in an outdoor event area with tents visible. The billboard displays",
   
   // === COUNTERS & STRUCTURES ===
@@ -145,13 +149,16 @@ export const HYPERREALISTIC_CONTEXTS: Record<string, string> = {
   // === PRINT MATERIALS ===
   FOLDER: "Photorealistic product photography of a professional presentation folder on a mahogany boardroom table with pen and business cards nearby. The folder cover shows",
   INVITATION: "Photorealistic product photography of a premium invitation card with envelope on a marble surface with calligraphy pen. The invitation design features",
+  INVITATION_CARD: "Photorealistic product photography of a premium invitation card with envelope on a marble surface with calligraphy pen. The invitation design features",
   RSVP_CARD: "Photorealistic product photography of an RSVP response card with envelope on an elegant desk setting. The card shows",
   TICKET: "Photorealistic product photography of event tickets fanned out with a lanyard badge nearby on a surface. The ticket design features",
+  TICKET_DESIGN: "Photorealistic product photography of event tickets fanned out with a lanyard badge nearby on a surface. The ticket design features",
   PROGRAM_BOOKLET: "Photorealistic product photography of an event program booklet opened on a conference table with coffee cup nearby. The booklet cover shows",
   THANK_YOU_NOTE: "Photorealistic product photography of elegant thank you cards stacked with a fountain pen on a linen surface. The card design features",
   ENVELOPE: "Photorealistic product photography of branded envelopes with liner visible, on a desk with letter opener. The envelope design shows",
   CERTIFICATE: "Photorealistic product photography of a framed certificate with gold seal and ribbon on an executive desk. The certificate displays",
   EVALUATION_FORM: "Photorealistic product photography of feedback/evaluation forms on clipboards at session seats. The form design shows",
+  SESSION_EVALUATION: "Photorealistic product photography of session evaluation forms on clipboards at conference seats, pens clipped on. The form design shows",
   FLOOR_PLAN: "Photorealistic product photography of a printed floor plan/map unfolded on an information desk. The map shows",
   SEATING_CHART: "Photorealistic 3D render of a large printed seating chart display on an easel at a gala entrance. The chart displays",
   
@@ -580,6 +587,14 @@ export const PRINT_SPECS: Record<string, PrintSpec> = {
     safeZone: '0.25" inside outer trim; 0.125" each side of fold score line',
   },
   // ── Printed materials ─────────────────────────────────────────────────────
+  INVITATION_CARD: {
+    physicalSize: '5" × 7" (12.7 × 17.8 cm) flat card — most common event invitation size',
+    printMethod: 'Offset lithography or digital on 300–400 gsm premium cardstock. Optional: letterpress, foil, or emboss.',
+    colorConstraints: 'Full color or limited palette for premium feel. Avoid neon — premium stock absorbs more ink.',
+    bleed: '0.125" (3 mm)',
+    safeZone: '0.25" (6 mm)',
+    specialNotes: 'Typography is the hero — hierarchy: event name → date → venue → RSVP. Include envelope design consideration.',
+  },
   INVITATION: {
     physicalSize: '5" × 7" (12.7 × 17.8 cm) flat card — most common event invitation size',
     printMethod: 'Offset lithography or digital on 300–400 gsm premium cardstock. Optional: letterpress, foil, or emboss.',
@@ -595,6 +610,14 @@ export const PRINT_SPECS: Record<string, PrintSpec> = {
     bleed: '0.125"',
     safeZone: '0.25"',
     specialNotes: 'Include: name field, attending Yes/No, meal choice, contact. Simple and functional.',
+  },
+  TICKET_DESIGN: {
+    physicalSize: '5.5" × 2.125" (14 × 5.4 cm) standard event ticket with 0.75" tear-off stub',
+    printMethod: 'Offset or digital on 80–100 lb cardstock or Tyvek',
+    colorConstraints: 'Full color. Include sequential numbering and barcode/QR areas in the design.',
+    bleed: '0.0625" (1.5 mm)',
+    safeZone: '0.125" from perforation line and outer edges',
+    specialNotes: 'Perforation line at 0.75" from right edge creates tear-off stub. Keep critical design content LEFT of stub. Include venue, date, seat/section areas.',
   },
   TICKET: {
     physicalSize: '5.5" × 2.125" (14 × 5.4 cm) standard event ticket with 0.75" tear-off stub',
