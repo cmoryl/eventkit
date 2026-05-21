@@ -146,7 +146,6 @@ const ASSET_FORMAT_HINTS: Record<string, string> = {
   ELEVATOR_WRAP:      'Door panel dimensions (typically 800mm×2000mm per door). Full-bleed immersive graphic. Key info at eye level (1000–1600mm).',
   COLUMN_WRAP:        'Wraparound panel (circumference × 2400mm tall). Pattern or brand scene. Seam considered (brand logo avoids seam).',
   STAIR_GRAPHICS:     'Per-riser (typically 170mm tall × tread width). Sequential message across risers. High-contrast, non-slip texture implied.',
-  MAIN_STAGE_BACKDROP:'Wide 16:9 or custom aspect. Full-bleed brand immersion. Event name + sponsor logos at foot. No text in centre (speaker zone).',
   STAGE_BACKDROP:     'Wide 16:9 (4m×2.25m typical). Brand hero graphic. Event name prominent. Speaker podium zone centred and clear.',
   // ── Merchandise (additions) ──────────────────────────────────────────────
   COASTER_DESIGN:     'Round 90mm or square 95mm. Event name/logo centred. Cork texture implied on reverse. Bleed 3mm. CMYK print.',
