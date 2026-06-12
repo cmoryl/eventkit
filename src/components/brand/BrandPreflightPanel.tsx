@@ -5,6 +5,7 @@ import type { BrandMode } from '@/types/brandProfile';
 import { getAvailableBrandProfiles } from '@/services/brandProfileService';
 import { generatePreflightReportText, getAssetSetPreflightSummary, preflightAssetSet } from '@/services/assetPreflightService';
 import { exportAssetsWithBrandPreflight } from '@/services/brandSafeExportService';
+import LogoVisibilityControl from './LogoVisibilityControl';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -94,9 +95,12 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
           <p className="text-sm text-muted-foreground mt-1">
             {summary.approvedCount} approved · {summary.reviewCount} need review · {summary.blockingCount} blocking
           </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Logo visibility controls future generations: keep logos visible, hide logos while preserving brand look, or let Auto decide by asset type.
+          </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2 lg:justify-end">
           <select
             className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
             value={activeProfile.id}
@@ -111,6 +115,7 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
           <select className="rounded-xl border border-border bg-background px-3 py-2 text-sm" value={mode} onChange={(event) => setMode(event.target.value as BrandMode)}>
             {modes.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
+          <LogoVisibilityControl compact />
           <button
             type="button"
             onClick={downloadReport}
