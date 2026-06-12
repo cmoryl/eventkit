@@ -348,12 +348,23 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* No frames warning */}
+          {/* Inline venue upload — skips the dead-end when no walkthrough was provided in onboarding */}
           {!hasFrames && (
-            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-center">
-              <p className="text-sm text-amber-600">
-                Upload a venue walkthrough video first to generate branded previews.
-              </p>
+            <div className="space-y-3">
+              <div className="p-3 bg-violet-500/5 border border-violet-500/20 rounded-xl">
+                <p className="text-sm text-foreground font-medium mb-1">Upload a venue walkthrough</p>
+                <p className="text-xs text-muted-foreground">
+                  Drop a short video of your venue to extract angles for branded previews — no need to restart onboarding.
+                </p>
+              </div>
+              <VenueVideoUploader
+                eventName={eventDetails.name}
+                eventDescription={eventDetails.description}
+                onAnalysisComplete={(analysis: VenueAnalysis) => {
+                  // VenueAnalysis is structurally compatible with VenueVideoAnalysis
+                  onVenueAnalyzed?.(analysis as unknown as VenueVideoAnalysis);
+                }}
+              />
             </div>
           )}
 
