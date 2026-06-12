@@ -12,6 +12,7 @@ import Agent from "./pages/Agent";
 import PowerPointAgent from "./pages/PowerPointAgent";
 import SlidesPage from "./pages/Slides";
 import BrandDebug from "./pages/BrandDebug";
+import BrandLibrary from "./pages/BrandLibrary";
 import NotFound from "./pages/NotFound";
 import { CreationStudio } from "@/components/studio/CreationStudio";
 import { initializeBrandTheme } from "@/services/brandThemeService";
@@ -45,6 +46,7 @@ const App: React.FC = () => {
                 <Route path="/agent" element={<Agent />} />
                 <Route path="/agent/powerpoint" element={<PowerPointAgent />} />
                 <Route path="/slides" element={<SlidesPage />} />
+                <Route path="/brand-library" element={<BrandLibrary />} />
                 <Route path="/brand-debug" element={<BrandDebug />} />
                 <Route path="/studio/:studioId" element={<CreationStudio />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
