@@ -80,6 +80,7 @@ export const VenuePreviewGenerator: React.FC<VenuePreviewGeneratorProps> = ({
   colorPalette,
   styleDescription,
   generatedAssets = [],
+  onVenueAnalyzed,
 }) => {
   const [stage, setStage] = useState<GenerationStage>('selecting');
   const [selectedFrames, setSelectedFrames] = useState<number[]>([0]);
