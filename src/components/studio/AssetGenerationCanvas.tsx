@@ -383,6 +383,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             assetType,
             eventName,
             templateId: templateId || undefined,
+            imageModel: engineIdToImageTier(selectedEngineId, assetType),
             masterDirection: masterDirectionBlock || undefined,
             styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
             brandContext: effectiveBrand ? {
