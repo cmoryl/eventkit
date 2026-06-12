@@ -8,6 +8,7 @@ import { ExportFidelityPanel } from './ExportFidelityPanel';
 import { GammaInspiredStudioPanel } from './GammaInspiredStudioPanel';
 import { PresentationCompetitiveEdgePanel } from './PresentationCompetitiveEdgePanel';
 import { PresentationEventHistoryPanel } from './PresentationEventHistoryPanel';
+import { PresentationStudioIntelligenceStatus } from './PresentationStudioIntelligenceStatus';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -35,6 +36,18 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
   humanApproved,
 }) => (
   <div className="space-y-5">
+    <PresentationStudioIntelligenceStatus
+      slides={slides}
+      creationMode={creationMode}
+      deckStyle={deckStyle}
+      events={events}
+      hasSourceMaterial={hasSourceMaterial}
+      hasBrandProfile={hasBrandProfile}
+      hasExactLogoSource={hasExactLogoSource}
+      templateSlotSet={templateSlotSet}
+      templateSlotValues={templateSlotValues}
+      humanApproved={humanApproved}
+    />
     <PresentationCompetitiveEdgePanel />
     <GammaInspiredStudioPanel />
     <div className="grid gap-5 xl:grid-cols-2">
