@@ -1102,7 +1102,9 @@ const Index: React.FC = () => {
         colorPalette={colorPalette}
         styleDescription={styleDescription}
         generatedAssets={generatedAssets}
+        onVenueAnalyzed={(analysis) => setVenueVideoAnalysis(analysis)}
       />
+
 
       {/* Regenerate With Engine Modal (only for logged-in users) */}
       {regeneratingAsset && user && (
