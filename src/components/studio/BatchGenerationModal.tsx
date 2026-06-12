@@ -57,6 +57,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
+  const [stylePreset, setStylePreset] = useState<'modern' | 'classic' | 'bold' | 'minimal' | 'playful' | 'premium'>('modern');
+  const [batchNotes, setBatchNotes] = useState('');
   const isPausedRef = useRef(false);
   const abortRef = useRef(false);
 
