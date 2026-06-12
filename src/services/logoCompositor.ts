@@ -4,10 +4,10 @@
  * the actual logo file on top at a position derived from asset-type rules.
  */
 
-type LogoPosition = 'top-left' | 'top-center' | 'top-right' | 'center' |
+export type LogoPosition = 'top-left' | 'top-center' | 'top-right' | 'center' |
   'bottom-left' | 'bottom-center' | 'bottom-right';
 
-interface CompositeOptions {
+export interface CompositeOptions {
   /** The AI-generated image (data-url or http url) */
   generatedImageUrl: string;
   /** The actual logo image (data-url or http url) */
@@ -66,7 +66,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
-    img.onerror = (e) => reject(new Error(`Failed to load image: ${src.substring(0, 80)}`));
+    img.onerror = () => reject(new Error(`Failed to load image: ${src.substring(0, 80)}`));
     img.src = src;
   });
 }
@@ -152,6 +152,6 @@ export async function compositeLogoOntoImage(opts: CompositeOptions): Promise<st
   // Draw logo
   ctx.drawImage(logoImg, x, y, logoW, logoH);
 
-  // Export as high-quality JPEG (or PNG if needed)
+  // Export as high-quality PNG so the exact logo pixels are preserved.
   return canvas.toDataURL('image/png');
 }
