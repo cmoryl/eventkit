@@ -2,6 +2,7 @@ import { AssetType } from '@/types';
 import type { ColorInfo, EventDetails } from '@/types';
 import type { BrandContext } from '@/types/brand.types';
 import type { BrandMode, BrandProfile } from '@/types/brandProfile';
+import { buildGenerationQualityPromptBlock } from './generationQualityService';
 
 export type AssetFamily = 'hero' | 'social' | 'signage' | 'badge' | 'merchandise' | 'deck' | 'utility' | 'content' | 'environmental';
 
@@ -215,6 +216,7 @@ export const buildCrossAssetConsistencyPromptBlock = (
 ): string => {
   const family = assetType ? getAssetFamily(assetType) : undefined;
   const familyRule = family ? system.assetFamilyRules[family] : undefined;
+  const qualityContract = assetType ? buildGenerationQualityPromptBlock(assetType, system.mode, 'production') : '';
 
   return `
 === CROSS-ASSET BRAND CONSISTENCY SYSTEM ===
@@ -254,6 +256,7 @@ Hierarchy: ${familyRule.hierarchy}
 Reusable elements: ${familyRule.reusableElements.join(', ')}
 Avoid: ${familyRule.avoid.join(', ')}
 ` : ''}
+${qualityContract}
 CRITICAL OUTPUT REQUIREMENT:
 This output must look like one member of the same coordinated brand kit, not a standalone design. Preserve the shared color hierarchy, typography, layout rhythm, logo handling, background treatment, and reusable motif across every asset type.
 === END CROSS-ASSET BRAND CONSISTENCY SYSTEM ===
