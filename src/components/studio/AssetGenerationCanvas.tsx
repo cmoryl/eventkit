@@ -655,6 +655,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
           assetType,
           eventName,
           templateId: templateId || undefined,
+          imageModel: engineIdToImageTier(selectedEngineId, assetType),
           masterDirection: regenMasterDirectionBlock || undefined,
           styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
           brandContext: effectiveBrand ? {
