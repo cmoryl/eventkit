@@ -46,3 +46,21 @@ export function describeAutoEngine(id: AutoEngineId): string {
     default: return 'Gemini 2.5 Flash (fast)';
   }
 }
+
+/** Maps an engine id (or 'auto') to the imageModel tier consumed by the generate-image edge function. */
+export function engineIdToImageTier(
+  engineId: string | undefined | null,
+  assetType?: string
+): 'fast' | 'quality' | 'nano-banana-2' | 'gpt-image' {
+  const resolved: AutoEngineId =
+    !engineId || engineId === 'auto' ? pickAutoEngine(assetType) : (engineId as AutoEngineId);
+  switch (resolved) {
+    case 'lovable-gpt-image': return 'gpt-image';
+    case 'lovable-hq': return 'quality';
+    case 'lovable-nano-banana-2': return 'nano-banana-2';
+    case 'lovable-default':
+    default:
+      return 'fast';
+  }
+}
+

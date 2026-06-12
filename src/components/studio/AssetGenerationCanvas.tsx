@@ -33,6 +33,8 @@ import { type LogoPlacement } from './DraggableLogoOverlay';
 import { useLogoPlacement } from '@/hooks/useLogoPlacement';
 import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
+import { engineIdToImageTier } from '@/services/aiBrain/engineAutoSelect';
+import { RenderEngineSelector } from '@/components/RenderEngineSelector';
 import type { EventDetails, ColorInfo } from '@/types';
 
 interface AssetGenerationCanvasProps {
@@ -96,6 +98,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [logoPlacement, setLogoPlacement] = useState<LogoPlacement | null>(null);
   const [previewImgSize, setPreviewImgSize] = useState<{ w: number; h: number } | null>(null);
   const [logoVariant, setLogoVariant] = useState<LogoVariant>('primary');
+  const [selectedEngineId, setSelectedEngineId] = useState<string>('auto');
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Resolve brand logo URL based on selected variant
@@ -380,6 +383,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             assetType,
             eventName,
             templateId: templateId || undefined,
+            imageModel: engineIdToImageTier(selectedEngineId, assetType),
             masterDirection: masterDirectionBlock || undefined,
             styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
             brandContext: effectiveBrand ? {
@@ -651,6 +655,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
           assetType,
           eventName,
           templateId: templateId || undefined,
+          imageModel: engineIdToImageTier(selectedEngineId, assetType),
           masterDirection: regenMasterDirectionBlock || undefined,
           styleAnchorImage: styleAnchor.anchorImageUrl || undefined,
           brandContext: effectiveBrand ? {
@@ -885,6 +890,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               onFontsChange={setSelectedFonts}
               compact
             />
+
+            {/* Render Engine — defaults to Auto, picks the best model per asset type */}
+            {user?.id && (
+              <RenderEngineSelector
+                userId={user.id}
+                value={selectedEngineId}
+                onChange={(id) => setSelectedEngineId(id)}
+                autoSelectFor={assetType}
+                compact
+                disabled={isGenerating}
+              />
+            )}
+
+            
             
             {/* Kit-consistent badge — shown when master direction or style anchor is active */}
             {(styleAnchor.hasMasterDirection || !!styleAnchor.anchorImageUrl) && (
