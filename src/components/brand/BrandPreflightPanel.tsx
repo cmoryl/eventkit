@@ -4,10 +4,13 @@ import type { GeneratedAsset } from '@/types';
 import type { BrandMode } from '@/types/brandProfile';
 import { getAvailableBrandProfiles } from '@/services/brandProfileService';
 import { generatePreflightReportText, getAssetSetPreflightSummary, preflightAssetSet } from '@/services/assetPreflightService';
+import { exportAssetsWithBrandPreflight } from '@/services/brandSafeExportService';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface BrandPreflightPanelProps {
   assets: GeneratedAsset[];
+  eventName?: string;
   className?: string;
 }
 
@@ -19,11 +22,12 @@ const getScoreStatus = (score: number) => {
   return { label: 'Risk', icon: XCircle, className: 'text-destructive' };
 };
 
-export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets, className }) => {
+export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets, eventName = 'eventkit-assets', className }) => {
   const profiles = useMemo(() => getAvailableBrandProfiles(), []);
   const [profileId, setProfileId] = useState(profiles[0]?.id || '');
   const activeProfile = profiles.find((profile) => profile.id === profileId) || profiles[0];
   const [mode, setMode] = useState<BrandMode>(activeProfile?.defaultMode || 'guided');
+  const [isExporting, setIsExporting] = useState(false);
 
   const results = useMemo(() => {
     if (!activeProfile) return [];
@@ -48,6 +52,30 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
     link.download = `brand-preflight-${activeProfile.id}-${mode}.txt`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleBrandSafeExport = async () => {
+    setIsExporting(true);
+    try {
+      const result = await exportAssetsWithBrandPreflight({
+        eventName,
+        assets,
+        brandProfile: activeProfile,
+        mode,
+        allowWarnings: mode !== 'locked',
+      });
+
+      if (result.blocked) {
+        toast.error(result.message);
+      } else {
+        toast.success(result.message);
+      }
+    } catch (error) {
+      console.error('Brand-safe export failed:', error);
+      toast.error('Brand-safe export failed');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -90,6 +118,14 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
           >
             <Download className="h-4 w-4" /> Report
           </button>
+          <button
+            type="button"
+            onClick={handleBrandSafeExport}
+            disabled={isExporting || results.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <ShieldCheck className="h-4 w-4" /> {isExporting ? 'Exporting...' : 'Brand-Safe ZIP'}
+          </button>
         </div>
       </div>
 
@@ -117,6 +153,7 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
                 <span className="text-xs uppercase tracking-wide text-muted-foreground">{issue.severity}</span>
               </div>
               <p className="text-muted-foreground mt-1">{issue.message}</p>
+              {issue.suggestion && <p className="mt-1 text-foreground">Fix: {issue.suggestion}</p>}
             </div>
           ))}
         </div>
