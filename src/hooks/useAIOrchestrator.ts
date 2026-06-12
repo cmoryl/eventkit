@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { resolveBrandImagery } from '@/services/brandImageryResolver';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock, clearMasterDirectionCache } from '@/services/masterStyleDirector';
 import { getActiveBrandMode, getActiveBrandProfile } from '@/services/brandProfileService';
+import { getBrandAssetGenerationContext } from '@/services/brandAssetLibraryService';
 import { buildCrossAssetConsistencyPromptBlock, buildCrossAssetConsistencySystem } from '@/services/crossAssetConsistencyService';
 import { getLogoVisibilityMode } from '@/services/logoVisibilityService';
 import { buildExactLogoGenerationInstruction, enforceExactLogoOnGeneratedContent, getLogoReferenceForGeneration } from '@/services/exactLogoEnforcementService';
@@ -231,6 +232,12 @@ export const useAIOrchestrator = ({
       })(),
     ]);
 
+    const activeBrandProfile = getActiveBrandProfile();
+    const activeBrandMode = getActiveBrandMode();
+    const logoVisibilityMode = getLogoVisibilityMode();
+    const brandAssetContext = getBrandAssetGenerationContext(activeBrandProfile.id, activeBrandProfile);
+    const canonicalLogoBase64 = primaryLogoBase64 || brandAssetContext.primaryLogo?.dataUrl;
+
     // Log venue video analysis data for spatial awareness
     if (venueVideoAnalysisData?.success) {
       console.log('Venue video analysis available:', {
@@ -266,6 +273,29 @@ export const useAIOrchestrator = ({
       console.log(`Brand imagery merged: ${mergedVibeImages.length} vibe refs, ${mergedPatternImages.length} pattern refs`);
     }
 
+    const existingVibes = Array.isArray(mergedVibeImages) ? mergedVibeImages : (mergedVibeImages ? [mergedVibeImages] : []);
+    const existingPatterns = Array.isArray(mergedPatternImages) ? mergedPatternImages : (mergedPatternImages ? [mergedPatternImages] : []);
+    mergedVibeImages = [
+      ...existingVibes,
+      ...brandAssetContext.visualReferences.map((asset) => asset.dataUrl),
+      ...brandAssetContext.doExamples.map((asset) => asset.dataUrl),
+      ...brandAssetContext.layoutReferences.map((asset) => asset.dataUrl),
+    ];
+    mergedPatternImages = [
+      ...existingPatterns,
+      ...brandAssetContext.patternReferences.map((asset) => asset.dataUrl),
+    ];
+
+    if (brandAssetContext.visualReferences.length || brandAssetContext.patternReferences.length || brandAssetContext.logos.length) {
+      console.log('Brand guide assets applied to generation:', {
+        logos: brandAssetContext.logos.length,
+        visualReferences: brandAssetContext.visualReferences.length,
+        patternReferences: brandAssetContext.patternReferences.length,
+        doExamples: brandAssetContext.doExamples.length,
+        dontExamples: brandAssetContext.dontExamples.length,
+      });
+    }
+
     // === GAP 3: Generate master style direction for visual consistency ===
     let masterDirectionBlock = '';
     const loadingCount = assetsToGenerate.filter(a => a.isLoading).length;
@@ -282,7 +312,7 @@ export const useAIOrchestrator = ({
         eventDetails,
         brandContext: brandContext || null,
         colorPalette: paletteOverride || colorPalette,
-        styleDescription: currentStyleDesc,
+        styleDescription: `${currentStyleDesc}\n\n${brandAssetContext.promptBlock}`,
         hasVibeImage: (Array.isArray(mergedVibeImages) ? mergedVibeImages.length : mergedVibeImages ? 1 : 0) > 0,
         hasVenueImage: !!venueImageBase64,
       });
@@ -294,9 +324,6 @@ export const useAIOrchestrator = ({
     }
 
     // === Cross-asset consistency system ===
-    const activeBrandProfile = getActiveBrandProfile();
-    const activeBrandMode = getActiveBrandMode();
-    const logoVisibilityMode = getLogoVisibilityMode();
     const crossAssetSystem = buildCrossAssetConsistencySystem({
       eventDetails,
       brandProfile: activeBrandProfile,
@@ -308,17 +335,18 @@ export const useAIOrchestrator = ({
 
     const buildDirectionBlockForAsset = (assetType: AssetType) => [
       masterDirectionBlock,
-      buildCrossAssetConsistencyPromptBlock(crossAssetSystem, assetType, Boolean(primaryLogoBase64)),
-      buildExactLogoGenerationInstruction(assetType, primaryLogoBase64, logoVisibilityMode),
+      brandAssetContext.promptBlock,
+      buildCrossAssetConsistencyPromptBlock(crossAssetSystem, assetType, Boolean(canonicalLogoBase64)),
+      buildExactLogoGenerationInstruction(assetType, canonicalLogoBase64, logoVisibilityMode),
     ].filter(Boolean).join('\n\n');
 
-    const getLogoInputForAsset = (assetType: AssetType) => getLogoReferenceForGeneration(assetType, primaryLogoBase64, logoVisibilityMode);
+    const getLogoInputForAsset = (assetType: AssetType) => getLogoReferenceForGeneration(assetType, canonicalLogoBase64, logoVisibilityMode);
 
     const enforceExactLogo = async (assetType: AssetType, content: string | string[] | ColorInfo[]) => {
       const result = await enforceExactLogoOnGeneratedContent({
         assetType,
         content,
-        logoUrl: primaryLogoBase64,
+        logoUrl: canonicalLogoBase64,
         mode: logoVisibilityMode,
       });
       if (result.applied) {
