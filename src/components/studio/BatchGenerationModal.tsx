@@ -96,11 +96,21 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   // callbacks already captured in useCallback closures.
   const generateOne = useCallback(async (assetType: string, anchorUrl?: string, masterDirectionBlock?: string): Promise<{ imageUrl?: string; error?: string }> => {
     const info = assetDisplayInfo[assetType];
+    const styleDescriptors: Record<typeof stylePreset, string> = {
+      modern: 'modern and brand-consistent, clean lines, contemporary typography',
+      classic: 'classic and elegant, timeless composition, refined typography',
+      bold: 'bold and high-impact, strong contrast, statement typography',
+      minimal: 'minimal and refined, generous whitespace, restrained typography',
+      playful: 'playful and energetic, dynamic shapes, expressive typography',
+      premium: 'premium and luxurious, sophisticated materials, polished typography',
+    };
+    const notesSuffix = batchNotes.trim() ? ` Additional creative direction: ${batchNotes.trim()}.` : '';
     const prompt = compileGenerationPrompt({
-      basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: modern and brand-consistent.`,
+      basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: ${styleDescriptors[stylePreset]}.${notesSuffix}`,
       context: {
         eventName,
         assetType,
+        styleDescription: stylePreset,
         colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c) || [],
       },
     });
