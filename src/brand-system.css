@@ -1,0 +1,12 @@
+/* Universal BrandKit runtime variables
+   These variables are intentionally brand-neutral. Active BrandProfile services can override them per brand. */
+
+:root {
+  --brand-font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --brand-font-headline: var(--brand-font-sans);
+  --brand-font-body: var(--brand-font-sans);
+}
+
+body {
+  font-family: var(--brand-font-body);
+}
