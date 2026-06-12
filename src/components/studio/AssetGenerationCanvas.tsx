@@ -98,6 +98,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   const [logoPlacement, setLogoPlacement] = useState<LogoPlacement | null>(null);
   const [previewImgSize, setPreviewImgSize] = useState<{ w: number; h: number } | null>(null);
   const [logoVariant, setLogoVariant] = useState<LogoVariant>('primary');
+  const [selectedEngineId, setSelectedEngineId] = useState<string>('auto');
   const previewContainerRef = useRef<HTMLDivElement>(null);
 
   // Resolve brand logo URL based on selected variant
