@@ -16,6 +16,7 @@ import { normalizeImageForGeneration } from '@/utils';
 import { compositeLogoOntoImage, positionFromAssetType, scaleFromAssetType } from '@/services/logoCompositor';
 import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
+import { engineIdToImageTier } from '@/services/aiBrain/engineAutoSelect';
 
 interface BatchAssetResult {
   assetType: string;
