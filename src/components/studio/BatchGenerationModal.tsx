@@ -163,7 +163,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     } catch (err: any) {
       return { error: err.message || 'Generation failed' };
     }
-  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo]);
+  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo, stylePreset, batchNotes]);
 
   const startBatch = useCallback(async () => {
     if (!effectiveBrand) {
