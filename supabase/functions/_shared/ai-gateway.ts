@@ -152,11 +152,13 @@ Respond with ONLY a JSON object with these exact fields:
 /**
  * Generate image with retry logic
  */
-export type ImageModelTier = 'fast' | 'quality';
+export type ImageModelTier = 'fast' | 'quality' | 'nano-banana-2' | 'gpt-image';
 
 const IMAGE_MODELS: Record<ImageModelTier, string> = {
   fast: 'google/gemini-2.5-flash-image',
   quality: 'google/gemini-3-pro-image-preview',
+  'nano-banana-2': 'google/gemini-3.1-flash-image-preview',
+  'gpt-image': 'openai/gpt-image-2',
 };
 
 /**
