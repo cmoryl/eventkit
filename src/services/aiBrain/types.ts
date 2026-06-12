@@ -21,7 +21,7 @@ export interface RenderEngine {
 
 export interface RenderEngineConfig {
   model?: string;
-  quality?: 'standard' | 'hd';
+  quality?: 'standard' | 'hd' | 'low' | 'medium' | 'high';
   style?: string;
   negativePrompt?: string;
   guidanceScale?: number;
