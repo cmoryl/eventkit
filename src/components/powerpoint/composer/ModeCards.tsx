@@ -1,7 +1,8 @@
 import React from "react";
-import { Sparkles, FileText, LayoutTemplate } from "lucide-react";
+import { Bot, FileText, Globe2, LayoutTemplate, Sparkles } from "lucide-react";
+import { gammaCreationPresets } from "@/services/gammaPresentationResearchService";
 
-type Mode = "prompt" | "paste" | "blank";
+type Mode = "prompt" | "paste" | "import" | "blank" | "agent";
 
 interface Props {
   active: Mode;
@@ -9,23 +10,56 @@ interface Props {
   disabled?: boolean;
 }
 
-const MODES: { id: Mode; icon: React.ElementType; title: string; subtitle: string }[] = [
-  { id: "prompt", icon: Sparkles, title: "Generate", subtitle: "Describe a topic — AI drafts the outline" },
-  { id: "paste", icon: FileText, title: "Paste / Upload", subtitle: "Use a doc, PDF or notes as source" },
-  { id: "blank", icon: LayoutTemplate, title: "Start from template", subtitle: "Pick a look & build manually" },
-];
+const modeMeta: Record<Mode, { gammaMode: string; icon: React.ElementType; title: string; subtitle: string }> = {
+  prompt: {
+    gammaMode: "generate",
+    icon: Sparkles,
+    title: "Generate",
+    subtitle: "Describe a topic — AI drafts the outline",
+  },
+  paste: {
+    gammaMode: "paste",
+    icon: FileText,
+    title: "Paste",
+    subtitle: "Turn notes, docs, or raw copy into cards",
+  },
+  import: {
+    gammaMode: "import",
+    icon: Globe2,
+    title: "Import",
+    subtitle: "Use PDF, PPTX, URL, or BrandHub source material",
+  },
+  blank: {
+    gammaMode: "template",
+    icon: LayoutTemplate,
+    title: "Template",
+    subtitle: "Start from a look, structure, or saved deck system",
+  },
+  agent: {
+    gammaMode: "agent",
+    icon: Bot,
+    title: "Agent",
+    subtitle: "Multi-source guided outline, style, and QA flow",
+  },
+};
+
+const MODES: Mode[] = ["prompt", "paste", "import", "blank", "agent"];
+
+const gammaDescription = (gammaMode: string) => gammaCreationPresets.find((preset) => preset.mode === gammaMode)?.description;
 
 export const ModeCards: React.FC<Props> = ({ active, onChange, disabled }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto">
-    {MODES.map((m) => {
-      const Icon = m.icon;
-      const isActive = active === m.id;
+  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 max-w-5xl mx-auto">
+    {MODES.map((id) => {
+      const meta = modeMeta[id];
+      const Icon = meta.icon;
+      const isActive = active === id;
       return (
         <button
-          key={m.id}
+          key={id}
           type="button"
           disabled={disabled}
-          onClick={() => onChange(m.id)}
+          onClick={() => onChange(id)}
+          title={gammaDescription(meta.gammaMode)}
           className={`group text-left rounded-2xl border p-4 transition-all ${
             isActive
               ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
@@ -37,8 +71,9 @@ export const ModeCards: React.FC<Props> = ({ active, onChange, disabled }) => (
           }`}>
             <Icon className="h-4 w-4" />
           </div>
-          <div className="font-semibold text-sm">{m.title}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">{m.subtitle}</div>
+          <div className="text-[10px] font-black uppercase tracking-wide text-primary/80 mb-1">{meta.gammaMode}</div>
+          <div className="font-semibold text-sm">{meta.title}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">{meta.subtitle}</div>
         </button>
       );
     })}
