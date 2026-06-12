@@ -11,6 +11,8 @@ import { resolveBrandImagery } from '@/services/brandImageryResolver';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock, clearMasterDirectionCache } from '@/services/masterStyleDirector';
 import { getActiveBrandMode, getActiveBrandProfile } from '@/services/brandProfileService';
 import { buildCrossAssetConsistencyPromptBlock, buildCrossAssetConsistencySystem } from '@/services/crossAssetConsistencyService';
+import { getLogoVisibilityMode } from '@/services/logoVisibilityService';
+import { buildExactLogoGenerationInstruction, enforceExactLogoOnGeneratedContent, getLogoReferenceForGeneration } from '@/services/exactLogoEnforcementService';
 
 interface UseAIOrchestratorProps {
   eventDetails: EventDetails;
@@ -294,6 +296,7 @@ export const useAIOrchestrator = ({
     // === Cross-asset consistency system ===
     const activeBrandProfile = getActiveBrandProfile();
     const activeBrandMode = getActiveBrandMode();
+    const logoVisibilityMode = getLogoVisibilityMode();
     const crossAssetSystem = buildCrossAssetConsistencySystem({
       eventDetails,
       brandProfile: activeBrandProfile,
@@ -305,8 +308,24 @@ export const useAIOrchestrator = ({
 
     const buildDirectionBlockForAsset = (assetType: AssetType) => [
       masterDirectionBlock,
-      buildCrossAssetConsistencyPromptBlock(crossAssetSystem, assetType),
+      buildCrossAssetConsistencyPromptBlock(crossAssetSystem, assetType, Boolean(primaryLogoBase64)),
+      buildExactLogoGenerationInstruction(assetType, primaryLogoBase64, logoVisibilityMode),
     ].filter(Boolean).join('\n\n');
+
+    const getLogoInputForAsset = (assetType: AssetType) => getLogoReferenceForGeneration(assetType, primaryLogoBase64, logoVisibilityMode);
+
+    const enforceExactLogo = async (assetType: AssetType, content: string | string[] | ColorInfo[]) => {
+      const result = await enforceExactLogoOnGeneratedContent({
+        assetType,
+        content,
+        logoUrl: primaryLogoBase64,
+        mode: logoVisibilityMode,
+      });
+      if (result.applied) {
+        console.log(`Exact source logo composited onto ${assetType}`);
+      }
+      return result.content as string | string[] | ColorInfo[];
+    };
     
     // Update phase to analyzing if we have reference images
     if (hasVibeImage && strategy.shouldPreAnalyze) {
@@ -371,7 +390,7 @@ export const useAIOrchestrator = ({
           AssetType.Palette, 
           eventDetails, 
           [], 
-          primaryLogoBase64,
+          undefined,
           currentStyleDesc,
           mergedVibeImages,
           mergedPatternImages,
@@ -441,7 +460,7 @@ export const useAIOrchestrator = ({
                 asset.type,
                 eventDetails,
                 currentPalette,
-                primaryLogoBase64,
+                getLogoInputForAsset(asset.type),
                 currentStyleDesc,
                 mergedVibeImages,
                 mergedPatternImages,
@@ -450,7 +469,8 @@ export const useAIOrchestrator = ({
                 brandContext,
                 buildDirectionBlockForAsset(asset.type)
               );
-              return { id: asset.id, success: true, content };
+              const exactContent = await enforceExactLogo(asset.type, content as string | string[] | ColorInfo[]);
+              return { id: asset.id, success: true, content: exactContent };
             } catch (error) {
               console.error(`Failed to generate ${asset.type}:`, error);
               return { 
