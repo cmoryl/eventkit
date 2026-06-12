@@ -34,15 +34,19 @@ const options: Array<{
 interface LogoVisibilityControlProps {
   compact?: boolean;
   className?: string;
+  value?: LogoVisibilityMode;
+  onChange?: (mode: LogoVisibilityMode) => void;
 }
 
-export const LogoVisibilityControl: React.FC<LogoVisibilityControlProps> = ({ compact = false, className }) => {
-  const [mode, setMode] = useState<LogoVisibilityMode>(() => getLogoVisibilityMode());
+export const LogoVisibilityControl: React.FC<LogoVisibilityControlProps> = ({ compact = false, className, value, onChange }) => {
+  const [internalMode, setInternalMode] = useState<LogoVisibilityMode>(() => getLogoVisibilityMode());
+  const mode = value || internalMode;
   const activeOption = useMemo(() => options.find((option) => option.value === mode) || options[0], [mode]);
 
   const updateMode = (nextMode: LogoVisibilityMode) => {
     setLogoVisibilityMode(nextMode);
-    setMode(nextMode);
+    setInternalMode(nextMode);
+    onChange?.(nextMode);
     toast.success(`Logo visibility set to ${options.find((option) => option.value === nextMode)?.label}`);
   };
 
