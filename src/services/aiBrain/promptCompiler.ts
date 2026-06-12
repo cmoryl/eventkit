@@ -1,10 +1,11 @@
 // src/services/aiBrain/promptCompiler.ts
-// Real compiler layer: injects Level-5 DNA, anchors, uniqueness seed, quality gate,
-// scene rules, AND brand intelligence from the knowledge base.
+// Prompt compiler layer: assembles masterful asset-family templates, Level-5 DNA,
+// brand intelligence, production QA, safe zones, and no-drift logo instructions.
 
 import type { GenerationContext } from "./types";
 import { getAssetDefault } from "@/config/level5/assetDefaults";
 import { getVariantProfile } from "@/config/level5/variantDNA";
+import { buildMasterfulPromptTemplateBlock } from "@/services/masterfulPromptTemplateService";
 
 /** Deterministic seed — stable per event+asset combo, not random */
 function makeUniquenessSeed(context: GenerationContext): string {
@@ -43,50 +44,48 @@ function shouldUseScene(assetType: string): boolean {
   return !(BRANDING_ASSETS.has(assetType) || DIGITAL_ASSETS.has(assetType));
 }
 
+const list = (title: string, items?: unknown[], max = 6) => {
+  if (!items?.length) return "";
+  return [title, ...items.slice(0, max).map((item) => `  • ${String(item)}`)].join("\n");
+};
+
 /**
  * Build brand intelligence block from knowledge entries.
- * This injects photography rules, logo usage, voice/tone, imagery, and constraints.
+ * This injects photography rules, logo usage, voice/tone, imagery, constraints,
+ * social specs, event metadata, gradients, and approved/rejected examples.
  */
 export function buildBrandIntelligenceBlock(
   brandKnowledge: Record<string, unknown>
 ): string {
   const blocks: string[] = [];
 
-  // Photography rules
-  const photoDos = brandKnowledge.photographyDos as string[] | undefined;
-  const photoDonts = brandKnowledge.photographyDonts as string[] | undefined;
-  const photoStyle = brandKnowledge.photographyStyle as string | undefined;
-  if (photoStyle || photoDos?.length || photoDonts?.length) {
-    const lines = ["BRAND PHOTOGRAPHY RULES:"];
-    if (photoStyle) lines.push(`  Style: ${photoStyle}`);
-    if (photoDos?.length) {
-      lines.push("  DO:");
-      photoDos.slice(0, 6).forEach(d => lines.push(`    ✓ ${d}`));
-    }
-    if (photoDonts?.length) {
-      lines.push("  DO NOT:");
-      photoDonts.slice(0, 6).forEach(d => lines.push(`    ✗ ${d}`));
-    }
-    blocks.push(lines.join("\n"));
+  const photographyStyle = brandKnowledge.photographyStyle as string | undefined;
+  const photographyDos = brandKnowledge.photographyDos as string[] | undefined;
+  const photographyDonts = brandKnowledge.photographyDonts as string[] | undefined;
+  if (photographyStyle || photographyDos?.length || photographyDonts?.length) {
+    blocks.push([
+      "BRAND PHOTOGRAPHY RULES:",
+      photographyStyle ? `  Style: ${photographyStyle}` : "",
+      list("  DO:", photographyDos, 6),
+      list("  DO NOT:", photographyDonts, 6),
+    ].filter(Boolean).join("\n"));
   }
 
-  // Logo usage rules
   const logoRules = brandKnowledge.logoPlacementRules as string[] | undefined;
   const logoClearSpace = brandKnowledge.logoClearSpace as string | undefined;
   const logoMinSize = brandKnowledge.logoMinSize as string | undefined;
-  const logoBgs = brandKnowledge.logoBackgrounds as string[] | undefined;
-  if (logoRules?.length || logoClearSpace || logoMinSize) {
-    const lines = ["BRAND LOGO USAGE RULES:"];
-    if (logoClearSpace) lines.push(`  Clear space: ${logoClearSpace}`);
-    if (logoMinSize) lines.push(`  Minimum size: ${logoMinSize}`);
-    if (logoBgs?.length) lines.push(`  Approved backgrounds: ${logoBgs.join(", ")}`);
-    if (logoRules?.length) {
-      logoRules.slice(0, 5).forEach(r => lines.push(`  • ${r}`));
-    }
-    blocks.push(lines.join("\n"));
+  const logoBackgrounds = brandKnowledge.logoBackgrounds as string[] | undefined;
+  if (logoRules?.length || logoClearSpace || logoMinSize || logoBackgrounds?.length) {
+    blocks.push([
+      "BRAND LOGO USAGE RULES:",
+      logoClearSpace ? `  Clear space: ${logoClearSpace}` : "",
+      logoMinSize ? `  Minimum size: ${logoMinSize}` : "",
+      logoBackgrounds?.length ? `  Approved backgrounds: ${logoBackgrounds.join(", ")}` : "",
+      list("  Rules:", logoRules, 6),
+      "  Hard rule: the image model must not redraw, approximate, distort, recolor, or invent the logo. Visible logos are placed by deterministic overlay only.",
+    ].filter(Boolean).join("\n"));
   }
 
-  // Voice & tone
   const voice = brandKnowledge.voice as string[] | undefined;
   const tone = brandKnowledge.tone as string[] | undefined;
   const writingStyle = brandKnowledge.writingStyle as string | undefined;
@@ -96,176 +95,114 @@ export function buildBrandIntelligenceBlock(
   const mission = brandKnowledge.mission as string | undefined;
   const industry = brandKnowledge.industry as string | undefined;
   const targetAudience = brandKnowledge.targetAudience as string | undefined;
-  if (voice?.length || tone?.length || writingStyle || tagline) {
-    const lines = ["BRAND VOICE & TONE:"];
-    if (voice?.length) lines.push(`  Voice: ${voice.join(", ")}`);
-    if (tone?.length) lines.push(`  Tone: ${tone.join(", ")}`);
-    if (writingStyle) lines.push(`  Writing style: ${writingStyle}`);
-    if (tagline) lines.push(`  Primary tagline: "${tagline}"`);
-    if (taglineSecondary) lines.push(`  Secondary tagline: "${taglineSecondary}"`);
-    if (taglineVariations?.length) {
-      lines.push(`  Tagline variations for campaign use:`);
-      taglineVariations.slice(0, 4).forEach(v => lines.push(`    • "${v}"`));
-    }
-    if (mission) lines.push(`  Mission: ${mission}`);
-    if (industry) lines.push(`  Industry: ${industry}`);
-    if (targetAudience) lines.push(`  Target audience: ${targetAudience}`);
-    blocks.push(lines.join("\n"));
+  if (voice?.length || tone?.length || writingStyle || tagline || mission || industry || targetAudience) {
+    blocks.push([
+      "BRAND VOICE & TONE:",
+      voice?.length ? `  Voice: ${voice.join(", ")}` : "",
+      tone?.length ? `  Tone: ${tone.join(", ")}` : "",
+      writingStyle ? `  Writing style: ${writingStyle}` : "",
+      tagline ? `  Primary tagline: \"${tagline}\"` : "",
+      taglineSecondary ? `  Secondary tagline: \"${taglineSecondary}\"` : "",
+      taglineVariations?.length ? `  Campaign tagline options: ${taglineVariations.slice(0, 4).map((v) => `\"${v}\"`).join("; ")}` : "",
+      mission ? `  Mission: ${mission}` : "",
+      industry ? `  Industry: ${industry}` : "",
+      targetAudience ? `  Target audience: ${targetAudience}` : "",
+    ].filter(Boolean).join("\n"));
   }
 
-  // Constraints / restrictions
   const restricted = brandKnowledge.restrictedElements as string[] | undefined;
   const approvedLayouts = brandKnowledge.approvedLayouts as string[] | undefined;
   if (restricted?.length || approvedLayouts?.length) {
-    const lines = ["BRAND CONSTRAINTS:"];
-    if (restricted?.length) {
-      lines.push("  NEVER:");
-      restricted.slice(0, 5).forEach(r => lines.push(`    ✗ ${r}`));
-    }
-    if (approvedLayouts?.length) {
-      lines.push("  APPROVED LAYOUTS:");
-      approvedLayouts.slice(0, 4).forEach(l => lines.push(`    ✓ ${l}`));
-    }
-    blocks.push(lines.join("\n"));
+    blocks.push([
+      "BRAND CONSTRAINTS:",
+      list("  NEVER:", restricted, 8),
+      list("  APPROVED LAYOUTS:", approvedLayouts, 6),
+    ].filter(Boolean).join("\n"));
   }
 
-  // Imagery style
   const imagery = brandKnowledge.imagery as string | undefined;
   const archetype = brandKnowledge.archetype as string | undefined;
-  if (imagery || archetype) {
-    const lines = ["BRAND VISUAL IDENTITY:"];
-    if (archetype) lines.push(`  Archetype: ${archetype}`);
-    if (imagery) lines.push(`  Imagery approach: ${imagery}`);
-    blocks.push(lines.join("\n"));
+  const gradients = brandKnowledge.gradients as string[] | undefined;
+  if (imagery || archetype || gradients?.length) {
+    blocks.push([
+      "BRAND VISUAL IDENTITY:",
+      archetype ? `  Archetype: ${archetype}` : "",
+      imagery ? `  Imagery approach: ${imagery}` : "",
+      gradients?.length ? `  Approved gradients: ${gradients.slice(0, 4).join("; ")}` : "",
+    ].filter(Boolean).join("\n"));
   }
 
-  // Event context from BrandHub
-  const eventName = brandKnowledge.name as string | undefined;
-  const eventDate = brandKnowledge.date as string | undefined;
-  const eventVenue = brandKnowledge.venue as string | undefined;
-  const eventType = brandKnowledge.eventType as string | undefined;
-  const eventDescription = brandKnowledge.description as string | undefined;
-  const attendeeCount = brandKnowledge.attendeeCount as string | number | undefined;
-  if (eventName || eventVenue || eventDate) {
-    const lines = ["EVENT CONTEXT (from BrandHub):"];
-    if (eventName) lines.push(`  Event: ${eventName}`);
-    if (eventType) lines.push(`  Type: ${eventType}`);
-    if (eventDate) lines.push(`  Date: ${eventDate}`);
-    if (eventVenue) lines.push(`  Venue: ${eventVenue}`);
-    if (attendeeCount) lines.push(`  Expected attendees: ${attendeeCount}`);
-    if (eventDescription) lines.push(`  Description: ${eventDescription}`);
-    lines.push("  Use this context to make designs feel event-specific and timely.");
-    blocks.push(lines.join("\n"));
-  }
-
-  // Content assets — services & values for text-heavy designs
   const values = brandKnowledge.values as string[] | undefined;
   const services = brandKnowledge.services as string[] | undefined;
   if (values?.length || services?.length) {
-    const lines = ["BRAND CONTENT (use in copy-heavy assets):"];
-    if (values?.length) lines.push(`  Brand values: ${values.slice(0, 5).join(", ")}`);
-    if (services?.length) {
-      lines.push("  Services/offerings:");
-      services.slice(0, 4).forEach(s => lines.push(`    • ${s}`));
-    }
-    blocks.push(lines.join("\n"));
+    blocks.push([
+      "BRAND CONTENT:",
+      values?.length ? `  Values: ${values.slice(0, 8).join(", ")}` : "",
+      services?.length ? `  Services/offerings: ${services.slice(0, 8).join(", ")}` : "",
+    ].filter(Boolean).join("\n"));
   }
 
-  // Gradients for design use
-  const gradients = brandKnowledge.gradients as string[] | undefined;
-  if (gradients?.length) {
-    blocks.push(`BRAND GRADIENTS:\n${gradients.slice(0, 3).map(g => `  • ${g}`).join("\n")}`);
-  }
-
-  // Color combinations — approved/rejected for design guidance
-  const colorCombos = brandKnowledge.colorCombinations as { approved?: Array<{ name?: string; colors?: string[]; notes?: string }>; rejected?: Array<{ name?: string; colors?: string[]; notes?: string }> } | undefined;
-  if (colorCombos?.approved?.length || colorCombos?.rejected?.length) {
-    const lines = ["APPROVED COLOR COMBINATIONS:"];
-    if (colorCombos.approved?.length) {
-      colorCombos.approved.slice(0, 4).forEach(c => {
-        lines.push(`  ✓ "${c.name}": ${(c.colors || []).join(" + ")}${c.notes ? ` — ${c.notes}` : ''}`);
-      });
-    }
-    if (colorCombos.rejected?.length) {
-      lines.push("  REJECTED COMBINATIONS (avoid):");
-      colorCombos.rejected.slice(0, 3).forEach(c => {
-        lines.push(`  ✗ "${c.name}": ${(c.colors || []).join(" + ")}${c.notes ? ` — ${c.notes}` : ''}`);
-      });
-    }
-    blocks.push(lines.join("\n"));
-  }
-
-  // Linked regional events — for multi-event context
   const linkedEvents = brandKnowledge.linkedEvents as Array<{ name?: string; region?: string; location?: string; dates?: string; venue?: string }> | undefined;
   if (linkedEvents?.length) {
-    const lines = ["REGIONAL EVENT SERIES:"];
-    linkedEvents.slice(0, 6).forEach(e => {
-      lines.push(`  • ${e.name} — ${e.location || e.region}${e.dates ? `, ${e.dates}` : ''}${e.venue ? ` at ${e.venue}` : ''}`);
-    });
-    lines.push("  Design should feel part of this cohesive global event series.");
-    blocks.push(lines.join("\n"));
+    blocks.push([
+      "REGIONAL EVENT SERIES:",
+      ...linkedEvents.slice(0, 8).map((e) => `  • ${e.name} — ${e.location || e.region || ""}${e.dates ? `, ${e.dates}` : ""}${e.venue ? ` at ${e.venue}` : ""}`),
+      "  Design should feel part of this cohesive global event series.",
+    ].join("\n"));
   }
 
-  // Event schedule — for agenda-related assets
   const schedule = brandKnowledge.schedule as Array<{ title?: string; time?: string; track?: string }> | undefined;
   if (schedule?.length) {
-    const lines = ["EVENT SCHEDULE (for agenda/program assets):"];
-    schedule.slice(0, 8).forEach(s => {
-      lines.push(`  ${s.time || ''}: ${s.title}${s.track ? ` [${s.track}]` : ''}`);
-    });
-    blocks.push(lines.join("\n"));
+    blocks.push([
+      "EVENT SCHEDULE:",
+      ...schedule.slice(0, 10).map((s) => `  ${s.time || ""}: ${s.title || ""}${s.track ? ` [${s.track}]` : ""}`),
+    ].join("\n"));
   }
 
-  // Sponsor list
   const sponsors = brandKnowledge.sponsors as Array<{ name?: string; tier?: string }> | undefined;
   if (sponsors?.length) {
-    const lines = ["EVENT SPONSORS:"];
-    sponsors.slice(0, 10).forEach(s => {
-      lines.push(`  • ${s.name}${s.tier ? ` (${s.tier})` : ''}`);
-    });
-    blocks.push(lines.join("\n"));
+    blocks.push([
+      "EVENT SPONSORS:",
+      ...sponsors.slice(0, 12).map((s) => `  • ${s.name}${s.tier ? ` (${s.tier})` : ""}`),
+    ].join("\n"));
   }
 
-  // Partner divisions/booths
   const divisions = brandKnowledge.divisions as Array<{ name?: string; tagline?: string; services?: string[] }> | undefined;
   if (divisions?.length) {
-    const lines = ["BRAND DIVISIONS/PARTNERS:"];
-    divisions.slice(0, 6).forEach(d => {
-      lines.push(`  • ${d.name}${d.tagline ? `: "${d.tagline}"` : ''}${d.services?.length ? ` — ${d.services.slice(0, 3).join(', ')}` : ''}`);
-    });
-    blocks.push(lines.join("\n"));
+    blocks.push([
+      "BRAND DIVISIONS/PARTNERS:",
+      ...divisions.slice(0, 8).map((d) => `  • ${d.name}${d.tagline ? `: \"${d.tagline}\"` : ""}${d.services?.length ? ` — ${d.services.slice(0, 3).join(", ")}` : ""}`),
+    ].join("\n"));
   }
 
-  // Social platform specs
   const socialSpecs = brandKnowledge.socialPlatforms as Array<{ platform?: string; postSize?: string; directive?: string }> | undefined;
   if (socialSpecs?.length) {
-    const lines = ["SOCIAL MEDIA SPECS:"];
-    socialSpecs.slice(0, 6).forEach(s => {
-      lines.push(`  ${s.platform}: ${s.postSize || ''}${s.directive ? ` — ${s.directive}` : ''}`);
-    });
-    blocks.push(lines.join("\n"));
+    blocks.push([
+      "SOCIAL MEDIA SPECS:",
+      ...socialSpecs.slice(0, 8).map((s) => `  ${s.platform}: ${s.postSize || ""}${s.directive ? ` — ${s.directive}` : ""}`),
+    ].join("\n"));
   }
 
-  // Event details (dates, hashtag, registration)
   const eventDetailsData = brandKnowledge.eventDetailsData as Record<string, unknown> | undefined;
   if (eventDetailsData) {
-    const lines: string[] = [];
-    if (eventDetailsData.hashtag) lines.push(`  Hashtag: ${eventDetailsData.hashtag}`);
-    if (eventDetailsData.registrationUrl) lines.push(`  Registration: ${eventDetailsData.registrationUrl}`);
-    if (eventDetailsData.eventDates) lines.push(`  Dates: ${eventDetailsData.eventDates}`);
-    if (lines.length) {
-      blocks.push(["EVENT DETAILS:", ...lines].join("\n"));
-    }
+    const lines = [
+      eventDetailsData.hashtag ? `  Hashtag: ${eventDetailsData.hashtag}` : "",
+      eventDetailsData.registrationUrl ? `  Registration: ${eventDetailsData.registrationUrl}` : "",
+      eventDetailsData.eventDates ? `  Dates: ${eventDetailsData.eventDates}` : "",
+    ].filter(Boolean);
+    if (lines.length) blocks.push(["EVENT DETAILS:", ...lines].join("\n"));
   }
 
-  if (blocks.length === 0) return "";
-
+  if (!blocks.length) return "";
   return `\n=== BRAND INTELLIGENCE ===\n${blocks.join("\n\n")}\n=== END BRAND INTELLIGENCE ===\n`;
 }
 
 /**
- * Compile a generation prompt by layering Level-5 DNA, anchors,
- * uniqueness seed, quality gate, and scene rules onto a base prompt.
+ * Compile a generation prompt by layering:
+ * 1) user/base prompt
+ * 2) masterful asset-family template
+ * 3) Level-5 DNA and variant anchors
+ * 4) production QA, scene/output rules, and brand intelligence
  */
 export function compileGenerationPrompt(args: {
   basePrompt: string;
@@ -277,13 +214,28 @@ export function compileGenerationPrompt(args: {
 
   const seed = makeUniquenessSeed(context);
   const useScene = shouldUseScene(context.assetType);
-
-  // Resolve variant: explicit → styleDescription → fallback
   const vName = variantName ?? context.styleDescription ?? "Modern Minimal";
   const assetDefault = getAssetDefault(context.assetType as any);
   const variant = getVariantProfile(vName);
 
-  // ── DNA block ──
+  const masterfulTemplateBlock = buildMasterfulPromptTemplateBlock({
+    assetType: context.assetType,
+    eventDetails: {
+      name: context.eventName || "Event",
+      description: context.eventDescription || "",
+      date: "",
+      location: context.location || "",
+      website: "",
+      email: "",
+      incorporateLocationStyle: false,
+    },
+    colorPalette: context.colorPalette || [],
+    styleDescription: basePrompt,
+    hasExactLogoSource: Boolean(context.logoBase64),
+    hasVisualReferences: Boolean(context.vibeImageBase64),
+    hasPatternReferences: Boolean(context.masterPatternBase64),
+  });
+
   const dnaBlock = [
     "TEMPLATE DNA:",
     `- Influence: ${variant.dna.influence}`,
@@ -299,42 +251,37 @@ export function compileGenerationPrompt(args: {
       : []),
   ].join("\n");
 
-  // ── Anchors ──
   const anchorsBlock = [
     "ANCHORS (do not change):",
     ...variant.anchors.map((a) => `- ${a}`),
   ].join("\n");
 
-  // ── Layout ──
   const layoutBlock = [
     "LAYOUT RULES:",
     ...(assetDefault.layoutBase ?? []).map((x) => `- ${x}`),
     ...(variant.layoutHints ?? []).map((x) => `- ${x}`),
   ].join("\n");
 
-  // ── Uniqueness seed ──
   const uniquenessBlock = [
     `UNIQUENESS SEED: ${seed}`,
     "Use the uniqueness seed to vary ONLY these allowed elements:",
     "- micro-variation in background texture/grain (subtle)",
     "- secondary shape placement within safe zones",
     "- pattern offset/scale within approved range",
-    "DO NOT change: anchors, hierarchy, logo placement zones, or readability.",
+    "DO NOT change: anchors, hierarchy, logo placement zones, readability, typography system, or campaign motif.",
   ].join("\n");
 
-  // ── Quality gate ──
   const qualityGate = [
     "QUALITY GATE (must pass before final output):",
-    "1) Logo present + sharp + not distorted (if logo provided).",
-    "2) Text is crisp and readable for intended distance/format.",
-    "3) No warped edges, melted typography, or nonsense micro-details.",
-    ...(useScene
-      ? ["4) Correct physical mounting/print realism (no floating mockups)."]
-      : []),
+    "1) Clear primary/secondary/tertiary hierarchy; no equal-weight clutter.",
+    "2) Logo is never drawn by AI; if required, logo zone is blank, clean, and unobstructed for deterministic overlay.",
+    "3) Text/content zones are crisp, readable, and safe for intended distance/format.",
+    "4) Brand colors, typography behavior, motif, and layout rhythm match the active brand brain.",
+    "5) No warped edges, melted typography, fake UI, fake sponsors, or nonsense micro-details.",
+    ...(useScene ? ["6) Correct physical mounting/print realism; no floating mockups or impossible perspective."] : []),
     "If any fail: regenerate internally and output only a passing result.",
   ].join("\n");
 
-  // ── Scene / output mode ──
   const sceneBlock = useScene
     ? [
         "PHOTOREAL SCENE:",
@@ -342,9 +289,7 @@ export function compileGenerationPrompt(args: {
         `- Mounting: ${variant.sceneOverrides?.mounting ?? assetDefault.sceneBase?.mounting ?? "Physically installed / printed"}`,
         `- People: ${variant.sceneOverrides?.people ?? assetDefault.sceneBase?.people ?? "Optional blurred silhouettes"}`,
         `- Lighting: ${variant.sceneOverrides?.lighting ?? assetDefault.sceneBase?.lighting ?? "Natural venue lighting"}`,
-        ...(assetDefault.sceneBase?.realismConstraints ?? []).map(
-          (r) => `- Constraint: ${r}`
-        ),
+        ...(assetDefault.sceneBase?.realismConstraints ?? []).map((r) => `- Constraint: ${r}`),
       ].join("\n")
     : [
         "OUTPUT MODE: DIGITAL / DESIGN (no fake photography).",
@@ -352,13 +297,12 @@ export function compileGenerationPrompt(args: {
         "No mockup shadows, no paper texture unless explicitly requested.",
       ].join("\n");
 
-  // ── Brand Intelligence ──
-  const brandBlock = brandKnowledge
-    ? buildBrandIntelligenceBlock(brandKnowledge)
-    : "";
+  const brandBlock = brandKnowledge ? buildBrandIntelligenceBlock(brandKnowledge) : "";
 
   return [
     basePrompt,
+    "",
+    masterfulTemplateBlock,
     "",
     dnaBlock,
     "",
