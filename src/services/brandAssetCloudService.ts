@@ -1,9 +1,12 @@
 import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
 import type { BrandProfile } from '@/types/brandProfile';
-import type { BrandGuideAsset } from './brandAssetLibraryService';
-import { getBrandGuideAssetsForProfile, saveBrandGuideAsset } from './brandAssetLibraryService';
+import type { BrandAssetGenerationContext, BrandGuideAsset } from './brandAssetLibraryService';
+import { getBrandAssetGenerationContext, getBrandGuideAssetsForProfile, saveBrandGuideAsset } from './brandAssetLibraryService';
 
 const BUCKET = 'brand-brain-assets';
+const HYDRATION_TTL_MS = 2 * 60 * 1000;
+
+const hydrationCache = new Map<string, number>();
 
 type CloudBrandBrainRow = {
   id: string;
@@ -38,6 +41,11 @@ export interface CloudSyncResult {
   uploaded?: number;
   pulled?: number;
   skipped?: number;
+}
+
+export interface CloudBackedBrandAssetContextResult {
+  context: BrandAssetGenerationContext;
+  cloud: CloudSyncResult;
 }
 
 const getCurrentUser = async () => {
@@ -161,6 +169,7 @@ export const uploadBrandGuideAssetToCloud = async (asset: BrandGuideAsset, profi
     .single();
 
   if (error) throw error;
+  hydrationCache.delete(profile.id);
   return data as CloudBrandBrainAssetRow;
 };
 
@@ -186,12 +195,18 @@ export const syncBrandGuideAssetsToCloud = async (profile: BrandProfile): Promis
     uploaded += 1;
   }
 
+  hydrationCache.set(profile.id, Date.now());
   return { ok: true, message: `${uploaded} brand brain asset${uploaded === 1 ? '' : 's'} synced to Supabase.`, uploaded };
 };
 
-export const pullBrandGuideAssetsFromCloud = async (profile: BrandProfile): Promise<CloudSyncResult> => {
+export const pullBrandGuideAssetsFromCloud = async (profile: BrandProfile, force = false): Promise<CloudSyncResult> => {
   if (!isSupabaseConfigured) {
     return { ok: false, message: 'Supabase is not configured. Cannot pull cloud brand brain assets.' };
+  }
+
+  const cachedAt = hydrationCache.get(profile.id);
+  if (!force && cachedAt && Date.now() - cachedAt < HYDRATION_TTL_MS) {
+    return { ok: true, message: 'Brand brain cloud cache is fresh.', pulled: 0, skipped: 1 };
   }
 
   const user = await getCurrentUser();
@@ -218,7 +233,33 @@ export const pullBrandGuideAssetsFromCloud = async (profile: BrandProfile): Prom
     pulled += 1;
   }
 
+  hydrationCache.set(profile.id, Date.now());
   return { ok: true, message: `${pulled} brand brain asset${pulled === 1 ? '' : 's'} pulled from Supabase.`, pulled };
+};
+
+export const getCloudBackedBrandAssetGenerationContext = async (profile: BrandProfile): Promise<CloudBackedBrandAssetContextResult> => {
+  const localContext = () => getBrandAssetGenerationContext(profile.id, profile);
+
+  if (!isSupabaseConfigured) {
+    return {
+      context: localContext(),
+      cloud: { ok: false, message: 'Supabase is not configured. Using local brand brain.' },
+    };
+  }
+
+  try {
+    const pullResult = await pullBrandGuideAssetsFromCloud(profile);
+    return {
+      context: localContext(),
+      cloud: pullResult,
+    };
+  } catch (error) {
+    console.warn('Cloud brand brain hydration failed; using local brand brain:', error);
+    return {
+      context: localContext(),
+      cloud: { ok: false, message: error instanceof Error ? error.message : 'Cloud brand brain hydration failed. Using local brand brain.' },
+    };
+  }
 };
 
 export const deleteBrandGuideAssetFromCloud = async (asset: BrandGuideAsset): Promise<CloudSyncResult> => {
@@ -232,5 +273,6 @@ export const deleteBrandGuideAssetFromCloud = async (asset: BrandGuideAsset): Pr
   const { error } = await (supabase as any).from('brand_brain_assets').delete().eq('id', asset.id).eq('user_id', user.id);
   if (error) throw error;
 
+  hydrationCache.delete(asset.brandProfileId);
   return { ok: true, message: 'Brand brain asset deleted from cloud.' };
 };
