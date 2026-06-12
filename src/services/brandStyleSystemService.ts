@@ -30,7 +30,7 @@ export interface BrandStyleSystem {
   productionBehavior: string[];
   bestFor: string[];
   avoid: string[];
-  assetFamilyUsage: Partial<Record<MasterPromptFamily, string>>;
+  assetFamilyUsage: Partial<Record<MasterPromptFamily | string, string>>;
 }
 
 const BRAND_STYLE_SYSTEMS_KEY = 'eventkit-brand-style-systems';
@@ -214,7 +214,7 @@ export const brandStyleSystems: Record<BrandStyleSystemId, BrandStyleSystem> = {
     avoid: ['overly corporate coldness', 'kitschy decoration', 'illegible script overuse'],
     assetFamilyUsage: {
       signage: 'Warm but extremely clear; guest action stays first.',
-      menu: 'Readable menu structure beats decoration.',
+      content: 'Readable menu/content structure beats decoration.',
       social_post: 'Use tasteful detail imagery and short welcoming copy.',
       environmental: 'Integrate into venue atmosphere without visual clutter.',
     },
