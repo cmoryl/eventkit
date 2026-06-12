@@ -1,8 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Copy, Download, Image, Layers, LayoutTemplate, Lock, Palette, Plus, ShieldCheck, Sparkles, Type } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Copy, Download, FileJson, Image, Layers, LayoutTemplate, Lock, Palette, Plus, ShieldCheck, Sparkles, Trash2, Type, Upload } from 'lucide-react';
 import type { BrandMode, BrandProfile } from '@/types/brandProfile';
-import { createCustomBrandProfile, getActiveBrandProfile, getAvailableBrandProfiles, setActiveBrandProfile } from '@/services/brandProfileService';
+import { createCustomBrandProfile, deleteCustomBrandProfile, duplicateBrandProfile, getActiveBrandProfile, getAvailableBrandProfiles, importBrandProfile, isPresetBrandProfile, setActiveBrandProfile } from '@/services/brandProfileService';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -93,6 +93,7 @@ const BrandCard: React.FC<{
 };
 
 const BrandLibrary: React.FC = () => {
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const profiles = useMemo(() => getAvailableBrandProfiles(), [refreshKey]);
   const [activeId, setActiveId] = useState(getActiveBrandProfile().id);
@@ -109,6 +110,11 @@ const BrandLibrary: React.FC = () => {
     const matchesMode = modeFilter === 'all' || profile.defaultMode === modeFilter;
     return matchesQuery && matchesMode;
   });
+
+  const refreshProfiles = (nextSelected?: BrandProfile | null) => {
+    setRefreshKey((value) => value + 1);
+    if (nextSelected !== undefined) setSelectedProfile(nextSelected);
+  };
 
   const activateProfile = (id: string) => {
     const profile = setActiveBrandProfile(id);
@@ -156,10 +162,51 @@ const BrandLibrary: React.FC = () => {
     };
 
     createCustomBrandProfile(profile);
-    setRefreshKey((value) => value + 1);
     setCustomName('');
-    setSelectedProfile(profile);
+    refreshProfiles(profile);
     activateProfile(profile.id);
+  };
+
+  const handleImportFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const profile = JSON.parse(String(reader.result)) as BrandProfile;
+        const imported = importBrandProfile(profile);
+        refreshProfiles(imported);
+        activateProfile(imported.id);
+        toast.success(`${imported.name} imported`);
+      } catch (error) {
+        console.error('Brand import failed:', error);
+        toast.error('Brand import failed. Use a valid BrandProfile JSON file.');
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDuplicate = (profile: BrandProfile) => {
+    const duplicate = duplicateBrandProfile(profile);
+    refreshProfiles(duplicate);
+    activateProfile(duplicate.id);
+    toast.success(`${duplicate.name} created`);
+  };
+
+  const handleDelete = (profile: BrandProfile) => {
+    if (isPresetBrandProfile(profile.id)) {
+      toast.error('Preset profiles cannot be deleted. Duplicate it first to create an editable copy.');
+      return;
+    }
+
+    deleteCustomBrandProfile(profile.id);
+    const nextActive = getActiveBrandProfile();
+    setActiveId(nextActive.id);
+    refreshProfiles(nextActive);
+    toast.success(`${profile.name} deleted`);
   };
 
   return (
@@ -170,7 +217,7 @@ const BrandLibrary: React.FC = () => {
             <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-3"><ArrowLeft className="h-4 w-4" /> Back to app</Link>
             <div className="flex items-center gap-2 text-sm font-semibold text-primary mb-1"><Layers className="h-4 w-4" /> Brand Library</div>
             <h1 className="text-3xl font-bold tracking-tight">Brand Profile Manager</h1>
-            <p className="text-muted-foreground mt-1">Choose, inspect, create, and activate reusable brand systems for generation and export preflight.</p>
+            <p className="text-muted-foreground mt-1">Choose, inspect, create, import, and activate reusable brand systems for generation and export preflight.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search brands, imagery, rules..." className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
@@ -188,7 +235,13 @@ const BrandLibrary: React.FC = () => {
       <main className="container mx-auto px-6 py-8 grid gap-8 xl:grid-cols-[1fr_460px]">
         <section className="space-y-6">
           <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4"><Plus className="h-5 w-5 text-primary" /><h2 className="text-xl font-bold">Quick Custom Brand</h2></div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
+              <div className="flex items-center gap-2"><Plus className="h-5 w-5 text-primary" /><h2 className="text-xl font-bold">Quick Custom Brand</h2></div>
+              <div className="flex gap-2">
+                <input ref={importInputRef} type="file" accept="application/json,.json" className="hidden" onChange={handleImportFile} />
+                <button onClick={() => importInputRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary"><Upload className="h-4 w-4" />Import JSON</button>
+              </div>
+            </div>
             <div className="grid gap-3 md:grid-cols-[1fr_1.4fr_0.8fr_0.8fr_auto]">
               <input value={customName} onChange={(event) => setCustomName(event.target.value)} placeholder="Brand name" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
               <input value={customColors} onChange={(event) => setCustomColors(event.target.value)} placeholder="#111827, #2563EB" className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
@@ -220,10 +273,13 @@ const BrandLibrary: React.FC = () => {
               </div>
               <p className="text-sm text-muted-foreground mb-5">{selectedProfile.description}</p>
 
-              <div className="grid grid-cols-2 gap-2 mb-5">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 <button onClick={() => copyJson(selectedProfile)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary"><Copy className="h-4 w-4" />Copy JSON</button>
                 <button onClick={() => downloadJson(selectedProfile)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary"><Download className="h-4 w-4" />Export JSON</button>
+                <button onClick={() => handleDuplicate(selectedProfile)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary"><FileJson className="h-4 w-4" />Duplicate</button>
+                <button onClick={() => handleDelete(selectedProfile)} disabled={isPresetBrandProfile(selectedProfile.id)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary disabled:opacity-50"><Trash2 className="h-4 w-4" />Delete</button>
               </div>
+              {isPresetBrandProfile(selectedProfile.id) && <p className="text-xs text-muted-foreground mb-5">Preset profile is protected. Duplicate it to create an editable custom copy.</p>}
 
               <div className="space-y-4">
                 <DetailBlock title="Color System" icon={<Palette className="h-4 w-4 text-primary" />}>
