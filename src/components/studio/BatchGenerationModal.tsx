@@ -57,6 +57,8 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
+  const [stylePreset, setStylePreset] = useState<'modern' | 'classic' | 'bold' | 'minimal' | 'playful' | 'premium'>('modern');
+  const [batchNotes, setBatchNotes] = useState('');
   const isPausedRef = useRef(false);
   const abortRef = useRef(false);
 
@@ -94,11 +96,21 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
   // callbacks already captured in useCallback closures.
   const generateOne = useCallback(async (assetType: string, anchorUrl?: string, masterDirectionBlock?: string): Promise<{ imageUrl?: string; error?: string }> => {
     const info = assetDisplayInfo[assetType];
+    const styleDescriptors: Record<typeof stylePreset, string> = {
+      modern: 'modern and brand-consistent, clean lines, contemporary typography',
+      classic: 'classic and elegant, timeless composition, refined typography',
+      bold: 'bold and high-impact, strong contrast, statement typography',
+      minimal: 'minimal and refined, generous whitespace, restrained typography',
+      playful: 'playful and energetic, dynamic shapes, expressive typography',
+      premium: 'premium and luxurious, sophisticated materials, polished typography',
+    };
+    const notesSuffix = batchNotes.trim() ? ` Additional creative direction: ${batchNotes.trim()}.` : '';
     const prompt = compileGenerationPrompt({
-      basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: modern and brand-consistent.`,
+      basePrompt: `Create a professional ${info?.name || assetType} for "${eventName}". Style: ${styleDescriptors[stylePreset]}.${notesSuffix}`,
       context: {
         eventName,
         assetType,
+        styleDescription: stylePreset,
         colorPalette: effectiveBrand?.styles?.color_palette?.map((c: any) => c.hex || c) || [],
       },
     });
@@ -151,7 +163,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
     } catch (err: any) {
       return { error: err.message || 'Generation failed' };
     }
-  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo]);
+  }, [effectiveBrand, effectiveLogoUrl, eventName, assetDisplayInfo, stylePreset, batchNotes]);
 
   const startBatch = useCallback(async () => {
     if (!effectiveBrand) {
@@ -342,6 +354,49 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
               <Progress value={progressPct} className="h-2" />
             </div>
           )}
+
+          {/* Style Brief — one-tile preset + optional notes applied to every asset */}
+          {!isRunning && results.some(r => r.status !== 'complete') && (
+            <div className="px-5 pt-4 space-y-3 border-b border-border pb-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Style for this batch
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-2">
+                  {(['modern','classic','bold','minimal','playful','premium'] as const).map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setStylePreset(preset)}
+                      className={cn(
+                        "px-2 py-2 rounded-lg text-xs font-medium border capitalize transition-all",
+                        stylePreset === preset
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-muted/30 text-muted-foreground hover:border-primary/30"
+                      )}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Notes (optional)
+                </label>
+                <input
+                  type="text"
+                  value={batchNotes}
+                  onChange={(e) => setBatchNotes(e.target.value)}
+                  placeholder="e.g. add subtle geometric patterns, feature the venue skyline"
+                  className="mt-2 w-full px-3 py-2 rounded-lg bg-muted/30 border border-border text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary"
+                  maxLength={240}
+                />
+              </div>
+            </div>
+          )}
+
+
 
           {/* Asset list */}
           <div className="flex-1 overflow-y-auto p-5 space-y-2">

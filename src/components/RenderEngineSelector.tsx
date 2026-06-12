@@ -1,33 +1,38 @@
 // Render Engine Selector - Inline selector for choosing render engine per asset
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Key, Video, Crown } from 'lucide-react';
+import { Sparkles, Zap, Key, Video, Crown, Wand2 } from 'lucide-react';
 import type { RenderEngine, RenderProvider, VideoProvider } from '@/services/aiBrain/types';
 import { getUserRenderEngines, getAllProviders } from '@/services/aiBrain/renderEngineService';
+import { pickAutoEngine, describeAutoEngine } from '@/services/aiBrain/engineAutoSelect';
 import { cn } from '@/lib/utils';
 
 interface RenderEngineSelectorProps {
   userId: string;
-  value?: string; // engine id or 'lovable-default'
+  value?: string; // engine id, 'auto', or 'lovable-default'
   onChange: (engineId: string, engine: RenderEngine | null) => void;
   compact?: boolean;
   className?: string;
   disabled?: boolean;
   engineType?: 'image' | 'video' | 'all'; // Filter by engine type
+  /** When set, an "Auto" option is offered (and is the default value) that picks the best engine for this asset type. */
+  autoSelectFor?: string;
 }
 
 type AnyProvider = RenderProvider | VideoProvider;
 
 export function RenderEngineSelector({
   userId,
-  value = 'lovable-default',
+  value,
   onChange,
   compact = false,
   className,
   disabled = false,
   engineType = 'image',
+  autoSelectFor,
 }: RenderEngineSelectorProps) {
+  const effectiveValue = value ?? (autoSelectFor ? 'auto' : 'lovable-default');
   const [engines, setEngines] = useState<RenderEngine[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -107,9 +112,21 @@ export function RenderEngineSelector({
   });
 
   const allEngines = [...builtInEngines, ...filteredEngines];
-  const selectedEngine = allEngines.find(e => e.id === value) || builtInEngines[0];
+
+  // Resolve the engine for 'auto' mode
+  const autoEngineId = useMemo(
+    () => (autoSelectFor ? pickAutoEngine(autoSelectFor) : 'lovable-nano-banana-2'),
+    [autoSelectFor]
+  );
+  const autoEngine = allEngines.find(e => e.id === autoEngineId) || builtInEngines[0];
+  const isAuto = effectiveValue === 'auto';
+  const selectedEngine = isAuto ? autoEngine : (allEngines.find(e => e.id === effectiveValue) || builtInEngines[0]);
 
   const handleChange = (engineId: string) => {
+    if (engineId === 'auto') {
+      onChange('auto', autoEngine);
+      return;
+    }
     const engine = allEngines.find(e => e.id === engineId);
     onChange(engineId, engine || null);
   };
@@ -154,7 +171,7 @@ export function RenderEngineSelector({
   }
 
   return (
-    <Select value={value} onValueChange={handleChange} disabled={disabled}>
+    <Select value={effectiveValue} onValueChange={handleChange} disabled={disabled}>
       <SelectTrigger 
         className={cn(
           "bg-background/80 backdrop-blur-sm border-border",
@@ -163,13 +180,30 @@ export function RenderEngineSelector({
         )}
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          {getProviderIcon(selectedEngine.provider)}
+          {isAuto ? (
+            <Wand2 className={cn("text-violet-500", compact ? "w-3 h-3" : "w-4 h-4")} />
+          ) : (
+            getProviderIcon(selectedEngine.provider)
+          )}
           <SelectValue>
-            <span className="truncate">{selectedEngine.displayName}</span>
+            <span className="truncate">
+              {isAuto ? `Auto · ${selectedEngine.displayName}` : selectedEngine.displayName}
+            </span>
           </SelectValue>
         </div>
       </SelectTrigger>
       <SelectContent>
+        {autoSelectFor && (
+          <SelectItem value="auto">
+            <div className="flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-violet-500" />
+              <span className="flex-1">Auto · {describeAutoEngine(autoEngineId as any)}</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-violet-500/10 text-violet-600 border-violet-500/30">
+                Smart
+              </Badge>
+            </div>
+          </SelectItem>
+        )}
         {allEngines.map((engine) => (
           <SelectItem key={engine.id} value={engine.id}>
             <div className="flex items-center gap-2">

@@ -27,7 +27,7 @@ export function RegenerateWithEngineModal({
   userId,
   onRegenerate,
 }: RegenerateWithEngineModalProps) {
-  const [selectedEngineId, setSelectedEngineId] = useState('lovable-default');
+  const [selectedEngineId, setSelectedEngineId] = useState('auto');
   const [selectedEngine, setSelectedEngine] = useState<RenderEngine | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
@@ -98,10 +98,11 @@ export function RegenerateWithEngineModal({
                 userId={userId}
                 value={selectedEngineId}
                 onChange={handleEngineChange}
+                autoSelectFor={asset.type as string}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground">
-                Choose which AI engine to use for generating this asset
+                Auto picks the best engine for this asset type (typography → GPT Image 2, hero → Gemini 3 Pro). Change it any time.
               </p>
             </div>
           )}
