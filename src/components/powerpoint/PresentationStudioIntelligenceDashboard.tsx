@@ -14,6 +14,7 @@ import { PresentationStudioIntelligenceStatus } from './PresentationStudioIntell
 import { PresentationExportReadinessPanel } from './PresentationExportReadinessPanel';
 import { PresentationUserFlowPanel } from './PresentationUserFlowPanel';
 import { PresentationFunctionPanel } from './PresentationFunctionPanel';
+import { PresentationSmartBlockPanel } from './PresentationSmartBlockPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -83,6 +84,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         hasSavedSnapshot={events.some((event) => event.eventType === 'export_created')}
       />
       <PresentationFunctionPanel />
+      <PresentationSmartBlockPanel />
       <PresentationExportReadinessPanel exportFidelity={state.exportFidelity} agentQA={state.agentQA} allowReviewedProceed={humanApproved} />
       <PresentationCompetitiveEdgePanel />
       <GammaInspiredStudioPanel />
