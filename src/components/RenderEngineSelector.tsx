@@ -171,7 +171,7 @@ export function RenderEngineSelector({
   }
 
   return (
-    <Select value={value} onValueChange={handleChange} disabled={disabled}>
+    <Select value={effectiveValue} onValueChange={handleChange} disabled={disabled}>
       <SelectTrigger 
         className={cn(
           "bg-background/80 backdrop-blur-sm border-border",
@@ -180,13 +180,30 @@ export function RenderEngineSelector({
         )}
       >
         <div className="flex items-center gap-1.5 min-w-0">
-          {getProviderIcon(selectedEngine.provider)}
+          {isAuto ? (
+            <Wand2 className={cn("text-violet-500", compact ? "w-3 h-3" : "w-4 h-4")} />
+          ) : (
+            getProviderIcon(selectedEngine.provider)
+          )}
           <SelectValue>
-            <span className="truncate">{selectedEngine.displayName}</span>
+            <span className="truncate">
+              {isAuto ? `Auto · ${selectedEngine.displayName}` : selectedEngine.displayName}
+            </span>
           </SelectValue>
         </div>
       </SelectTrigger>
       <SelectContent>
+        {autoSelectFor && (
+          <SelectItem value="auto">
+            <div className="flex items-center gap-2">
+              <Wand2 className="w-4 h-4 text-violet-500" />
+              <span className="flex-1">Auto · {describeAutoEngine(autoEngineId as any)}</span>
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-violet-500/10 text-violet-600 border-violet-500/30">
+                Smart
+              </Badge>
+            </div>
+          </SelectItem>
+        )}
         {allEngines.map((engine) => (
           <SelectItem key={engine.id} value={engine.id}>
             <div className="flex items-center gap-2">
