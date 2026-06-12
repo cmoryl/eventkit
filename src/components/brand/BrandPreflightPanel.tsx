@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Download, ShieldCheck, XCircle } from 'lucide-react';
 import type { GeneratedAsset } from '@/types';
 import type { BrandMode } from '@/types/brandProfile';
 import { getAvailableBrandProfiles } from '@/services/brandProfileService';
-import { getAssetSetPreflightSummary, preflightAssetSet } from '@/services/assetPreflightService';
+import { generatePreflightReportText, getAssetSetPreflightSummary, preflightAssetSet } from '@/services/assetPreflightService';
 import { cn } from '@/lib/utils';
 
 interface BrandPreflightPanelProps {
@@ -39,6 +39,17 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
 
   if (!activeProfile) return null;
 
+  const downloadReport = () => {
+    const report = generatePreflightReportText(results, activeProfile, mode);
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `brand-preflight-${activeProfile.id}-${mode}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <section className={cn('rounded-2xl border border-border bg-card p-5 shadow-sm', className)}>
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -72,6 +83,13 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
           <select className="rounded-xl border border-border bg-background px-3 py-2 text-sm" value={mode} onChange={(event) => setMode(event.target.value as BrandMode)}>
             {modes.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
+          <button
+            type="button"
+            onClick={downloadReport}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary"
+          >
+            <Download className="h-4 w-4" /> Report
+          </button>
         </div>
       </div>
 
