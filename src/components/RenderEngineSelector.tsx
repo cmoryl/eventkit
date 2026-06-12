@@ -63,6 +63,18 @@ export function RenderEngineSelector({
       engineType: 'image',
     },
     {
+      id: 'lovable-nano-banana-2',
+      userId,
+      provider: 'lovable-nano-banana-2',
+      displayName: 'Nano Banana 2 (Fast HQ)',
+      isActive: true,
+      isDefault: false,
+      config: { model: 'gemini-3.1-flash-image-preview' },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      engineType: 'image',
+    },
+    {
       id: 'lovable-hq',
       userId,
       provider: 'lovable-hq',
@@ -70,6 +82,18 @@ export function RenderEngineSelector({
       isActive: true,
       isDefault: false,
       config: { model: 'gemini-3-pro-image-preview', quality: 'hd' },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      engineType: 'image',
+    },
+    {
+      id: 'lovable-gpt-image',
+      userId,
+      provider: 'lovable-gpt-image',
+      displayName: 'GPT Image (Typography)',
+      isActive: true,
+      isDefault: false,
+      config: { model: 'gpt-image-2', quality: 'high' },
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       engineType: 'image',
@@ -99,6 +123,10 @@ export function RenderEngineSelector({
         return <Sparkles className={cn("text-primary", compact ? "w-3 h-3" : "w-4 h-4")} />;
       case 'lovable-hq':
         return <Crown className={cn("text-amber-500", compact ? "w-3 h-3" : "w-4 h-4")} />;
+      case 'lovable-nano-banana-2':
+        return <Sparkles className={cn("text-yellow-500", compact ? "w-3 h-3" : "w-4 h-4")} />;
+      case 'lovable-gpt-image':
+        return <Sparkles className={cn("text-emerald-500", compact ? "w-3 h-3" : "w-4 h-4")} />;
       default:
         return <Zap className={cn("text-muted-foreground", compact ? "w-3 h-3" : "w-4 h-4")} />;
     }
@@ -116,7 +144,7 @@ export function RenderEngineSelector({
   };
 
   const isBuiltIn = (provider: AnyProvider) => {
-    return provider === 'lovable' || provider === 'lovable-hq' || provider === 'lovable-veo3';
+    return provider === 'lovable' || provider === 'lovable-hq' || provider === 'lovable-nano-banana-2' || provider === 'lovable-gpt-image' || provider === 'lovable-veo3';
   };
 
   if (loading) {

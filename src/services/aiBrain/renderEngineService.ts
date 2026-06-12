@@ -23,9 +23,23 @@ const IMAGE_PROVIDER_INFO: Record<RenderProvider, ProviderInfo> = {
   },
   'lovable-hq': {
     name: 'Lovable AI (HQ)',
-    description: 'High-quality mode using next-gen Gemini. Slower but produces superior results.',
+    description: 'High-quality mode using next-gen Gemini 3 Pro. Slower but produces superior results.',
     requiresKey: false,
     models: ['gemini-3-pro-image-preview'],
+    type: 'image',
+  },
+  'lovable-nano-banana-2': {
+    name: 'Lovable AI (Nano Banana 2)',
+    description: 'Fast high-quality image generation using Gemini 3.1 Flash Image. Best balance of speed and quality.',
+    requiresKey: false,
+    models: ['gemini-3.1-flash-image-preview'],
+    type: 'image',
+  },
+  'lovable-gpt-image': {
+    name: 'Lovable AI (GPT Image)',
+    description: 'OpenAI GPT Image 2 via Lovable Gateway. Best for crisp typography and text-heavy designs.',
+    requiresKey: false,
+    models: ['gpt-image-2'],
     type: 'image',
   },
   openai: {
