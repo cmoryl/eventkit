@@ -112,7 +112,7 @@ BRAND: "${brandContext.brandName}"
 - Restricted elements: ${brandContext.restrictedElements?.join(', ') || 'N/A'}`
     : 'No brand context provided.';
 
-  return `You are a creative director creating a UNIFIED VISUAL DIRECTION for a complete event design kit.
+  return `You are a senior creative director building a LOCKED MULTI-ASSET DESIGN SYSTEM for a complete event/campaign kit.
 
 EVENT: "${eventDetails.name}"
 Description: ${eventDetails.description || 'N/A'}
@@ -124,17 +124,29 @@ ${brandSection}
 COLOR PALETTE: ${colorPalette.map(c => `${c.hex} (${c.name})`).join(', ')}
 STYLE: ${styleDescription || 'Modern professional'}
 
-Generate a unified visual direction that ensures ALL assets (banners, badges, social posts, signage, merchandise, etc.) look like they belong to the SAME event and brand.
+The design system must create consistent outputs across many asset types: hero banners, social posts, stories, signage, room signs, name tags, lanyards, shirts, bags, presentation slides, counters, kiosks, QR/WiFi signs, and environmental graphics.
+
+Do NOT create one-off designs. Create one repeatable brand system that can be scaled and cropped across formats.
+
+Define:
+1. one visual narrative
+2. one recurring visual motif
+3. one color hierarchy
+4. one typography hierarchy
+5. one logo placement system
+6. one background/pattern system
+7. one spacing/grid system
+8. asset-family translation rules for hero, social, signage, badges, merch, decks, utility, and environmental formats
 
 Respond in this exact JSON format:
 {
-  "visualNarrative": "2-3 sentence visual story that ties all assets together",
-  "designPrinciples": ["principle 1", "principle 2", "principle 3", "principle 4"],
-  "colorRules": "How to apply colors consistently: primary for X, secondary for Y, accent for Z",
-  "typographyGuidance": "Font pairing and usage rules across assets",
-  "imageryDirection": "Photography/illustration style, mood, and treatment",
-  "layoutPhilosophy": "Spatial relationships, grid system, and composition approach",
-  "avoidElements": ["avoid 1", "avoid 2", "avoid 3"]
+  "visualNarrative": "2-3 sentence visual story that ties all assets together, including the recurring motif/background logic",
+  "designPrinciples": ["principle 1", "principle 2", "principle 3", "principle 4", "principle 5"],
+  "colorRules": "How to apply colors consistently: primary for X, secondary for Y, accent for Z, neutral for readable zones. Include what must never change.",
+  "typographyGuidance": "Font pairing, casing, hierarchy, and scale rules across all asset sizes.",
+  "imageryDirection": "Photography/illustration style, treatment, crop behavior, and how it adapts across asset families.",
+  "layoutPhilosophy": "Grid, spacing, safe zones, logo zones, CTA zones, and repeatable family layouts.",
+  "avoidElements": ["avoid 1", "avoid 2", "avoid 3", "avoid 4", "avoid 5"]
 }`;
 }
 
@@ -169,22 +181,24 @@ function buildFallbackDirection(args: {
   colorPalette: ColorInfo[];
 }): MasterStyleDirection {
   const { eventDetails, brandContext, colorPalette } = args;
-  const primaryHex = colorPalette[0]?.hex || '#667eea';
-  const secondaryHex = colorPalette[1]?.hex || '#764ba2';
+  const primaryHex = colorPalette[0]?.hex || brandContext?.primaryColor || '#667eea';
+  const secondaryHex = colorPalette[1]?.hex || brandContext?.secondaryColor || '#764ba2';
+  const accentHex = colorPalette[2]?.hex || brandContext?.accentColor || secondaryHex;
 
   return {
-    visualNarrative: `A cohesive design system for "${eventDetails.name}" that combines ${brandContext?.archetype || 'modern professional'} aesthetics with a ${brandContext?.moodKeywords?.[0] || 'polished'} feel. Every touchpoint reinforces the event's identity through consistent use of the brand palette, typography, and visual language.`,
+    visualNarrative: `A cohesive design system for "${eventDetails.name}" that combines ${brandContext?.archetype || 'modern professional'} aesthetics with a ${brandContext?.moodKeywords?.[0] || 'polished'} feel. Every touchpoint uses the same visual signature, scaled from hero formats down to badges, merchandise, social, and utility signs.`,
     designPrinciples: [
-      'Maintain consistent color hierarchy across all assets',
-      'Typography must follow the same scale and pairing rules everywhere',
+      'All assets must feel like crops or extensions of one master design system',
+      'Maintain the same color hierarchy across every asset family',
+      'Typography must use one consistent scale, casing logic, and pairing system',
       'Logo placement follows brand guidelines without exception',
-      'White space is treated as a design element, not empty space',
+      'Each format may simplify the system, but must not introduce a new art direction',
     ],
-    colorRules: `Primary (${primaryHex}) for headlines and key elements. Secondary (${secondaryHex}) for accents and supporting elements. Maintain consistent application across all assets.`,
-    typographyGuidance: `${brandContext?.headingFont || 'Sans-serif'} for headlines, ${brandContext?.bodyFont || 'clean sans-serif'} for body text. Maintain consistent sizing ratios.`,
-    imageryDirection: brandContext?.imageryStyle || 'Professional, high-quality imagery with consistent color treatment.',
-    layoutPhilosophy: 'Clean, hierarchical layouts that pass the 3-second scan test. Consistent margins and spacing ratios.',
-    avoidElements: brandContext?.restrictedElements || ['cluttered layouts', 'inconsistent spacing', 'off-brand colors'],
+    colorRules: `Primary (${primaryHex}) anchors headlines and major brand zones. Secondary (${secondaryHex}) supports panels, section breaks, and large fields. Accent (${accentHex}) is reserved for CTAs, wayfinding cues, chips, highlights, and small repeated details. Do not introduce new dominant colors per asset.`,
+    typographyGuidance: `${brandContext?.headingFont || 'Sans-serif'} for headlines, ${brandContext?.bodyFont || 'clean sans-serif'} for body text. Maintain consistent sizing ratios, casing, weight contrast, and line-height across all formats.`,
+    imageryDirection: brandContext?.imageryStyle || 'Professional, high-quality imagery with consistent color treatment, crop behavior, and background treatment across every asset family.',
+    layoutPhilosophy: 'Use a repeatable grid: consistent safe margins, logo zones, title zones, footer/header bands, CTA chips, and the same motif/background language. Scale and crop the system instead of redesigning each asset.',
+    avoidElements: brandContext?.restrictedElements || ['cluttered layouts', 'inconsistent spacing', 'off-brand colors', 'changing typography systems', 'new motifs per asset'],
   };
 }
 
@@ -194,23 +208,53 @@ function buildFallbackDirection(args: {
  */
 export function buildMasterDirectionPromptBlock(direction: MasterStyleDirection): string {
   return `
-=== MASTER VISUAL DIRECTION (applies to ALL assets in this event kit) ===
-VISUAL NARRATIVE: ${direction.visualNarrative}
+=== MASTER MULTI-ASSET VISUAL SYSTEM (applies to EVERY asset in this kit) ===
+VISUAL NARRATIVE:
+${direction.visualNarrative}
 
 DESIGN PRINCIPLES:
 ${direction.designPrinciples.map(p => `  • ${p}`).join('\n')}
 
-COLOR APPLICATION: ${direction.colorRules}
-TYPOGRAPHY: ${direction.typographyGuidance}
-IMAGERY: ${direction.imageryDirection}
-LAYOUT: ${direction.layoutPhilosophy}
+COLOR APPLICATION:
+${direction.colorRules}
+
+TYPOGRAPHY SYSTEM:
+${direction.typographyGuidance}
+
+IMAGERY / ILLUSTRATION SYSTEM:
+${direction.imageryDirection}
+
+LAYOUT / GRID SYSTEM:
+${direction.layoutPhilosophy}
+
+ASSET FAMILY TRANSLATION RULES:
+  • HERO / BANNERS / EMAIL HEADERS: use the fullest expression of the design system; large headline, clear logo zone, strongest background/motif.
+  • SOCIAL POSTS / STORIES: crop and simplify the hero system; same colors, type treatment, CTA chip, and motif behavior.
+  • SIGNAGE / WAYFINDING: prioritize scan speed; keep the same header/footer bands, icon badge style, directional arrows, and high-contrast panels.
+  • BADGES / LANYARDS / NAME TAGS: use a simplified version of the motif with consistent name field, role field, accent stripe, and logo placement.
+  • MERCHANDISE: distill the system into an iconic mark; fewer colors, print-safe motif, no tiny poster-like details.
+  • DECKS / PRESENTATIONS: use the same title bar, section marker, content card, footer/page number system, and spacing rhythm.
+  • UTILITY SIGNS / QR / WIFI: protect functional readability; use simple panels, large info zones, and minimal motif treatment.
+  • ENVIRONMENTAL / COUNTERS / KIOSKS: scale up the hero system; preserve safe areas, viewing distance, logo visibility, and repeated spatial motifs.
+
+REUSABLE DESIGN DNA TO KEEP CONSTANT:
+  • same primary/secondary/accent hierarchy
+  • same typography/casing/weight system
+  • same logo zone and clear-space behavior
+  • same background treatment and motif family
+  • same corner/shape/icon language
+  • same spacing rhythm and hierarchy logic
 
 AVOID:
 ${direction.avoidElements.map(a => `  ✗ ${a}`).join('\n')}
+  ✗ one-off designs that do not match the rest of the kit
+  ✗ switching art styles between asset types
+  ✗ changing dominant colors per asset
+  ✗ changing fonts, corner styles, shadows, or motif systems per asset
 
-CRITICAL: This asset must look like it belongs to the SAME event kit as every other asset.
-Maintain visual consistency in color treatment, typography, spacing, and overall aesthetic.
-=== END MASTER VISUAL DIRECTION ===
+CRITICAL:
+This asset must look like one member of a coordinated brand design system, not a standalone design. Adapt the system to the asset type, but do not invent a new design language.
+=== END MASTER MULTI-ASSET VISUAL SYSTEM ===
 `;
 }
 
