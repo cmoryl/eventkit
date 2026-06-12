@@ -123,6 +123,10 @@ export function RenderEngineSelector({
         return <Sparkles className={cn("text-primary", compact ? "w-3 h-3" : "w-4 h-4")} />;
       case 'lovable-hq':
         return <Crown className={cn("text-amber-500", compact ? "w-3 h-3" : "w-4 h-4")} />;
+      case 'lovable-nano-banana-2':
+        return <Sparkles className={cn("text-yellow-500", compact ? "w-3 h-3" : "w-4 h-4")} />;
+      case 'lovable-gpt-image':
+        return <Sparkles className={cn("text-emerald-500", compact ? "w-3 h-3" : "w-4 h-4")} />;
       default:
         return <Zap className={cn("text-muted-foreground", compact ? "w-3 h-3" : "w-4 h-4")} />;
     }
