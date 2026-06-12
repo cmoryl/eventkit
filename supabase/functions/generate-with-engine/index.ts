@@ -120,6 +120,9 @@ serve(async (req) => {
 async function validateApiKey(provider: string, apiKey?: string): Promise<{ valid: boolean; message: string }> {
   switch (provider) {
     case 'lovable':
+    case 'lovable-hq':
+    case 'lovable-nano-banana-2':
+    case 'lovable-gpt-image':
       // Lovable uses internal API key, no validation needed
       return { valid: true, message: "Lovable AI is ready to use" };
     
