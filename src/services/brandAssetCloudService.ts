@@ -2,6 +2,7 @@ import { supabase, isSupabaseConfigured } from '@/integrations/supabase/client';
 import type { BrandProfile } from '@/types/brandProfile';
 import type { BrandAssetGenerationContext, BrandGuideAsset } from './brandAssetLibraryService';
 import { getBrandAssetGenerationContext, getBrandGuideAssetsForProfile, saveBrandGuideAsset } from './brandAssetLibraryService';
+import { hydrateBrandCreativeDirectionFromCloud } from './brandCreativeDirectionCloudService';
 
 const BUCKET = 'brand-brain-assets';
 const HYDRATION_TTL_MS = 2 * 60 * 1000;
@@ -248,10 +249,19 @@ export const getCloudBackedBrandAssetGenerationContext = async (profile: BrandPr
   }
 
   try {
-    const pullResult = await pullBrandGuideAssetsFromCloud(profile);
+    const [assetsResult, creativeDirectionResult] = await Promise.all([
+      pullBrandGuideAssetsFromCloud(profile),
+      hydrateBrandCreativeDirectionFromCloud(profile),
+    ]);
+
     return {
       context: localContext(),
-      cloud: pullResult,
+      cloud: {
+        ok: assetsResult.ok || creativeDirectionResult.ok,
+        message: `${assetsResult.message} ${creativeDirectionResult.message}`,
+        pulled: (assetsResult.pulled || 0) + (creativeDirectionResult.pulled || 0),
+        skipped: (assetsResult.skipped || 0) + (creativeDirectionResult.skipped || 0),
+      },
     };
   } catch (error) {
     console.warn('Cloud brand brain hydration failed; using local brand brain:', error);
