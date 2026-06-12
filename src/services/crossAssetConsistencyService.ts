@@ -3,6 +3,7 @@ import type { ColorInfo, EventDetails } from '@/types';
 import type { BrandContext } from '@/types/brand.types';
 import type { BrandMode, BrandProfile } from '@/types/brandProfile';
 import { buildGenerationQualityPromptBlock } from './generationQualityService';
+import { buildLogoVisibilityPromptBlock } from './logoVisibilityService';
 
 export type AssetFamily = 'hero' | 'social' | 'signage' | 'badge' | 'merchandise' | 'deck' | 'utility' | 'content' | 'environmental';
 
@@ -194,7 +195,7 @@ export const buildCrossAssetConsistencySystem = (args: {
       `Keep all assets visibly part of ${eventDetails.name || 'the same campaign'}.`,
       `Reuse the same color hierarchy: ${primary} / ${secondary} / ${accent}.`,
       `Use the same typography pairing: ${headline} + ${body}.`,
-      'Keep logo placement and clear space consistent.',
+      'Keep logo placement and clear space consistent when logo visibility is enabled.',
       'Use one shared motif/background language across all formats.',
       mode === 'locked' ? 'Locked mode: do not deviate from approved brand tokens.' : 'Allow controlled variation only within the active brand profile.',
     ]),
@@ -212,10 +213,12 @@ export const buildCrossAssetConsistencySystem = (args: {
 
 export const buildCrossAssetConsistencyPromptBlock = (
   system: CrossAssetConsistencySystem,
-  assetType?: AssetType
+  assetType?: AssetType,
+  hasLogo = true
 ): string => {
   const family = assetType ? getAssetFamily(assetType) : undefined;
   const familyRule = family ? system.assetFamilyRules[family] : undefined;
+  const logoContract = assetType ? buildLogoVisibilityPromptBlock(assetType, hasLogo) : '';
   const qualityContract = assetType ? buildGenerationQualityPromptBlock(assetType, system.mode, 'production') : '';
 
   return `
@@ -256,9 +259,10 @@ Hierarchy: ${familyRule.hierarchy}
 Reusable elements: ${familyRule.reusableElements.join(', ')}
 Avoid: ${familyRule.avoid.join(', ')}
 ` : ''}
+${logoContract}
 ${qualityContract}
 CRITICAL OUTPUT REQUIREMENT:
-This output must look like one member of the same coordinated brand kit, not a standalone design. Preserve the shared color hierarchy, typography, layout rhythm, logo handling, background treatment, and reusable motif across every asset type.
+This output must look like one member of the same coordinated brand kit, not a standalone design. Preserve the shared color hierarchy, typography, layout rhythm, logo handling, background treatment, and reusable motif across every asset type. Logo visibility must follow the logo visibility contract exactly.
 === END CROSS-ASSET BRAND CONSISTENCY SYSTEM ===
 `;
 };
