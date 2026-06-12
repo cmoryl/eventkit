@@ -548,7 +548,7 @@ export const generateAssetImage = async (
   eventDate?: string,
   eventType?: string,
   brandContext?: BrandContext | null,
-  imageModel?: 'fast' | 'quality'
+  imageModel?: 'fast' | 'quality' | 'nano-banana-2' | 'gpt-image'
 ): Promise<string | null> => {
   if (!USE_AI_GENERATION) return null;
 

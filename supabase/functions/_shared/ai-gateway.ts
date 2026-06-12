@@ -152,11 +152,13 @@ Respond with ONLY a JSON object with these exact fields:
 /**
  * Generate image with retry logic
  */
-export type ImageModelTier = 'fast' | 'quality';
+export type ImageModelTier = 'fast' | 'quality' | 'nano-banana-2' | 'gpt-image';
 
 const IMAGE_MODELS: Record<ImageModelTier, string> = {
   fast: 'google/gemini-2.5-flash-image',
   quality: 'google/gemini-3-pro-image-preview',
+  'nano-banana-2': 'google/gemini-3.1-flash-image-preview',
+  'gpt-image': 'openai/gpt-image-2',
 };
 
 /**
@@ -181,6 +183,13 @@ export async function generateImageWithRetry(
   modelTier: ImageModelTier = 'fast'
 ): Promise<string> {
   let lastError: Error | null = null;
+
+  // GPT Image 2 uses the dedicated /v1/images/generations endpoint (no multi-image chat input).
+  // Reference images are described textually in the prompt; the model is text-to-image only here.
+  if (modelTier === 'gpt-image') {
+    return generateWithGptImage(apiKey, prompt, assetType, referenceImages, maxRetries);
+  }
+
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -316,4 +325,75 @@ ${validImages.some(img => img.label?.startsWith('KIT STYLE ANCHOR')) ? `KIT STYL
   }
 
   throw lastError || new Error("Failed to generate image after retries");
+}
+
+/**
+ * Generate an image via the dedicated /v1/images/generations endpoint using OpenAI GPT Image 2.
+ * GPT Image 2 produces extremely sharp typography, but this endpoint is text-to-image only —
+ * we encode any reference image labels into the prompt so the model has textual context.
+ */
+async function generateWithGptImage(
+  apiKey: string,
+  prompt: string,
+  assetType: string,
+  referenceImages: (string | LabeledImage)[] = [],
+  maxRetries = 2
+): Promise<string> {
+  let lastError: Error | null = null;
+
+  const referenceContext = referenceImages.length
+    ? `\n\nREFERENCE CONTEXT (described textually — no images attached to this model):\n${referenceImages
+        .map((r, i) => `  ${i + 1}. ${typeof r === 'string' ? 'Reference image' : (r.label || 'Reference image')}`)
+        .join('\n')}\n`
+    : '';
+
+  const finalPrompt = `${prompt}${referenceContext}`;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        await new Promise(r => setTimeout(r, 1000 * attempt));
+      }
+
+      console.log(`[gpt-image-2] Generating for ${assetType} (attempt ${attempt}, prompt ${finalPrompt.length} chars)`);
+
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-image-2',
+          prompt: finalPrompt,
+          size: '1024x1024',
+          quality: 'high',
+          n: 1,
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) throw new Error('RATE_LIMIT');
+        if (response.status === 402) throw new Error('PAYMENT_REQUIRED');
+        const errorText = await response.text();
+        console.error(`[gpt-image-2] gateway error ${response.status}:`, errorText);
+        throw new Error(`AI gateway error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const b64 = data.data?.[0]?.b64_json;
+      if (b64) return `data:image/png;base64,${b64}`;
+      const url = data.data?.[0]?.url;
+      if (url) return url;
+
+      lastError = new Error('No image in GPT Image 2 response');
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (lastError.message === 'RATE_LIMIT' || lastError.message === 'PAYMENT_REQUIRED') {
+        throw lastError;
+      }
+    }
+  }
+
+  throw lastError || new Error('Failed to generate image with GPT Image 2');
 }

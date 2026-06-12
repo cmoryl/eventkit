@@ -105,7 +105,7 @@ export interface GenerateImageRequest {
   imageAnalysis?: ImageAnalysis;
   venueIntelligence?: VenueIntelligence;
   brandContext?: BrandContext;
-  imageModel?: 'fast' | 'quality'; // fast = gemini-2.5-flash-image, quality = gemini-3-pro-image-preview
+  imageModel?: 'fast' | 'quality' | 'nano-banana-2' | 'gpt-image'; // fast=gemini-2.5-flash-image, quality=gemini-3-pro-image-preview, nano-banana-2=gemini-3.1-flash-image-preview, gpt-image=openai/gpt-image-2
 }
 
 // Error types for consistent error handling
