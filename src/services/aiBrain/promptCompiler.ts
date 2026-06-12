@@ -1,11 +1,15 @@
 // src/services/aiBrain/promptCompiler.ts
 // Prompt compiler layer: assembles masterful asset-family templates, Level-5 DNA,
-// brand intelligence, production QA, safe zones, and no-drift logo instructions.
+// brand intelligence, production QA, safe zones, brand-specific overrides, full-set style systems, and no-drift logo instructions.
 
 import type { GenerationContext } from "./types";
 import { getAssetDefault } from "@/config/level5/assetDefaults";
 import { getVariantProfile } from "@/config/level5/variantDNA";
-import { buildMasterfulPromptTemplateBlock } from "@/services/masterfulPromptTemplateService";
+import { buildMasterfulPromptTemplateBlock, getMasterPromptFamily } from "@/services/masterfulPromptTemplateService";
+import { getActiveBrandProfile } from "@/services/brandProfileService";
+import { getBrandGuideAssetsForProfile } from "@/services/brandAssetLibraryService";
+import { buildBrandStyleSystemPromptBlock } from "@/services/brandStyleSystemService";
+import { buildBrandPromptOverrideBlock } from "@/services/brandPromptOverrideService";
 
 /** Deterministic seed — stable per event+asset combo, not random */
 function makeUniquenessSeed(context: GenerationContext): string {
@@ -201,8 +205,10 @@ export function buildBrandIntelligenceBlock(
  * Compile a generation prompt by layering:
  * 1) user/base prompt
  * 2) masterful asset-family template
- * 3) Level-5 DNA and variant anchors
- * 4) production QA, scene/output rules, and brand intelligence
+ * 3) full-set brand style systems
+ * 4) brand-specific prompt overrides
+ * 5) Level-5 DNA and variant anchors
+ * 6) production QA, scene/output rules, and brand intelligence
  */
 export function compileGenerationPrompt(args: {
   basePrompt: string;
@@ -217,6 +223,9 @@ export function compileGenerationPrompt(args: {
   const vName = variantName ?? context.styleDescription ?? "Modern Minimal";
   const assetDefault = getAssetDefault(context.assetType as any);
   const variant = getVariantProfile(vName);
+  const activeBrandProfile = getActiveBrandProfile();
+  const activeBrandAssets = getBrandGuideAssetsForProfile(activeBrandProfile.id);
+  const promptFamily = getMasterPromptFamily(context.assetType);
 
   const masterfulTemplateBlock = buildMasterfulPromptTemplateBlock({
     assetType: context.assetType,
@@ -229,12 +238,16 @@ export function compileGenerationPrompt(args: {
       email: "",
       incorporateLocationStyle: false,
     },
+    brandProfile: activeBrandProfile,
     colorPalette: context.colorPalette || [],
     styleDescription: basePrompt,
     hasExactLogoSource: Boolean(context.logoBase64),
     hasVisualReferences: Boolean(context.vibeImageBase64),
     hasPatternReferences: Boolean(context.masterPatternBase64),
   });
+
+  const fullSetStyleSystemBlock = buildBrandStyleSystemPromptBlock(activeBrandProfile, activeBrandAssets, promptFamily);
+  const brandPromptOverrideBlock = buildBrandPromptOverrideBlock(activeBrandProfile.id, promptFamily);
 
   const dnaBlock = [
     "TEMPLATE DNA:",
@@ -277,8 +290,10 @@ export function compileGenerationPrompt(args: {
     "2) Logo is never drawn by AI; if required, logo zone is blank, clean, and unobstructed for deterministic overlay.",
     "3) Text/content zones are crisp, readable, and safe for intended distance/format.",
     "4) Brand colors, typography behavior, motif, and layout rhythm match the active brand brain.",
-    "5) No warped edges, melted typography, fake UI, fake sponsors, or nonsense micro-details.",
-    ...(useScene ? ["6) Correct physical mounting/print realism; no floating mockups or impossible perspective."] : []),
+    "5) Full-set style system is preserved across asset families; density/crop may change, but art direction must not drift.",
+    "6) Approved brand-specific prompt overrides are followed unless they conflict with hard logo, accessibility, or production safety rules.",
+    "7) No warped edges, melted typography, fake UI, fake sponsors, or nonsense micro-details.",
+    ...(useScene ? ["8) Correct physical mounting/print realism; no floating mockups or impossible perspective."] : []),
     "If any fail: regenerate internally and output only a passing result.",
   ].join("\n");
 
@@ -303,6 +318,10 @@ export function compileGenerationPrompt(args: {
     basePrompt,
     "",
     masterfulTemplateBlock,
+    "",
+    fullSetStyleSystemBlock,
+    "",
+    brandPromptOverrideBlock,
     "",
     dnaBlock,
     "",
