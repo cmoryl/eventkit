@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { SlideData } from '@/components/slides/slideTypes';
 import type { GammaCreationMode, GammaDeckStyle } from '@/services/gammaPresentationResearchService';
 import type { PresentationEventRecord } from '@/services/presentationEventHistoryService';
 import type { PresentationTemplateSlotSet } from '@/services/presentationTemplateSlotService';
+import { buildPresentationStudioIntelligenceState } from '@/services/presentationStudioIntelligenceOrchestrator';
 import { AgentQALoopPanel } from './AgentQALoopPanel';
 import { ExportFidelityPanel } from './ExportFidelityPanel';
 import { GammaInspiredStudioPanel } from './GammaInspiredStudioPanel';
 import { PresentationCompetitiveEdgePanel } from './PresentationCompetitiveEdgePanel';
 import { PresentationEventHistoryPanel } from './PresentationEventHistoryPanel';
 import { PresentationStudioIntelligenceStatus } from './PresentationStudioIntelligenceStatus';
+import { PresentationExportReadinessPanel } from './PresentationExportReadinessPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -34,27 +36,27 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
   templateSlotSet,
   templateSlotValues,
   humanApproved,
-}) => (
-  <div className="space-y-5">
-    <PresentationStudioIntelligenceStatus
-      slides={slides}
-      creationMode={creationMode}
-      deckStyle={deckStyle}
-      events={events}
-      hasSourceMaterial={hasSourceMaterial}
-      hasBrandProfile={hasBrandProfile}
-      hasExactLogoSource={hasExactLogoSource}
-      templateSlotSet={templateSlotSet}
-      templateSlotValues={templateSlotValues}
-      humanApproved={humanApproved}
-    />
-    <PresentationCompetitiveEdgePanel />
-    <GammaInspiredStudioPanel />
-    <div className="grid gap-5 xl:grid-cols-2">
-      <AgentQALoopPanel
+}) => {
+  const state = useMemo(() => buildPresentationStudioIntelligenceState({
+    slides,
+    creationMode,
+    deckStyle,
+    events,
+    hasSourceMaterial,
+    hasBrandProfile,
+    hasExactLogoSource,
+    templateSlotSet,
+    templateSlotValues,
+    humanApproved,
+  }), [slides, creationMode, deckStyle, events, hasSourceMaterial, hasBrandProfile, hasExactLogoSource, templateSlotSet, templateSlotValues, humanApproved]);
+
+  return (
+    <div className="space-y-5">
+      <PresentationStudioIntelligenceStatus
         slides={slides}
         creationMode={creationMode}
         deckStyle={deckStyle}
+        events={events}
         hasSourceMaterial={hasSourceMaterial}
         hasBrandProfile={hasBrandProfile}
         hasExactLogoSource={hasExactLogoSource}
@@ -62,8 +64,24 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         templateSlotValues={templateSlotValues}
         humanApproved={humanApproved}
       />
-      <ExportFidelityPanel slides={slides} />
+      <PresentationExportReadinessPanel exportFidelity={state.exportFidelity} agentQA={state.agentQA} allowReviewedProceed={humanApproved} />
+      <PresentationCompetitiveEdgePanel />
+      <GammaInspiredStudioPanel />
+      <div className="grid gap-5 xl:grid-cols-2">
+        <AgentQALoopPanel
+          slides={slides}
+          creationMode={creationMode}
+          deckStyle={deckStyle}
+          hasSourceMaterial={hasSourceMaterial}
+          hasBrandProfile={hasBrandProfile}
+          hasExactLogoSource={hasExactLogoSource}
+          templateSlotSet={templateSlotSet}
+          templateSlotValues={templateSlotValues}
+          humanApproved={humanApproved}
+        />
+        <ExportFidelityPanel slides={slides} />
+      </div>
+      <PresentationEventHistoryPanel events={events} />
     </div>
-    <PresentationEventHistoryPanel events={events} />
-  </div>
-);
+  );
+};
