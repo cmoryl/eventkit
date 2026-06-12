@@ -177,6 +177,17 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                     Home
                   </button>
 
+                  <button
+                    onClick={() => navigate('/brand-library')}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActivePath('/brand-library') ? "bg-primary/10 text-primary" : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <Palette className="w-4 h-4" />
+                    Brand Library
+                  </button>
+
                   {/* Studios in mobile menu */}
                   <div className="pt-3 pb-1">
                     <p className="px-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Studios</p>
@@ -278,6 +289,14 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
               >
                 <Home className="w-4 h-4 mr-1.5" />
                 Home
+              </NavButton>
+
+              <NavButton
+                onClick={() => navigate('/brand-library')}
+                isActive={isActivePath('/brand-library')}
+              >
+                <Palette className="w-4 h-4 mr-1.5" />
+                Brands
               </NavButton>
 
               {/* Studios Dropdown */}
@@ -517,8 +536,8 @@ export const AppNavHeader: React.FC<AppNavHeaderProps> = ({
                           />
                           <UserMenuItem 
                             icon={Palette} 
-                            label="Brands" 
-                            onClick={() => { navigate('/admin?tab=brands'); setShowUserMenu(false); }}
+                            label="Brand Library" 
+                            onClick={() => { navigate('/brand-library'); setShowUserMenu(false); }}
                           />
                           <UserMenuItem 
                             icon={Shield} 
