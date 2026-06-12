@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Layers3, RefreshCw, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, CloudDownload, CloudUpload, Layers3, RefreshCw, Save, Sparkles } from 'lucide-react';
 import { getActiveBrandProfile, getAvailableBrandProfiles, setActiveBrandProfile } from '@/services/brandProfileService';
 import { getBrandGuideAssetsForProfile } from '@/services/brandAssetLibraryService';
 import type { BrandStyleSystemId } from '@/services/brandStyleSystemService';
 import { brandStyleSystems, getActiveBrandStyleSystems, getStoredBrandStyleSystemIds, inferBrandStyleSystemIds, setBrandStyleSystemIds } from '@/services/brandStyleSystemService';
+import { pullBrandStyleSystemsFromCloud, syncBrandStyleSystemsToCloud } from '@/services/brandCreativeDirectionCloudService';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -19,7 +20,12 @@ const BrandStyleSystems: React.FC = () => {
   const inferredIds = useMemo(() => inferBrandStyleSystemIds(activeProfile, assets), [activeProfile, assets]);
   const storedIds = getStoredBrandStyleSystemIds(activeProfile.id);
   const [selectedIds, setSelectedIds] = useState<BrandStyleSystemId[]>(storedIds?.length ? storedIds : inferredIds);
-  const activeSystems = useMemo(() => getActiveBrandStyleSystems(activeProfile, assets), [activeProfile, assets]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [isCloudSyncing, setIsCloudSyncing] = useState(false);
+  const [cloudMessage, setCloudMessage] = useState('Cloud style systems have not synced this session.');
+  const activeSystems = useMemo(() => getActiveBrandStyleSystems(activeProfile, assets), [activeProfile, assets, refreshKey]);
+
+  const refresh = () => setRefreshKey((value) => value + 1);
 
   const handleProfileChange = (nextProfileId: string) => {
     const profile = setActiveBrandProfile(nextProfileId);
@@ -34,15 +40,64 @@ const BrandStyleSystems: React.FC = () => {
     setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   };
 
-  const save = () => {
+  const save = async () => {
     setBrandStyleSystemIds(activeProfile.id, selectedIds);
+    refresh();
     toast.success('Brand style systems saved');
+    try {
+      const result = await syncBrandStyleSystemsToCloud(activeProfile);
+      setCloudMessage(result.message);
+    } catch (error) {
+      console.warn('Style system cloud sync failed:', error);
+      setCloudMessage('Saved locally. Cloud sync can be retried.');
+    }
   };
 
-  const useInferred = () => {
+  const useInferred = async () => {
     setSelectedIds(inferredIds);
     setBrandStyleSystemIds(activeProfile.id, inferredIds);
+    refresh();
     toast.success('Inferred style systems applied');
+    try {
+      const result = await syncBrandStyleSystemsToCloud(activeProfile);
+      setCloudMessage(result.message);
+    } catch (error) {
+      console.warn('Style system cloud sync failed:', error);
+    }
+  };
+
+  const pullCloud = async () => {
+    setIsCloudSyncing(true);
+    try {
+      const result = await pullBrandStyleSystemsFromCloud(activeProfile, true);
+      setCloudMessage(result.message);
+      const pulledStored = getStoredBrandStyleSystemIds(activeProfile.id);
+      if (pulledStored?.length) setSelectedIds(pulledStored);
+      refresh();
+      result.ok ? toast.success(result.message) : toast.error(result.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Cloud pull failed';
+      setCloudMessage(message);
+      toast.error(message);
+    } finally {
+      setIsCloudSyncing(false);
+    }
+  };
+
+  const syncCloud = async () => {
+    setIsCloudSyncing(true);
+    try {
+      setBrandStyleSystemIds(activeProfile.id, selectedIds);
+      const result = await syncBrandStyleSystemsToCloud(activeProfile);
+      setCloudMessage(result.message);
+      result.ok ? toast.success(result.message) : toast.error(result.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Cloud sync failed';
+      setCloudMessage(message);
+      toast.error(message);
+    } finally {
+      setIsCloudSyncing(false);
+    }
   };
 
   return (
@@ -59,6 +114,8 @@ const BrandStyleSystems: React.FC = () => {
             <select value={activeProfile.id} onChange={(event) => handleProfileChange(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
               {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
             </select>
+            <button onClick={pullCloud} disabled={isCloudSyncing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-50"><CloudDownload className="h-4 w-4" /> Pull</button>
+            <button onClick={syncCloud} disabled={isCloudSyncing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-50"><CloudUpload className="h-4 w-4" /> Sync</button>
             <button onClick={useInferred} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-secondary"><RefreshCw className="h-4 w-4" /> Use inferred</button>
             <button onClick={save} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"><Save className="h-4 w-4" /> Save</button>
           </div>
@@ -77,6 +134,7 @@ const BrandStyleSystems: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             {activeSystems.map((system) => <span key={system.id} className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm text-primary">{system.name}</span>)}
           </div>
+          <p className="mt-4 text-sm text-muted-foreground">{cloudMessage}</p>
         </section>
 
         <section className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
