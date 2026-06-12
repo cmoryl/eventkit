@@ -74,3 +74,42 @@ export const getAssetSetPreflightSummary = (results: AssetPreflightResult[]) => 
     blockingCount,
   };
 };
+
+export const generatePreflightReportText = (
+  results: AssetPreflightResult[],
+  brandProfile: BrandProfile,
+  mode?: BrandMode
+): string => {
+  const summary = getAssetSetPreflightSummary(results);
+  const activeMode = mode ?? brandProfile.defaultMode;
+  const lines: string[] = [];
+
+  lines.push('EventKit Brand Preflight Report');
+  lines.push('================================');
+  lines.push(`Brand profile: ${brandProfile.name}`);
+  lines.push(`Mode: ${activeMode}`);
+  lines.push(`Overall score: ${summary.overallScore}`);
+  lines.push(`Approved: ${summary.approvedCount}`);
+  lines.push(`Needs review: ${summary.reviewCount}`);
+  lines.push(`Blocking: ${summary.blockingCount}`);
+  lines.push('');
+
+  results.forEach((result) => {
+    lines.push(`${result.assetTitle} (${result.assetType})`);
+    lines.push(`Score: ${result.validation.overallScore}`);
+    lines.push(`Approved: ${result.validation.approved ? 'yes' : 'no'}`);
+
+    if (result.validation.issues.length > 0) {
+      result.validation.issues.forEach((issue) => {
+        lines.push(`- [${issue.severity}] ${issue.category}: ${issue.message}`);
+        if (issue.suggestion) lines.push(`  Fix: ${issue.suggestion}`);
+      });
+    } else {
+      lines.push('- No issues detected.');
+    }
+
+    lines.push('');
+  });
+
+  return lines.join('\n');
+};
