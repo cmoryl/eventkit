@@ -112,9 +112,21 @@ export function RenderEngineSelector({
   });
 
   const allEngines = [...builtInEngines, ...filteredEngines];
-  const selectedEngine = allEngines.find(e => e.id === value) || builtInEngines[0];
+
+  // Resolve the engine for 'auto' mode
+  const autoEngineId = useMemo(
+    () => (autoSelectFor ? pickAutoEngine(autoSelectFor) : 'lovable-nano-banana-2'),
+    [autoSelectFor]
+  );
+  const autoEngine = allEngines.find(e => e.id === autoEngineId) || builtInEngines[0];
+  const isAuto = effectiveValue === 'auto';
+  const selectedEngine = isAuto ? autoEngine : (allEngines.find(e => e.id === effectiveValue) || builtInEngines[0]);
 
   const handleChange = (engineId: string) => {
+    if (engineId === 'auto') {
+      onChange('auto', autoEngine);
+      return;
+    }
     const engine = allEngines.find(e => e.id === engineId);
     onChange(engineId, engine || null);
   };
