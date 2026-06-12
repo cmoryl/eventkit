@@ -24,13 +24,15 @@ type AnyProvider = RenderProvider | VideoProvider;
 
 export function RenderEngineSelector({
   userId,
-  value = 'lovable-default',
+  value,
   onChange,
   compact = false,
   className,
   disabled = false,
   engineType = 'image',
+  autoSelectFor,
 }: RenderEngineSelectorProps) {
+  const effectiveValue = value ?? (autoSelectFor ? 'auto' : 'lovable-default');
   const [engines, setEngines] = useState<RenderEngine[]>([]);
   const [loading, setLoading] = useState(true);
 
