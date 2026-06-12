@@ -8,6 +8,7 @@ import type { RenderEngine } from '@/services/aiBrain/types';
 import OnboardingFlow from '../components/onboarding/OnboardingFlow';
 import StudioHeader from '../components/studio/StudioHeader';
 import AssetGrid from '../components/studio/AssetGrid';
+import BrandPreflightPanel from '@/components/brand/BrandPreflightPanel';
 import AssetPreviewModal from '../components/studio/AssetPreviewModal';
 import AssetDownloadModal from '../components/studio/AssetDownloadModal';
 import GenerationLoader from '../components/GenerationLoader';
@@ -51,7 +52,7 @@ const ensureProtocol = (url: string) => url && !url.match(/^[a-zA-Z]+:\/\//) ? `
 const Index: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
-  const { insights, isReady: isBrainReady } = useAIBrain();
+  const { insights } = useAIBrain();
   const { notifyGenerationComplete, notifyAssetComplete } = useNotifications();
   const { activeBrand, brandAdherenceMode } = useActiveBrand();
   
@@ -258,7 +259,9 @@ const Index: React.FC = () => {
     );
     
     // Restore the queue and create asset placeholders
-    restoreQueue(setGeneratedAssets);
+    restoreQueue((assets) => {
+      setGeneratedAssets(prev => [...prev, ...assets]);
+    });
     
     // Switch to studio view
     setView('studio');
@@ -968,6 +971,8 @@ const Index: React.FC = () => {
                 onDismiss={() => setShowGenerationSummary(false)}
               />
             )}
+
+            {generatedAssets.length > 0 && <BrandPreflightPanel assets={generatedAssets} className="mb-6" />}
 
             <AssetGrid
               assets={generatedAssets}
