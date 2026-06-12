@@ -5,6 +5,12 @@ import { getCloudBackedBrandAssetGenerationContext } from './brandAssetCloudServ
 import { getActiveBrandStyleSystems } from './brandStyleSystemService';
 import { buildBrandPromptOverrideBlock, getApprovedBrandPromptOverrides } from './brandPromptOverrideService';
 import { getLogoVisibilityMode } from './logoVisibilityService';
+import {
+  buildGammaDeckBrainPromptBlock,
+  gammaCreationPresets,
+  type GammaCreationMode,
+  type GammaDeckStyle,
+} from './gammaPresentationResearchService';
 
 export type PresentationExportProfile =
   | 'editable_working_deck'
@@ -35,6 +41,8 @@ export interface PresentationDeckBrainOptions {
   exportProfile?: PresentationExportProfile;
   sourceKind?: 'prompt' | 'pdf' | 'pptx' | 'brandhub' | 'mixed';
   parallaxMode?: boolean;
+  gammaCreationMode?: GammaCreationMode;
+  gammaDeckStyle?: GammaDeckStyle;
 }
 
 export interface PresentationDeckBrainPayload {
@@ -47,6 +55,8 @@ export interface PresentationDeckBrainPayload {
   exportProfile: PresentationExportProfile;
   sourceKind: string;
   parallaxMode: boolean;
+  gammaCreationMode: GammaCreationMode;
+  gammaDeckStyle: GammaDeckStyle;
   hasExactLogoSource: boolean;
   primaryLogo?: {
     name: string;
@@ -89,6 +99,10 @@ export interface PresentationDeckBrainPayload {
   approvedPromptOverrides: {
     count: number;
     scopes: string[];
+    promptBlock: string;
+  };
+  gammaInspired: {
+    creationModes: string[];
     promptBlock: string;
   };
   powerpointRules: string[];
@@ -137,6 +151,18 @@ const allAssetsFromContext = (context: BrandAssetGenerationContext): BrandGuideA
   ...context.dontExamples,
 ];
 
+const inferGammaCreationMode = (sourceKind: PresentationDeckBrainOptions['sourceKind']): GammaCreationMode => {
+  if (sourceKind === 'pdf' || sourceKind === 'pptx' || sourceKind === 'brandhub' || sourceKind === 'mixed') return 'import';
+  return 'generate';
+};
+
+const inferGammaDeckStyle = (exportProfile: PresentationExportProfile): GammaDeckStyle => {
+  if (exportProfile === 'executive_presentation' || exportProfile === 'sales_pitch') return 'consultant';
+  if (exportProfile === 'event_keynote' || exportProfile === 'video_storyboard') return 'visual';
+  if (exportProfile === 'print_handout' || exportProfile === 'training_workshop') return 'classic';
+  return 'visual';
+};
+
 export const getPresentationExportProfileRules = (profile: PresentationExportProfile) => {
   const base = [
     'Build a fully editable PowerPoint deck, not a flattened image deck.',
@@ -145,6 +171,7 @@ export const getPresentationExportProfileRules = (profile: PresentationExportPro
     'Preserve speaker notes when provided or generated.',
     'Protect slide-safe margins, title zones, footer zones, and logo-safe zones.',
     'Use exact source logos as PowerPoint image layers only; never ask AI to redraw logos.',
+    'Use Gamma-inspired card thinking: each slide/card should have one dominant purpose and a clear next action.',
   ];
 
   const profileRules: Record<PresentationExportProfile, string[]> = {
@@ -191,6 +218,7 @@ export const getPresentationQAChecklist = (profile: PresentationExportProfile) =
   'Logo is never AI-generated; exact source logo is reserved for deterministic PowerPoint placement.',
   'Charts, KPI grids, timelines, process diagrams, and comparisons use real editable structures.',
   'Source facts, quoted language, numbers, and slide order are preserved when source material is provided.',
+  'Gamma-inspired structure is honored: creation mode, deck style, theme tokens, smart layouts, and export frame are separated.',
   `Export profile '${profile}' rules are followed.`,
 ];
 
@@ -204,6 +232,8 @@ export const buildPresentationDeckBrainPayload = (options: PresentationDeckBrain
     exportProfile = 'editable_working_deck',
     sourceKind = 'prompt',
     parallaxMode = false,
+    gammaCreationMode = inferGammaCreationMode(sourceKind),
+    gammaDeckStyle = inferGammaDeckStyle(exportProfile),
   } = options;
 
   const primaryLogo = brandAssetContext.primaryLogo;
@@ -229,6 +259,8 @@ export const buildPresentationDeckBrainPayload = (options: PresentationDeckBrain
   const powerpointRules = getPresentationExportProfileRules(exportProfile);
   const qaChecklist = getPresentationQAChecklist(exportProfile);
   const assetSummary = summarizeAssets(brandAssetContext);
+  const gammaPromptBlock = buildGammaDeckBrainPromptBlock();
+  const gammaCreationModeSummary = gammaCreationPresets.map((preset) => `${preset.label} (${preset.mode})`).join(', ');
 
   const styleSystemPrompt = systems.map((system) => [
     `${system.name} (${system.id})`,
@@ -244,6 +276,15 @@ Deck template: ${templateName || templateId || 'none selected'}
 Export profile: ${exportProfile}
 Source kind: ${sourceKind}
 Parallax/video intent: ${parallaxMode ? 'enabled' : 'disabled'}
+Gamma-inspired creation mode: ${gammaCreationMode}
+Gamma-inspired deck style: ${gammaDeckStyle}
+
+GAMMA-INSPIRED AUTHORING MODEL:
+  Available creation modes: ${gammaCreationModeSummary}
+  Use the selected creation mode as workflow context, not as a visual theme.
+  Use the selected deck style as structural/writing guidance, independent from brand tokens.
+  Prefer card-like slides with one clear purpose, smart layout structure, and strong export fidelity.
+  Keep theme tokens, structural template logic, live editing, presentation runtime, and export behavior separated.
 
 BRAND TOKENS:
   Colors: primary #${colorTokens.primary || 'auto'}, secondary #${colorTokens.secondary || 'auto'}, accent #${colorTokens.accent || 'auto'}, background #${colorTokens.background || 'auto'}, foreground #${colorTokens.foreground || 'auto'}.
@@ -277,6 +318,8 @@ ${overrideBlock || '  No approved presentation-specific overrides.'}
 
 DECK QA CHECKLIST:
 ${qaChecklist.map((rule) => `  • ${rule}`).join('\n')}
+
+${gammaPromptBlock}
 === END PRESENTATION DECK BRAIN ===
 `;
 
@@ -290,6 +333,8 @@ ${qaChecklist.map((rule) => `  • ${rule}`).join('\n')}
     exportProfile,
     sourceKind,
     parallaxMode,
+    gammaCreationMode,
+    gammaDeckStyle,
     hasExactLogoSource: Boolean(primaryLogo),
     primaryLogo: primaryLogo ? {
       name: primaryLogo.name,
@@ -314,6 +359,10 @@ ${qaChecklist.map((rule) => `  • ${rule}`).join('\n')}
       count: approvedOverrides.length,
       scopes: approvedOverrides.map((override) => override.scope),
       promptBlock: overrideBlock,
+    },
+    gammaInspired: {
+      creationModes: gammaCreationPresets.map((preset) => preset.mode),
+      promptBlock: gammaPromptBlock,
     },
     powerpointRules,
     qaChecklist,
