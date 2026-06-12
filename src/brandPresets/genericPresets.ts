@@ -81,6 +81,107 @@ export const hospitality: BrandProfile = {
   restrictedUses: ['Avoid cheap gold effects.', 'Avoid over-busy backgrounds behind text.']
 };
 
+export const sportsEvent: BrandProfile = {
+  id: 'sports-event',
+  name: 'Sports Event',
+  description: 'High-energy preset for tournaments, fan activations, championship moments, watch parties, and athletic event systems.',
+  defaultMode: 'guided',
+  colors: [
+    { name: 'Stadium Navy', hex: '#07111F', role: 'primary' },
+    { name: 'Victory Blue', hex: '#0066FF', role: 'secondary' },
+    { name: 'Energy Red', hex: '#F43F5E', role: 'accent' },
+    { name: 'Field Green', hex: '#16A34A', role: 'semantic' },
+    { name: 'Bright White', hex: '#F8FAFC', role: 'neutral' }
+  ],
+  gradients: [{ name: 'Stadium Lights', stops: ['#07111F', '#0066FF', '#F43F5E'], usage: 'Hero energy, social hype, and event signage.' }],
+  typography: [
+    { role: 'headline', fontFamily: 'Inter', weight: '800' },
+    { role: 'body', fontFamily: 'Inter', weight: '500' },
+    { role: 'fallback', fontFamily: 'Arial', weight: '700' }
+  ],
+  logoRules: [{ name: 'Protect event/team marks', description: 'Do not distort crests, trophies, sponsor marks, or team/event lockups.', required: true }],
+  imageryRules: { styleSummary: 'Cinematic action, crowd atmosphere, bold lighting, local venue energy.', requiredTraits: ['motion', 'celebration', 'high contrast', 'crowd energy'], avoid: ['generic gym stock', 'muddy low-light images', 'fake sponsor logos'] },
+  layoutRules: { styleSummary: 'Bold type, large numerals, strong contrast, sponsor-safe zones.', requiredTraits: ['big hero moments', 'clear score/event hierarchy', 'social-safe crop zones'], avoid: ['thin typography', 'overcrowded sponsor placement'] },
+  accessibilityRules: commonAccessibility,
+  exportRules: { socialDimensions: { square: '1080x1080', story: '1080x1920', horizontal: '1200x675' }, printRules: ['Check sponsor logo safe zones.', 'Maintain legibility at stadium/signage distance.'] },
+  restrictedUses: ['Do not create unlicensed team logos.', 'Do not crowd sponsor marks into unsafe areas.']
+};
+
+export const luxuryEvent: BrandProfile = {
+  id: 'luxury-event',
+  name: 'Luxury Event',
+  description: 'Premium editorial preset for galas, fundraisers, launches, destination events, and high-touch experiences.',
+  defaultMode: 'guided',
+  colors: [
+    { name: 'Obsidian', hex: '#11100E', role: 'primary' },
+    { name: 'Champagne', hex: '#E8D8B8', role: 'accent' },
+    { name: 'Ivory', hex: '#F7F2E8', role: 'background' },
+    { name: 'Warm Taupe', hex: '#8A7968', role: 'neutral' }
+  ],
+  gradients: [{ name: 'Champagne Light', stops: ['#11100E', '#8A7968', '#E8D8B8'], usage: 'Invitations, hero imagery, gala visuals.' }],
+  typography: [
+    { role: 'headline', fontFamily: 'Georgia', weight: '700' },
+    { role: 'body', fontFamily: 'Inter', weight: '400' },
+    { role: 'fallback', fontFamily: 'serif', weight: '400' }
+  ],
+  logoRules: [{ name: 'Keep marks minimal and elegant', description: 'Avoid shadows, bevels, heavy strokes, or novelty effects.', required: true }],
+  imageryRules: { styleSummary: 'Editorial lighting, refined details, premium materials, elegant negative space.', requiredTraits: ['warm light', 'texture', 'premium detail', 'quiet confidence'], avoid: ['cheap gold effects', 'overly busy glamour', 'stock luxury clichés'] },
+  layoutRules: { styleSummary: 'Editorial spacing, refined contrast, restrained ornament.', requiredTraits: ['large margins', 'quiet hierarchy', 'premium pacing'], avoid: ['overcrowded copy', 'loud gradients', 'generic templates'] },
+  accessibilityRules: commonAccessibility,
+  exportRules: { printRules: ['Check metallic color substitutes for digital/print.', 'Protect invitation bleed and trim.'] },
+  restrictedUses: ['Avoid fake foil effects unless clearly marked as a mockup.', 'Avoid low contrast champagne-on-ivory text.']
+};
+
+export const nonprofit: BrandProfile = {
+  id: 'nonprofit',
+  name: 'Nonprofit',
+  description: 'Human-centered preset for cause campaigns, donor communications, impact reports, and community events.',
+  defaultMode: 'guided',
+  colors: [
+    { name: 'Trust Navy', hex: '#12355B', role: 'primary' },
+    { name: 'Hope Teal', hex: '#2AA198', role: 'secondary' },
+    { name: 'Warm Sun', hex: '#F2B84B', role: 'accent' },
+    { name: 'Paper', hex: '#FAF7F0', role: 'background' }
+  ],
+  gradients: [{ name: 'Impact Warmth', stops: ['#12355B', '#2AA198', '#F2B84B'], usage: 'Impact modules, campaign headers, donation CTAs.' }],
+  typography: [
+    { role: 'headline', fontFamily: 'Inter', weight: '700' },
+    { role: 'body', fontFamily: 'Inter', weight: '400' },
+    { role: 'fallback', fontFamily: 'Arial', weight: '400' }
+  ],
+  logoRules: [{ name: 'Protect trust cues', description: 'Do not distort partner, sponsor, or grant marks.', required: true }],
+  imageryRules: { styleSummary: 'Authentic people, community settings, respectful storytelling, documentary warmth.', requiredTraits: ['human dignity', 'community', 'authenticity', 'warmth'], avoid: ['poverty clichés', 'exploitative imagery', 'forced emotion'] },
+  layoutRules: { styleSummary: 'Clear impact hierarchy with stats, story, CTA, and donor recognition.', requiredTraits: ['readable stats', 'clear CTA', 'human story'], avoid: ['cluttered donor walls', 'low-contrast calls to action'] },
+  accessibilityRules: commonAccessibility,
+  exportRules: { socialDimensions: { square: '1080x1080', donationAd: '1200x628' }, deckRules: ['Keep impact stats large and readable.'] },
+  restrictedUses: ['Avoid manipulative visual language.', 'Do not fabricate beneficiaries or impact claims.']
+};
+
+export const creatorBrand: BrandProfile = {
+  id: 'creator-brand',
+  name: 'Creator Brand',
+  description: 'Flexible preset for independent creators, studios, personal brands, podcasts, social series, and content engines.',
+  defaultMode: 'inspired',
+  colors: [
+    { name: 'Charcoal', hex: '#18181B', role: 'primary' },
+    { name: 'Electric Violet', hex: '#8B5CF6', role: 'accent' },
+    { name: 'Hot Coral', hex: '#FB7185', role: 'accent' },
+    { name: 'Cloud', hex: '#F4F4F5', role: 'neutral' }
+  ],
+  gradients: [{ name: 'Creator Pulse', stops: ['#18181B', '#8B5CF6', '#FB7185'], usage: 'Social content, podcast covers, launch graphics.' }],
+  typography: [
+    { role: 'headline', fontFamily: 'Inter', weight: '800' },
+    { role: 'body', fontFamily: 'Inter', weight: '400' },
+    { role: 'fallback', fontFamily: 'system-ui', weight: '400' }
+  ],
+  logoRules: [{ name: 'Keep personal marks recognizable', description: 'Do not over-style or obscure the creator mark/avatar.', required: true }],
+  imageryRules: { styleSummary: 'Personality-forward, cinematic, platform-native, high recognition at small sizes.', requiredTraits: ['strong thumbnail read', 'personality', 'distinctive crop'], avoid: ['generic influencer stock', 'too much text', 'low-recognition thumbnails'] },
+  layoutRules: { styleSummary: 'Bold hooks, platform-native crops, repeatable series structure.', requiredTraits: ['strong hook', 'series consistency', 'mobile-first'], avoid: ['tiny type', 'too many CTAs'] },
+  accessibilityRules: commonAccessibility,
+  exportRules: { socialDimensions: { square: '1080x1080', story: '1080x1920', thumbnail: '1280x720' } },
+  restrictedUses: ['Do not create misleading fake endorsements.', 'Do not use illegible thumbnail typography.']
+};
+
 export const blankCustomBrand: BrandProfile = {
   id: 'blank-custom-brand',
   name: 'Blank Custom Brand',
@@ -101,4 +202,4 @@ export const blankCustomBrand: BrandProfile = {
   restrictedUses: ['Do not export final assets until the brand profile has enough validated rules.']
 };
 
-export const genericBrandPresets = [modernSaaS, enterpriseCorporate, hospitality, blankCustomBrand];
+export const genericBrandPresets = [modernSaaS, enterpriseCorporate, sportsEvent, hospitality, luxuryEvent, nonprofit, creatorBrand, blankCustomBrand];
