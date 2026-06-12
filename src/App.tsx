@@ -17,6 +17,7 @@ import BrandHealth from "./pages/BrandHealth";
 import BrandGuideAssets from "./pages/BrandGuideAssets";
 import BrandBrain from "./pages/BrandBrain";
 import LogoPlacementMatrix from "./pages/LogoPlacementMatrix";
+import LogoConsistencyAudit from "./pages/LogoConsistencyAudit";
 import NotFound from "./pages/NotFound";
 import { CreationStudio } from "@/components/studio/CreationStudio";
 import { initializeBrandTheme } from "@/services/brandThemeService";
@@ -55,6 +56,7 @@ const App: React.FC = () => {
                 <Route path="/brand-assets" element={<BrandGuideAssets />} />
                 <Route path="/brand-health" element={<BrandHealth />} />
                 <Route path="/logo-placement" element={<LogoPlacementMatrix />} />
+                <Route path="/logo-audit" element={<LogoConsistencyAudit />} />
                 <Route path="/brand-debug" element={<BrandDebug />} />
                 <Route path="/studio/:studioId" element={<CreationStudio />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
