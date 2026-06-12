@@ -14,6 +14,7 @@ import SlidesPage from "./pages/Slides";
 import BrandDebug from "./pages/BrandDebug";
 import BrandLibrary from "./pages/BrandLibrary";
 import BrandHealth from "./pages/BrandHealth";
+import BrandGuideAssets from "./pages/BrandGuideAssets";
 import LogoPlacementMatrix from "./pages/LogoPlacementMatrix";
 import NotFound from "./pages/NotFound";
 import { CreationStudio } from "@/components/studio/CreationStudio";
@@ -49,6 +50,7 @@ const App: React.FC = () => {
                 <Route path="/agent/powerpoint" element={<PowerPointAgent />} />
                 <Route path="/slides" element={<SlidesPage />} />
                 <Route path="/brand-library" element={<BrandLibrary />} />
+                <Route path="/brand-assets" element={<BrandGuideAssets />} />
                 <Route path="/brand-health" element={<BrandHealth />} />
                 <Route path="/logo-placement" element={<LogoPlacementMatrix />} />
                 <Route path="/brand-debug" element={<BrandDebug />} />
