@@ -2,7 +2,7 @@ import { AssetType } from '@/types';
 
 export type LogoVisibilityMode = 'auto' | 'visible' | 'hidden';
 export type LogoVisibilityRequirement = 'required' | 'visible' | 'optional' | 'hidden';
-export type LogoPlacementPriority = 'primary' | 'secondary' | 'tertiary' | 'suppressed';
+export type LogoPlacementPriority = 'primary' | 'secondary' | 'tertiary' | 'optional' | 'suppressed';
 
 export interface LogoPlacementConstraints {
   priority: LogoPlacementPriority;
