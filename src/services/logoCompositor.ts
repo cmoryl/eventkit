@@ -2,6 +2,10 @@
  * Logo Compositor — pixel-perfect logo overlay on AI-generated images.
  * Uses an offscreen canvas to draw the generated image, then composites
  * the actual logo file on top at a position derived from asset-type rules.
+ *
+ * This is the only approved path for visible logo rendering. AI generation
+ * may reserve a logo-safe zone, but the final logo pixels must come from the
+ * source logo image supplied by the user/brand brain.
  */
 
 export type LogoPosition = 'top-left' | 'top-center' | 'top-right' | 'center' |
@@ -18,8 +22,12 @@ export interface CompositeOptions {
   scale?: number;
   /** Padding from edge as fraction of image width. Default 0.04 */
   padding?: number;
-  /** Optional semi-transparent backing plate behind logo. Default true */
+  /** Backing plate behind logo. Strongly recommended to cover AI placeholder marks. Default true */
   backingPlate?: boolean;
+  /** Backing plate opacity. Default 0.92 */
+  backingPlateOpacity?: number;
+  /** Backing plate fill. Default white */
+  backingPlateFill?: string;
   /** Custom placement overrides position/scale/padding (from drag UI) */
   customPlacement?: { x: number; y: number; scale: number };
 }
@@ -61,14 +69,54 @@ export function scaleFromAssetType(assetType: string): number {
   return 0.18;
 }
 
+const isDataOrBlobUrl = (src: string) => src.startsWith('data:') || src.startsWith('blob:');
+
+const blobToDataUrl = (blob: Blob): Promise<string> => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result));
+  reader.onerror = () => reject(new Error('Failed to convert fetched image to data URL'));
+  reader.readAsDataURL(blob);
+});
+
+async function normalizeImageSrc(src: string): Promise<string> {
+  if (isDataOrBlobUrl(src)) return src;
+
+  // Remote images can taint canvas. Fetching to a data URL first keeps the
+  // compositor deterministic when the source permits CORS.
+  try {
+    const response = await fetch(src, { mode: 'cors' });
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+    const blob = await response.blob();
+    return await blobToDataUrl(blob);
+  } catch (error) {
+    console.warn('Could not normalize image source before compositing; falling back to direct image load:', error);
+    return src;
+  }
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (!isDataOrBlobUrl(src)) img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error(`Failed to load image: ${src.substring(0, 80)}`));
     img.src = src;
   });
+}
+
+function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
 
 /**
@@ -82,19 +130,27 @@ export async function compositeLogoOntoImage(opts: CompositeOptions): Promise<st
     scale = 0.18,
     padding = 0.04,
     backingPlate = true,
+    backingPlateOpacity = 0.92,
+    backingPlateFill = '#ffffff',
     customPlacement,
   } = opts;
 
+  const [safeGeneratedImageUrl, safeLogoUrl] = await Promise.all([
+    normalizeImageSrc(generatedImageUrl),
+    normalizeImageSrc(logoUrl),
+  ]);
+
   // Load both images in parallel
   const [bgImg, logoImg] = await Promise.all([
-    loadImage(generatedImageUrl),
-    loadImage(logoUrl),
+    loadImage(safeGeneratedImageUrl),
+    loadImage(safeLogoUrl),
   ]);
 
   const canvas = document.createElement('canvas');
   canvas.width = bgImg.naturalWidth;
   canvas.height = bgImg.naturalHeight;
-  const ctx = canvas.getContext('2d')!;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas context unavailable for exact logo compositing');
 
   // Draw background
   ctx.drawImage(bgImg, 0, 0);
@@ -132,24 +188,27 @@ export async function compositeLogoOntoImage(opts: CompositeOptions): Promise<st
     }
   }
 
-  // Optional backing plate for contrast
+  // Keep logo and backing plate inside canvas bounds.
+  x = Math.max(0, Math.min(x, canvas.width - logoW));
+  y = Math.max(0, Math.min(y, canvas.height - logoH));
+
+  // Backing plate intentionally covers any AI placeholder/logo-like marks in the reserved zone.
   if (backingPlate) {
-    const platePad = Math.min(logoW, logoH) * 0.12;
+    const platePad = Math.min(logoW, logoH) * 0.18;
     ctx.save();
-    ctx.globalAlpha = 0.7;
-    ctx.fillStyle = '#ffffff';
-    const radius = Math.min(logoW, logoH) * 0.08;
-    const px = x - platePad;
-    const py = y - platePad;
-    const pw = logoW + platePad * 2;
-    const ph = logoH + platePad * 2;
-    ctx.beginPath();
-    ctx.roundRect(px, py, pw, ph, radius);
+    ctx.globalAlpha = backingPlateOpacity;
+    ctx.fillStyle = backingPlateFill;
+    const radius = Math.min(logoW, logoH) * 0.1;
+    const px = Math.max(0, x - platePad);
+    const py = Math.max(0, y - platePad);
+    const pw = Math.min(canvas.width - px, logoW + platePad * 2);
+    const ph = Math.min(canvas.height - py, logoH + platePad * 2);
+    roundedRect(ctx, px, py, pw, ph, radius);
     ctx.fill();
     ctx.restore();
   }
 
-  // Draw logo
+  // Draw logo from the real source image only.
   ctx.drawImage(logoImg, x, y, logoW, logoH);
 
   // Export as high-quality PNG so the exact logo pixels are preserved.
