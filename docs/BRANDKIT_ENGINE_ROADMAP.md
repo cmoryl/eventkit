@@ -13,24 +13,39 @@ EventKit should become a universal brand-aware asset engine: select or upload a 
 - Brand compliance validator
 - Asset preflight service
 - Brand debug route at `/brand-debug`
+- Studio Brand Preflight panel
+- Downloadable preflight report
+- Brand-safe export service foundation
+- Brand export policy service
 - Safe Supabase environment handling
 
-## Next priority: visible compliance in Studio
+## Current implementation notes
 
-Add a Brand Score panel to the studio workspace that shows:
+The app now has the core services needed for a production preflight loop:
 
-- Overall brand score
-- Color score
-- Typography score
-- Logo score
-- Layout score
-- Accessibility score
-- Export readiness score
-- Brand drift score
-- Blocking issues
-- Suggested fixes
+- `src/services/brandComplianceValidator.ts`
+- `src/services/assetPreflightService.ts`
+- `src/services/brandSafeExportService.ts`
+- `src/services/brandExportPolicy.ts`
+- `src/hooks/useBrandSafeExport.ts`
+- `src/components/brand/BrandPreflightPanel.tsx`
 
-The panel should use `preflightAssetSet` and `getAssetSetPreflightSummary` from `src/services/assetPreflightService.ts`.
+## Next priority: export enforcement wiring
+
+The export foundation exists. The next pass should wire `useBrandSafeExport` into:
+
+- Download All
+- Advanced Export
+- Batch Print Export
+- Individual Asset Download
+
+Expected behavior:
+
+- Locked mode blocks export when preflight contains errors.
+- Guided mode allows export with warnings.
+- Inspired mode allows export but labels output as brand-inspired.
+- Experimental mode allows export but marks output as non-final exploration.
+- ZIP exports include `brand-preflight-report.txt` and `eventkit-export-manifest.json`.
 
 ## Generator enforcement layer
 
@@ -42,18 +57,6 @@ Required behavior:
 - Guided mode warns and suggests fixes.
 - Inspired mode allows wider exploration but marks outputs as not final-compliant when needed.
 - Experimental mode allows exploration and clearly labels outputs as exploratory.
-
-## Export enforcement layer
-
-Before export, run all selected assets through preflight.
-
-Export buttons should support:
-
-- Export approved only
-- Export with warnings
-- Block export when locked mode has errors
-- Generate fix suggestions
-- Create a preflight report inside the ZIP export
 
 ## Brand ingestion layer
 
