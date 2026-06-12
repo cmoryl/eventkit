@@ -4,6 +4,7 @@ import type { GammaCreationMode, GammaDeckStyle } from '@/services/gammaPresenta
 import type { PresentationEventRecord } from '@/services/presentationEventHistoryService';
 import type { PresentationTemplateSlotSet } from '@/services/presentationTemplateSlotService';
 import { buildPresentationStudioIntelligenceState } from '@/services/presentationStudioIntelligenceOrchestrator';
+import { evaluatePresentationExportReadiness } from '@/services/presentationExportReadinessService';
 import { AgentQALoopPanel } from './AgentQALoopPanel';
 import { ExportFidelityPanel } from './ExportFidelityPanel';
 import { GammaInspiredStudioPanel } from './GammaInspiredStudioPanel';
@@ -11,6 +12,7 @@ import { PresentationCompetitiveEdgePanel } from './PresentationCompetitiveEdgeP
 import { PresentationEventHistoryPanel } from './PresentationEventHistoryPanel';
 import { PresentationStudioIntelligenceStatus } from './PresentationStudioIntelligenceStatus';
 import { PresentationExportReadinessPanel } from './PresentationExportReadinessPanel';
+import { PresentationUserFlowPanel } from './PresentationUserFlowPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -49,6 +51,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
     templateSlotValues,
     humanApproved,
   }), [slides, creationMode, deckStyle, events, hasSourceMaterial, hasBrandProfile, hasExactLogoSource, templateSlotSet, templateSlotValues, humanApproved]);
+  const exportReadiness = useMemo(() => evaluatePresentationExportReadiness({ exportFidelity: state.exportFidelity, agentQA: state.agentQA, allowReviewedProceed: humanApproved }), [state.exportFidelity, state.agentQA, humanApproved]);
 
   return (
     <div className="space-y-5">
@@ -63,6 +66,20 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         templateSlotSet={templateSlotSet}
         templateSlotValues={templateSlotValues}
         humanApproved={humanApproved}
+      />
+      <PresentationUserFlowPanel
+        creationMode={creationMode}
+        deckStyle={deckStyle}
+        hasSourceMaterial={hasSourceMaterial}
+        hasBrandProfile={hasBrandProfile}
+        hasExactLogoSource={hasExactLogoSource}
+        hasTemplate={Boolean(templateSlotSet)}
+        hasOutline={slides.length > 0}
+        hasDeck={slides.length > 0}
+        hasEdits={events.some((event) => event.eventType === 'slide_edited')}
+        qaStatus={state.agentQA.status}
+        exportDecision={exportReadiness.decision}
+        hasSavedSnapshot={events.some((event) => event.eventType === 'export_created')}
       />
       <PresentationExportReadinessPanel exportFidelity={state.exportFidelity} agentQA={state.agentQA} allowReviewedProceed={humanApproved} />
       <PresentationCompetitiveEdgePanel />
