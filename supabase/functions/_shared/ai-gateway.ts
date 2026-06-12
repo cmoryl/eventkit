@@ -183,6 +183,13 @@ export async function generateImageWithRetry(
   modelTier: ImageModelTier = 'fast'
 ): Promise<string> {
   let lastError: Error | null = null;
+
+  // GPT Image 2 uses the dedicated /v1/images/generations endpoint (no multi-image chat input).
+  // Reference images are described textually in the prompt; the model is text-to-image only here.
+  if (modelTier === 'gpt-image') {
+    return generateWithGptImage(apiKey, prompt, assetType, referenceImages, maxRetries);
+  }
+
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
