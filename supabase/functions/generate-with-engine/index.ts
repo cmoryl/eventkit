@@ -70,7 +70,16 @@ serve(async (req) => {
 
     switch (provider) {
       case 'lovable':
-        imageUrl = await generateWithLovable(prompt, context, config);
+        imageUrl = await generateWithLovable(prompt, context, config, 'google/gemini-2.5-flash-image');
+        break;
+      case 'lovable-nano-banana-2':
+        imageUrl = await generateWithLovable(prompt, context, config, 'google/gemini-3.1-flash-image-preview');
+        break;
+      case 'lovable-hq':
+        imageUrl = await generateWithLovable(prompt, context, config, 'google/gemini-3-pro-image-preview');
+        break;
+      case 'lovable-gpt-image':
+        imageUrl = await generateWithLovableGptImage(prompt, config);
         break;
       case 'openai':
         imageUrl = await generateWithOpenAI(apiKey!, prompt, config);
