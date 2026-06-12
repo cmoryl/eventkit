@@ -30,7 +30,7 @@ The safe default access model is user-owned via `auth.uid()`. `workspace_id` is 
 
 Handles local brand guide assets and generation context construction. This preserves local-only behavior when Supabase is not configured.
 
-### Cloud sync
+### Cloud sync and hydration
 
 `src/services/brandAssetCloudService.ts`
 
@@ -41,12 +41,15 @@ Handles:
 - upserting asset metadata into `brand_brain_assets`
 - pulling cloud assets back into the local generation library
 - deleting cloud asset metadata/storage files when possible
+- building a cloud-backed generation context with local fallback
+- using a short hydration cache so generation does not repeatedly download the same brand brain assets
 
 ## UI
 
-Route:
+Routes:
 
-`/brand-assets`
+- `/brand-brain` — overview of the active brand brain, readiness, cloud state, what enters generation, and recent assets.
+- `/brand-assets` — asset library management for the active brand.
 
 The Brand Guide Assets page supports:
 
