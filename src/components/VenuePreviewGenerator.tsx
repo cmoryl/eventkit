@@ -14,6 +14,8 @@ import { AssetType } from '@/types';
 import type { VenueVideoAnalysis, ColorInfo, EventDetails, GeneratedAsset } from '@/types';
 import { compileGenerationPrompt } from '@/services/aiBrain/promptCompiler';
 import type { GenerationContext } from '@/services/aiBrain/types';
+import { VenueVideoUploader } from './VenueVideoUploader';
+import type { VenueAnalysis } from '@/services/venueVideoService';
 
 interface VenuePreviewGeneratorProps {
   isOpen: boolean;
@@ -23,6 +25,8 @@ interface VenuePreviewGeneratorProps {
   colorPalette: ColorInfo[];
   styleDescription?: string;
   generatedAssets?: GeneratedAsset[];
+  /** Called when the user uploads & analyzes a venue video inline (no walkthrough was provided in onboarding). */
+  onVenueAnalyzed?: (analysis: VenueVideoAnalysis) => void;
 }
 
 type BrandElementType = 'signage' | 'banner' | 'counter' | 'environmental' | 'digital';
