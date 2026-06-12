@@ -19,6 +19,7 @@ describe('exactLogoEnforcementService', () => {
 
     expect(instruction).toContain('EXACT LOGO HARD RULE');
     expect(instruction).toContain('Do not draw, recreate, trace, recolor, distort, or approximate');
+    expect(instruction).toContain('blank, empty, unobstructed logo-safe zone');
     expect(instruction).toContain('deterministic overlay');
   });
 
@@ -32,5 +33,17 @@ describe('exactLogoEnforcementService', () => {
 
     expect(result.applied).toBe(false);
     expect(result.reason).toContain('No exact logo source');
+  });
+
+  it('keeps non-image arrays unchanged when no compositable image exists', async () => {
+    const result = await enforceExactLogoOnGeneratedContent({
+      assetType: AssetType.MarketingCopy,
+      content: ['headline', 'body copy'],
+      logoUrl: 'data:image/png;base64,abc',
+      mode: 'visible',
+    });
+
+    expect(result.applied).toBe(false);
+    expect(result.reason).toContain('does not contain image URLs');
   });
 });
