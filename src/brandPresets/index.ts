@@ -4,8 +4,11 @@ import { genericBrandPresets, modernSaaS, enterpriseCorporate, hospitality, blan
 export { transperfect2026, genericBrandPresets, modernSaaS, enterpriseCorporate, hospitality, blankCustomBrand };
 
 export const brandPresets = [
-  transperfect2026,
-  ...genericBrandPresets
+  blankCustomBrand,
+  modernSaaS,
+  enterpriseCorporate,
+  hospitality,
+  transperfect2026
 ];
 
 export const getBrandPresetById = (id: string) => brandPresets.find((preset) => preset.id === id);
