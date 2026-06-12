@@ -895,6 +895,18 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
             )}
 
             <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowBriefModal(true); setGenerationPhase('brief'); }}
+              disabled={isGenerating}
+              className="gap-2"
+              title="Open the full brief to customize style, fonts, colors, and reference images"
+            >
+              <Wand2 className="h-4 w-4" />
+              Customize Brief
+            </Button>
+
+            <Button
               variant="outline"
               size="sm"
               onClick={handleRegenerateAll}
