@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Layers, Lock, Palette, Plus, ShieldCheck, Sparkles, Type } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Copy, Download, Image, Layers, LayoutTemplate, Lock, Palette, Plus, ShieldCheck, Sparkles, Type } from 'lucide-react';
 import type { BrandMode, BrandProfile } from '@/types/brandProfile';
 import { createCustomBrandProfile, getActiveBrandProfile, getAvailableBrandProfiles, setActiveBrandProfile } from '@/services/brandProfileService';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,39 @@ const getModeBadgeClass = (mode: string) => {
 
 const slugify = (value: string) => value.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 const isHex = (value: string) => /^#[0-9a-fA-F]{6}$/.test(value.trim());
+
+const downloadJson = (profile: BrandProfile) => {
+  const blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${profile.id}-brand-profile.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+const copyJson = async (profile: BrandProfile) => {
+  await navigator.clipboard.writeText(JSON.stringify(profile, null, 2));
+  toast.success(`${profile.name} JSON copied`);
+};
+
+const DetailBlock: React.FC<{ title: string; icon?: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
+  <div className="rounded-2xl border border-border bg-background p-4">
+    <div className="flex items-center gap-2 font-semibold mb-3">
+      {icon}
+      <span>{title}</span>
+    </div>
+    {children}
+  </div>
+);
+
+const TagList: React.FC<{ items: string[]; empty?: string }> = ({ items, empty = 'No details saved yet.' }) => (
+  <div className="flex flex-wrap gap-2">
+    {items.length > 0 ? items.map((item) => (
+      <span key={item} className="rounded-full border border-border bg-secondary/60 px-2.5 py-1 text-xs text-muted-foreground">{item}</span>
+    )) : <span className="text-sm text-muted-foreground">{empty}</span>}
+  </div>
+);
 
 const BrandCard: React.FC<{
   profile: BrandProfile;
@@ -72,7 +105,7 @@ const BrandLibrary: React.FC = () => {
   const [customMode, setCustomMode] = useState<BrandMode>('guided');
 
   const filteredProfiles = profiles.filter((profile) => {
-    const matchesQuery = `${profile.name} ${profile.description}`.toLowerCase().includes(query.toLowerCase());
+    const matchesQuery = `${profile.name} ${profile.description} ${profile.imageryRules.styleSummary}`.toLowerCase().includes(query.toLowerCase());
     const matchesMode = modeFilter === 'all' || profile.defaultMode === modeFilter;
     return matchesQuery && matchesMode;
   });
@@ -140,7 +173,7 @@ const BrandLibrary: React.FC = () => {
             <p className="text-muted-foreground mt-1">Choose, inspect, create, and activate reusable brand systems for generation and export preflight.</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search brands..." className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search brands, imagery, rules..." className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
             <select value={modeFilter} onChange={(event) => setModeFilter(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
               <option value="all">All modes</option>
               <option value="locked">Locked</option>
@@ -152,7 +185,7 @@ const BrandLibrary: React.FC = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 grid gap-8 xl:grid-cols-[1fr_420px]">
+      <main className="container mx-auto px-6 py-8 grid gap-8 xl:grid-cols-[1fr_460px]">
         <section className="space-y-6">
           <div className="rounded-3xl border border-border bg-card p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4"><Plus className="h-5 w-5 text-primary" /><h2 className="text-xl font-bold">Quick Custom Brand</h2></div>
@@ -175,19 +208,110 @@ const BrandLibrary: React.FC = () => {
           </div>
         </section>
 
-        <aside className="rounded-3xl border border-border bg-card p-6 shadow-sm h-fit xl:sticky xl:top-28">
+        <aside className="rounded-3xl border border-border bg-card p-6 shadow-sm h-fit xl:sticky xl:top-28 max-h-[calc(100vh-8rem)] overflow-y-auto">
           {selectedProfile ? (
             <div>
-              <div className="flex items-center justify-between gap-3 mb-2">
-                <h2 className="text-xl font-bold">{selectedProfile.name}</h2>
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div>
+                  <h2 className="text-xl font-bold">{selectedProfile.name}</h2>
+                  <p className="text-xs text-muted-foreground mt-1">ID: {selectedProfile.id}</p>
+                </div>
                 <span className={cn('rounded-full border px-2.5 py-1 text-xs font-semibold capitalize', getModeBadgeClass(selectedProfile.defaultMode))}>{selectedProfile.defaultMode}</span>
               </div>
               <p className="text-sm text-muted-foreground mb-5">{selectedProfile.description}</p>
-              <div className="space-y-5">
-                <div><h3 className="font-semibold mb-2">Colors</h3><div className="space-y-2">{selectedProfile.colors.map((color) => <div key={`${color.name}-${color.hex}`} className="flex items-center justify-between gap-3 rounded-xl bg-secondary/50 p-2 text-sm"><div className="flex items-center gap-2"><span className="h-5 w-5 rounded-full border border-border" style={{ backgroundColor: color.hex }} />{color.name}</div><code className="text-xs text-muted-foreground">{color.hex}</code></div>)}{selectedProfile.colors.length === 0 && <p className="text-sm text-muted-foreground">This custom brand is ready for uploaded tokens.</p>}</div></div>
-                <div><h3 className="font-semibold mb-2">Typography</h3><div className="space-y-2">{selectedProfile.typography.map((type) => <div key={`${type.role}-${type.fontFamily}-${type.weight}`} className="rounded-xl bg-secondary/50 p-2 text-sm"><span className="font-medium capitalize">{type.role}</span>: {type.fontFamily} {type.weight}</div>)}</div></div>
-                <div><h3 className="font-semibold mb-2">Rules</h3><div className="space-y-2">{selectedProfile.restrictedUses.map((rule) => <div key={rule} className="rounded-xl bg-secondary/50 p-2 text-sm text-muted-foreground">{rule}</div>)}</div></div>
-                <div><h3 className="font-semibold mb-2">Imagery Direction</h3><p className="rounded-xl bg-secondary/50 p-3 text-sm text-muted-foreground">{selectedProfile.imageryRules.styleSummary}</p></div>
+
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                <button onClick={() => copyJson(selectedProfile)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary"><Copy className="h-4 w-4" />Copy JSON</button>
+                <button onClick={() => downloadJson(selectedProfile)} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-secondary"><Download className="h-4 w-4" />Export JSON</button>
+              </div>
+
+              <div className="space-y-4">
+                <DetailBlock title="Color System" icon={<Palette className="h-4 w-4 text-primary" />}>
+                  <div className="space-y-2">
+                    {selectedProfile.colors.map((color) => (
+                      <div key={`${color.name}-${color.hex}`} className="rounded-xl bg-secondary/50 p-3 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2"><span className="h-6 w-6 rounded-full border border-border" style={{ backgroundColor: color.hex }} /> <span className="font-medium">{color.name}</span></div>
+                          <code className="text-xs text-muted-foreground">{color.hex}</code>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground capitalize">Role: {color.role}{color.locked ? ' · Locked' : ''}</div>
+                        {color.usage && <div className="mt-1 text-xs text-muted-foreground">Usage: {color.usage}</div>}
+                      </div>
+                    ))}
+                    {selectedProfile.colors.length === 0 && <p className="text-sm text-muted-foreground">This custom brand is ready for uploaded tokens.</p>}
+                  </div>
+                </DetailBlock>
+
+                <DetailBlock title="Gradient System" icon={<Sparkles className="h-4 w-4 text-primary" />}>
+                  <div className="space-y-2">
+                    {selectedProfile.gradients.map((gradient) => (
+                      <div key={gradient.name} className="rounded-xl bg-secondary/50 p-3 text-sm">
+                        <div className="font-medium mb-2">{gradient.name}</div>
+                        <div className="h-8 rounded-lg border border-border" style={{ background: `linear-gradient(90deg, ${gradient.stops.join(', ')})` }} />
+                        <div className="mt-2 text-xs text-muted-foreground">{gradient.stops.join(' → ')}</div>
+                        {gradient.usage && <div className="mt-1 text-xs text-muted-foreground">Usage: {gradient.usage}</div>}
+                      </div>
+                    ))}
+                    {selectedProfile.gradients.length === 0 && <p className="text-sm text-muted-foreground">No gradients defined.</p>}
+                  </div>
+                </DetailBlock>
+
+                <DetailBlock title="Typography" icon={<Type className="h-4 w-4 text-primary" />}>
+                  <div className="space-y-2">
+                    {selectedProfile.typography.map((type) => (
+                      <div key={`${type.role}-${type.fontFamily}-${type.weight}`} className="rounded-xl bg-secondary/50 p-3 text-sm">
+                        <div><span className="font-medium capitalize">{type.role}</span>: {type.fontFamily} {type.weight}</div>
+                        {type.usage && <div className="mt-1 text-xs text-muted-foreground">Usage: {type.usage}</div>}
+                        {type.locked && <div className="mt-1 text-xs text-primary">Locked type rule</div>}
+                      </div>
+                    ))}
+                  </div>
+                </DetailBlock>
+
+                <DetailBlock title="Logo Rules" icon={<ShieldCheck className="h-4 w-4 text-primary" />}>
+                  <div className="space-y-2">
+                    {selectedProfile.logoRules.map((rule) => (
+                      <div key={rule.name} className="rounded-xl bg-secondary/50 p-3 text-sm">
+                        <div className="font-medium">{rule.name}{rule.required ? ' · Required' : ''}</div>
+                        <p className="mt-1 text-xs text-muted-foreground">{rule.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </DetailBlock>
+
+                <DetailBlock title="Imagery Direction" icon={<Image className="h-4 w-4 text-primary" />}>
+                  <p className="text-sm text-muted-foreground mb-3">{selectedProfile.imageryRules.styleSummary}</p>
+                  <div className="mb-3"><div className="text-xs font-semibold uppercase tracking-wide mb-2">Required traits</div><TagList items={selectedProfile.imageryRules.requiredTraits} /></div>
+                  <div><div className="text-xs font-semibold uppercase tracking-wide mb-2">Avoid</div><TagList items={selectedProfile.imageryRules.avoid} /></div>
+                  {selectedProfile.imageryRules.promptGuidance && <p className="mt-3 rounded-xl bg-secondary/50 p-3 text-xs text-muted-foreground">{selectedProfile.imageryRules.promptGuidance}</p>}
+                </DetailBlock>
+
+                <DetailBlock title="Layout Rules" icon={<LayoutTemplate className="h-4 w-4 text-primary" />}>
+                  <p className="text-sm text-muted-foreground mb-3">{selectedProfile.layoutRules.styleSummary}</p>
+                  <div className="mb-3"><div className="text-xs font-semibold uppercase tracking-wide mb-2">Required traits</div><TagList items={selectedProfile.layoutRules.requiredTraits} /></div>
+                  <div><div className="text-xs font-semibold uppercase tracking-wide mb-2">Avoid</div><TagList items={selectedProfile.layoutRules.avoid} /></div>
+                </DetailBlock>
+
+                <DetailBlock title="Accessibility + Export Rules" icon={<CheckCircle2 className="h-4 w-4 text-primary" />}>
+                  <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
+                    <div className="rounded-xl bg-secondary/50 p-3"><div className="text-xs text-muted-foreground">Minimum contrast</div><div className="font-bold">{selectedProfile.accessibilityRules.minimumContrastRatio}:1</div></div>
+                    <div className="rounded-xl bg-secondary/50 p-3"><div className="text-xs text-muted-foreground">Large text</div><div className="font-bold">{selectedProfile.accessibilityRules.largeTextContrastRatio}:1</div></div>
+                  </div>
+                  <TagList items={selectedProfile.accessibilityRules.notes || []} />
+                  {selectedProfile.exportRules.socialDimensions && <pre className="mt-3 max-h-40 overflow-auto rounded-xl bg-secondary/50 p-3 text-xs text-muted-foreground">{JSON.stringify(selectedProfile.exportRules.socialDimensions, null, 2)}</pre>}
+                  {selectedProfile.exportRules.printRules && <div className="mt-3"><div className="text-xs font-semibold uppercase tracking-wide mb-2">Print</div><TagList items={selectedProfile.exportRules.printRules} /></div>}
+                  {selectedProfile.exportRules.deckRules && <div className="mt-3"><div className="text-xs font-semibold uppercase tracking-wide mb-2">Decks</div><TagList items={selectedProfile.exportRules.deckRules} /></div>}
+                </DetailBlock>
+
+                <DetailBlock title="Restricted Uses" icon={<Lock className="h-4 w-4 text-primary" />}>
+                  <div className="space-y-2">{selectedProfile.restrictedUses.map((rule) => <div key={rule} className="rounded-xl bg-secondary/50 p-2 text-sm text-muted-foreground">{rule}</div>)}</div>
+                </DetailBlock>
+
+                {selectedProfile.promptKeywords && (
+                  <DetailBlock title="Prompt Keywords" icon={<Sparkles className="h-4 w-4 text-primary" />}>
+                    <TagList items={selectedProfile.promptKeywords} />
+                  </DetailBlock>
+                )}
               </div>
             </div>
           ) : <p className="text-sm text-muted-foreground">Select a brand to inspect its rules.</p>}
