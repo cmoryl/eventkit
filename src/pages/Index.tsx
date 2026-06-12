@@ -917,7 +917,7 @@ const Index: React.FC = () => {
             onExportBrandGuide={handleExportBrandGuide}
             onOpenQRGenerator={() => setShowQRGenerator(true)}
             onOpenVideoGenerator={() => setShowVideoModal(true)}
-            onOpenVenuePreview={venueVideoAnalysis ? () => setShowVenuePreview(true) : undefined}
+            onOpenVenuePreview={() => setShowVenuePreview(true)}
             onAddMoreAssets={handleAddMoreAssets}
             onUndo={undo}
             onRedo={redo}
