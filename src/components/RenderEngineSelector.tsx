@@ -1,20 +1,23 @@
 // Render Engine Selector - Inline selector for choosing render engine per asset
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Key, Video, Crown } from 'lucide-react';
+import { Sparkles, Zap, Key, Video, Crown, Wand2 } from 'lucide-react';
 import type { RenderEngine, RenderProvider, VideoProvider } from '@/services/aiBrain/types';
 import { getUserRenderEngines, getAllProviders } from '@/services/aiBrain/renderEngineService';
+import { pickAutoEngine, describeAutoEngine } from '@/services/aiBrain/engineAutoSelect';
 import { cn } from '@/lib/utils';
 
 interface RenderEngineSelectorProps {
   userId: string;
-  value?: string; // engine id or 'lovable-default'
+  value?: string; // engine id, 'auto', or 'lovable-default'
   onChange: (engineId: string, engine: RenderEngine | null) => void;
   compact?: boolean;
   className?: string;
   disabled?: boolean;
   engineType?: 'image' | 'video' | 'all'; // Filter by engine type
+  /** When set, an "Auto" option is offered (and is the default value) that picks the best engine for this asset type. */
+  autoSelectFor?: string;
 }
 
 type AnyProvider = RenderProvider | VideoProvider;
