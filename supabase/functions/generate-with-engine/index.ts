@@ -187,20 +187,13 @@ async function validateApiKey(provider: string, apiKey?: string): Promise<{ vali
 async function generateWithLovable(
   prompt: string,
   context?: GenerateRequest['context'],
-  config?: Record<string, unknown>
+  _config?: Record<string, unknown>,
+  model: string = "google/gemini-2.5-flash-image",
 ): Promise<string | null> {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
     throw new Error("LOVABLE_API_KEY is not configured");
   }
-
-  // Support model selection: nano banana (fast) or pro (higher quality)
-  const modelChoice = (config?.model as string) || "google/gemini-2.5-flash-image";
-  const validModels = [
-    "google/gemini-2.5-flash-image",     // Nano Banana - fast, good quality
-    "google/gemini-3-pro-image-preview"   // Pro - slower, higher quality
-  ];
-  const model = validModels.includes(modelChoice) ? modelChoice : "google/gemini-2.5-flash-image";
 
   console.log(`Using Lovable AI model: ${model}`);
 
@@ -255,6 +248,49 @@ async function generateWithLovable(
 
   const data = await response.json();
   return data.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
+}
+
+// Generate using OpenAI GPT Image 2 via Lovable AI Gateway (best for typography/text)
+async function generateWithLovableGptImage(
+  prompt: string,
+  config?: Record<string, unknown>,
+): Promise<string | null> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    throw new Error("LOVABLE_API_KEY is not configured");
+  }
+
+  const quality = (config?.quality as string) || "high";
+  const validQuality = ["low", "medium", "high", "hd"].includes(quality) ? quality : "high";
+
+  console.log(`Using Lovable AI GPT Image 2 (quality=${validQuality})`);
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/images/generations", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "openai/gpt-image-2",
+      prompt,
+      quality: validQuality,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Lovable GPT Image error:", response.status, errorText);
+    if (response.status === 429) throw new Error("Rate limit exceeded. Please try again in a moment.");
+    if (response.status === 402) throw new Error("AI credits exhausted. Please add credits to continue.");
+    throw new Error(`Lovable GPT Image error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const b64 = data?.data?.[0]?.b64_json;
+  const url = data?.data?.[0]?.url;
+  if (b64) return `data:image/png;base64,${b64}`;
+  return url || null;
 }
 
 // Generate using OpenAI DALL-E
