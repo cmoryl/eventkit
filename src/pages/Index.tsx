@@ -917,7 +917,7 @@ const Index: React.FC = () => {
             onExportBrandGuide={handleExportBrandGuide}
             onOpenQRGenerator={() => setShowQRGenerator(true)}
             onOpenVideoGenerator={() => setShowVideoModal(true)}
-            onOpenVenuePreview={venueVideoAnalysis ? () => setShowVenuePreview(true) : undefined}
+            onOpenVenuePreview={() => setShowVenuePreview(true)}
             onAddMoreAssets={handleAddMoreAssets}
             onUndo={undo}
             onRedo={redo}
@@ -1102,7 +1102,9 @@ const Index: React.FC = () => {
         colorPalette={colorPalette}
         styleDescription={styleDescription}
         generatedAssets={generatedAssets}
+        onVenueAnalyzed={(analysis) => setVenueVideoAnalysis(analysis)}
       />
+
 
       {/* Regenerate With Engine Modal (only for logged-in users) */}
       {regeneratingAsset && user && (

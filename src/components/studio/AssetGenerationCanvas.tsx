@@ -241,12 +241,32 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, brand?.id]);
 
-  // Initialize when opened - show brief modal first
+  // Build a sensible default brief that relies on brand styles for everything
+  const buildDefaultBrief = useCallback((): AssetBrief => ({
+    customContent: {},
+    stylePreset: 'modern',
+    colorMood: (brand || activeBrand) ? 'brand-only' : 'vibrant',
+    layoutStyle: 'ai-decide',
+    typographyStyle: (brand?.styles?.heading_font || activeBrand?.styles?.heading_font) ? 'brand-fonts' : 'modern-sans',
+    imageryStyle: 'mixed',
+  }), [brand, activeBrand]);
+
+  // Initialize when opened — auto-skip brief modal when an active brand exists
   useEffect(() => {
     if (isOpen) {
-      // Show brief modal before generation
-      setShowBriefModal(true);
-      setGenerationPhase('brief');
+      const activeBrandPresent = !!(brand || activeBrand);
+      if (activeBrandPresent) {
+        // Fast path: use brand defaults, generate immediately. User can still customize via header button.
+        const defaultBrief = buildDefaultBrief();
+        setCurrentBrief(defaultBrief);
+        setShowBriefModal(false);
+        // Defer to allow other open-effects (master direction, knowledge fetch) to kick off
+        setTimeout(() => initializeAndGenerateWithBrief(defaultBrief), 0);
+      } else {
+        // No brand → show brief modal so user can specify style
+        setShowBriefModal(true);
+        setGenerationPhase('brief');
+      }
     } else {
       // Reset state when closed
       setVariations([]);
@@ -256,6 +276,7 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
       setShowBriefModal(false);
       setCurrentBrief(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, assetType]);
 
   // Handle brief submission
@@ -872,6 +893,18 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
                 Kit-consistent
               </div>
             )}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setShowBriefModal(true); setGenerationPhase('brief'); }}
+              disabled={isGenerating}
+              className="gap-2"
+              title="Open the full brief to customize style, fonts, colors, and reference images"
+            >
+              <Wand2 className="h-4 w-4" />
+              Customize Brief
+            </Button>
 
             <Button
               variant="outline"
