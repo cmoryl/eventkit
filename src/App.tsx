@@ -17,6 +17,7 @@ import BrandHealth from "./pages/BrandHealth";
 import BrandGuideAssets from "./pages/BrandGuideAssets";
 import BrandBrain from "./pages/BrandBrain";
 import BrandStyleSystems from "./pages/BrandStyleSystems";
+import BrandPromptOverrides from "./pages/BrandPromptOverrides";
 import LogoPlacementMatrix from "./pages/LogoPlacementMatrix";
 import LogoConsistencyAudit from "./pages/LogoConsistencyAudit";
 import NotFound from "./pages/NotFound";
@@ -55,6 +56,7 @@ const App: React.FC = () => {
                 <Route path="/brand-library" element={<BrandLibrary />} />
                 <Route path="/brand-brain" element={<BrandBrain />} />
                 <Route path="/brand-style-systems" element={<BrandStyleSystems />} />
+                <Route path="/brand-prompt-overrides" element={<BrandPromptOverrides />} />
                 <Route path="/brand-assets" element={<BrandGuideAssets />} />
                 <Route path="/brand-health" element={<BrandHealth />} />
                 <Route path="/logo-placement" element={<LogoPlacementMatrix />} />
