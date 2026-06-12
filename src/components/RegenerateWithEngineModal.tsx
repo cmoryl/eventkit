@@ -27,7 +27,7 @@ export function RegenerateWithEngineModal({
   userId,
   onRegenerate,
 }: RegenerateWithEngineModalProps) {
-  const [selectedEngineId, setSelectedEngineId] = useState('lovable-default');
+  const [selectedEngineId, setSelectedEngineId] = useState('auto');
   const [selectedEngine, setSelectedEngine] = useState<RenderEngine | null>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
 
