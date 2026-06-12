@@ -1,8 +1,9 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Image, Layers, ShieldCheck, Star, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, CloudDownload, CloudUpload, Image, Layers, ShieldCheck, Star, Trash2, Upload } from 'lucide-react';
 import type { BrandGuideAsset, BrandGuideAssetType, BrandGuideAssetUsage } from '@/services/brandAssetLibraryService';
 import { deleteBrandGuideAsset, fileToBrandGuideAsset, getBrandGuideAssetsForProfile, inferBrandAssetType, inferBrandAssetUsage, saveBrandGuideAsset, setPrimaryBrandLogoAsset } from '@/services/brandAssetLibraryService';
+import { deleteBrandGuideAssetFromCloud, pullBrandGuideAssetsFromCloud, syncBrandGuideAssetsToCloud, uploadBrandGuideAssetToCloud } from '@/services/brandAssetCloudService';
 import { getActiveBrandProfile, getAvailableBrandProfiles, setActiveBrandProfile } from '@/services/brandProfileService';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -43,7 +44,7 @@ const getUsageBadgeClass = (usage: BrandGuideAssetUsage) => {
 
 const AssetCard: React.FC<{
   asset: BrandGuideAsset;
-  onDelete: (id: string) => void;
+  onDelete: (asset: BrandGuideAsset) => void;
   onPrimary: (id: string) => void;
 }> = ({ asset, onDelete, onPrimary }) => {
   const isVisual = asset.mimeType.startsWith('image/') || asset.mimeType.includes('svg');
@@ -60,7 +61,7 @@ const AssetCard: React.FC<{
           </div>
           <p className="mt-1 truncate text-xs text-muted-foreground">{asset.fileName}</p>
         </div>
-        <button onClick={() => onDelete(asset.id)} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-secondary hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+        <button onClick={() => onDelete(asset)} className="rounded-lg border border-border p-2 text-muted-foreground hover:bg-secondary hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         <span className="rounded-full border border-border bg-secondary px-2.5 py-1 text-xs text-muted-foreground">{asset.type}</span>
@@ -90,6 +91,8 @@ const BrandGuideAssets: React.FC = () => {
   const [notes, setNotes] = useState('');
   const [filter, setFilter] = useState('all');
   const [isUploading, setIsUploading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastCloudMessage, setLastCloudMessage] = useState('Cloud sync has not run yet.');
 
   const assets = useMemo(() => getBrandGuideAssetsForProfile(activeProfile.id), [activeProfile.id, refreshKey]);
   const filteredAssets = assets.filter((asset) => filter === 'all' || asset.usage === filter || asset.type === filter);
@@ -120,7 +123,15 @@ const BrandGuideAssets: React.FC = () => {
           notes,
           isPrimary: shouldBePrimary,
         });
-        return saveBrandGuideAsset(asset);
+        const saved = saveBrandGuideAsset(asset);
+        try {
+          await uploadBrandGuideAssetToCloud(saved, activeProfile);
+          setLastCloudMessage('Latest upload was saved locally and synced to Supabase.');
+        } catch (cloudError) {
+          console.warn('Cloud upload skipped or failed:', cloudError);
+          setLastCloudMessage('Latest upload was saved locally. Cloud sync needs sign-in/configuration or a retry.');
+        }
+        return saved;
       }));
       toast.success(`${uploaded.length} brand asset${uploaded.length === 1 ? '' : 's'} added`);
       refresh();
@@ -133,16 +144,62 @@ const BrandGuideAssets: React.FC = () => {
     }
   };
 
-  const handleDelete = (assetId: string) => {
-    deleteBrandGuideAsset(assetId);
+  const handleDelete = async (asset: BrandGuideAsset) => {
+    deleteBrandGuideAsset(asset.id);
+    try {
+      await deleteBrandGuideAssetFromCloud(asset);
+      setLastCloudMessage('Asset removed locally and from cloud storage when available.');
+    } catch (error) {
+      console.warn('Cloud delete failed:', error);
+      setLastCloudMessage('Asset removed locally. Cloud delete can be retried after sign-in/configuration.');
+    }
     refresh();
     toast.success('Brand asset deleted');
   };
 
-  const handlePrimary = (assetId: string) => {
+  const handlePrimary = async (assetId: string) => {
     setPrimaryBrandLogoAsset(activeProfile.id, assetId);
     refresh();
     toast.success('Primary logo source updated');
+    try {
+      const result = await syncBrandGuideAssetsToCloud(activeProfile);
+      setLastCloudMessage(result.message);
+    } catch (error) {
+      console.warn('Cloud sync after primary logo update failed:', error);
+    }
+  };
+
+  const handleSyncCloud = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncBrandGuideAssetsToCloud(activeProfile);
+      setLastCloudMessage(result.message);
+      result.ok ? toast.success(result.message) : toast.error(result.message);
+    } catch (error) {
+      console.error('Cloud sync failed:', error);
+      const message = error instanceof Error ? error.message : 'Cloud sync failed';
+      setLastCloudMessage(message);
+      toast.error(message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handlePullCloud = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await pullBrandGuideAssetsFromCloud(activeProfile);
+      setLastCloudMessage(result.message);
+      result.ok ? toast.success(result.message) : toast.error(result.message);
+      refresh();
+    } catch (error) {
+      console.error('Cloud pull failed:', error);
+      const message = error instanceof Error ? error.message : 'Cloud pull failed';
+      setLastCloudMessage(message);
+      toast.error(message);
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -159,6 +216,8 @@ const BrandGuideAssets: React.FC = () => {
             <select value={activeProfile.id} onChange={(event) => handleProfileChange(event.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
               {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
             </select>
+            <button onClick={handlePullCloud} disabled={isSyncing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-50"><CloudDownload className="h-4 w-4" /> Pull cloud</button>
+            <button onClick={handleSyncCloud} disabled={isSyncing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold hover:bg-secondary disabled:opacity-50"><CloudUpload className="h-4 w-4" /> Sync cloud</button>
             <button onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"><Upload className="h-4 w-4" /> {isUploading ? 'Uploading...' : 'Add assets'}</button>
           </div>
         </div>
@@ -191,6 +250,12 @@ const BrandGuideAssets: React.FC = () => {
                 <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="How should this asset influence generation?" className="min-h-24 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" />
               </label>
             </div>
+          </section>
+
+          <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
+            <div className="flex items-center gap-2 font-semibold mb-4"><CloudUpload className="h-4 w-4 text-primary" /> Cloud brand brain</div>
+            <p className="text-sm text-muted-foreground">{lastCloudMessage}</p>
+            <p className="mt-3 text-xs text-muted-foreground">Supabase stores the brand brain metadata and files by active brand profile. Local mode still works when Supabase is unavailable.</p>
           </section>
 
           <section className="rounded-3xl border border-border bg-card p-5 shadow-sm">
