@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, LayoutGrid, Search, X, Bookmark, Globe2, Loader2, Trash2, Sparkles, Wand2, Layers3, MonitorPlay, Star } from "lucide-react";
+import { LayoutGrid, Search, X, Bookmark, Globe2, Loader2, Trash2, Sparkles, Wand2, Layers3, Star } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALL_PRESENTATION_TEMPLATES } from "@/config/editableTemplates/presentationTemplates";
-import { TemplateDemoCard } from "./TemplateDemoCard";
 import { TemplatePreviewDialog } from "./TemplatePreviewDialog";
+import { TemplatePosterPreview } from "./TemplatePosterPreview";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -73,7 +73,6 @@ export const DECK_TEMPLATES: DeckTemplate[] = [
   },
 ];
 
-// Convert library templates (PRESENTATION_SLIDE / WEBINAR / STREAM) into DeckTemplate shape
 const LIBRARY_TEMPLATES: DeckTemplate[] = ALL_PRESENTATION_TEMPLATES.map((t) => {
   const bg =
     t.background?.type === "solid"
@@ -97,16 +96,13 @@ const LIBRARY_TEMPLATES: DeckTemplate[] = ALL_PRESENTATION_TEMPLATES.map((t) => 
   } as DeckTemplate;
 });
 
-// Combined catalog: theme presets first, then full library
 export const ALL_DECK_TEMPLATES: DeckTemplate[] = [...DECK_TEMPLATES, ...LIBRARY_TEMPLATES];
 
 interface Props {
   selectedId: string | null;
   onSelect: (template: DeckTemplate) => void;
-  /** Optional: open the template's starter deck directly in the Slide Editor. */
   onOpenInEditor?: (template: DeckTemplate) => void;
   disabled?: boolean;
-  /** "compact" = small cards (legacy). "showcase" = rich demo cards at top of blank mode. */
   variant?: "compact" | "showcase";
 }
 
@@ -121,147 +117,20 @@ const isLightTemplate = (t: DeckTemplate) => {
   return (r * 299 + g * 587 + b * 114) / 1000 > 180;
 };
 
-const templateBadge = (t: DeckTemplate) => {
-  if (t.id.includes("transperfect")) return "Brand system";
-  if (t.id.includes("dark") || !isLightTemplate(t)) return "Dark mode";
-  if (t.id.includes("editorial")) return "Editorial";
-  if (t.id.includes("corporate")) return "Executive";
-  if (t.id.includes("startup")) return "Launch";
-  if (t.id.includes("brutalist")) return "Bold";
-  return isLightTemplate(t) ? "Light deck" : "Premium";
+const filterTemplates = (templates: DeckTemplate[], filter: TemplateFilter, search: string, savedIds: Set<string>) => {
+  const q = search.trim().toLowerCase();
+  return templates.filter((t) => {
+    const matchesSearch = !q || t.name.toLowerCase().includes(q) || (t.description || "").toLowerCase().includes(q) || t.id.toLowerCase().includes(q);
+    const matchesFilter =
+      filter === "all" ||
+      (filter === "featured" && DECK_TEMPLATES.some((featured) => featured.id === t.id)) ||
+      (filter === "saved" && savedIds.has(t.id)) ||
+      (filter === "library" && LIBRARY_TEMPLATES.some((library) => library.id === t.id)) ||
+      (filter === "dark" && !isLightTemplate(t)) ||
+      (filter === "light" && isLightTemplate(t));
+    return matchesSearch && matchesFilter;
+  });
 };
-
-const MiniSlideStack: React.FC<{ template: DeckTemplate }> = ({ template }) => (
-  <div className="absolute right-4 top-4 flex -space-x-5 opacity-95 transition-transform duration-500 group-hover:translate-y-[-3px]">
-    {[0, 1, 2].map((i) => (
-      <div
-        key={i}
-        className="h-16 w-24 rounded-lg border shadow-2xl backdrop-blur-sm"
-        style={{
-          background: i === 0
-            ? `linear-gradient(135deg, ${template.palette.bg}, ${template.palette.secondary})`
-            : i === 1
-            ? `linear-gradient(135deg, ${template.palette.accent}, ${template.palette.bg})`
-            : template.palette.bg,
-          borderColor: `${template.palette.text}33`,
-          transform: `rotate(${(i - 1) * 5}deg) translateY(${i * 8}px)`,
-        }}
-      >
-        <div className="p-2">
-          <div className="mb-2 h-1.5 w-10 rounded-full" style={{ background: template.palette.accent }} />
-          <div className="space-y-1">
-            <div className="h-1 rounded-full opacity-80" style={{ background: template.palette.text }} />
-            <div className="h-1 w-2/3 rounded-full opacity-40" style={{ background: template.palette.text }} />
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
-const PremiumTemplateCard: React.FC<{
-  template: DeckTemplate;
-  selected: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  saved?: boolean;
-  shared?: boolean;
-}> = ({ template: t, selected, disabled, onClick, saved, shared }) => {
-  const light = isLightTemplate(t);
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "group relative min-h-[260px] overflow-hidden rounded-[28px] border text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl",
-        selected ? "border-primary ring-2 ring-primary/40" : "border-border/70 hover:border-primary/50",
-        disabled && "cursor-not-allowed opacity-50",
-      )}
-      style={{ color: t.palette.text }}
-    >
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `radial-gradient(circle at 18% 18%, ${t.palette.accent}77 0, transparent 32%), radial-gradient(circle at 82% 28%, ${t.palette.secondary}66 0, transparent 34%), linear-gradient(135deg, ${t.palette.bg}, ${light ? "#FFFFFF" : "#111827"})`,
-        }}
-      />
-      <div className="absolute inset-0 opacity-25" style={{ backgroundImage: `linear-gradient(90deg, ${t.palette.text}18 1px, transparent 1px), linear-gradient(${t.palette.text}12 1px, transparent 1px)`, backgroundSize: "28px 28px" }} />
-      <MiniSlideStack template={t} />
-      <div className="relative flex h-full min-h-[260px] flex-col justify-between p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide backdrop-blur-md" style={{ borderColor: `${t.palette.text}33`, background: `${t.palette.bg}66` }}>{templateBadge(t)}</span>
-            {saved && <span className="rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide backdrop-blur-md" style={{ borderColor: `${t.palette.text}33`, background: `${t.palette.accent}33` }}>Saved</span>}
-            {shared && <span className="rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide backdrop-blur-md" style={{ borderColor: `${t.palette.text}33`, background: `${t.palette.secondary}33` }}>Shared</span>}
-          </div>
-          {selected && <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"><Check className="h-4 w-4" /></span>}
-        </div>
-
-        <div className="max-w-[72%] pt-16">
-          <div className="mb-3 h-1 w-16 rounded-full" style={{ background: t.palette.accent }} />
-          <h3 className="text-2xl font-black leading-[0.95] tracking-tight drop-shadow-sm">{t.name}</h3>
-          <p className="mt-3 text-sm font-medium opacity-80 line-clamp-2">{t.description || "Presentation template"}</p>
-        </div>
-
-        <div className="flex items-center justify-between pt-4">
-          <div className="flex items-center gap-2 text-xs font-semibold opacity-85">
-            <MonitorPlay className="h-4 w-4" />
-            Built deck preview
-          </div>
-          <div className="flex gap-1.5">
-            {[t.palette.accent, t.palette.secondary, t.palette.text].map((color) => (
-              <span key={color} className="h-4 w-4 rounded-full border" style={{ background: color, borderColor: `${t.palette.text}55` }} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-};
-
-const TemplateCard: React.FC<{
-  template: DeckTemplate;
-  selected: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-}> = ({ template: t, selected, disabled, onClick }) => (
-  <button
-    type="button"
-    disabled={disabled}
-    onClick={onClick}
-    className={`group relative rounded-2xl border overflow-hidden text-left transition-all hover:-translate-y-0.5 hover:shadow-xl ${
-      selected ? "border-primary ring-2 ring-primary/40" : "border-border hover:border-primary/50"
-    } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-  >
-    <div
-      className="aspect-[16/10] p-3 flex flex-col justify-between relative"
-      style={{ background: `radial-gradient(circle at 25% 20%, ${t.palette.accent}66, transparent 35%), linear-gradient(135deg, ${t.palette.bg}, ${t.palette.secondary})`, color: t.palette.text }}
-    >
-      <div className="absolute right-2 top-2 h-8 w-12 rounded-md border opacity-70" style={{ borderColor: `${t.palette.text}44`, background: `${t.palette.bg}AA` }} />
-      <div>
-        <div className="text-[10px] font-bold leading-tight truncate" style={{ color: t.palette.text }}>
-          {t.name}
-        </div>
-        <div className="h-[2px] w-7 mt-1 rounded-full" style={{ background: t.palette.accent }} />
-      </div>
-      <div className="flex gap-1">
-        <div className="h-1.5 flex-1 rounded-full" style={{ background: t.palette.accent }} />
-        <div className="h-1.5 flex-1 rounded-full opacity-60" style={{ background: t.palette.secondary }} />
-        <div className="h-1.5 w-3 rounded-full opacity-30" style={{ background: t.palette.text }} />
-      </div>
-    </div>
-    <div className="px-3 py-2 bg-card border-t">
-      <p className="text-[11px] font-medium truncate">{t.name}</p>
-      <p className="text-[10px] text-muted-foreground truncate">{t.description || "Template"}</p>
-    </div>
-    {selected && (
-      <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg">
-        <Check className="h-3.5 w-3.5" />
-      </div>
-    )}
-  </button>
-);
 
 export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenInEditor, disabled, variant = "compact" }) => {
   const [browseOpen, setBrowseOpen] = useState(false);
@@ -275,7 +144,6 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
 
-  // Load saved deck templates (own + shared)
   useEffect(() => {
     if (!isAuthenticated) {
       setSavedTemplates([]);
@@ -319,6 +187,10 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
     [savedTemplates],
   );
 
+  const savedIdSet = useMemo(() => new Set(savedAsDeckTemplates.map((t) => t.id)), [savedAsDeckTemplates]);
+  const allTemplates = useMemo(() => [...savedAsDeckTemplates, ...ALL_DECK_TEMPLATES], [savedAsDeckTemplates]);
+  const filtered = useMemo(() => filterTemplates(allTemplates, filter, search, savedIdSet), [allTemplates, filter, search, savedIdSet]);
+
   const handleDeleteSaved = async (savedId: string, name: string) => {
     if (!confirm(`Delete saved template "${name}"?`)) return;
     const { error } = await supabase.from("deck_templates").delete().eq("id", savedId);
@@ -330,75 +202,71 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
     toast({ title: "Template deleted" });
   };
 
-  const filtered = useMemo(() => {
-    const all = [...savedAsDeckTemplates, ...ALL_DECK_TEMPLATES];
-    const q = search.trim().toLowerCase();
-    return all.filter((t) => {
-      const matchesSearch = !q || t.name.toLowerCase().includes(q) || (t.description || "").toLowerCase().includes(q);
-      const matchesFilter =
-        filter === "all" ||
-        (filter === "featured" && DECK_TEMPLATES.some((featured) => featured.id === t.id)) ||
-        (filter === "saved" && t.id.startsWith("saved:")) ||
-        (filter === "library" && LIBRARY_TEMPLATES.some((library) => library.id === t.id)) ||
-        (filter === "dark" && !isLightTemplate(t)) ||
-        (filter === "light" && isLightTemplate(t));
-      return matchesSearch && matchesFilter;
-    });
-  }, [search, filter, savedAsDeckTemplates]);
-
   const isShowcase = variant === "showcase";
-  const showcaseTemplates = savedAsDeckTemplates.length ? [...savedAsDeckTemplates.slice(0, 2), ...DECK_TEMPLATES].slice(0, 8) : DECK_TEMPLATES;
+  const heroTemplates = savedAsDeckTemplates.length ? [...savedAsDeckTemplates.slice(0, 2), ...DECK_TEMPLATES].slice(0, 8) : DECK_TEMPLATES;
+
+  const renderTemplate = (t: DeckTemplate, dense = false) => {
+    const savedId = t.id.startsWith("saved:") ? t.id.replace(/^saved:/, "") : "";
+    const saved = savedTemplates.find((s) => s.id === savedId);
+    const ownedByMe = saved?.user_id === user?.id;
+    return (
+      <div key={t.id} className="relative group">
+        <TemplatePosterPreview
+          template={t}
+          selected={selectedId === t.id}
+          disabled={disabled}
+          dense={dense}
+          saved={t.id.startsWith("saved:")}
+          shared={saved?.is_shared}
+          onClick={() => setPreviewTemplate(t)}
+        />
+        {saved?.is_shared && (
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-primary/90 text-primary-foreground text-[10px] font-bold flex items-center gap-1">
+            <Globe2 className="h-3 w-3" /> Shared
+          </div>
+        )}
+        {ownedByMe && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteSaved(savedId, t.name);
+            }}
+            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-background/90 border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground"
+            title="Delete saved template"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
-    <div className={`${isShowcase ? "max-w-7xl" : "max-w-4xl"} mx-auto pt-2 space-y-4`}>
-      <div className="relative overflow-hidden rounded-[28px] border border-border bg-card/80 p-5 shadow-sm">
+    <div className={`${isShowcase ? "max-w-7xl" : "max-w-5xl"} mx-auto pt-2 space-y-5`}>
+      <div className="relative overflow-hidden rounded-[32px] border border-border bg-card/80 p-6 shadow-sm">
         <div className="absolute inset-0 opacity-70" style={{ background: "radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.18), transparent 32%), radial-gradient(circle at 85% 10%, hsl(var(--accent) / 0.18), transparent 28%)" }} />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
+            <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-primary">
               <Sparkles className="h-4 w-4" /> Presentation Template Studio
             </div>
-            <h2 className="text-2xl font-black tracking-tight">Choose a deck system, not just a theme.</h2>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Prebuilt PowerPoint systems with title, section, stats, quote, card, and story slides ready for Brand Brain-driven generation.</p>
+            <h2 className="text-3xl font-black tracking-tight">Choose a deck system, not just a theme.</h2>
+            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">High-design, prebuilt PowerPoint systems with title, section, stats, quote, timeline, chart, and story slides ready for Brand Brain-driven generation.</p>
           </div>
           <button
             type="button"
             onClick={() => setBrowseOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-lg hover:bg-primary/90"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground shadow-lg hover:bg-primary/90"
           >
-            <LayoutGrid className="h-4 w-4" />
-            Browse all {ALL_DECK_TEMPLATES.length + savedAsDeckTemplates.length}
+            <LayoutGrid className="h-4 w-4" /> Browse all {allTemplates.length}
           </button>
         </div>
       </div>
 
-      {isShowcase ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {showcaseTemplates.map((t) => (
-            <PremiumTemplateCard
-              key={t.id}
-              template={t}
-              selected={selectedId === t.id}
-              disabled={disabled}
-              saved={t.id.startsWith("saved:")}
-              shared={Boolean(savedTemplates.find((s) => `saved:${s.id}` === t.id)?.is_shared)}
-              onClick={() => setPreviewTemplate(t)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {DECK_TEMPLATES.map((t) => (
-            <PremiumTemplateCard
-              key={t.id}
-              template={t}
-              selected={selectedId === t.id}
-              disabled={disabled}
-              onClick={() => setPreviewTemplate(t)}
-            />
-          ))}
-        </div>
-      )}
+      <div className={`grid grid-cols-1 gap-5 ${isShowcase ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
+        {(isShowcase ? heroTemplates : DECK_TEMPLATES).map((t) => renderTemplate(t))}
+      </div>
 
       <Dialog open={browseOpen} onOpenChange={setBrowseOpen}>
         <DialogContent className="max-w-7xl w-[96vw] h-[90vh] p-0 overflow-hidden flex flex-col gap-0">
@@ -409,7 +277,7 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg"><LayoutGrid className="h-5 w-5" /></div>
                 <div>
                   <h2 className="text-xl font-black tracking-tight">PowerPoint Template Gallery</h2>
-                  <p className="text-sm text-muted-foreground">{filtered.length} templates showing · {DECK_TEMPLATES.length} featured · {LIBRARY_TEMPLATES.length} library · {savedAsDeckTemplates.length} saved</p>
+                  <p className="text-sm text-muted-foreground">{filtered.length} showing · {DECK_TEMPLATES.length} featured · {LIBRARY_TEMPLATES.length} library · {savedAsDeckTemplates.length} saved</p>
                 </div>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -450,87 +318,35 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
           <ScrollArea className="flex-1">
             <div className="p-6 space-y-8">
               {!search.trim() && filter === "all" && savedAsDeckTemplates.length > 0 && (
-                <div>
-                  <h3 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                <section>
+                  <h3 className="mb-4 flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">
                     <Bookmark className="h-3.5 w-3.5" /> My Templates {loadingSaved && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   </h3>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                    {savedAsDeckTemplates.map((t) => {
-                      const savedId = t.id.replace(/^saved:/, "");
-                      const saved = savedTemplates.find((s) => s.id === savedId);
-                      const ownedByMe = saved?.user_id === user?.id;
-                      return (
-                        <div key={t.id} className="relative group">
-                          <PremiumTemplateCard
-                            template={t}
-                            selected={selectedId === t.id}
-                            disabled={disabled}
-                            saved
-                            shared={saved?.is_shared}
-                            onClick={() => setPreviewTemplate(t)}
-                          />
-                          {saved?.is_shared && (
-                            <div className="absolute top-3 left-3 px-2 py-1 rounded-full bg-primary/90 text-primary-foreground text-[10px] font-bold flex items-center gap-1">
-                              <Globe2 className="h-3 w-3" /> Shared
-                            </div>
-                          )}
-                          {ownedByMe && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteSaved(savedId, t.name);
-                              }}
-                              className="absolute top-3 right-3 h-8 w-8 rounded-full bg-background/90 border opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground"
-                              title="Delete saved template"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {savedAsDeckTemplates.map((t) => renderTemplate(t))}
                   </div>
-                </div>
+                </section>
               )}
 
               {!search.trim() && (filter === "all" || filter === "featured") && (
-                <div>
+                <section>
                   <div className="mb-4 flex items-center justify-between gap-4">
-                    <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground"><Star className="h-3.5 w-3.5" /> Featured deck systems</h3>
+                    <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-muted-foreground"><Star className="h-3.5 w-3.5" /> Featured deck systems</h3>
                     <span className="text-xs text-muted-foreground">Large previews · full demo decks · editor-ready</span>
                   </div>
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                    {DECK_TEMPLATES.map((t) => (
-                      <PremiumTemplateCard
-                        key={t.id}
-                        template={t}
-                        selected={selectedId === t.id}
-                        disabled={disabled}
-                        onClick={() => setPreviewTemplate(t)}
-                      />
-                    ))}
+                    {DECK_TEMPLATES.map((t) => renderTemplate(t))}
                   </div>
-                </div>
+                </section>
               )}
 
-              <div>
+              <section>
                 <div className="mb-4 flex items-center justify-between gap-4">
-                  <h3 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground"><Layers3 className="h-3.5 w-3.5" /> {search.trim() || filter !== "all" ? "Matching templates" : "Template library"}</h3>
+                  <h3 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-muted-foreground"><Layers3 className="h-3.5 w-3.5" /> {search.trim() || filter !== "all" ? "Matching templates" : "Template library"}</h3>
                   <span className="text-xs text-muted-foreground">{filtered.length} available</span>
                 </div>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {(search.trim() || filter !== "all" ? filtered : LIBRARY_TEMPLATES).map((t) => (
-                    <PremiumTemplateCard
-                      key={t.id}
-                      template={t}
-                      selected={selectedId === t.id}
-                      disabled={disabled}
-                      saved={t.id.startsWith("saved:")}
-                      shared={Boolean(savedTemplates.find((s) => `saved:${s.id}` === t.id)?.is_shared)}
-                      onClick={() => setPreviewTemplate(t)}
-                    />
-                  ))}
+                  {(search.trim() || filter !== "all" ? filtered : LIBRARY_TEMPLATES).map((t) => renderTemplate(t, true))}
                   {filtered.length === 0 && (
                     <div className="col-span-full rounded-3xl border border-dashed border-border py-16 text-center">
                       <Wand2 className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
@@ -539,7 +355,7 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
                     </div>
                   )}
                 </div>
-              </div>
+              </section>
             </div>
           </ScrollArea>
         </DialogContent>
