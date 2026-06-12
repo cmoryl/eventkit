@@ -888,6 +888,20 @@ export const AssetGenerationCanvas: React.FC<AssetGenerationCanvasProps> = ({
               onFontsChange={setSelectedFonts}
               compact
             />
+
+            {/* Render Engine — defaults to Auto, picks the best model per asset type */}
+            {user?.id && (
+              <RenderEngineSelector
+                userId={user.id}
+                value={selectedEngineId}
+                onChange={(id) => setSelectedEngineId(id)}
+                autoSelectFor={assetType}
+                compact
+                disabled={isGenerating}
+              />
+            )}
+
+            
             
             {/* Kit-consistent badge — shown when master direction or style anchor is active */}
             {(styleAnchor.hasMasterDirection || !!styleAnchor.anchorImageUrl) && (
