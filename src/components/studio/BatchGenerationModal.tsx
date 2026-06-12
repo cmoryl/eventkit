@@ -124,6 +124,7 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
           prompt,
           assetType,
           eventName,
+          imageModel: engineIdToImageTier('auto', assetType),
           masterDirection: masterDirectionBlock || undefined,
           styleAnchorImage: anchorUrl || undefined,
           brandContext: effectiveBrand ? {
