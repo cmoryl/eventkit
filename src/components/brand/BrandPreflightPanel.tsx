@@ -1,0 +1,110 @@
+import React, { useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
+import type { GeneratedAsset } from '@/types';
+import type { BrandMode } from '@/types/brandProfile';
+import { getAvailableBrandProfiles } from '@/services/brandProfileService';
+import { getAssetSetPreflightSummary, preflightAssetSet } from '@/services/assetPreflightService';
+import { cn } from '@/lib/utils';
+
+interface BrandPreflightPanelProps {
+  assets: GeneratedAsset[];
+  className?: string;
+}
+
+const modes: BrandMode[] = ['locked', 'guided', 'inspired', 'experimental'];
+
+const getScoreStatus = (score: number) => {
+  if (score >= 90) return { label: 'Strong', icon: CheckCircle2, className: 'text-emerald-600' };
+  if (score >= 75) return { label: 'Review', icon: AlertTriangle, className: 'text-amber-600' };
+  return { label: 'Risk', icon: XCircle, className: 'text-destructive' };
+};
+
+export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets, className }) => {
+  const profiles = useMemo(() => getAvailableBrandProfiles(), []);
+  const [profileId, setProfileId] = useState(profiles[0]?.id || '');
+  const activeProfile = profiles.find((profile) => profile.id === profileId) || profiles[0];
+  const [mode, setMode] = useState<BrandMode>(activeProfile?.defaultMode || 'guided');
+
+  const results = useMemo(() => {
+    if (!activeProfile) return [];
+    return preflightAssetSet(assets.filter((asset) => !asset.isLoading), activeProfile, mode);
+  }, [assets, activeProfile, mode]);
+
+  const summary = useMemo(() => getAssetSetPreflightSummary(results), [results]);
+  const status = getScoreStatus(summary.overallScore);
+  const StatusIcon = status.icon;
+  const topIssues = results
+    .flatMap((result) => result.validation.issues.map((issue) => ({ ...issue, assetTitle: result.assetTitle })))
+    .slice(0, 4);
+
+  if (!activeProfile) return null;
+
+  return (
+    <section className={cn('rounded-2xl border border-border bg-card p-5 shadow-sm', className)}>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-sm font-semibold text-primary mb-1">
+            <ShieldCheck className="h-4 w-4" /> Brand preflight
+          </div>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold tracking-tight">{summary.overallScore}</h2>
+            <div className={cn('flex items-center gap-1 text-sm font-semibold', status.className)}>
+              <StatusIcon className="h-4 w-4" /> {status.label}
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {summary.approvedCount} approved · {summary.reviewCount} need review · {summary.blockingCount} blocking
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2">
+          <select
+            className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            value={activeProfile.id}
+            onChange={(event) => {
+              const next = profiles.find((profile) => profile.id === event.target.value);
+              setProfileId(event.target.value);
+              if (next) setMode(next.defaultMode);
+            }}
+          >
+            {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+          </select>
+          <select className="rounded-xl border border-border bg-background px-3 py-2 text-sm" value={mode} onChange={(event) => setMode(event.target.value as BrandMode)}>
+            {modes.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        {[
+          ['Approved', summary.approvedCount],
+          ['Review', summary.reviewCount],
+          ['Blocking', summary.blockingCount],
+          ['Checked', results.length],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-xl bg-secondary/50 p-3">
+            <div className="text-xs text-muted-foreground">{label}</div>
+            <div className="text-lg font-bold">{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {topIssues.length > 0 && (
+        <div className="mt-5 space-y-2">
+          <div className="text-sm font-semibold">Top issues</div>
+          {topIssues.map((issue, index) => (
+            <div key={`${issue.assetTitle}-${issue.category}-${index}`} className="rounded-xl border border-border bg-background p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium truncate">{issue.assetTitle}</span>
+                <span className="text-xs uppercase tracking-wide text-muted-foreground">{issue.severity}</span>
+              </div>
+              <p className="text-muted-foreground mt-1">{issue.message}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+};
+
+export default BrandPreflightPanel;
