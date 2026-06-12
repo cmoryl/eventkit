@@ -355,6 +355,49 @@ export const BatchGenerationModal: React.FC<BatchGenerationModalProps> = ({
             </div>
           )}
 
+          {/* Style Brief — one-tile preset + optional notes applied to every asset */}
+          {!isRunning && results.some(r => r.status !== 'complete') && (
+            <div className="px-5 pt-4 space-y-3 border-b border-border pb-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Style for this batch
+                </label>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mt-2">
+                  {(['modern','classic','bold','minimal','playful','premium'] as const).map(preset => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setStylePreset(preset)}
+                      className={cn(
+                        "px-2 py-2 rounded-lg text-xs font-medium border capitalize transition-all",
+                        stylePreset === preset
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-muted/30 text-muted-foreground hover:border-primary/30"
+                      )}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Notes (optional)
+                </label>
+                <input
+                  type="text"
+                  value={batchNotes}
+                  onChange={(e) => setBatchNotes(e.target.value)}
+                  placeholder="e.g. add subtle geometric patterns, feature the venue skyline"
+                  className="mt-2 w-full px-3 py-2 rounded-lg bg-muted/30 border border-border text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary"
+                  maxLength={240}
+                />
+              </div>
+            </div>
+          )}
+
+
+
           {/* Asset list */}
           <div className="flex-1 overflow-y-auto p-5 space-y-2">
             {results.map((result) => (
