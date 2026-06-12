@@ -972,7 +972,7 @@ const Index: React.FC = () => {
               />
             )}
 
-            {generatedAssets.length > 0 && <BrandPreflightPanel assets={generatedAssets} className="mb-6" />}
+            {generatedAssets.length > 0 && <BrandPreflightPanel assets={generatedAssets} eventName={eventDetails.name} className="mb-6" />}
 
             <AssetGrid
               assets={generatedAssets}
