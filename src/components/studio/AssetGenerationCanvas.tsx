@@ -33,6 +33,8 @@ import { type LogoPlacement } from './DraggableLogoOverlay';
 import { useLogoPlacement } from '@/hooks/useLogoPlacement';
 import { useStyleAnchor } from '@/contexts/StyleAnchorContext';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock } from '@/services/masterStyleDirector';
+import { engineIdToImageTier } from '@/services/aiBrain/engineAutoSelect';
+import { RenderEngineSelector } from '@/components/RenderEngineSelector';
 import type { EventDetails, ColorInfo } from '@/types';
 
 interface AssetGenerationCanvasProps {
