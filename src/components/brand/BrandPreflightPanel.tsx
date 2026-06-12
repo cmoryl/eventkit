@@ -2,10 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, ShieldCheck, XCircle } from 'lucide-react';
 import type { GeneratedAsset } from '@/types';
 import type { BrandMode } from '@/types/brandProfile';
+import type { LogoVisibilityMode } from '@/services/logoVisibilityService';
+import { getLogoVisibilityMode } from '@/services/logoVisibilityService';
 import { getAvailableBrandProfiles } from '@/services/brandProfileService';
 import { generatePreflightReportText, getAssetSetPreflightSummary, preflightAssetSet } from '@/services/assetPreflightService';
 import { exportAssetsWithBrandPreflight } from '@/services/brandSafeExportService';
 import LogoVisibilityControl from './LogoVisibilityControl';
+import LogoPlacementGuide from './LogoPlacementGuide';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -28,6 +31,7 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
   const [profileId, setProfileId] = useState(profiles[0]?.id || '');
   const activeProfile = profiles.find((profile) => profile.id === profileId) || profiles[0];
   const [mode, setMode] = useState<BrandMode>(activeProfile?.defaultMode || 'guided');
+  const [logoMode, setLogoMode] = useState<LogoVisibilityMode>(() => getLogoVisibilityMode());
   const [isExporting, setIsExporting] = useState(false);
 
   const results = useMemo(() => {
@@ -115,7 +119,7 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
           <select className="rounded-xl border border-border bg-background px-3 py-2 text-sm" value={mode} onChange={(event) => setMode(event.target.value as BrandMode)}>
             {modes.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
-          <LogoVisibilityControl compact />
+          <LogoVisibilityControl compact value={logoMode} onChange={setLogoMode} />
           <button
             type="button"
             onClick={downloadReport}
@@ -146,6 +150,10 @@ export const BrandPreflightPanel: React.FC<BrandPreflightPanelProps> = ({ assets
             <div className="text-lg font-bold">{value}</div>
           </div>
         ))}
+      </div>
+
+      <div className="mt-5">
+        <LogoPlacementGuide mode={logoMode} hasLogo />
       </div>
 
       {topIssues.length > 0 && (
