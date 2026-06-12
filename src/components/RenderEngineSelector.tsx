@@ -144,7 +144,7 @@ export function RenderEngineSelector({
   };
 
   const isBuiltIn = (provider: AnyProvider) => {
-    return provider === 'lovable' || provider === 'lovable-hq' || provider === 'lovable-veo3';
+    return provider === 'lovable' || provider === 'lovable-hq' || provider === 'lovable-nano-banana-2' || provider === 'lovable-gpt-image' || provider === 'lovable-veo3';
   };
 
   if (loading) {
