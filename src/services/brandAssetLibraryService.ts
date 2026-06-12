@@ -1,4 +1,5 @@
 import type { BrandProfile } from '@/types/brandProfile';
+import { buildBrandStyleSystemPromptBlock } from './brandStyleSystemService';
 
 export type BrandGuideAssetType =
   | 'primary-logo'
@@ -190,6 +191,15 @@ ${[
   ...context.doExamples,
   ...context.dontExamples,
 ].slice(0, MAX_PROMPT_ASSETS).map(buildAssetLine).join('\n') || 'No uploaded brand assets saved yet.'}
+
+${buildBrandStyleSystemPromptBlock(brandProfile, [
+  ...context.logos,
+  ...context.visualReferences,
+  ...context.patternReferences,
+  ...context.layoutReferences,
+  ...context.doExamples,
+  ...context.dontExamples,
+])}
 
 USAGE RULES:
   • Treat uploaded logos, SVGs, transparent PNGs, icons, product images, patterns, textures, and reference visuals as authoritative brand inputs.
