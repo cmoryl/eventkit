@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { resolveBrandImagery } from '@/services/brandImageryResolver';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock, clearMasterDirectionCache } from '@/services/masterStyleDirector';
 import { getActiveBrandMode, getActiveBrandProfile } from '@/services/brandProfileService';
-import { getBrandAssetGenerationContext } from '@/services/brandAssetLibraryService';
+import { getCloudBackedBrandAssetGenerationContext } from '@/services/brandAssetCloudService';
 import { buildCrossAssetConsistencyPromptBlock, buildCrossAssetConsistencySystem } from '@/services/crossAssetConsistencyService';
 import { getLogoVisibilityMode } from '@/services/logoVisibilityService';
 import { buildExactLogoGenerationInstruction, enforceExactLogoOnGeneratedContent, getLogoReferenceForGeneration } from '@/services/exactLogoEnforcementService';
@@ -235,8 +235,24 @@ export const useAIOrchestrator = ({
     const activeBrandProfile = getActiveBrandProfile();
     const activeBrandMode = getActiveBrandMode();
     const logoVisibilityMode = getLogoVisibilityMode();
-    const brandAssetContext = getBrandAssetGenerationContext(activeBrandProfile.id, activeBrandProfile);
+
+    setGenerationProgress(prev => ({
+      ...prev,
+      phase: 'analyzing',
+      currentAssetName: 'Hydrating active brand brain...'
+    }));
+
+    const { context: brandAssetContext, cloud: brandBrainCloud } = await getCloudBackedBrandAssetGenerationContext(activeBrandProfile);
     const canonicalLogoBase64 = primaryLogoBase64 || brandAssetContext.primaryLogo?.dataUrl;
+
+    console.log('Brand brain context loaded for generation:', {
+      cloud: brandBrainCloud.message,
+      logos: brandAssetContext.logos.length,
+      visualReferences: brandAssetContext.visualReferences.length,
+      patternReferences: brandAssetContext.patternReferences.length,
+      doExamples: brandAssetContext.doExamples.length,
+      dontExamples: brandAssetContext.dontExamples.length,
+    });
 
     // Log venue video analysis data for spatial awareness
     if (venueVideoAnalysisData?.success) {
