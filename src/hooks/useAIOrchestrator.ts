@@ -9,6 +9,8 @@ import { progressPublisher } from '@/services/progressPublisher';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveBrandImagery } from '@/services/brandImageryResolver';
 import { generateMasterStyleDirection, buildMasterDirectionPromptBlock, clearMasterDirectionCache } from '@/services/masterStyleDirector';
+import { getActiveBrandMode, getActiveBrandProfile } from '@/services/brandProfileService';
+import { buildCrossAssetConsistencyPromptBlock, buildCrossAssetConsistencySystem } from '@/services/crossAssetConsistencyService';
 
 interface UseAIOrchestratorProps {
   eventDetails: EventDetails;
@@ -106,6 +108,7 @@ export const useAIOrchestrator = ({
     
     // Get asset types for strategy optimization
     const assetTypes = assetsToGenerate.filter(a => a.isLoading).map(a => String(a.type));
+    const assetTypesForConsistency = assetsToGenerate.filter(a => a.isLoading).map(a => a.type);
     const hasVibeImage = !!(vibeImageFiles?.length || styleImage?.file);
     const hasLogo = logos.length > 0;
     
@@ -287,6 +290,23 @@ export const useAIOrchestrator = ({
         console.log('Master visual direction generated — will inject into all assets');
       }
     }
+
+    // === Cross-asset consistency system ===
+    const activeBrandProfile = getActiveBrandProfile();
+    const activeBrandMode = getActiveBrandMode();
+    const crossAssetSystem = buildCrossAssetConsistencySystem({
+      eventDetails,
+      brandProfile: activeBrandProfile,
+      mode: activeBrandMode,
+      brandContext: brandContext || null,
+      colorPalette: paletteOverride || colorPalette,
+      assetTypes: assetTypesForConsistency,
+    });
+
+    const buildDirectionBlockForAsset = (assetType: AssetType) => [
+      masterDirectionBlock,
+      buildCrossAssetConsistencyPromptBlock(crossAssetSystem, assetType),
+    ].filter(Boolean).join('\n\n');
     
     // Update phase to analyzing if we have reference images
     if (hasVibeImage && strategy.shouldPreAnalyze) {
@@ -428,7 +448,7 @@ export const useAIOrchestrator = ({
                 venueImageBase64,
                 renderEngine,
                 brandContext,
-                masterDirectionBlock
+                buildDirectionBlockForAsset(asset.type)
               );
               return { id: asset.id, success: true, content };
             } catch (error) {
