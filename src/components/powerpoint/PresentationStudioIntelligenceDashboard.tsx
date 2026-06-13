@@ -27,6 +27,7 @@ import { PresentationProductionRunbookPanel } from './PresentationProductionRunb
 import { PresentationEditorUXPanel } from './PresentationEditorUXPanel';
 import { PresentationEditorActionAuditPanel } from './PresentationEditorActionAuditPanel';
 import { PresentationAssetSuggestionPanel } from './PresentationAssetSuggestionPanel';
+import { PresentationAssetDropZonePanel } from './PresentationAssetDropZonePanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -131,6 +132,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
       <PresentationNarrativePanel />
       <PresentationSmartBlockPanel />
       <PresentationAssetSuggestionPanel />
+      <PresentationAssetDropZonePanel />
       <PresentationDeckRecipePanel title="Studio deck recipe" goal="Create an editable, brand-safe, export-ready presentation system." />
       <PresentationExportReadinessPanel exportFidelity={state.exportFidelity} agentQA={state.agentQA} allowReviewedProceed={humanApproved} />
       <PresentationFixPlanPanel />
