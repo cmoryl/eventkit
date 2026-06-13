@@ -1,10 +1,11 @@
-import { PRESENTATION_DRAG_DROP_ASSET_KITS } from '@/config/editableTemplates/presentationDragDropAssetKits';
 import { GALLERY_IMAGE_ASSETS } from '@/components/powerpoint/composer/galleryImageAssets';
 import { GALLERY_IMAGERY_DIRECTIVES } from '@/components/powerpoint/composer/galleryImageryDirectives';
 import { PREBUILT_PRESENTATION_OBJECTS } from '@/components/powerpoint/composer/prebuiltPresentationObjects';
 import { PREBUILT_DATA_VIZ_STYLES } from '@/components/powerpoint/composer/prebuiltDataVizStyles';
 import { ADVANCED_DATA_STORY_BLOCKS } from '@/components/powerpoint/composer/advancedDataStoryBlocks';
 import { getPresentationAssetDropZoneSummary } from './presentationAssetDropZoneService';
+import { getUnifiedPresentationAssetLibrary } from './presentationUnifiedAssetLibraryService';
+import { getPresentationAssetGovernanceSummary } from './presentationAssetGovernanceService';
 
 export interface PresentationAssetReadinessArea {
   id: string;
@@ -22,6 +23,7 @@ export interface PresentationAssetReadinessReport {
   totals: {
     kits: number;
     kitItems: number;
+    advancedPacks: number;
     generatedGalleryImages: number;
     imageryDirectives: number;
     prebuiltObjects: number;
@@ -29,6 +31,7 @@ export interface PresentationAssetReadinessReport {
     advancedStoryBlocks: number;
     templatesWithDropZones: number;
     totalDropZones: number;
+    sourceGovernanceCoverage: number;
   };
 }
 
@@ -48,7 +51,8 @@ const area = (id: string, label: string, score: number, evidence: string[], next
 });
 
 export const getPresentationAssetReadinessReport = (): PresentationAssetReadinessReport => {
-  const kitItems = PRESENTATION_DRAG_DROP_ASSET_KITS.flatMap((kit) => kit.items);
+  const library = getUnifiedPresentationAssetLibrary();
+  const governance = getPresentationAssetGovernanceSummary();
   const dropZoneSummary = getPresentationAssetDropZoneSummary();
 
   const generatedImageCoverage = Math.round(Math.min(100, (GALLERY_IMAGE_ASSETS.length / 10) * 100));
@@ -57,15 +61,16 @@ export const getPresentationAssetReadinessReport = (): PresentationAssetReadines
   const dataCoverage = Math.round(Math.min(100, (PREBUILT_DATA_VIZ_STYLES.length / 20) * 100));
   const storyCoverage = Math.round(Math.min(100, (ADVANCED_DATA_STORY_BLOCKS.length / 12) * 100));
   const dropZoneCoverage = Math.round(Math.min(100, (dropZoneSummary.totalDropZones / 24) * 100));
-  const kitCoverage = Math.round(Math.min(100, (kitItems.length / 36) * 100));
+  const kitCoverage = Math.round(Math.min(100, (library.summary.totalItems / 44) * 100));
+  const governanceCoverage = governance.coveragePercent;
 
   const areas = [
     area(
       'asset-kits',
       'Asset kits and reusable source slots',
       kitCoverage,
-      [`${PRESENTATION_DRAG_DROP_ASSET_KITS.length} kits`, `${kitItems.length} kit items`, 'Slots include logo, hero, map, chart, person, UI panel, QR, texture, product render, and sponsor-logo.'],
-      ['Expand from starter kits into industry packs: boardroom, product, event, case study, editorial, training, governance, and data.', 'Add source/rights metadata, resolution guidance, and export-safe minimums per item.'],
+      [`${library.summary.totalKits} total kits`, `${library.summary.advancedPacks} advanced packs`, `${library.summary.totalItems} kit items`, 'Slots include logo, hero, map, chart, person, UI panel, QR, texture, product render, and sponsor-logo.'],
+      ['Continue expanding into industry-specific packs and add source/rights metadata, resolution guidance, and export-safe minimums per item.', 'Create visual thumbnails for every kit item.'],
     ),
     area(
       'drop-zones',
@@ -73,6 +78,13 @@ export const getPresentationAssetReadinessReport = (): PresentationAssetReadines
       dropZoneCoverage,
       [`${dropZoneSummary.templatesWithDropZones} templates with drop zones`, `${dropZoneSummary.totalDropZones} total drop zones`, `${dropZoneSummary.logoZones} logo zones`, `${dropZoneSummary.imageZones} image zones`],
       ['Require aspect ratio, accepted formats, safe-area notes, and crop behavior on every asset field.', 'Add per-zone validation for exact logos, QR scannability, and low-resolution images.'],
+    ),
+    area(
+      'source-governance',
+      'Source and rights governance',
+      governanceCoverage,
+      [`${governance.sourceRecords} source records`, `${governance.governedItems} governed items`, `${governance.ungovernedItems} ungoverned items`, `${governance.coveragePercent}% coverage`],
+      ['Add source records for every asset pack item.', 'Require approved rights status before asset insertion or export.'],
     ),
     area(
       'generated-imagery',
@@ -118,8 +130,9 @@ export const getPresentationAssetReadinessReport = (): PresentationAssetReadines
     verdict: score >= 85 ? 'Strong asset system, now needs runtime wiring and export proof.' : 'Good foundation, but not best-in-class until validation, thumbnails, and insertion wiring are complete.',
     areas,
     totals: {
-      kits: PRESENTATION_DRAG_DROP_ASSET_KITS.length,
-      kitItems: kitItems.length,
+      kits: library.summary.totalKits,
+      kitItems: library.summary.totalItems,
+      advancedPacks: library.summary.advancedPacks,
       generatedGalleryImages: GALLERY_IMAGE_ASSETS.length,
       imageryDirectives: GALLERY_IMAGERY_DIRECTIVES.length,
       prebuiltObjects: PREBUILT_PRESENTATION_OBJECTS.length,
@@ -127,6 +140,7 @@ export const getPresentationAssetReadinessReport = (): PresentationAssetReadines
       advancedStoryBlocks: ADVANCED_DATA_STORY_BLOCKS.length,
       templatesWithDropZones: dropZoneSummary.templatesWithDropZones,
       totalDropZones: dropZoneSummary.totalDropZones,
+      sourceGovernanceCoverage: governance.coveragePercent,
     },
   };
 };
