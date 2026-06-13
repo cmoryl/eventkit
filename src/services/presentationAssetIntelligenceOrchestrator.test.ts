@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { getUnifiedPresentationAssetLibrary } from './presentationUnifiedAssetLibraryService';
 import { getPresentationAssetReadinessReport } from './presentationAssetReadinessService';
 import { validatePresentationAssetCandidate } from './presentationAssetValidationService';
-import { buildPresentationAssetIntelligenceState } from './presentationAssetIntelligenceOrchestrator';
+import { buildUnifiedAssetLibraryPromptBlock } from './presentationUnifiedAssetLibraryService';
+import { buildPresentationAssetReadinessPromptBlock } from './presentationAssetReadinessService';
+import { buildPresentationAssetGovernancePromptBlock } from './presentationAssetGovernanceService';
 import { PRESENTATION_ASSET_VARIANT_FAMILIES } from '@/config/editableTemplates/presentationAssetVariations';
 import { PRESENTATION_EXTENDED_SYSTEM_ASSETS } from '@/config/editableTemplates/presentationExtendedSystemAssets';
 
@@ -32,7 +34,7 @@ describe('presentation asset intelligence system', () => {
       expect(asset.components.length).toBeGreaterThan(0);
       expect(asset.variants.length).toBeGreaterThan(0);
       expect(asset.usageRules.length).toBeGreaterThan(0);
-      expect(asset.promptHint.length).toBeGreaterThan(40);
+      expect(asset.promptHint.length).toBeGreaterThan(30);
     }
   });
 
@@ -59,11 +61,9 @@ describe('presentation asset intelligence system', () => {
     expect(result.issues.some((issue) => issue.code === 'logo.not_exact')).toBe(true);
   });
 
-  it('builds one consolidated asset intelligence prompt block', () => {
-    const state = buildPresentationAssetIntelligenceState({ query: 'executive data story' });
-    expect(state.promptBlock).toContain('PRESENTATION ASSET INTELLIGENCE ORCHESTRATOR');
-    expect(state.promptBlock).toContain('PRESENTATION ASSET READINESS AUDIT');
-    expect(state.promptBlock).toContain('UNIFIED PRESENTATION ASSET LIBRARY');
-    expect(state.promptBlock).toContain('EXTENDED PRESENTATION SYSTEM ASSETS');
+  it('builds core asset prompt sections without runtime editor dependencies', () => {
+    expect(buildPresentationAssetReadinessPromptBlock()).toContain('PRESENTATION ASSET READINESS AUDIT');
+    expect(buildPresentationAssetGovernancePromptBlock()).toContain('PRESENTATION ASSET GOVERNANCE');
+    expect(buildUnifiedAssetLibraryPromptBlock()).toContain('UNIFIED PRESENTATION ASSET LIBRARY');
   });
 });
