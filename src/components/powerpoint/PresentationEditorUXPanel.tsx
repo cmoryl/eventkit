@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { MousePointerClick, PanelRight, Keyboard } from 'lucide-react';
+import type { PresentationEditorActionGroupId } from '@/services/presentationEditorActionAuditService';
+import type { PresentationEditorActionId } from '@/services/presentationEditorActionContractService';
 import type { SlideData } from '@/components/slides/slideTypes';
 import { EditorRefinedChrome } from '@/components/slides/EditorRefinedChrome';
 import { buildPresentationEditorUXState } from '@/services/presentationEditorUXService';
@@ -11,8 +13,9 @@ export const PresentationEditorUXPanel: React.FC<{
   readinessScore?: number;
   hasBrand?: boolean;
   exportReady?: boolean;
+  onEditorAction?: (action: PresentationEditorActionId, group: PresentationEditorActionGroupId) => void;
   className?: string;
-}> = ({ slides, activeSlideIndex = 0, readinessScore = 0, hasBrand, exportReady, className }) => {
+}> = ({ slides, activeSlideIndex = 0, readinessScore = 0, hasBrand, exportReady, onEditorAction, className }) => {
   const state = useMemo(() => buildPresentationEditorUXState({ slides, activeSlideIndex }), [slides, activeSlideIndex]);
 
   return (
@@ -34,7 +37,7 @@ export const PresentationEditorUXPanel: React.FC<{
       </div>
 
       <div className="mt-4">
-        <EditorRefinedChrome slides={slides} activeSlideIndex={activeSlideIndex} readinessScore={readinessScore} hasBrand={hasBrand} exportReady={exportReady} />
+        <EditorRefinedChrome slides={slides} activeSlideIndex={activeSlideIndex} readinessScore={readinessScore} hasBrand={hasBrand} exportReady={exportReady} onEditorAction={onEditorAction} />
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
