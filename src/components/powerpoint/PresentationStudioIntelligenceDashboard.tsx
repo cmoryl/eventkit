@@ -23,6 +23,7 @@ import { PresentationCommandRouterPanel } from './PresentationCommandRouterPanel
 import { PresentationFixPlanPanel } from './PresentationFixPlanPanel';
 import { PresentationStudioInterfaceShell } from './PresentationStudioInterfaceShell';
 import { PresentationStudioQuickActions } from './PresentationStudioQuickActions';
+import { PresentationProductionRunbookPanel } from './PresentationProductionRunbookPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -88,6 +89,16 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         hasExactLogoSource={hasExactLogoSource}
         templateSlotSet={templateSlotSet}
         templateSlotValues={templateSlotValues}
+        humanApproved={humanApproved}
+      />
+      <PresentationProductionRunbookPanel
+        slides={slides}
+        events={events}
+        hasSourceMaterial={hasSourceMaterial}
+        hasBrandProfile={hasBrandProfile}
+        hasExactLogoSource={hasExactLogoSource}
+        qaStatus={state.agentQA.status}
+        exportDecision={exportReadiness.decision}
         humanApproved={humanApproved}
       />
       <PresentationCommandRouterPanel />
