@@ -4,6 +4,7 @@ import type { PresentationEditorActionGroupId } from '@/services/presentationEdi
 import type { PresentationEditorActionId } from '@/services/presentationEditorActionContractService';
 import type { SlideData } from '@/components/slides/slideTypes';
 import { EditorRefinedChrome } from '@/components/slides/EditorRefinedChrome';
+import { useEditorConsolidatedActionDispatcher } from '@/hooks/useEditorConsolidatedActionDispatcher';
 import { buildPresentationEditorUXState } from '@/services/presentationEditorUXService';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +18,8 @@ export const PresentationEditorUXPanel: React.FC<{
   className?: string;
 }> = ({ slides, activeSlideIndex = 0, readinessScore = 0, hasBrand, exportReady, onEditorAction, className }) => {
   const state = useMemo(() => buildPresentationEditorUXState({ slides, activeSlideIndex }), [slides, activeSlideIndex]);
+  const fallbackDispatcher = useEditorConsolidatedActionDispatcher();
+  const handleEditorAction = onEditorAction || fallbackDispatcher;
 
   return (
     <section className={cn('rounded-[2rem] border border-border bg-card/80 p-5 shadow-sm backdrop-blur', className)}>
@@ -37,7 +40,7 @@ export const PresentationEditorUXPanel: React.FC<{
       </div>
 
       <div className="mt-4">
-        <EditorRefinedChrome slides={slides} activeSlideIndex={activeSlideIndex} readinessScore={readinessScore} hasBrand={hasBrand} exportReady={exportReady} onEditorAction={onEditorAction} />
+        <EditorRefinedChrome slides={slides} activeSlideIndex={activeSlideIndex} readinessScore={readinessScore} hasBrand={hasBrand} exportReady={exportReady} onEditorAction={handleEditorAction} />
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
