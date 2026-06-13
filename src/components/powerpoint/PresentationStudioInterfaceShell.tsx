@@ -11,11 +11,11 @@ export interface PresentationStudioInterfaceShellProps {
   className?: string;
 }
 
-const stages = ['Autopilot', 'Command', 'Flow', 'Functions', 'Structure', 'Export', 'Fix', 'Review'];
+const stages = ['Autopilot', 'Editor', 'Command', 'Flow', 'Functions', 'Structure', 'QA', 'Export', 'Fix', 'Review'];
 
 export const PresentationStudioInterfaceShell: React.FC<PresentationStudioInterfaceShellProps> = ({
   title = 'Presentation Studio Mission Control',
-  subtitle = 'One interface for guided creation, smart blocks, QA, fixes, export readiness, and reusable presentation systems.',
+  subtitle = 'One interface for guided creation, canvas-first editing, smart blocks, QA, fixes, export readiness, and reusable presentation systems.',
   readinessScore = 0,
   activeStage = 'Autopilot',
   children,
@@ -57,9 +57,9 @@ export const PresentationStudioInterfaceShell: React.FC<PresentationStudioInterf
           <div className="sticky top-36 space-y-3 rounded-[1.5rem] border border-border bg-card p-4 text-xs shadow-sm">
             <div className="flex items-center gap-2 font-black text-primary"><Sparkles className="h-4 w-4" /> UI Priorities</div>
             <div className="rounded-2xl bg-background p-3"><span className="font-bold">1.</span> Keep the next action visible.</div>
-            <div className="rounded-2xl bg-background p-3"><span className="font-bold">2.</span> Show why each system matters.</div>
-            <div className="rounded-2xl bg-background p-3"><span className="font-bold">3.</span> Make QA and export confidence obvious.</div>
-            <div className="rounded-2xl bg-background p-3"><span className="font-bold">4.</span> Let users move from command to fix to export.</div>
+            <div className="rounded-2xl bg-background p-3"><span className="font-bold">2.</span> Make the canvas feel like the source of truth.</div>
+            <div className="rounded-2xl bg-background p-3"><span className="font-bold">3.</span> Surface contextual controls only when useful.</div>
+            <div className="rounded-2xl bg-background p-3"><span className="font-bold">4.</span> Make QA and export confidence obvious.</div>
           </div>
         </aside>
       </div>
