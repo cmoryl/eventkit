@@ -2,6 +2,7 @@ import React from 'react';
 import { Grid3X3, Layers3, Maximize2 } from 'lucide-react';
 import type { SlideData } from './slideTypes';
 import { EditorCommandPalette } from './EditorCommandPalette';
+import { EditorConsolidatedActionBar } from './EditorConsolidatedActionBar';
 import { EditorFloatingToolbar } from './EditorFloatingToolbar';
 import { EditorInspectorTabs } from './EditorInspectorTabs';
 import { EditorUXStatusBar } from './EditorUXStatusBar';
@@ -28,14 +29,19 @@ export const EditorRefinedChrome: React.FC<EditorRefinedChromeProps> = ({
 
   return (
     <div className={cn('overflow-hidden rounded-[2rem] border border-border bg-[radial-gradient(circle_at_top_left,hsl(var(--primary)/0.16),transparent_34%),linear-gradient(135deg,hsl(var(--background)),hsl(var(--muted)/0.72))] shadow-2xl', className)}>
-      <div className="flex items-center justify-between border-b border-border/70 bg-card/80 px-4 py-3 backdrop-blur-xl">
-        <div>
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Editor Workspace</div>
-          <div className="text-sm font-black tracking-tight">Refined canvas-first interface</div>
+      <div className="border-b border-border/70 bg-card/80 px-4 py-3 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Editor Workspace</div>
+            <div className="text-sm font-black tracking-tight">Refined canvas-first interface</div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/80 px-2.5 py-1 font-bold"><Grid3X3 className="h-3.5 w-3.5 text-primary" /> Grid</span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/80 px-2.5 py-1 font-bold"><Maximize2 className="h-3.5 w-3.5 text-primary" /> 100%</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/80 px-2.5 py-1 font-bold"><Grid3X3 className="h-3.5 w-3.5 text-primary" /> Grid</span>
-          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background/80 px-2.5 py-1 font-bold"><Maximize2 className="h-3.5 w-3.5 text-primary" /> 100%</span>
+        <div className="mt-3">
+          <EditorConsolidatedActionBar />
         </div>
       </div>
 
