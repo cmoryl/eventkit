@@ -21,6 +21,7 @@ import { PresentationAudiencePanel } from './PresentationAudiencePanel';
 import { PresentationAutopilotPanel } from './PresentationAutopilotPanel';
 import { PresentationCommandRouterPanel } from './PresentationCommandRouterPanel';
 import { PresentationFixPlanPanel } from './PresentationFixPlanPanel';
+import { PresentationStudioInterfaceShell } from './PresentationStudioInterfaceShell';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -62,7 +63,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
   const exportReadiness = useMemo(() => evaluatePresentationExportReadiness({ exportFidelity: state.exportFidelity, agentQA: state.agentQA, allowReviewedProceed: humanApproved }), [state.exportFidelity, state.agentQA, humanApproved]);
 
   return (
-    <div className="space-y-5">
+    <PresentationStudioInterfaceShell readinessScore={state.score} activeStage="Autopilot">
       <PresentationStudioIntelligenceStatus
         slides={slides}
         creationMode={creationMode}
@@ -126,6 +127,6 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         <ExportFidelityPanel slides={slides} />
       </div>
       <PresentationEventHistoryPanel events={events} />
-    </div>
+    </PresentationStudioInterfaceShell>
   );
 };
