@@ -22,6 +22,7 @@ import { PresentationAutopilotPanel } from './PresentationAutopilotPanel';
 import { PresentationCommandRouterPanel } from './PresentationCommandRouterPanel';
 import { PresentationFixPlanPanel } from './PresentationFixPlanPanel';
 import { PresentationStudioInterfaceShell } from './PresentationStudioInterfaceShell';
+import { PresentationStudioQuickActions } from './PresentationStudioQuickActions';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -64,6 +65,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
 
   return (
     <PresentationStudioInterfaceShell readinessScore={state.score} activeStage="Autopilot">
+      <PresentationStudioQuickActions />
       <PresentationStudioIntelligenceStatus
         slides={slides}
         creationMode={creationMode}
