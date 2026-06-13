@@ -16,6 +16,7 @@ import { PresentationUserFlowPanel } from './PresentationUserFlowPanel';
 import { PresentationFunctionPanel } from './PresentationFunctionPanel';
 import { PresentationSmartBlockPanel } from './PresentationSmartBlockPanel';
 import { PresentationDeckRecipePanel } from './PresentationDeckRecipePanel';
+import { PresentationNarrativePanel } from './PresentationNarrativePanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -85,6 +86,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         hasSavedSnapshot={events.some((event) => event.eventType === 'export_created')}
       />
       <PresentationFunctionPanel />
+      <PresentationNarrativePanel />
       <PresentationSmartBlockPanel />
       <PresentationDeckRecipePanel title="Studio deck recipe" goal="Create an editable, brand-safe, export-ready presentation system." />
       <PresentationExportReadinessPanel exportFidelity={state.exportFidelity} agentQA={state.agentQA} allowReviewedProceed={humanApproved} />
