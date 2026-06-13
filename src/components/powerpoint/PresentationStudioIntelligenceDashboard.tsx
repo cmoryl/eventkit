@@ -28,6 +28,13 @@ import { PresentationEditorUXPanel } from './PresentationEditorUXPanel';
 import { PresentationEditorActionAuditPanel } from './PresentationEditorActionAuditPanel';
 import { PresentationAssetSuggestionPanel } from './PresentationAssetSuggestionPanel';
 import { PresentationAssetDropZonePanel } from './PresentationAssetDropZonePanel';
+import { PresentationAssetReadinessPanel } from './composer/PresentationAssetReadinessPanel';
+import { PresentationAssetValidationPanel } from './composer/PresentationAssetValidationPanel';
+import { PresentationAssetVariantsPanel } from './composer/PresentationAssetVariantsPanel';
+import { PresentationExtendedSystemAssetsPanel } from './composer/PresentationExtendedSystemAssetsPanel';
+import { PrebuiltPresentationObjectsPanel } from './composer/PrebuiltPresentationObjectsPanel';
+import { PrebuiltDataVizStylesPanel } from './composer/PrebuiltDataVizStylesPanel';
+import { AdvancedDataStoryBlocksPanel } from './composer/AdvancedDataStoryBlocksPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -133,6 +140,13 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
       <PresentationSmartBlockPanel />
       <PresentationAssetSuggestionPanel />
       <PresentationAssetDropZonePanel />
+      <PresentationAssetReadinessPanel />
+      <PresentationAssetValidationPanel />
+      <PresentationAssetVariantsPanel />
+      <PresentationExtendedSystemAssetsPanel />
+      <PrebuiltPresentationObjectsPanel />
+      <PrebuiltDataVizStylesPanel />
+      <AdvancedDataStoryBlocksPanel />
       <PresentationDeckRecipePanel title="Studio deck recipe" goal="Create an editable, brand-safe, export-ready presentation system." />
       <PresentationExportReadinessPanel exportFidelity={state.exportFidelity} agentQA={state.agentQA} allowReviewedProceed={humanApproved} />
       <PresentationFixPlanPanel />
