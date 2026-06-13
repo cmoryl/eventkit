@@ -36,7 +36,7 @@ const handlerBlock = `
     setIsPresentationMode,
     setIsAssetsLibraryOpen,
     setSaveTemplateOpen,
-    exportPptx: () => exportSlidesToPptx(slides, assetName),
+    exportPptx: () => exportSlidesToPptx(slides, assetName, { transition: slideTransition }),
   });
 `;
 
@@ -52,18 +52,32 @@ if (!source.includes('const consolidatedToolbarHandlers = buildSlideEditorConsol
   changed = true;
 }
 
-const toolbarExample = `
-<SlideEditorConsolidatedToolbar
-  assetName={assetName}
-  slideCount={slides.length}
-  zoom={zoom}
-  isGridView={isGridView}
-  hasBrand={Boolean(brand)}
-  exportReady={true}
-  onClose={onClose}
-  handlers={consolidatedToolbarHandlers}
-/>
+const toolbarReplacement = `          {/* Toolbar */}
+          <SlideEditorConsolidatedToolbar
+            assetName={assetName}
+            slideCount={slides.length}
+            zoom={zoom}
+            isGridView={isGridView}
+            hasBrand={Boolean(brand)}
+            exportReady={true}
+            onClose={onClose}
+            handlers={consolidatedToolbarHandlers}
+          />
+
 `;
+
+const toolbarStart = source.indexOf('          {/* Toolbar */}');
+const mainAreaStart = toolbarStart >= 0 ? source.indexOf('          {/* Main area */}', toolbarStart) : -1;
+const alreadyReplaced = source.includes('<SlideEditorConsolidatedToolbar');
+
+if (!alreadyReplaced && toolbarStart >= 0 && mainAreaStart > toolbarStart) {
+  source = `${source.slice(0, toolbarStart)}${toolbarReplacement}${source.slice(mainAreaStart)}`;
+  changed = true;
+} else if (!alreadyReplaced && toolbarStart < 0) {
+  console.warn('Could not find toolbar start marker. Manual replacement required.');
+} else if (!alreadyReplaced && mainAreaStart < 0) {
+  console.warn('Could not find main area marker. Manual replacement required.');
+}
 
 if (changed) {
   fs.writeFileSync(filePath, source);
@@ -72,6 +86,5 @@ if (changed) {
   console.log('SlideEditor already contains consolidated toolbar preparation.');
 }
 
-console.log('\nNext manual replacement target: replace the existing top toolbar JSX with:');
-console.log(toolbarExample);
-console.log('Then run: npm run test && npm run lint && npm run build');
+console.log('\nValidation:');
+console.log('npm run test && npm run lint && npm run build');
