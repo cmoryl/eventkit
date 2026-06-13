@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { MousePointerClick, PanelRight, Keyboard } from 'lucide-react';
 import type { SlideData } from '@/components/slides/slideTypes';
 import { EditorCommandPalette } from '@/components/slides/EditorCommandPalette';
+import { EditorFloatingToolbar } from '@/components/slides/EditorFloatingToolbar';
+import { EditorInspectorTabs } from '@/components/slides/EditorInspectorTabs';
 import { EditorUXStatusBar } from '@/components/slides/EditorUXStatusBar';
 import { buildPresentationEditorUXState } from '@/services/presentationEditorUXService';
 import { cn } from '@/lib/utils';
@@ -15,6 +17,7 @@ export const PresentationEditorUXPanel: React.FC<{
   className?: string;
 }> = ({ slides, activeSlideIndex = 0, readinessScore = 0, hasBrand, exportReady, className }) => {
   const state = useMemo(() => buildPresentationEditorUXState({ slides, activeSlideIndex }), [slides, activeSlideIndex]);
+  const activeSlide = slides[activeSlideIndex];
 
   return (
     <section className={cn('rounded-3xl border border-border bg-card p-5 shadow-sm', className)}>
@@ -35,10 +38,10 @@ export const PresentationEditorUXPanel: React.FC<{
       </div>
 
       <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-background">
-        <div className="grid min-h-[260px] grid-cols-[150px_minmax(0,1fr)_260px]">
+        <div className="grid min-h-[360px] grid-cols-[150px_minmax(0,1fr)_300px]">
           <div className="border-r bg-muted/40 p-3 text-xs">
             <div className="mb-2 font-black">Slide Rail</div>
-            {slides.slice(0, 4).map((slide, index) => (
+            {slides.slice(0, 5).map((slide, index) => (
               <div key={slide.id || index} className={cn('mb-2 rounded-xl border p-2', index === activeSlideIndex ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground')}>
                 <div className="font-bold">{index + 1}. {slide.title || 'Untitled'}</div>
                 <div className="text-[10px]">{slide.layout}</div>
@@ -46,16 +49,20 @@ export const PresentationEditorUXPanel: React.FC<{
             ))}
           </div>
           <div className="relative flex items-center justify-center bg-muted/20 p-5">
-            <div className="aspect-video w-full max-w-[480px] rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2">
+              <EditorFloatingToolbar />
+            </div>
+            <div className="aspect-video w-full max-w-[520px] rounded-2xl border border-border bg-card p-5 shadow-sm">
               <div className="text-xs font-bold uppercase text-muted-foreground">Canvas preview</div>
-              <div className="mt-8 text-2xl font-black">{slides[activeSlideIndex]?.title || 'Active slide'}</div>
+              <div className="mt-8 text-2xl font-black">{activeSlide?.title || 'Active slide'}</div>
               <div className="mt-3 text-sm text-muted-foreground">Inline editing, drag/drop, floating tools, and contextual feedback should all happen here.</div>
             </div>
-            <div className="absolute bottom-4 left-1/2 w-[340px] -translate-x-1/2">
+            <div className="absolute bottom-4 left-1/2 w-[420px] -translate-x-1/2">
               <EditorUXStatusBar slides={slides} activeIndex={activeSlideIndex} readinessScore={readinessScore} hasBrand={hasBrand} exportReady={exportReady} />
             </div>
           </div>
-          <div className="border-l bg-muted/30 p-3">
+          <div className="space-y-3 border-l bg-muted/30 p-3">
+            <EditorInspectorTabs slide={activeSlide} />
             <EditorCommandPalette />
           </div>
         </div>
