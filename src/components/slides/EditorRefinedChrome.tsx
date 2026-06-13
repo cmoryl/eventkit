@@ -1,5 +1,7 @@
 import React from 'react';
 import { Grid3X3, Layers3, Maximize2 } from 'lucide-react';
+import type { PresentationEditorActionGroupId } from '@/services/presentationEditorActionAuditService';
+import type { PresentationEditorActionId } from '@/services/presentationEditorActionContractService';
 import type { SlideData } from './slideTypes';
 import { EditorCommandPalette } from './EditorCommandPalette';
 import { EditorConsolidatedActionBar } from './EditorConsolidatedActionBar';
@@ -14,6 +16,7 @@ export interface EditorRefinedChromeProps {
   readinessScore?: number;
   hasBrand?: boolean;
   exportReady?: boolean;
+  onEditorAction?: (action: PresentationEditorActionId, group: PresentationEditorActionGroupId) => void;
   className?: string;
 }
 
@@ -23,6 +26,7 @@ export const EditorRefinedChrome: React.FC<EditorRefinedChromeProps> = ({
   readinessScore = 0,
   hasBrand,
   exportReady,
+  onEditorAction,
   className,
 }) => {
   const activeSlide = slides[activeSlideIndex];
@@ -41,7 +45,7 @@ export const EditorRefinedChrome: React.FC<EditorRefinedChromeProps> = ({
           </div>
         </div>
         <div className="mt-3">
-          <EditorConsolidatedActionBar />
+          <EditorConsolidatedActionBar onAction={onEditorAction} />
         </div>
       </div>
 
