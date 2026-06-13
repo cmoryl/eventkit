@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useRef } from 'react';
 import { Download, Grid3X3, Play, ShieldCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { EditorConsolidatedActionHandlers } from '@/hooks/useEditorConsolidatedActionDispatcher';
@@ -14,6 +14,7 @@ export interface SlideEditorConsolidatedToolbarProps {
   hasBrand?: boolean;
   exportReady?: boolean;
   onClose: () => void;
+  onImportPptxChange?: React.ChangeEventHandler<HTMLInputElement>;
   handlers?: EditorConsolidatedActionHandlers;
   className?: string;
 }
@@ -26,13 +27,20 @@ export const SlideEditorConsolidatedToolbar: React.FC<SlideEditorConsolidatedToo
   hasBrand,
   exportReady,
   onClose,
+  onImportPptxChange,
   handlers,
   className,
 }) => {
-  const dispatchAction = useEditorConsolidatedActionDispatcher(handlers);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const resolvedHandlers = useMemo<EditorConsolidatedActionHandlers>(() => ({
+    ...handlers,
+    importPptx: handlers?.importPptx ?? (() => importInputRef.current?.click()),
+  }), [handlers]);
+  const dispatchAction = useEditorConsolidatedActionDispatcher(resolvedHandlers);
 
   return (
     <header className={cn('border-b bg-card/95 px-4 py-3 shadow-sm backdrop-blur', className)}>
+      <input ref={importInputRef} type="file" accept=".pptx" className="hidden" onChange={onImportPptxChange} />
       <div className="mb-3 flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={onClose}>
