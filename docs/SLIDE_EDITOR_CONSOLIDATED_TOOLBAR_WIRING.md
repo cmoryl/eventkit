@@ -37,8 +37,9 @@ Replace the crowded SlideEditor top toolbar with the consolidated six-group edit
    - `setIsAssetsLibraryOpen`
    - `setSaveTemplateOpen`
    - `exportSlidesToPptx(slides, assetName)`
-4. Replace the existing toolbar block with `SlideEditorConsolidatedToolbar`.
-5. Keep canvas, slide rail, inspector, modals, import, export, and presentation mode behavior unchanged.
+4. Pass the current `handleImportPptx` function into the toolbar as `onImportPptxChange`.
+5. Replace the existing toolbar block with `SlideEditorConsolidatedToolbar`.
+6. Keep canvas, slide rail, inspector, modals, import, export, and presentation mode behavior unchanged.
 
 ## Implementation snippet
 
@@ -64,7 +65,7 @@ const consolidatedToolbarHandlers = buildSlideEditorConsolidatedToolbarHandlers(
   setIsPresentationMode,
   setIsAssetsLibraryOpen,
   setSaveTemplateOpen,
-  exportPptx: () => exportSlidesToPptx(slides, assetName),
+  exportPptx: () => exportSlidesToPptx(slides, assetName, { transition: slideTransition }),
 });
 ```
 
@@ -79,6 +80,7 @@ Replace the current top toolbar with:
   hasBrand={Boolean(brand)}
   exportReady={true}
   onClose={onClose}
+  onImportPptxChange={handleImportPptx}
   handlers={consolidatedToolbarHandlers}
 />
 ```
@@ -89,7 +91,7 @@ Replace the current top toolbar with:
 - All existing actions remain accessible through the six action groups.
 - Present and Review & Export remain visible as high-priority actions.
 - Add, duplicate, and delete slide still operate on the active slide.
-- Brand Assets, Gallery, AI Generate, Save Template, Grid, Animated Backgrounds, and Export still work.
+- Brand Assets, Gallery, AI Generate, Save Template, Grid, Animated Backgrounds, Import, and Export still work.
 - Export is routed through review/export language and readiness state.
 
 ## Validation
