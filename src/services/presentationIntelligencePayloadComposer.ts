@@ -9,6 +9,7 @@ import type { PresentationSmartBlockType } from './presentationSmartBlockService
 import { buildSmartBlockPromptBlock } from './presentationSmartBlockService';
 import { buildPresentationAdvancedFunctionPromptBlock } from './presentationAdvancedFunctionRegistry';
 import { buildDeckRecipePromptBlock, buildPresentationDeckRecipe, type PresentationDeckRecipe } from './presentationDeckRecipeService';
+import { buildNarrativeDeckRecipe, buildNarrativePromptBlock, type PresentationNarrativeProfile } from './presentationNarrativeEngineService';
 
 export interface PresentationIntelligenceComposerInput {
   slides?: SlideData[];
@@ -22,6 +23,7 @@ export interface PresentationIntelligenceComposerInput {
   templateSlotSet?: PresentationTemplateSlotSet;
   templateSlotValues?: Record<string, unknown>;
   selectedSmartBlocks?: PresentationSmartBlockType[];
+  narrativeProfile?: PresentationNarrativeProfile;
   deckRecipe?: PresentationDeckRecipe;
   deckRecipeTitle?: string;
   deckRecipeGoal?: string;
@@ -38,6 +40,7 @@ export interface PresentationIntelligenceComposedPayload {
     deckStyle: GammaDeckStyle;
     hasTemplateSlotSet: boolean;
     smartBlockCount: number;
+    narrativeProfileIncluded: boolean;
     deckRecipeIncluded: boolean;
     deckRecipeSlideCount: number;
     functionRegistryIncluded: boolean;
@@ -55,7 +58,14 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
 
   const templateBlock = input.templateSlotSet ? buildTemplateSlotPromptBlock(input.templateSlotSet) : undefined;
   const smartBlock = buildSmartBlockPromptBlock(input.selectedSmartBlocks);
-  const recipe = input.deckRecipe || (input.includeDeckRecipe ? buildPresentationDeckRecipe({
+  const narrativeBlock = input.narrativeProfile ? buildNarrativePromptBlock({
+    title: input.deckRecipeTitle || 'Presentation Narrative',
+    profile: input.narrativeProfile,
+  }) : undefined;
+  const recipe = input.deckRecipe || (input.narrativeProfile ? buildNarrativeDeckRecipe({
+    title: input.deckRecipeTitle || 'Presentation Deck Recipe',
+    profile: input.narrativeProfile,
+  }) : input.includeDeckRecipe ? buildPresentationDeckRecipe({
     title: input.deckRecipeTitle || 'Presentation Deck Recipe',
     goal: input.deckRecipeGoal,
     selectedSmartBlocks: input.selectedSmartBlocks,
@@ -82,6 +92,7 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
       workflowBlock,
       templateBlock,
       smartBlock,
+      narrativeBlock,
       recipeBlock,
       functionRegistryBlock,
       intelligenceBlock,
@@ -91,6 +102,7 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
       deckStyle: input.deckStyle,
       hasTemplateSlotSet: Boolean(input.templateSlotSet),
       smartBlockCount: input.selectedSmartBlocks?.length || 0,
+      narrativeProfileIncluded: Boolean(input.narrativeProfile),
       deckRecipeIncluded: Boolean(recipe),
       deckRecipeSlideCount: recipe?.slides.length || 0,
       functionRegistryIncluded: Boolean(input.includeFunctionRegistry),
