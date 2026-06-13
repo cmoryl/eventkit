@@ -5,6 +5,9 @@ import { buildTemplateSlotPromptBlock } from './presentationTemplateSlotService'
 import type { PresentationEventRecord } from './presentationEventHistoryService';
 import { buildPresentationStudioIntelligencePromptBlock } from './presentationStudioIntelligenceOrchestrator';
 import { buildGammaWorkflowPromptAddendum } from './presentationGammaWorkflowService';
+import type { PresentationSmartBlockType } from './presentationSmartBlockService';
+import { buildSmartBlockPromptBlock } from './presentationSmartBlockService';
+import { buildPresentationAdvancedFunctionPromptBlock } from './presentationAdvancedFunctionRegistry';
 
 export interface PresentationIntelligenceComposerInput {
   slides?: SlideData[];
@@ -17,6 +20,8 @@ export interface PresentationIntelligenceComposerInput {
   hasExactLogoSource?: boolean;
   templateSlotSet?: PresentationTemplateSlotSet;
   templateSlotValues?: Record<string, unknown>;
+  selectedSmartBlocks?: PresentationSmartBlockType[];
+  includeFunctionRegistry?: boolean;
   humanApproved?: boolean;
   existingThemeOverride?: string;
 }
@@ -27,6 +32,8 @@ export interface PresentationIntelligenceComposedPayload {
     creationMode: GammaCreationMode;
     deckStyle: GammaDeckStyle;
     hasTemplateSlotSet: boolean;
+    smartBlockCount: number;
+    functionRegistryIncluded: boolean;
     eventCount: number;
     slideCount: number;
   };
@@ -40,6 +47,8 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
   });
 
   const templateBlock = input.templateSlotSet ? buildTemplateSlotPromptBlock(input.templateSlotSet) : undefined;
+  const smartBlock = buildSmartBlockPromptBlock(input.selectedSmartBlocks);
+  const functionRegistryBlock = input.includeFunctionRegistry ? buildPresentationAdvancedFunctionPromptBlock() : undefined;
 
   const intelligenceBlock = buildPresentationStudioIntelligencePromptBlock({
     slides: input.slides || [],
@@ -59,12 +68,16 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
       input.existingThemeOverride,
       workflowBlock,
       templateBlock,
+      smartBlock,
+      functionRegistryBlock,
       intelligenceBlock,
     ].filter(Boolean).join('\n\n'),
     metadata: {
       creationMode: input.creationMode,
       deckStyle: input.deckStyle,
       hasTemplateSlotSet: Boolean(input.templateSlotSet),
+      smartBlockCount: input.selectedSmartBlocks?.length || 0,
+      functionRegistryIncluded: Boolean(input.includeFunctionRegistry),
       eventCount: input.events?.length || 0,
       slideCount: input.slides?.length || 0,
     },
