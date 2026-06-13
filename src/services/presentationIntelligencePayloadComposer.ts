@@ -8,6 +8,7 @@ import { buildGammaWorkflowPromptAddendum } from './presentationGammaWorkflowSer
 import type { PresentationSmartBlockType } from './presentationSmartBlockService';
 import { buildSmartBlockPromptBlock } from './presentationSmartBlockService';
 import { buildPresentationAdvancedFunctionPromptBlock } from './presentationAdvancedFunctionRegistry';
+import { buildDeckRecipePromptBlock, buildPresentationDeckRecipe, type PresentationDeckRecipe } from './presentationDeckRecipeService';
 
 export interface PresentationIntelligenceComposerInput {
   slides?: SlideData[];
@@ -21,6 +22,10 @@ export interface PresentationIntelligenceComposerInput {
   templateSlotSet?: PresentationTemplateSlotSet;
   templateSlotValues?: Record<string, unknown>;
   selectedSmartBlocks?: PresentationSmartBlockType[];
+  deckRecipe?: PresentationDeckRecipe;
+  deckRecipeTitle?: string;
+  deckRecipeGoal?: string;
+  includeDeckRecipe?: boolean;
   includeFunctionRegistry?: boolean;
   humanApproved?: boolean;
   existingThemeOverride?: string;
@@ -33,6 +38,8 @@ export interface PresentationIntelligenceComposedPayload {
     deckStyle: GammaDeckStyle;
     hasTemplateSlotSet: boolean;
     smartBlockCount: number;
+    deckRecipeIncluded: boolean;
+    deckRecipeSlideCount: number;
     functionRegistryIncluded: boolean;
     eventCount: number;
     slideCount: number;
@@ -48,6 +55,12 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
 
   const templateBlock = input.templateSlotSet ? buildTemplateSlotPromptBlock(input.templateSlotSet) : undefined;
   const smartBlock = buildSmartBlockPromptBlock(input.selectedSmartBlocks);
+  const recipe = input.deckRecipe || (input.includeDeckRecipe ? buildPresentationDeckRecipe({
+    title: input.deckRecipeTitle || 'Presentation Deck Recipe',
+    goal: input.deckRecipeGoal,
+    selectedSmartBlocks: input.selectedSmartBlocks,
+  }) : undefined);
+  const recipeBlock = recipe ? buildDeckRecipePromptBlock(recipe) : undefined;
   const functionRegistryBlock = input.includeFunctionRegistry ? buildPresentationAdvancedFunctionPromptBlock() : undefined;
 
   const intelligenceBlock = buildPresentationStudioIntelligencePromptBlock({
@@ -69,6 +82,7 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
       workflowBlock,
       templateBlock,
       smartBlock,
+      recipeBlock,
       functionRegistryBlock,
       intelligenceBlock,
     ].filter(Boolean).join('\n\n'),
@@ -77,6 +91,8 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
       deckStyle: input.deckStyle,
       hasTemplateSlotSet: Boolean(input.templateSlotSet),
       smartBlockCount: input.selectedSmartBlocks?.length || 0,
+      deckRecipeIncluded: Boolean(recipe),
+      deckRecipeSlideCount: recipe?.slides.length || 0,
       functionRegistryIncluded: Boolean(input.includeFunctionRegistry),
       eventCount: input.events?.length || 0,
       slideCount: input.slides?.length || 0,
