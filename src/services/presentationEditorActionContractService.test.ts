@@ -18,6 +18,11 @@ describe('presentationEditorActionContractService', () => {
     }
   });
 
+  it('does not define duplicate action ids', () => {
+    const ids = presentationEditorActionContracts.map((action) => action.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it('marks required preflight actions as export blockers', () => {
     const blockers = presentationEditorActionContracts.filter((action) => action.blocksExportUntilComplete).map((action) => action.id);
     expect(blockers).toContain('brand_logo_check');
