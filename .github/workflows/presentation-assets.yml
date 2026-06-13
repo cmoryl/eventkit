@@ -1,0 +1,27 @@
+name: Presentation Assets
+
+on:
+  pull_request:
+    paths:
+      - 'src/services/presentationAsset*.ts'
+      - 'src/services/presentationAsset*.test.ts'
+      - 'src/config/editableTemplates/presentation*Asset*.ts'
+      - 'src/components/powerpoint/composer/PresentationAsset*.tsx'
+      - 'scripts/verify-presentation-asset-system.mjs'
+      - '.github/workflows/presentation-assets.yml'
+  workflow_dispatch:
+
+jobs:
+  asset-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies for asset verification
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Verify presentation asset system wiring
+        run: node scripts/verify-presentation-asset-system.mjs
+      - name: Run asset intelligence and scaling tests
+        run: npx vitest run src/services/presentationAssetIntelligenceOrchestrator.test.ts src/services/presentationAssetScalingService.test.ts
