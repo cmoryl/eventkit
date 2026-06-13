@@ -1,10 +1,7 @@
 import React, { useMemo } from 'react';
 import { MousePointerClick, PanelRight, Keyboard } from 'lucide-react';
 import type { SlideData } from '@/components/slides/slideTypes';
-import { EditorCommandPalette } from '@/components/slides/EditorCommandPalette';
-import { EditorFloatingToolbar } from '@/components/slides/EditorFloatingToolbar';
-import { EditorInspectorTabs } from '@/components/slides/EditorInspectorTabs';
-import { EditorUXStatusBar } from '@/components/slides/EditorUXStatusBar';
+import { EditorRefinedChrome } from '@/components/slides/EditorRefinedChrome';
 import { buildPresentationEditorUXState } from '@/services/presentationEditorUXService';
 import { cn } from '@/lib/utils';
 
@@ -17,15 +14,14 @@ export const PresentationEditorUXPanel: React.FC<{
   className?: string;
 }> = ({ slides, activeSlideIndex = 0, readinessScore = 0, hasBrand, exportReady, className }) => {
   const state = useMemo(() => buildPresentationEditorUXState({ slides, activeSlideIndex }), [slides, activeSlideIndex]);
-  const activeSlide = slides[activeSlideIndex];
 
   return (
-    <section className={cn('rounded-3xl border border-border bg-card p-5 shadow-sm', className)}>
+    <section className={cn('rounded-[2rem] border border-border bg-card/80 p-5 shadow-sm backdrop-blur', className)}>
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-sm font-black text-primary"><MousePointerClick className="h-4 w-4" /> Editor UX</div>
-          <h3 className="mt-1 text-xl font-black tracking-tight">Canvas-first editing experience</h3>
-          <p className="mt-1 text-sm text-muted-foreground">Improves the slide editor around direct manipulation, contextual controls, inspector clarity, and fast command access.</p>
+          <h3 className="mt-1 text-xl font-black tracking-tight">Refined canvas-first editing experience</h3>
+          <p className="mt-1 text-sm text-muted-foreground">A cleaner visual system for direct manipulation, contextual controls, polished chrome, inspector clarity, and command-driven editing.</p>
         </div>
         <div className="rounded-2xl border border-primary/20 bg-primary/10 px-3 py-2 text-xs text-primary">
           <div className="font-black">Slide {state.activeSlideIndex + 1}</div>
@@ -33,44 +29,17 @@ export const PresentationEditorUXPanel: React.FC<{
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-background p-4 text-xs text-muted-foreground">
+      <div className="rounded-2xl border border-border bg-background/80 p-4 text-xs text-muted-foreground">
         <span className="font-bold text-foreground">Recommended focus:</span> {state.recommendedFocus}
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-3xl border border-border bg-background">
-        <div className="grid min-h-[360px] grid-cols-[150px_minmax(0,1fr)_300px]">
-          <div className="border-r bg-muted/40 p-3 text-xs">
-            <div className="mb-2 font-black">Slide Rail</div>
-            {slides.slice(0, 5).map((slide, index) => (
-              <div key={slide.id || index} className={cn('mb-2 rounded-xl border p-2', index === activeSlideIndex ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground')}>
-                <div className="font-bold">{index + 1}. {slide.title || 'Untitled'}</div>
-                <div className="text-[10px]">{slide.layout}</div>
-              </div>
-            ))}
-          </div>
-          <div className="relative flex items-center justify-center bg-muted/20 p-5">
-            <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2">
-              <EditorFloatingToolbar />
-            </div>
-            <div className="aspect-video w-full max-w-[520px] rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <div className="text-xs font-bold uppercase text-muted-foreground">Canvas preview</div>
-              <div className="mt-8 text-2xl font-black">{activeSlide?.title || 'Active slide'}</div>
-              <div className="mt-3 text-sm text-muted-foreground">Inline editing, drag/drop, floating tools, and contextual feedback should all happen here.</div>
-            </div>
-            <div className="absolute bottom-4 left-1/2 w-[420px] -translate-x-1/2">
-              <EditorUXStatusBar slides={slides} activeIndex={activeSlideIndex} readinessScore={readinessScore} hasBrand={hasBrand} exportReady={exportReady} />
-            </div>
-          </div>
-          <div className="space-y-3 border-l bg-muted/30 p-3">
-            <EditorInspectorTabs slide={activeSlide} />
-            <EditorCommandPalette />
-          </div>
-        </div>
+      <div className="mt-4">
+        <EditorRefinedChrome slides={slides} activeSlideIndex={activeSlideIndex} readinessScore={readinessScore} hasBrand={hasBrand} exportReady={exportReady} />
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {state.zones.map((zone) => (
-          <article key={zone.id} className="rounded-2xl border border-border bg-background p-4 text-xs">
+          <article key={zone.id} className="rounded-2xl border border-border bg-background/80 p-4 text-xs shadow-sm">
             <div className="flex items-center gap-2 font-black"><PanelRight className="h-4 w-4 text-primary" /> {zone.label}</div>
             <p className="mt-2 text-muted-foreground">{zone.purpose}</p>
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -81,7 +50,7 @@ export const PresentationEditorUXPanel: React.FC<{
         ))}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-border bg-background p-4 text-xs">
+      <div className="mt-4 rounded-2xl border border-border bg-background/80 p-4 text-xs shadow-sm">
         <div className="mb-3 flex items-center gap-2 font-black"><Keyboard className="h-4 w-4 text-primary" /> Interaction model</div>
         <div className="grid gap-2 md:grid-cols-2">
           {state.interactions.map((interaction) => (
@@ -95,7 +64,7 @@ export const PresentationEditorUXPanel: React.FC<{
       </div>
 
       {state.warnings.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-300">
+        <div className="mt-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-700 shadow-sm dark:text-amber-300">
           <div className="font-black">Editor warnings</div>
           <ul className="mt-2 list-disc space-y-1 pl-4">
             {state.warnings.map((warning) => <li key={warning}>{warning}</li>)}
