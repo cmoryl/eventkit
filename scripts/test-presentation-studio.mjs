@@ -1,6 +1,9 @@
 import { spawnSync } from 'node:child_process';
 
+const applyToolbar = process.argv.includes('--apply-toolbar');
+
 const commands = [
+  ['node', ['scripts/prepare-slide-editor-consolidated-toolbar.mjs', applyToolbar ? '' : '--dry-run'].filter(Boolean)],
   ['npm', ['run', 'test']],
   ['npm', ['run', 'lint']],
   ['npm', ['run', 'build']],
@@ -20,4 +23,8 @@ for (const [cmd, args] of commands) {
   }
 }
 
-console.log('\n✓ Presentation Studio verification passed: tests, lint, and build completed.');
+console.log(
+  applyToolbar
+    ? '\n✓ Presentation Studio verification passed after applying the SlideEditor toolbar migration.'
+    : '\n✓ Presentation Studio verification passed with SlideEditor toolbar migration dry-run.'
+);
