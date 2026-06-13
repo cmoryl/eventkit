@@ -61,6 +61,7 @@ const toolbarReplacement = `          {/* Toolbar */}
             hasBrand={Boolean(brand)}
             exportReady={true}
             onClose={onClose}
+            onImportPptxChange={handleImportPptx}
             handlers={consolidatedToolbarHandlers}
           />
 
