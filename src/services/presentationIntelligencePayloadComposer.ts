@@ -10,6 +10,7 @@ import { buildSmartBlockPromptBlock } from './presentationSmartBlockService';
 import { buildPresentationAdvancedFunctionPromptBlock } from './presentationAdvancedFunctionRegistry';
 import { buildDeckRecipePromptBlock, buildPresentationDeckRecipe, type PresentationDeckRecipe } from './presentationDeckRecipeService';
 import { buildNarrativeDeckRecipe, buildNarrativePromptBlock, type PresentationNarrativeProfile } from './presentationNarrativeEngineService';
+import { buildCommandRouterPromptBlock } from './presentationCommandRouterService';
 
 export interface PresentationIntelligenceComposerInput {
   slides?: SlideData[];
@@ -29,6 +30,7 @@ export interface PresentationIntelligenceComposerInput {
   deckRecipeGoal?: string;
   includeDeckRecipe?: boolean;
   includeFunctionRegistry?: boolean;
+  includeCommandRouter?: boolean;
   humanApproved?: boolean;
   existingThemeOverride?: string;
 }
@@ -44,6 +46,7 @@ export interface PresentationIntelligenceComposedPayload {
     deckRecipeIncluded: boolean;
     deckRecipeSlideCount: number;
     functionRegistryIncluded: boolean;
+    commandRouterIncluded: boolean;
     eventCount: number;
     slideCount: number;
   };
@@ -72,6 +75,7 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
   }) : undefined);
   const recipeBlock = recipe ? buildDeckRecipePromptBlock(recipe) : undefined;
   const functionRegistryBlock = input.includeFunctionRegistry ? buildPresentationAdvancedFunctionPromptBlock() : undefined;
+  const commandRouterBlock = input.includeCommandRouter ? buildCommandRouterPromptBlock() : undefined;
 
   const intelligenceBlock = buildPresentationStudioIntelligencePromptBlock({
     slides: input.slides || [],
@@ -95,6 +99,7 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
       narrativeBlock,
       recipeBlock,
       functionRegistryBlock,
+      commandRouterBlock,
       intelligenceBlock,
     ].filter(Boolean).join('\n\n'),
     metadata: {
@@ -106,6 +111,7 @@ export const composePresentationIntelligencePayload = (input: PresentationIntell
       deckRecipeIncluded: Boolean(recipe),
       deckRecipeSlideCount: recipe?.slides.length || 0,
       functionRegistryIncluded: Boolean(input.includeFunctionRegistry),
+      commandRouterIncluded: Boolean(input.includeCommandRouter),
       eventCount: input.events?.length || 0,
       slideCount: input.slides?.length || 0,
     },
