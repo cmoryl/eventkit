@@ -20,6 +20,7 @@ import { PresentationNarrativePanel } from './PresentationNarrativePanel';
 import { PresentationAudiencePanel } from './PresentationAudiencePanel';
 import { PresentationAutopilotPanel } from './PresentationAutopilotPanel';
 import { PresentationCommandRouterPanel } from './PresentationCommandRouterPanel';
+import { PresentationFixPlanPanel } from './PresentationFixPlanPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -107,6 +108,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
       <PresentationSmartBlockPanel />
       <PresentationDeckRecipePanel title="Studio deck recipe" goal="Create an editable, brand-safe, export-ready presentation system." />
       <PresentationExportReadinessPanel exportFidelity={state.exportFidelity} agentQA={state.agentQA} allowReviewedProceed={humanApproved} />
+      <PresentationFixPlanPanel />
       <PresentationCompetitiveEdgePanel />
       <GammaInspiredStudioPanel />
       <div className="grid gap-5 xl:grid-cols-2">
