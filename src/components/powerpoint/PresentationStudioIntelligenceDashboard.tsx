@@ -19,6 +19,7 @@ import { PresentationDeckRecipePanel } from './PresentationDeckRecipePanel';
 import { PresentationNarrativePanel } from './PresentationNarrativePanel';
 import { PresentationAudiencePanel } from './PresentationAudiencePanel';
 import { PresentationAutopilotPanel } from './PresentationAutopilotPanel';
+import { PresentationCommandRouterPanel } from './PresentationCommandRouterPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -85,6 +86,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         templateSlotValues={templateSlotValues}
         humanApproved={humanApproved}
       />
+      <PresentationCommandRouterPanel />
       <PresentationUserFlowPanel
         creationMode={creationMode}
         deckStyle={deckStyle}
