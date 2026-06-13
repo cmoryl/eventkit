@@ -12,6 +12,8 @@ import { ALL_LARGE_EVENT_SIGNAGE_TEMPLATES } from './largeEventSignageTemplates'
 import { ALL_EVENT_ESSENTIALS_TEMPLATES } from './eventEssentialsTemplates';
 import { ALL_DIGITAL_MISC_TEMPLATES } from './digitalMiscTemplates';
 import { ALL_PRESENTATION_TEMPLATES } from './presentationTemplates';
+import { CUTTING_EDGE_PRESENTATION_TEMPLATES } from './cuttingEdgePresentationTemplates';
+import { CUTTING_EDGE_PRESENTATION_TEMPLATE_PACK_2 } from './cuttingEdgePresentationTemplatePack2';
 
 // Master collection of all editable templates
 export const ALL_EDITABLE_TEMPLATES: EditableTemplate[] = [
@@ -25,7 +27,9 @@ export const ALL_EDITABLE_TEMPLATES: EditableTemplate[] = [
   ...ALL_LARGE_EVENT_SIGNAGE_TEMPLATES,
   ...ALL_EVENT_ESSENTIALS_TEMPLATES,
   ...ALL_DIGITAL_MISC_TEMPLATES,
-  ...ALL_PRESENTATION_TEMPLATES
+  ...ALL_PRESENTATION_TEMPLATES,
+  ...CUTTING_EDGE_PRESENTATION_TEMPLATES,
+  ...CUTTING_EDGE_PRESENTATION_TEMPLATE_PACK_2
 ];
 
 // Template counts by category
