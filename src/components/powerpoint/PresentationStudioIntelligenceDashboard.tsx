@@ -102,7 +102,12 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         exportDecision={exportReadiness.decision}
         humanApproved={humanApproved}
       />
-      <PresentationEditorUXPanel slides={slides} />
+      <PresentationEditorUXPanel
+        slides={slides}
+        readinessScore={state.score}
+        hasBrand={Boolean(hasBrandProfile && hasExactLogoSource)}
+        exportReady={exportReadiness.canProceed}
+      />
       <PresentationCommandRouterPanel />
       <PresentationUserFlowPanel
         creationMode={creationMode}
