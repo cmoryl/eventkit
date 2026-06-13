@@ -1,5 +1,6 @@
 import { PRESENTATION_DRAG_DROP_ASSET_EXAMPLES, type PresentationDragDropAssetExample } from '@/config/editableTemplates/presentationDragDropAssetExamples';
-import { PRESENTATION_DRAG_DROP_ASSET_KITS, type PresentationAssetKit, type PresentationAssetKitItem, type PresentationAssetSlot } from '@/config/editableTemplates/presentationDragDropAssetKits';
+import type { PresentationAssetKit, PresentationAssetKitItem, PresentationAssetSlot } from '@/config/editableTemplates/presentationDragDropAssetKits';
+import { getUnifiedPresentationAssetLibrary } from './presentationUnifiedAssetLibraryService';
 
 export interface PresentationAssetSuggestionRequest {
   templateId?: string;
@@ -29,8 +30,9 @@ export const getPresentationAssetSuggestions = ({
   limit = 12,
 }: PresentationAssetSuggestionRequest = {}): PresentationAssetSuggestionResult => {
   const q = normalize(query);
+  const library = getUnifiedPresentationAssetLibrary();
 
-  const kitItems = PRESENTATION_DRAG_DROP_ASSET_KITS
+  const kitItems = library.kits
     .flatMap((kit) => kit.items.map((item) => ({ kit, item })))
     .filter(({ item }) => !templateId || item.preferredTemplates.includes(templateId))
     .filter(({ item }) => !slot || item.slot === slot)
@@ -42,7 +44,7 @@ export const getPresentationAssetSuggestions = ({
     .filter((example) => matchesQuery(q, [example.label, example.recommendedUse, example.kind, example.promptHint]))
     .slice(0, limit);
 
-  const kits = PRESENTATION_DRAG_DROP_ASSET_KITS
+  const kits = library.kits
     .filter((kit) => kitItems.some(({ kit: matchedKit }) => matchedKit.id === kit.id))
     .slice(0, limit);
 
@@ -52,6 +54,8 @@ export const getPresentationAssetSuggestions = ({
     query,
     kitItems: kitItems.map(({ item }) => item),
     examples,
+    totalLibraryKits: library.summary.totalKits,
+    totalLibraryItems: library.summary.totalItems,
   });
 
   return {
@@ -68,25 +72,37 @@ export const buildPresentationAssetSuggestionPromptBlock = ({
   query,
   kitItems,
   examples,
+  totalLibraryKits,
+  totalLibraryItems,
 }: {
   templateId?: string;
   slot?: PresentationAssetSlot;
   query?: string;
   kitItems: PresentationAssetKitItem[];
   examples: PresentationDragDropAssetExample[];
+  totalLibraryKits?: number;
+  totalLibraryItems?: number;
 }) => [
   'PRESENTATION ASSET SUGGESTIONS',
   templateId ? `Template: ${templateId}` : 'Template: any',
   slot ? `Slot: ${slot}` : 'Slot: any',
   query ? `Search intent: ${query}` : 'Search intent: none',
+  totalLibraryKits ? `Unified library kits: ${totalLibraryKits}` : undefined,
+  totalLibraryItems ? `Unified library items: ${totalLibraryItems}` : undefined,
   'Use approved exact logos. Do not redraw or approximate brand marks.',
-  'Prioritize assets that match the selected template slot and recommended format.',
+  'Prioritize assets that match the selected template slot, recommended format, and runtime drop zone.',
+  'Prefer source-approved, export-safe, high-resolution, accessible assets.',
   ...kitItems.map((item) => `- Kit item: ${item.label} [${item.slot}] formats=${item.formats.join(', ')} use=${item.usage}`),
   ...examples.map((example) => `- Example: ${example.label} [${example.kind}] formats=${example.recommendedFormats.join(', ')} use=${example.recommendedUse}`),
-].join('\n');
+].filter(Boolean).join('\n');
 
-export const getPresentationAssetSuggestionCount = () => ({
-  kits: PRESENTATION_DRAG_DROP_ASSET_KITS.length,
-  kitItems: PRESENTATION_DRAG_DROP_ASSET_KITS.reduce((count, kit) => count + kit.items.length, 0),
-  examples: PRESENTATION_DRAG_DROP_ASSET_EXAMPLES.length,
-});
+export const getPresentationAssetSuggestionCount = () => {
+  const library = getUnifiedPresentationAssetLibrary();
+  return {
+    kits: library.summary.totalKits,
+    kitItems: library.summary.totalItems,
+    starterKits: library.summary.starterKits,
+    advancedPacks: library.summary.advancedPacks,
+    examples: PRESENTATION_DRAG_DROP_ASSET_EXAMPLES.length,
+  };
+};
