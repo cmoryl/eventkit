@@ -18,6 +18,7 @@ import { PresentationSmartBlockPanel } from './PresentationSmartBlockPanel';
 import { PresentationDeckRecipePanel } from './PresentationDeckRecipePanel';
 import { PresentationNarrativePanel } from './PresentationNarrativePanel';
 import { PresentationAudiencePanel } from './PresentationAudiencePanel';
+import { PresentationAutopilotPanel } from './PresentationAutopilotPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -64,6 +65,18 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         slides={slides}
         creationMode={creationMode}
         deckStyle={deckStyle}
+        events={events}
+        hasSourceMaterial={hasSourceMaterial}
+        hasBrandProfile={hasBrandProfile}
+        hasExactLogoSource={hasExactLogoSource}
+        templateSlotSet={templateSlotSet}
+        templateSlotValues={templateSlotValues}
+        humanApproved={humanApproved}
+      />
+      <PresentationAutopilotPanel
+        creationMode={creationMode}
+        deckStyle={deckStyle}
+        slides={slides}
         events={events}
         hasSourceMaterial={hasSourceMaterial}
         hasBrandProfile={hasBrandProfile}
