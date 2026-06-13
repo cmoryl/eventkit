@@ -24,10 +24,32 @@ export const PresentationAutopilotPanel: React.FC<{
 }> = ({
   title = 'Presentation Autopilot',
   goal = 'Create an editable, brand-safe, export-ready presentation system.',
+  creationMode,
+  deckStyle,
+  slides,
+  events,
+  hasSourceMaterial,
+  hasBrandProfile,
+  hasExactLogoSource,
+  templateSlotSet,
+  templateSlotValues,
+  humanApproved,
   className,
-  ...input
 }) => {
-  const plan = useMemo(() => buildPresentationAutopilotPlan({ title, goal, ...input }), [title, goal, input]);
+  const plan = useMemo(() => buildPresentationAutopilotPlan({
+    title,
+    goal,
+    creationMode,
+    deckStyle,
+    slides,
+    events,
+    hasSourceMaterial,
+    hasBrandProfile,
+    hasExactLogoSource,
+    templateSlotSet,
+    templateSlotValues,
+    humanApproved,
+  }), [title, goal, creationMode, deckStyle, slides, events, hasSourceMaterial, hasBrandProfile, hasExactLogoSource, templateSlotSet, templateSlotValues, humanApproved]);
 
   return (
     <section className={cn('rounded-3xl border border-primary/20 bg-primary/5 p-5 shadow-sm', className)}>
