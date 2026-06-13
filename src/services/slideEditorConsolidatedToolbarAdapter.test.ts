@@ -8,6 +8,8 @@ describe('slideEditorConsolidatedToolbarAdapter', () => {
     const addSlide = vi.fn();
     const duplicateSlide = vi.fn();
     const deleteSlide = vi.fn();
+    const setIsGridView = vi.fn();
+    const setAnimatedBackgrounds = vi.fn();
     const setIsPresentationMode = vi.fn();
     const setIsAssetsLibraryOpen = vi.fn();
     const setSaveTemplateOpen = vi.fn();
@@ -20,6 +22,8 @@ describe('slideEditorConsolidatedToolbarAdapter', () => {
       addSlide,
       duplicateSlide,
       deleteSlide,
+      setIsGridView,
+      setAnimatedBackgrounds,
       setIsPresentationMode,
       setIsAssetsLibraryOpen,
       setSaveTemplateOpen,
@@ -31,6 +35,8 @@ describe('slideEditorConsolidatedToolbarAdapter', () => {
     handlers.addSlide?.();
     handlers.duplicateSlide?.();
     handlers.deleteSlide?.();
+    handlers.toggleGrid?.();
+    handlers.toggleAnimatedBackgrounds?.();
     handlers.present?.();
     handlers.openBrandAssets?.();
     handlers.saveTemplate?.();
@@ -41,6 +47,8 @@ describe('slideEditorConsolidatedToolbarAdapter', () => {
     expect(addSlide).toHaveBeenCalledWith(2);
     expect(duplicateSlide).toHaveBeenCalledWith(2);
     expect(deleteSlide).toHaveBeenCalledWith(2);
+    expect(setIsGridView).toHaveBeenCalledWith(expect.any(Function));
+    expect(setAnimatedBackgrounds).toHaveBeenCalledWith(expect.any(Function));
     expect(setIsPresentationMode).toHaveBeenCalledWith(true);
     expect(setIsAssetsLibraryOpen).toHaveBeenCalledWith(true);
     expect(setSaveTemplateOpen).toHaveBeenCalledWith(true);
