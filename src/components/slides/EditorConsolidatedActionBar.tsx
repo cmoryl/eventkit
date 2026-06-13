@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Box, CheckCircle2, Eye, FolderOpen, MousePointerClick, PackageCheck, PlusCircle, ShieldCheck } from 'lucide-react';
+import { Box, CheckCircle2, Eye, MousePointerClick, PackageCheck, PlusCircle, ShieldCheck } from 'lucide-react';
 import { editorActionGroups, type PresentationEditorActionGroupId } from '@/services/presentationEditorActionAuditService';
+import { getPresentationEditorActionsByGroup, type PresentationEditorActionId } from '@/services/presentationEditorActionContractService';
 import { cn } from '@/lib/utils';
 
 const groupIcons: Record<PresentationEditorActionGroupId, React.ElementType> = {
@@ -15,8 +16,9 @@ const groupIcons: Record<PresentationEditorActionGroupId, React.ElementType> = {
 export const EditorConsolidatedActionBar: React.FC<{
   activeGroup?: PresentationEditorActionGroupId;
   onSelectGroup?: (group: PresentationEditorActionGroupId) => void;
+  onAction?: (action: PresentationEditorActionId, group: PresentationEditorActionGroupId) => void;
   className?: string;
-}> = ({ activeGroup = 'create_insert', onSelectGroup, className }) => {
+}> = ({ activeGroup = 'create_insert', onSelectGroup, onAction, className }) => {
   const [expandedGroup, setExpandedGroup] = useState<PresentationEditorActionGroupId | null>(activeGroup);
 
   return (
@@ -49,17 +51,28 @@ export const EditorConsolidatedActionBar: React.FC<{
       </div>
       {expandedGroup && (
         <div className="mt-2 rounded-xl border border-border bg-background/90 p-2">
-          {editorActionGroups.filter((group) => group.id === expandedGroup).map((group) => (
-            <div key={group.id}>
-              <div className="font-black">{group.label}</div>
-              <p className="mt-1 text-muted-foreground">{group.purpose}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {group.secondaryActions.map((action) => (
-                  <span key={action} className="rounded-full bg-secondary px-2 py-1 text-[10px] font-bold text-muted-foreground">{action}</span>
-                ))}
+          {editorActionGroups.filter((group) => group.id === expandedGroup).map((group) => {
+            const actions = getPresentationEditorActionsByGroup(group.id);
+            return (
+              <div key={group.id}>
+                <div className="font-black">{group.label}</div>
+                <p className="mt-1 text-muted-foreground">{group.purpose}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {actions.map((action) => (
+                    <button
+                      key={action.id}
+                      type="button"
+                      onClick={() => onAction?.(action.id, group.id)}
+                      className="rounded-full bg-secondary px-2 py-1 text-[10px] font-bold text-muted-foreground transition hover:bg-primary hover:text-primary-foreground"
+                      title={action.userFeedback}
+                    >
+                      {action.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
