@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowRight, Compass, Layers3, Sparkles } from 'lucide-react';
+import { Compass, Layers3, Sparkles } from 'lucide-react';
 import { TEMPLATE_GALLERY_COLLECTIONS, getTemplateGalleryCollection } from '@/services/templateGalleryCurationService';
+import { TemplatePosterPreview } from './TemplatePosterPreview';
 
 export const TemplateGalleryCurationPanel: React.FC = () => {
   const [activeId, setActiveId] = useState(TEMPLATE_GALLERY_COLLECTIONS[0]?.id ?? '');
@@ -38,28 +39,22 @@ export const TemplateGalleryCurationPanel: React.FC = () => {
       </div>
 
       {active && (
-        <div className="mt-3 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-2xl bg-muted p-4">
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary"><Sparkles className="h-3.5 w-3.5" /> Active collection</div>
-            <div className="mt-2 text-lg font-black">{active.label}</div>
-            <p className="mt-1 text-sm text-muted-foreground">{active.description}</p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {active.advancedTemplates.map((template) => (
-              <div key={template.id} className="rounded-2xl border border-border bg-background p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-black">{template.name}</div>
-                    <p className="mt-1 text-xs text-muted-foreground">{template.description}</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-primary" />
-                </div>
-                <div className="mt-3 flex gap-1.5">
-                  {[template.palette.bg, template.palette.accent, template.palette.secondary].map((color) => (
-                    <span key={color} className="h-4 w-4 rounded-full border border-border" style={{ background: color }} />
-                  ))}
-                </div>
+        <div className="mt-3 space-y-4">
+          <div className="relative overflow-hidden rounded-3xl border border-border bg-background p-5">
+            <div className="absolute inset-0 opacity-70" style={{ background: 'radial-gradient(circle at 18% 18%, hsl(var(--primary) / 0.16), transparent 32%), radial-gradient(circle at 86% 10%, hsl(var(--accent) / 0.16), transparent 28%)' }} />
+            <div className="relative flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-primary"><Sparkles className="h-3.5 w-3.5" /> Active collection</div>
+                <div className="mt-2 text-2xl font-black">{active.label}</div>
+                <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{active.description}</p>
               </div>
+              <div className="rounded-2xl bg-primary/10 px-4 py-3 text-sm font-black text-primary">{active.templateIds.length} systems</div>
+            </div>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {active.advancedTemplates.map((template) => (
+              <TemplatePosterPreview key={template.id} template={template} dense />
             ))}
             {active.advancedTemplates.length === 0 && (
               <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
