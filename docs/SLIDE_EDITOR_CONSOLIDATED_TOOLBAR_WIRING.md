@@ -11,6 +11,8 @@ Replace the crowded SlideEditor top toolbar with the consolidated six-group edit
 - `src/hooks/useEditorConsolidatedActionDispatcher.ts`
 - `src/services/slideEditorConsolidatedToolbarAdapter.ts`
 - `src/services/presentationEditorActionContractService.ts`
+- `scripts/prepare-slide-editor-consolidated-toolbar.mjs`
+- `scripts/verify-presentation-studio-migration.mjs`
 
 ## Action groups
 
@@ -83,6 +85,32 @@ Replace the current top toolbar with:
   onImportPptxChange={handleImportPptx}
   handlers={consolidatedToolbarHandlers}
 />
+```
+
+## Migration commands
+
+Preview the migration without changing `SlideEditor.tsx`:
+
+```bash
+node scripts/prepare-slide-editor-consolidated-toolbar.mjs --dry-run
+```
+
+Apply the migration:
+
+```bash
+node scripts/prepare-slide-editor-consolidated-toolbar.mjs
+```
+
+Run the full migration validation in preview mode:
+
+```bash
+node scripts/verify-presentation-studio-migration.mjs
+```
+
+Apply the migration and then run validation:
+
+```bash
+node scripts/verify-presentation-studio-migration.mjs --apply-toolbar
 ```
 
 ## Acceptance criteria
