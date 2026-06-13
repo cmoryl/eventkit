@@ -25,6 +25,7 @@ import { PresentationStudioInterfaceShell } from './PresentationStudioInterfaceS
 import { PresentationStudioQuickActions } from './PresentationStudioQuickActions';
 import { PresentationProductionRunbookPanel } from './PresentationProductionRunbookPanel';
 import { PresentationEditorUXPanel } from './PresentationEditorUXPanel';
+import { PresentationEditorActionAuditPanel } from './PresentationEditorActionAuditPanel';
 
 export interface PresentationStudioIntelligenceDashboardProps {
   slides: SlideData[];
@@ -108,6 +109,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
         hasBrand={Boolean(hasBrandProfile && hasExactLogoSource)}
         exportReady={exportReadiness.canProceed}
       />
+      <PresentationEditorActionAuditPanel />
       <PresentationCommandRouterPanel />
       <PresentationUserFlowPanel
         creationMode={creationMode}
