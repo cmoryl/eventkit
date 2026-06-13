@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Compass, Layers3, Sparkles } from 'lucide-react';
 import { TEMPLATE_GALLERY_COLLECTIONS, getTemplateGalleryCollection } from '@/services/templateGalleryCurationService';
+import { TemplateGeneratedImagePosterPreview } from './TemplateGeneratedImagePosterPreview';
 import { TemplatePosterPreview } from './TemplatePosterPreview';
 
 export const TemplateGalleryCurationPanel: React.FC = () => {
@@ -54,7 +55,7 @@ export const TemplateGalleryCurationPanel: React.FC = () => {
 
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {active.advancedTemplates.map((template) => (
-              <TemplatePosterPreview key={template.id} template={template} dense />
+              <TemplateGeneratedImagePosterPreview key={template.id} template={template} dense />
             ))}
             {active.advancedTemplates.length === 0 && (
               <div className="rounded-2xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
