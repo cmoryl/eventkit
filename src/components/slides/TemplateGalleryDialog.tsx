@@ -288,7 +288,7 @@ export function TemplateGalleryDialog({
                     isFavorite={favSet.has(template.id)}
                     onHoverChange={(hovered) => setHoveredId(hovered ? template.id : null)}
                     onToggleFavorite={() => toggleFavorite(template.id)}
-                    onSelect={() => handleSelect(template)}
+                    onSelect={() => setPreviewId(template.id)}
                     brandColors={brandColors}
                     brandFonts={brandFonts}
                   />
