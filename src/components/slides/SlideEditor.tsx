@@ -1759,6 +1759,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                       });
                       toast.success(`Added "${file.name}" to slide`);
                     }}
+                    onUseAsAccent={(file) => {
+                      setAccentImageForSlide(file.url, activeIndex, 'background');
+                      toast.success(`Set "${file.name}" as accent image`);
+                    }}
                   />
                 )}
 
