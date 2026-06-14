@@ -50,6 +50,8 @@ import { useSlidesHistory } from '@/hooks/useSlidesHistory';
 import { Undo2, Redo2 } from 'lucide-react';
 import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
 import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
+import { FindReplaceDialog } from './FindReplaceDialog';
+import { Search as SearchIcon } from 'lucide-react';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -132,6 +134,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, [brandLockKey]);
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
 
   // Undo / redo history for the deck.
   const history = useSlidesHistory(slides, (next) => setSlides(next), { enabled: isOpen });
@@ -147,8 +150,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable
       );
-      if (inField) return;
       const mod = e.metaKey || e.ctrlKey;
+
+      // Find & Replace — works even while typing in an input.
+      if (mod && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setFindOpen((v) => !v);
+        return;
+      }
+
+      if (inField) return;
 
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
