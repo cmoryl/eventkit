@@ -1018,6 +1018,28 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 </PopoverContent>
               </Popover>
+              <div className="flex items-center gap-0.5 bg-muted/60 rounded-full px-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 rounded-full"
+                  disabled={!history.canUndo}
+                  onClick={history.undo}
+                  title="Undo (⌘Z)"
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 rounded-full"
+                  disabled={!history.canRedo}
+                  onClick={history.redo}
+                  title="Redo (⌘⇧Z)"
+                >
+                  <Redo2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <Button
                 size="sm"
                 variant="ghost"
@@ -1027,6 +1049,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
               >
                 <span className="text-sm font-bold">?</span>
               </Button>
+
               <BrandLockBar
                 brandName={brand?.name}
                 brandColors={brandColors}
