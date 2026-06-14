@@ -56,10 +56,13 @@ const SOURCE_FILTERS: Array<{ value: AssetSourceFilter; label: string }> = [
   { value: 'brandHub', label: 'Hub' },
 ];
 
+const normalizeCategory = (category: string) => CATEGORY_LABELS[category] || category.replace(/[-_]/g, ' ');
+
 export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ slide, brandImagery, brandFiles = [], onApplyImage, onOpenAssetLibrary }) => {
   const [query, setQuery] = useState('');
   const [urlInput, setUrlInput] = useState('');
   const [sourceFilter, setSourceFilter] = useState<AssetSourceFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
 
   const assets = useMemo<AssetPreview[]>(() => {
     const fromImagery = Object.entries(brandImagery || {}).flatMap(([category, urls]) =>
@@ -103,13 +106,22 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
     brandHub: assets.filter((asset) => asset.sourceFilter === 'brandHub').length,
   }), [assets]);
 
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const asset of assets) counts.set(asset.category, (counts.get(asset.category) || 0) + 1);
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+  }, [assets]);
+
   const filteredAssets = useMemo(() => {
     const q = query.trim().toLowerCase();
     return assets
       .filter((asset) => sourceFilter === 'all' || asset.sourceFilter === sourceFilter)
+      .filter((asset) => categoryFilter === 'all' || asset.category === categoryFilter)
       .filter((asset) => !q || [asset.label, asset.source, asset.category, asset.url].join(' ').toLowerCase().includes(q))
       .slice(0, q ? 24 : 12);
-  }, [assets, query, sourceFilter]);
+  }, [assets, categoryFilter, query, sourceFilter]);
 
   const applyUrl = () => {
     const trimmed = urlInput.trim();
@@ -155,6 +167,28 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
         ))}
       </div>
 
+      {categoryCounts.length > 0 && (
+        <div className="flex max-h-[62px] flex-wrap gap-1.5 overflow-hidden rounded-lg border border-border bg-background p-1.5">
+          <button
+            type="button"
+            onClick={() => setCategoryFilter('all')}
+            className={cn('rounded-md px-2 py-1 text-[10px] font-semibold transition', categoryFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
+          >
+            Any category
+          </button>
+          {categoryCounts.map(([category, count]) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setCategoryFilter(category)}
+              className={cn('rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition', categoryFilter === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
+            >
+              {normalizeCategory(category)} · {count}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-center justify-between rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] text-muted-foreground">
         <span>{filteredAssets.length} preview{filteredAssets.length === 1 ? '' : 's'} shown</span>
         <span>Click a preview to apply</span>
@@ -176,7 +210,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
               <div className="truncate text-[11px] font-semibold">{asset.label}</div>
               <div className="mt-1 flex items-center justify-between gap-1 text-[10px] text-muted-foreground">
                 <span className="truncate">{asset.source}</span>
-                <span className="rounded-full bg-muted px-1.5 py-0.5 uppercase">{asset.category}</span>
+                <span className="rounded-full bg-muted px-1.5 py-0.5 uppercase">{normalizeCategory(asset.category)}</span>
               </div>
             </div>
           </button>
