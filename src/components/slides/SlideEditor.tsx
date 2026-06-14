@@ -1410,6 +1410,23 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 )}
 
+                {/* BrandHub asset rail — search images for active brand and add to slide */}
+                {brand?.brandhub_share_token && (
+                  <SlideAssetSearchPanel
+                    images={brandFilesByCategory.image}
+                    brandName={brand?.name}
+                    onOpenLibrary={() => setIsAssetsLibraryOpen(true)}
+                    onUseImage={(file) => {
+                      const currentImages = activeSlide.images || [];
+                      updateSlide(activeIndex, {
+                        images: [...currentImages, file.url],
+                        imageUrl: activeSlide.imageUrl || file.url,
+                      });
+                      toast.success(`Added "${file.name}" to slide`);
+                    }}
+                  />
+                )}
+
                 {/* Slide Images */}
                 {(activeSlide.images && activeSlide.images.length > 0) || activeSlide.imageUrl ? (
                   <div className="space-y-2">
