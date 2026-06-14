@@ -32,6 +32,10 @@ describe('SlideAssetSearchPanel static contract', () => {
     expect(source).toContain('aria-pressed={visibleCategoryFilter === category}');
   });
 
+  it('labels asset preview apply buttons for assistive technology', () => {
+    expect(source).toContain('aria-label={`Apply ${asset.label} from ${asset.source}`}');
+  });
+
   it('keeps brand, hub, and current slide assets in the same searchable asset model', () => {
     expect(source).toContain('Brand imagery');
     expect(source).toContain('BrandHub');
