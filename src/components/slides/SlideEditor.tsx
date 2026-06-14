@@ -500,11 +500,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       return;
     }
 
-    // BrandHub image URL → apply to this slide (or new slide with Shift).
+    // BrandHub image URL → apply to this slide (Shift = new slide, Alt = accent image).
     if (hasAssetUrl) {
       const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
       if (!url) return;
-      if (e.shiftKey) {
+      if (e.altKey) {
+        setAccentImageForSlide(url, index, 'background');
+        setActiveIndex(index);
+        toast.success('Set as accent image');
+      } else if (e.shiftKey) {
         const newSlide: SlideData = {
           id: uuidv4(),
           layout: 'full-image',
@@ -538,7 +542,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setActiveIndex(index);
       toast.success('Image added to slide');
     }
-  }, [loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
+  }, [loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide, setAccentImageForSlide]);
 
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
     setSlides(newSlides);
