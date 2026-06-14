@@ -24,6 +24,14 @@ const GOOGLE_MODELS = [
   { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
 ];
 
+const ANTHROPIC_MODELS = [
+  { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (Recommended)' },
+  { value: 'claude-opus-4-5', label: 'Claude Opus 4.5 (Max quality)' },
+  { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (Fastest)' },
+];
+
+type SlideProvider = 'lovable' | 'google' | 'anthropic';
+
 interface BrandHubImagery {
   logos?: string[];
   brandIcons?: string[];
@@ -81,7 +89,7 @@ export function AISlideGenerator({
   const [topic, setTopic] = useState('');
   const [slideCount, setSlideCount] = useState('6');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [provider, setProvider] = useState<'lovable' | 'google'>('lovable');
+  const [provider, setProvider] = useState<SlideProvider>('lovable');
   const [model, setModel] = useState('google/gemini-3-flash-preview');
   const [googleApiKey, setGoogleApiKey] = useState('');
   const [brandHubOnly, setBrandHubOnly] = useState(false);
@@ -154,12 +162,19 @@ export function AISlideGenerator({
   const selectAllCategories = () => setSelectedCategories(new Set(availableCategories));
   const clearAllCategories = () => setSelectedCategories(new Set());
 
-  const models = provider === 'lovable' ? LOVABLE_MODELS : GOOGLE_MODELS;
+  const models =
+    provider === 'lovable' ? LOVABLE_MODELS
+    : provider === 'google' ? GOOGLE_MODELS
+    : ANTHROPIC_MODELS;
 
   const handleProviderChange = (val: string) => {
-    const p = val as 'lovable' | 'google';
+    const p = val as SlideProvider;
     setProvider(p);
-    setModel(p === 'lovable' ? 'google/gemini-3-flash-preview' : 'google/gemini-2.5-flash');
+    setModel(
+      p === 'lovable' ? 'google/gemini-3-flash-preview'
+      : p === 'google' ? 'google/gemini-2.5-flash'
+      : 'claude-sonnet-4-5'
+    );
   };
 
   const handleGenerate = async () => {
@@ -187,6 +202,34 @@ export function AISlideGenerator({
 
     setIsGenerating(true);
     try {
+      // ---- Anthropic Claude path ---------------------------------------
+      // Claude doesn't run through generate-slides; it plans a deck outline
+      // via generate-deck-claude, then we convert that outline → SlideData.
+      if (provider === 'anthropic') {
+        const sourceText = briefMode === 'content' && hasContent ? content.trim() : undefined;
+        const { data: claudeData, error: claudeErr } = await supabase.functions.invoke('generate-deck-claude', {
+          body: {
+            topic: hasTopic ? topic.trim() : (sourceText?.slice(0, 200) ?? 'Untitled deck'),
+            slideCount: parseInt(slideCount),
+            brandName: brandName || undefined,
+            sourceSummary: sourceText,
+            model,
+          },
+        });
+        if (claudeErr) throw new Error(claudeErr.message || 'Claude failed to plan deck');
+        if (!claudeData?.outline?.slides) throw new Error('Claude returned an empty outline');
+
+        const { outlineToThemedSlides } = await import('@/components/slides/outlineToSlides');
+        const slides = outlineToThemedSlides(claudeData.outline);
+        onSlidesGenerated(slides);
+        toast.success(`Generated ${slides.length} slides with Claude ✨`);
+        setTopic('');
+        setContent('');
+        onClose();
+        return;
+      }
+
+      // ---- Lovable / Google (existing path) ----------------------------
       const { data, error } = await supabase.functions.invoke('generate-slides', {
         body: {
           topic: hasTopic ? topic.trim() : undefined,
@@ -291,7 +334,8 @@ export function AISlideGenerator({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="lovable">Lovable AI (built-in)</SelectItem>
+                <SelectItem value="lovable">Lovable AI (Gemini, built-in)</SelectItem>
+                <SelectItem value="anthropic">Anthropic Claude ✨</SelectItem>
                 <SelectItem value="google">Google Gemini (own key)</SelectItem>
               </SelectContent>
             </Select>
