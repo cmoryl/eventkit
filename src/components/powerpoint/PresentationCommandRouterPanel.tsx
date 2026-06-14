@@ -42,15 +42,15 @@ export const PresentationCommandRouterPanel: React.FC<{ className?: string }> = 
       <div className="mt-4 grid gap-3 md:grid-cols-3">
         <div className="rounded-2xl border border-border bg-background p-4 text-xs">
           <div className="font-black">Intent</div>
-          <div className="mt-2 text-sm font-black text-primary">{route.intent.replaceAll('_', ' ')}</div>
+          <div className="mt-2 text-sm font-black text-primary">{String(route.intent).replace(/_/g, ' ')}</div>
         </div>
         <div className="rounded-2xl border border-border bg-background p-4 text-xs">
           <div className="font-black">Flow Step</div>
-          <div className="mt-2 text-sm font-black text-primary">{route.flowStep.replaceAll('_', ' ')}</div>
+          <div className="mt-2 text-sm font-black text-primary">{String(route.flowStep).replace(/_/g, ' ')}</div>
         </div>
         <div className="rounded-2xl border border-border bg-background p-4 text-xs">
           <div className="font-black">Function</div>
-          <div className="mt-2 text-sm font-black text-primary">{route.functionCategory.replaceAll('_', ' ')}</div>
+          <div className="mt-2 text-sm font-black text-primary">{String(route.functionCategory).replace(/_/g, ' ')}</div>
         </div>
       </div>
 
