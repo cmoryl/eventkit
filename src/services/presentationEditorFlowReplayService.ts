@@ -42,10 +42,19 @@ export const applyPresentationEditorReplayAction = (state: PresentationEditorRep
   if (action.startsWith('edit_')) next.hasEdits = true;
   if (action === 'brand_assets' || action === 'brand_apply_theme' || action === 'brand_repair') next.hasBrand = true;
   if (action === 'brand_logo_check') next.logoChecked = true;
-  if (action === 'review_run_qa') next.qaPassed = true;
+  if (action === 'review_run_qa') {
+    if (!next.hasDeck) next.warnings.push('QA blocked: no deck exists.');
+    next.qaPassed = next.hasDeck;
+  }
   if (action === 'review_fix_issues') next.hasEdits = true;
-  if (action === 'review_export_check') next.exportChecked = next.qaPassed;
-  if (action === 'view_present') next.presentationPreviewed = true;
+  if (action === 'review_export_check') {
+    if (!next.qaPassed) next.warnings.push('Export preflight blocked: QA has not passed.');
+    next.exportChecked = next.qaPassed;
+  }
+  if (action === 'view_present') {
+    if (!next.hasDeck) next.warnings.push('Present blocked: no deck exists.');
+    next.presentationPreviewed = next.hasDeck;
+  }
   if (action.startsWith('reuse_')) next.reusableSaved = true;
 
   if (action === 'review_export_pptx') {
