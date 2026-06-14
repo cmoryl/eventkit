@@ -456,7 +456,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Added ${imageFiles.length} images as slides`);
       }
     }
-  }, [activeIndex, loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
+  }, [activeIndex, loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide, setAccentImageForSlide]);
 
   const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
     e.preventDefault();
