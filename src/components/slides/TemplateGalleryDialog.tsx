@@ -16,6 +16,7 @@ import {
   type InfographicTemplate,
   type InfographicCategory,
 } from './infographicTemplates';
+import { TemplatePreviewDialog } from './TemplatePreviewDialog';
 
 interface TemplateGalleryDialogProps {
   isOpen: boolean;
