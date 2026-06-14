@@ -19,6 +19,8 @@ interface Row {
 const KEYBOARD: Row[] = [
   { keys: ["?"], label: "Show this cheatsheet" },
   { keys: ["Esc"], label: "Close overlays" },
+  { keys: ["⌘", "Z"], label: "Undo" },
+  { keys: ["⌘", "⇧", "Z"], label: "Redo" },
   { keys: ["⌘", "L"], label: "Toggle Brand Lock" },
   { keys: ["⌘", "D"], label: "Duplicate active slide" },
   { keys: ["Shift", "Del"], label: "Delete active slide" },
