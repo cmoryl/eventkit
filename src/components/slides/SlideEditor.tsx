@@ -38,6 +38,7 @@ import { SlideAssetSearchPanel, SLIDE_ASSET_IMAGE_MIME } from './SlideAssetSearc
 import { SlideSmartLayoutsPanel, SLIDE_SECTION_MIME } from './SlideSmartLayoutsPanel';
 import { AccentImagePanel } from './AccentImagePanel';
 import { AccentImageLayer } from './AccentImageLayer';
+import { ShortcutsOverlay } from './ShortcutsOverlay';
 import { BrandLockBar, applyBrandLockToSlide } from './BrandLockBar';
 import { GeneratedSlidesTray } from './GeneratedSlidesTray';
 import { applySlideTemplate, SLIDE_BLOCK_TEMPLATES } from './slideTemplateRegistry';
