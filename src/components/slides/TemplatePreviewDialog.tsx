@@ -184,6 +184,17 @@ export function TemplatePreviewDialog({
               </div>
             </div>
 
+            {/* Sample deck — shows the active theme applied across common
+                slide layouts so users see how the template performs beyond the
+                hero card. */}
+            <SampleDeck
+              template={themedTpl}
+              activeTheme={activeTheme}
+              brandColors={brandColors}
+              brandFonts={brandFonts}
+              animated={animated}
+            />
+
             {/* Alternate styles */}
             <div className="rounded-xl border bg-card p-4">
               <div className="flex items-center justify-between mb-3">
