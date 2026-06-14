@@ -14,9 +14,11 @@ const GROUPS: Group[] = [
     title: "Selection",
     rows: [
       { keys: ["Click"], label: "Select text box / section" },
+      { keys: ["Shift", "+", "Click"], label: "Add / remove from selection" },
+      { keys: ["Drag on canvas"], label: "Marquee multi-select" },
       { keys: ["Double-click"], label: "Edit text inline" },
       { keys: ["Esc"], label: "Deselect" },
-      { keys: ["Delete", "Backspace"], label: "Remove selected text box" },
+      { keys: ["Delete", "Backspace"], label: "Remove selected text box(es)" },
     ],
   },
   {
