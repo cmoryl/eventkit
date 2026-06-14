@@ -388,9 +388,13 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                     <ClaudeBrandCopyDialog
                       context={{
                         brandName: selectedBrand.name,
-                        brandVoice: selectedBrand.styles?.brand_voice ?? selectedBrand.styles?.tone,
-                        tone: selectedBrand.styles?.tone,
+                        brandVoice: selectedBrand.styles?.brand_voice,
                         palette: [
+                          selectedBrand.styles?.primary_color,
+                          selectedBrand.styles?.secondary_color,
+                          selectedBrand.styles?.accent_color,
+                        ].filter(Boolean) as string[],
+                      }}
                           selectedBrand.styles?.primary_color,
                           selectedBrand.styles?.secondary_color,
                           selectedBrand.styles?.accent_color,
