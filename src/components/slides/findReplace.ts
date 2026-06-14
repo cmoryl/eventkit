@@ -73,23 +73,6 @@ function* slideStringFields(
   }
 
   if (slide.textBoxes?.length) {
-    slide.textBoxes.forEach((tb, idx) => {
-      if (!tb.text) return;
-      const item = {
-        field: `textBox#${idx + 1}`,
-        value: tb.text,
-        set: (v: string) => ({
-          ...slide,
-          textBoxes: slide.textBoxes!.map((t, i) => (i === idx ? { ...t, text: v } : t)),
-        }),
-      };
-      // eslint-disable-next-line no-restricted-syntax
-      Object.defineProperty(item, '__sentinel', { value: true, enumerable: false });
-      // Yield through closure
-      // @ts-expect-error generator yield is fine
-      // eslint-disable-next-line no-restricted-syntax
-    });
-    // Yield via second pass (generator can't yield from forEach)
     for (let idx = 0; idx < slide.textBoxes.length; idx += 1) {
       const tb = slide.textBoxes[idx];
       if (!tb.text) continue;
