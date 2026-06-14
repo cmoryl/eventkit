@@ -1535,6 +1535,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 )}
 
+                {/* Pre-built section library — drag onto canvas/thumbnails or click to insert */}
+                <SlideSectionLibraryPanel
+                  onInsertSection={(payload) => insertSectionAfter(activeIndex, payload)}
+                />
+
                 {/* BrandHub asset rail — search images for active brand and add to slide */}
                 {brand?.brandhub_share_token && (
                   <SlideAssetSearchPanel
