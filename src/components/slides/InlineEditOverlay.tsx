@@ -1079,6 +1079,18 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         setSelectedTextBoxId(id);
         return;
       }
+      // Z-order: Cmd/Ctrl+] = bring forward, Cmd/Ctrl+[ = send back.
+      if ((e.metaKey || e.ctrlKey) && (e.key === ']' || e.key === '[')) {
+        e.preventDefault();
+        const list = [...(slideRef.current.textBoxes || [])];
+        const idx = list.findIndex((t) => t.id === selectedTextBoxId);
+        if (idx < 0) return;
+        const target = e.key === ']' ? idx + 1 : idx - 1;
+        if (target < 0 || target >= list.length) return;
+        [list[idx], list[target]] = [list[target], list[idx]];
+        onUpdate({ textBoxes: list } as Partial<SlideData>);
+        return;
+      }
       if (e.key.startsWith('Arrow')) {
         e.preventDefault();
         const step = e.shiftKey ? 5 : 0.5;
