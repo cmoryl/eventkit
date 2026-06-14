@@ -971,6 +971,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 </PopoverContent>
               </Popover>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
+                onClick={() => setShortcutsOpen(true)}
+                title="Keyboard shortcuts (?)"
+              >
+                <span className="text-sm font-bold">?</span>
+              </Button>
               <BrandLockBar
                 brandName={brand?.name}
                 brandColors={brandColors}
