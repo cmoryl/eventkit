@@ -839,6 +839,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         runDeckBulkActionRef.current(id);
         return true;
       },
+      findReplace: (params) => {
+        const replaced = runFindReplaceRef.current(
+          params.find,
+          params.replace ?? '',
+          { caseSensitive: params.caseSensitive, wholeWord: params.wholeWord },
+        );
+        return replaced;
+      },
     });
     return () => slideEditorBus.disconnect();
   }, [applyImageUrlToSlide, setAccentImageForSlide]);
@@ -850,6 +858,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const brandColorsRef = useRef(brandColors);
   const historyRef = useRef(history);
   const runDeckBulkActionRef = useRef(runDeckBulkAction);
+  const runFindReplaceRef = useRef(runFindReplace);
   useEffect(() => { brandLockedRef.current = brandLocked; }, [brandLocked]);
   useEffect(() => { draftSlidesRef.current = generatedTraySlides; }, [generatedTraySlides]);
   useEffect(() => { brandColorsRef.current = brandColors; }, [brandColors]);
