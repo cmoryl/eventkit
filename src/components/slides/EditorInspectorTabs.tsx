@@ -186,6 +186,20 @@ export const EditorInspectorTabs: React.FC<{
             <CheckCircle2 className="h-4 w-4 text-primary" />
           </div>
         </div>
+        <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-primary">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-black uppercase tracking-[0.16em]">Selected layer</div>
+              <div className="mt-1 font-black">Slide canvas</div>
+            </div>
+            <Layers3 className="h-4 w-4" />
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] font-black">
+            <div className="rounded-lg bg-background/80 p-2 text-center text-foreground">Move</div>
+            <div className="rounded-lg bg-background/80 p-2 text-center text-foreground">Resize</div>
+            <div className="rounded-lg bg-background/80 p-2 text-center text-foreground">Lock</div>
+          </div>
+        </div>
         {renderPanel()}
         <div className="rounded-xl border border-border bg-background p-3 text-muted-foreground">
           <div className="mb-1 flex items-center gap-2 font-black text-foreground"><SlidersHorizontal className="h-3.5 w-3.5 text-primary" /> Control rule</div>
