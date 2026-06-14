@@ -384,6 +384,26 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                 <CollapsibleContent className="animate-accordion-down">
                   <ScrollArea className="max-h-[50vh]">
                   <div className="px-4 pb-4 space-y-3">
+                    {/* Claude copywriting trigger */}
+                    <ClaudeBrandCopyDialog
+                      context={{
+                        brandName: selectedBrand.name,
+                        brandVoice: selectedBrand.styles?.brand_voice ?? selectedBrand.styles?.tone,
+                        tone: selectedBrand.styles?.tone,
+                        palette: [
+                          selectedBrand.styles?.primary_color,
+                          selectedBrand.styles?.secondary_color,
+                          selectedBrand.styles?.accent_color,
+                        ].filter(Boolean) as string[],
+                      }}
+                      trigger={
+                        <Button variant="outline" size="sm" className="w-full rounded-xl gap-1.5 mb-2">
+                          <Sparkles className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-xs">Write copy with Claude</span>
+                        </Button>
+                      }
+                    />
+
                     {/* Tagline */}
                     {selectedBrand.styles?.tagline && (
                       <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/10">
