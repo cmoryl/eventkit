@@ -319,7 +319,7 @@ export const setBrandStyleSystemIds = (brandProfileId: string, ids: BrandStyleSy
 
 const brandText = (profile?: BrandProfile, assets: BrandGuideAsset[] = []) => [
   profile?.name,
-  profile?.tagline,
+  (profile as any)?.tagline,
   profile?.imageryRules?.styleSummary,
   ...(profile?.imageryRules?.requiredTraits || []),
   ...(profile?.layoutRules?.requiredTraits || []),
