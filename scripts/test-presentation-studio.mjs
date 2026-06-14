@@ -7,7 +7,7 @@ const commands = [
   ['node', ['scripts/prepare-slide-editor-consolidated-toolbar.mjs', applyToolbar ? '' : '--dry-run'].filter(Boolean)],
   ['node', ['scripts/wire-slide-asset-search-panel.mjs', applyAssetPanel ? '--apply' : ''].filter(Boolean)],
   ['node', ['scripts/verify-presentation-asset-system.mjs']],
-  ['npx', ['vitest', 'run', 'src/services/presentationAssetIntelligenceOrchestrator.test.ts', 'src/services/presentationAssetScalingService.test.ts', 'src/services/presentationAssetStaticAudit.test.ts', 'src/services/presentationEditorUserFlowCombinationService.test.ts', 'src/services/presentationEditorFlowReplayService.test.ts', 'src/services/presentationEditorE2ECoverageService.test.ts']],
+  ['npx', ['vitest', 'run', 'src/services/presentationAssetIntelligenceOrchestrator.test.ts', 'src/services/presentationAssetScalingService.test.ts', 'src/services/presentationAssetStaticAudit.test.ts', 'src/services/presentationEditorUserFlowCombinationService.test.ts', 'src/services/presentationEditorFlowReplayService.test.ts', 'src/services/presentationEditorE2ECoverageService.test.ts', 'src/components/slides/SlideAssetSearchPanel.static.test.ts']],
 ];
 
 for (const [cmd, args] of commands) {
