@@ -537,3 +537,26 @@ function TemplateCard({
     </div>
   );
 }
+
+/** Lightweight shimmer placeholder shown until the card scrolls into view.
+ *  Mimics the rough composition of a slide (title bar + body block) so the
+ *  reveal feels less jarring than a flat gray box. */
+function ThumbnailSkeleton() {
+  return (
+    <div
+      className="absolute inset-0 overflow-hidden"
+      style={{
+        background:
+          'linear-gradient(110deg, hsl(var(--muted)) 30%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 70%)',
+        backgroundSize: '200% 100%',
+        animation: 'tplShimmer 1.4s linear infinite',
+      }}
+      aria-hidden="true"
+    >
+      <style>{`@keyframes tplShimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }`}</style>
+      <div className="absolute left-[8%] right-[8%] top-[18%] h-[10%] rounded-sm bg-foreground/10" />
+      <div className="absolute left-[8%] right-[40%] top-[34%] h-[6%] rounded-sm bg-foreground/8" />
+      <div className="absolute left-[8%] right-[8%] top-[52%] h-[28%] rounded-md bg-foreground/5" />
+    </div>
+  );
+}
