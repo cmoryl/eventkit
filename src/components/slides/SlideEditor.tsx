@@ -822,10 +822,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const draftSlidesRef = useRef<SlideData[]>(generatedTraySlides);
   const brandColorsRef = useRef(brandColors);
   const historyRef = useRef(history);
+  const runDeckBulkActionRef = useRef(runDeckBulkAction);
   useEffect(() => { brandLockedRef.current = brandLocked; }, [brandLocked]);
   useEffect(() => { draftSlidesRef.current = generatedTraySlides; }, [generatedTraySlides]);
   useEffect(() => { brandColorsRef.current = brandColors; }, [brandColors]);
   useEffect(() => { historyRef.current = history; }, [history]);
+  useEffect(() => { runDeckBulkActionRef.current = runDeckBulkAction; }, [runDeckBulkAction]);
 
 
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
