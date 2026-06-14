@@ -1050,16 +1050,45 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     };
   };
 
-  // Delete key removes the selected (non-editing) text box.
+  // Keyboard shortcuts for the selected text box: Delete/Backspace removes,
+  // arrows nudge (Shift = 5x), Cmd/Ctrl+D duplicates, Escape deselects.
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
       if (!selectedTextBoxId || editingTextBoxId) return;
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
       const ae = document.activeElement as HTMLElement | null;
       if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
-      e.preventDefault();
-      removeTextBox(selectedTextBoxId);
+      const tb = (slideRef.current.textBoxes || []).find((t) => t.id === selectedTextBoxId);
+      if (!tb) return;
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        removeTextBox(selectedTextBoxId);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedTextBoxId(null);
+        return;
+      }
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
+        e.preventDefault();
+        const id = `tb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+        const copy = { ...tb, id, xPct: Math.min(98, tb.xPct + 3), yPct: Math.min(98, tb.yPct + 3) };
+        onUpdate({ textBoxes: [...(slideRef.current.textBoxes || []), copy] } as Partial<SlideData>);
+        setSelectedTextBoxId(id);
+        return;
+      }
+      if (e.key.startsWith('Arrow')) {
+        e.preventDefault();
+        const step = e.shiftKey ? 5 : 0.5;
+        let { xPct, yPct } = tb;
+        if (e.key === 'ArrowLeft') xPct = Math.max(0, xPct - step);
+        if (e.key === 'ArrowRight') xPct = Math.min(100, xPct + step);
+        if (e.key === 'ArrowUp') yPct = Math.max(0, yPct - step);
+        if (e.key === 'ArrowDown') yPct = Math.min(100, yPct + step);
+        updateTextBox(selectedTextBoxId, { xPct, yPct });
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
