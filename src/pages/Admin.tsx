@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, Shield, FileText, Brain, 
   Settings, BarChart3, Palette, Type, Cog, Database,
-  LayoutDashboard, Users, ShieldCheck,
+  LayoutDashboard, Users, ShieldCheck, Sparkles,
 } from 'lucide-react';
+import { AiProviderSettings } from '@/components/settings/AiProviderSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -259,6 +260,10 @@ const Admin: React.FC = () => {
                   <Settings className="w-4 h-4" />
                   <span className="hidden sm:inline">Engines</span>
                 </TabsTrigger>
+                <TabsTrigger value="ai" className="gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">AI</span>
+                </TabsTrigger>
                 <TabsTrigger value="settings" className="gap-1.5">
                   <Cog className="w-4 h-4" />
                   <span className="hidden sm:inline">Site</span>
@@ -320,6 +325,10 @@ const Admin: React.FC = () => {
 
               <TabsContent value="engines" className="mt-0">
                 <AdminRenderEngines />
+              </TabsContent>
+
+              <TabsContent value="ai" className="mt-0">
+                <AiProviderSettings />
               </TabsContent>
 
               <TabsContent value="settings" className="mt-0">
