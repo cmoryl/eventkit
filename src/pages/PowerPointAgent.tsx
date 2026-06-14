@@ -1385,7 +1385,7 @@ const PowerPointAgent: React.FC = () => {
                 )}
                 <span className="inline-flex items-center gap-1 rounded-full border bg-background/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                   <LayoutTemplate className="h-3 w-3 text-primary" />
-                  {editorInitialSlides.length} slide{editorInitialSlides.length === 1 ? "" : "s"}
+                  {editorInitialSlides?.length ?? 0} slide{(editorInitialSlides?.length ?? 0) === 1 ? "" : "s"}
                 </span>
               </div>
             </div>
