@@ -51,6 +51,7 @@ import { Undo2, Redo2 } from 'lucide-react';
 import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
 import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
 import { FindReplaceDialog } from './FindReplaceDialog';
+import { replaceInDeck } from './findReplace';
 import { Search as SearchIcon } from 'lucide-react';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
@@ -690,8 +691,6 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       if (!find) return 0;
       let replacedCount = 0;
       setSlides((prev) => {
-        // Lazy import via require would be wrong here — use the static import.
-        const { replaceInDeck } = require('./findReplace') as typeof import('./findReplace');
         const result = replaceInDeck(prev, find, replace, opts ?? {});
         replacedCount = result.replacedCount;
         return result.slides;
