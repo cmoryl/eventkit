@@ -5,6 +5,8 @@ import { Mic, MicOff, Phone, PhoneOff, Loader2, MessageSquare, ChevronDown, Chev
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { slideEditorBus } from "@/lib/slideEditorBus";
+import { SLIDE_BLOCK_TEMPLATES } from "@/components/slides/slideTemplateRegistry";
 
 export interface VoiceAgentContext {
   brandName?: string;
@@ -139,7 +141,48 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
           themeOverride: c.themeOverride ?? "",
           selectedSourcePages: c.selectedPages ?? 0,
           brandStylingActive: !!c.useBrand,
+          liveEditorConnected: slideEditorBus.isConnected(),
+          activeSlideIndex: slideEditorBus.isConnected() ? slideEditorBus.call("getActiveIndex") : null,
+          slideCountInEditor: slideEditorBus.isConnected() ? slideEditorBus.call("getSlideCount") : null,
         });
+      },
+      // ── Live editor commands (only effective when SlideEditor is mounted) ──
+      listSmartLayouts: () => {
+        // Returns the template catalog so the agent can pick one by id.
+        return JSON.stringify(
+          SLIDE_BLOCK_TEMPLATES.map((t) => ({
+            id: t.id,
+            category: t.category,
+            label: t.label,
+            description: t.description,
+            slots: t.slots.map((s) => ({ name: s.name, type: s.type, required: !!s.required })),
+          })),
+        );
+      },
+      insertSlide: (params: { templateId: string; slotValues?: Record<string, unknown> }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open. Switch to the editor tab first.";
+        const result = slideEditorBus.call("insertTemplate", params.templateId, params.slotValues ?? {});
+        return result ? `Inserted ${params.templateId} slide` : `Unknown template "${params.templateId}"`;
+      },
+      setAccentImage: (params: { position?: "none" | "top" | "left" | "right" | "background"; overlay?: "none" | "frosted" | "faded" | "clear"; intensity?: number; url?: string }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("setAccentImage", params);
+        return `Accent image updated (${params.position ?? "current"})`;
+      },
+      goToSlide: (params: { index: number }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("goToSlide", Math.max(0, Math.floor(params.index)));
+        return ok ? `Showing slide ${params.index + 1}` : `No slide at index ${params.index}`;
+      },
+      duplicateActiveSlide: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("duplicateActive");
+        return "Duplicated active slide";
+      },
+      deleteActiveSlide: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("deleteActive");
+        return ok ? "Deleted active slide" : "Cannot delete the last remaining slide";
       },
     },
   });
@@ -170,11 +213,20 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
 
   const buildDynamicPrompt = useCallback(() => {
     const c = contextRef.current;
+    const editorOpen = slideEditorBus.isConnected();
     const lines = [
       "You are EventKIT's PowerPoint deck design assistant. The user is on the deck-builder page right now.",
       "Be concise and conversational. Ask one question at a time. Confirm before triggering generation.",
       "When the user gives you details (topic, audience, slide count, tone, theme), call the matching client tool to fill the form.",
       "Call generateDeck only when the user explicitly says to generate, build, or create the deck.",
+      "",
+      editorOpen
+        ? "The LIVE EDITOR is currently open. You can directly modify the active deck without regenerating:"
+        : "The live editor is not open. You can still help plan the deck and trigger generation.",
+      editorOpen ? "- Use listSmartLayouts to see available slide templates and their slot names." : "",
+      editorOpen ? "- Use insertSlide({ templateId, slotValues }) to add a new slide (e.g. 'kpi-trio' with three stats)." : "",
+      editorOpen ? "- Use setAccentImage({ position, overlay, intensity, url }) to apply a Gamma-style accent image." : "",
+      editorOpen ? "- Use goToSlide, duplicateActiveSlide, deleteActiveSlide to navigate and manage slides." : "",
       "",
       "Current deck context:",
       `- Active brand: ${c.brandName ?? "none"}${c.isFromBrandHub ? " (BrandHub)" : ""}`,
@@ -185,7 +237,7 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       `- Tone: ${c.tone || "(empty)"}`,
       `- Theme override: ${c.themeOverride || "(none)"}`,
       `- PDF source pages selected: ${c.selectedPages ?? 0}`,
-    ];
+    ].filter(Boolean);
     return lines.join("\n");
   }, []);
 

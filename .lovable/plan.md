@@ -1,104 +1,79 @@
-## Goal
+## Beat-Gamma sprint for /agent/powerpoint
 
-Add a live **Conversational AI voice agent** to `/agent/powerpoint` so you can talk to it like a phone call — speak naturally, it replies in a real voice, you can interrupt mid-sentence, and it can optionally act on your deck (fill the topic, set tone, toggle brand, trigger generation).
+Goal: leapfrog Gamma in six concrete moves, all shipping in one sprint. We build on the SlideEditor + voice agent + BrandHub stack we already have.
 
-## What you'll see
+### What ships
 
-A new floating **"Talk to agent"** panel on the PowerPoint page (bottom-right, glassmorphic, dark mode). Click the mic orb → grants microphone → connects to ElevenLabs → starts a live conversation. While connected:
+**1. Smart Layouts library** (extends the new section panel)
+- Add a tabbed `SlideSmartLayoutsPanel`: Basic / Structure / Data / Media.
+- New structural layouts beyond the current 12: `timeline-horizontal`, `timeline-vertical`, `stat-grid`, `gallery-3up`, `gallery-grid`, `process-arrow`, `comparison-vs`, `columns-3`, `kpi-trio`, `pull-callout`, `quote-card`.
+- Each tile renders a real mini-preview using a tiny `<SlideRenderer>` scale, draggable to canvas / thumbnail rail (drop wiring already exists).
+- Layouts are template entries (see #3), not just raw `SlideLayout` values, so they carry seeded copy and slot defaults.
 
-- A pulsing orb shows agent state: idle / listening / thinking / speaking
-- Live transcript of what you said and what the agent said scrolls below
-- Volume meter for input/output
-- "End call" button to disconnect
+**2. Accent image system** (Gamma's signature visual move)
+- New `SlideData.accentImage?: { url, position: 'top'|'left'|'right'|'background', overlay: 'none'|'frosted'|'faded'|'clear', intensity: 0..1, focalX, focalY }`.
+- `SlideRenderer` / `SlideLayout` honor accent position with proper layout shift (image takes one column / full bleed).
+- New `AccentImagePanel` in inspector: position selector (5 swatch buttons), overlay style, intensity slider, focal-point picker.
+- BrandHub asset rail gains a second click-target: "Use as accent image" (and dropping an image while holding `Alt` on the canvas sets it as accent instead of body image).
+- Backwards compatible: slides without `accentImage` render exactly as today.
 
-The agent is briefed with the current page state (active brand, selected PDF source, selected pages, current topic/audience/slide-count form values) so it answers in context.
+**3. Named-slot templates** (deterministic, vs Gamma's loose prompt sub)
+- New file `src/components/slides/slideTemplateRegistry.ts` exporting `SLIDE_TEMPLATES: SlideTemplate[]` where each template has:
+  - `id`, `category`, `label`, `layout`, `slots: { name, type, default, required }[]`, `seed: Partial<SlideData>`.
+- Helper `applySlideTemplate(template, values, brand)` returns a fully-populated `SlideData`, validating required slots and falling back to defaults.
+- Slot editor in inspector when a slide was created from a template: simple key/value form, validates types (string/number/image-url/stat).
+- Powers both the Smart Layouts panel (#1) and the voice agent (#4).
 
-## Setup steps (one-time, in ElevenLabs dashboard)
+**4. Voice-driven live editing** (we already have ElevenLabs)
+- Extend `PowerPointAgent.tsx` `clientTools` with: `insertSlide({ templateId, values })`, `setSlideField({ field, value })`, `setAccentImage({ position, overlay })`, `applyBrandImage({ assetName, role })`, `goToSlide({ index })`, `duplicateActive()`, `deleteActive()`.
+- A new `useSlideEditorBridge` context exposes mutating callbacks from `SlideEditor` to `PowerPointAgent` so voice commands hit the live editor state.
+- Voice + Smart Layouts means "add a stat slide with 99 percent retention" works end-to-end. No new edge functions needed — uses the existing `elevenlabs-token` function and the agent's already-configured Agent ID.
 
-You'll need to do this part — Lovable can't create the agent for you:
+**5. Live AI-output drag-onto-canvas**
+- Replace AI Slide Generator's "Replace deck" with "Generated slides tray": a horizontal strip of generated card thumbnails docked under the canvas.
+- Each thumbnail is draggable (reuses `SLIDE_SECTION_MIME` shape) so users drop generated slides into precise positions instead of nuking the deck. Old "Replace deck" remains as a secondary button.
 
-1. Sign up at elevenlabs.io (free tier covers ~10 min/month of conversation)
-2. Go to **Conversational AI → Agents → Create Agent**
-3. Paste the system prompt we provide ("You are EventKIT's PowerPoint deck design assistant…")
-4. Pick a voice (Sarah / George / Brian — or any from their library)
-5. **Enable "Overrides"** → check `firstMessage` and `prompt` (so we can inject your deck context per session)
-6. **Add client tools** (if you want voice-controlled actions):
-   - `setTopic(topic: string)`
-   - `setAudience(audience: string)`
-   - `setSlideCount(count: number)`
-   - `setTone(tone: string)`
-   - `toggleBrandStyle(enabled: boolean)`
-   - `generateDeck()` — triggers the existing Generate button
-7. Copy the **Agent ID** and **API Key** — paste them into Lovable when prompted
+**6. Pixel-perfect brand lock**
+- New `BrandLockBar` in the editor header showing active brand chip + a lock toggle. When locked, all newly-inserted slides:
+  - Inherit `bgColor`, accent color, fonts from active brand.
+  - Auto-apply the brand's compositor-baked logo URL (primary / mono / reversed) chosen via slide background luminance.
+  - Reject AI-generated palettes that drift from brand tokens (toast + auto-correct).
+- Pulls existing `brandColors` / `brandFonts` already plumbed into `SlideRenderer`.
 
-## Build steps
+### Architecture sketch
 
-### 1. Secrets + edge function
-- Request `ELEVENLABS_API_KEY` and `ELEVENLABS_POWERPOINT_AGENT_ID` as Lovable Cloud secrets
-- New edge function `elevenlabs-conversation-token`: server-side, requires auth, calls ElevenLabs `/v1/convai/conversation/token` and returns a short-lived WebRTC token. Keeps the API key off the client.
+```
+src/components/slides/
+  SlideEditor.tsx                    (mount panels, expose bridge)
+  SlideSectionLibraryPanel.tsx       (REPLACED by ↓ )
+  SlideSmartLayoutsPanel.tsx         (#1, tabbed, real-preview tiles)
+  AccentImagePanel.tsx               (#2)
+  SlideTemplateSlotEditor.tsx        (#3)
+  GeneratedSlidesTray.tsx            (#5)
+  BrandLockBar.tsx                   (#6)
+  slideTemplateRegistry.ts           (#3, source of truth)
+  slideTypes.ts                      (+ accentImage, + templateId/slotValues on SlideData)
+  SlideRenderer.tsx / SlideLayout.tsx (render accentImage)
 
-### 2. Install SDK
-- `bun add @elevenlabs/react`
-
-### 3. New component: `src/components/powerpoint/VoiceAgentPanel.tsx`
-- Uses `useConversation` hook from `@elevenlabs/react`
-- Floating panel, dark glassmorphic, animated mic orb (Framer Motion pulse synced to `getOutputVolume()`)
-- Handles mic permission with friendly prompt
-- Wires `clientTools` to setters passed in as props (setTopic, setAudience, setSlideCount, setTone, setUseBrand, triggerGenerate)
-- Uses `overrides.agent.firstMessage` to greet you with current context: *"Hi — I see you're working on a deck with the Acme brand and 4 PDF reference pages selected. What should we build?"*
-- Uses `overrides.agent.prompt` to inject live deck state every session
-- Shows scrolling transcript using `onMessage` events (`user_transcript`, `agent_response`)
-- Toast on errors (rate limit, mic denied, quota exhausted)
-
-### 4. Wire into PowerPointAgent.tsx
-- Render `<VoiceAgentPanel />` at the bottom of the page
-- Pass current state + setters as props
-- Pass a `triggerGenerate` callback that calls the existing handle-submit logic
-
-### 5. Memory
-- Save a memory entry documenting the ElevenLabs voice agent integration so future sessions don't reinvent it
-
-## Technical details
-
-```text
-┌──────────────────┐    WebRTC     ┌─────────────────────┐
-│  VoiceAgentPanel │◄─────────────►│  ElevenLabs Convai  │
-│  (browser)       │   audio+text  │  (managed agent)    │
-└────────┬─────────┘               └─────────────────────┘
-         │                                   ▲
-         │ clientTools                       │ short-lived token
-         │ (setTopic, setSlideCount,         │
-         │  generateDeck, ...)               │
-         ▼                                   │
-┌──────────────────┐    invoke    ┌─────────────────────┐
-│  PowerPointAgent │              │  edge function:     │
-│  (form + deck)   │              │  elevenlabs-conv-   │
-└──────────────────┘              │  token              │
-                                  │  (uses              │
-                                  │   ELEVENLABS_API_KEY)│
-                                  └─────────────────────┘
+src/pages/PowerPointAgent.tsx        (expanded clientTools, BrandLockBar mount)
+src/hooks/useSlideEditorBridge.ts    (#4, context bridge for voice)
 ```
 
-- Connection type: **WebRTC** (lower latency than WebSocket, ~300ms)
-- Server location: default global (we can switch to `eu-residency` if needed)
-- Token endpoint requires Supabase JWT — no anonymous access
-- Mic permission requested only when user clicks the orb (not on page load)
+### Out of scope (deliberately deferred)
 
-## Cost expectation
+- Card model with toggles / nested cards (multi-week refactor; revisit after this sprint).
+- Web publishing (deck-as-site) — separate sprint.
+- Server-side template storage in Supabase — registry ships client-side first; we add a `slide_templates` table later if users want to save custom ones.
 
-ElevenLabs Conversational AI: roughly **$0.08–0.10 per minute** of live conversation on the paid plan. Free tier gives ~10 min/month to test.
+### Verification
 
-## Out of scope (can add later)
+- Typecheck clean.
+- `/agent/powerpoint?tab=editor` loads with no console errors.
+- Drag a Smart Layout tile onto canvas → new slide inserts with seeded copy.
+- Drag a BrandHub image onto a slide → normal swap. Hold Alt → becomes accent image.
+- Voice "add a stat slide with three columns" → slide appears live; sidebar logs the tool call.
+- Lock brand → newly inserted slides pick up brand colors and logo automatically.
 
-- Persisting transcripts to Supabase (currently in-memory per session)
-- Voice-driven slide-by-slide editing inside a generated deck
-- Multi-language support (default English; ElevenLabs supports 30+)
-- Switching voices from inside the app (do it in ElevenLabs dashboard for now)
+### Approach
 
-## What I'll need from you after approval
-
-1. Confirm you've created the agent in ElevenLabs and have the **Agent ID** ready
-2. Have your **ElevenLabs API key** ready to paste when Lovable prompts for it
-3. Decide: enable voice-controlled actions (tool-calling) — yes or just discussion?
-
-If you want, I can also ship a simpler "voice replies on text chat" version first (cheaper, no ElevenLabs agent setup needed) and layer the full Conversational AI on top later. Just say the word.
+Single sprint, executed in one pass (no check-ins between phases per saved preference). Order: types → registry → smart layouts panel → accent images → bridge + voice tools → AI tray → brand lock → polish.

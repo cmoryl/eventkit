@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
@@ -35,7 +35,11 @@ import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
 import { SlideAssetSearchPanel, SLIDE_ASSET_IMAGE_MIME } from './SlideAssetSearchPanel';
-import { SlideSectionLibraryPanel, SLIDE_SECTION_MIME } from './SlideSectionLibraryPanel';
+import { SlideSmartLayoutsPanel, SLIDE_SECTION_MIME } from './SlideSmartLayoutsPanel';
+import { AccentImagePanel } from './AccentImagePanel';
+import { AccentImageLayer } from './AccentImageLayer';
+import { applySlideTemplate } from './slideTemplateRegistry';
+import { slideEditorBus } from '@/lib/slideEditorBus';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
@@ -305,6 +309,25 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     }));
   }, []);
 
+  /** Set (or clear with url='') a slide's accent image. */
+  const setAccentImageForSlide = useCallback((url: string, slideIndex: number, position: 'top' | 'left' | 'right' | 'background' = 'background') => {
+    setSlides(prev => prev.map((s, i) => {
+      if (i !== slideIndex) return s;
+      if (!url) return { ...s, accentImage: undefined };
+      return {
+        ...s,
+        accentImage: {
+          url,
+          position,
+          overlay: position === 'background' ? 'faded' : 'none',
+          intensity: 1,
+          focalX: 50,
+          focalY: 50,
+        },
+      };
+    }));
+  }, []);
+
   /** Insert a pre-built section template as a new slide after `afterIndex`. */
   const insertSectionAfter = useCallback((afterIndex: number, payload: Omit<SlideData, 'id'>) => {
     const newSlide: SlideData = { id: uuidv4(), ...payload };
@@ -361,11 +384,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       return;
     }
 
-    // 2. BrandHub image URL → apply to active slide (Shift = new slide).
+    // 2. BrandHub image URL → apply to active slide (Shift = new slide, Alt = accent image).
     if (hasAssetUrl) {
       const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
       if (url) {
-        if (e.shiftKey) {
+        if (e.altKey) {
+          setAccentImageForSlide(url, activeIndex, 'background');
+          toast.success('Set as accent image');
+        } else if (e.shiftKey) {
           const newSlide: SlideData = {
             id: uuidv4(),
             layout: 'full-image',
@@ -430,7 +456,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Added ${imageFiles.length} images as slides`);
       }
     }
-  }, [activeIndex, loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
+  }, [activeIndex, loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide, setAccentImageForSlide]);
 
   const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
     e.preventDefault();
@@ -474,11 +500,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       return;
     }
 
-    // BrandHub image URL → apply to this slide (or new slide with Shift).
+    // BrandHub image URL → apply to this slide (Shift = new slide, Alt = accent image).
     if (hasAssetUrl) {
       const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
       if (!url) return;
-      if (e.shiftKey) {
+      if (e.altKey) {
+        setAccentImageForSlide(url, index, 'background');
+        setActiveIndex(index);
+        toast.success('Set as accent image');
+      } else if (e.shiftKey) {
         const newSlide: SlideData = {
           id: uuidv4(),
           layout: 'full-image',
@@ -512,12 +542,101 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setActiveIndex(index);
       toast.success('Image added to slide');
     }
-  }, [loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
+  }, [loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide, setAccentImageForSlide]);
 
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
     setSlides(newSlides);
     setActiveIndex(0);
   }, []);
+
+  // ── Voice-agent bridge: expose imperative commands to the slideEditorBus
+  // so the ElevenLabs voice agent (or any other surface) can drive this
+  // editor's state without prop-drilling.
+  const activeIndexRef = useRef(0);
+  const slidesCountRef = useRef(0);
+  useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
+  useEffect(() => { slidesCountRef.current = slides.length; }, [slides.length]);
+  useEffect(() => {
+    slideEditorBus.connect({
+      insertTemplate: (templateId, slotValues) => {
+        const payload = applySlideTemplate(templateId, slotValues ?? {});
+        if (!payload) return null;
+        const newSlide: SlideData = { id: uuidv4(), ...payload };
+        setSlides(prev => {
+          const next = [...prev];
+          next.splice(activeIndexRef.current + 1, 0, newSlide);
+          return next;
+        });
+        setActiveIndex(activeIndexRef.current + 1);
+        return newSlide;
+      },
+      insertSection: (payload) => {
+        const newSlide: SlideData = { id: uuidv4(), ...payload };
+        setSlides(prev => {
+          const next = [...prev];
+          next.splice(activeIndexRef.current + 1, 0, newSlide);
+          return next;
+        });
+        setActiveIndex(activeIndexRef.current + 1);
+        return newSlide;
+      },
+      setAccentImage: (params) => {
+        const idx = activeIndexRef.current;
+        setSlides(prev => prev.map((s, i) => {
+          if (i !== idx) return s;
+          if (params.position === 'none') return { ...s, accentImage: undefined };
+          const current = s.accentImage;
+          return {
+            ...s,
+            accentImage: {
+              url: params.url ?? current?.url ?? '',
+              position: params.position ?? current?.position ?? 'background',
+              overlay: params.overlay ?? current?.overlay ?? 'none',
+              intensity: params.intensity ?? current?.intensity ?? 1,
+              focalX: current?.focalX ?? 50,
+              focalY: current?.focalY ?? 50,
+            },
+          };
+        }));
+        return true;
+      },
+      applyBrandImage: (params) => {
+        const idx = activeIndexRef.current;
+        if (params.role === 'accent') {
+          setAccentImageForSlide(params.url, idx, 'background');
+        } else {
+          applyImageUrlToSlide(params.url, idx);
+        }
+        return true;
+      },
+      goToSlide: (index) => {
+        if (index < 0 || index >= slidesCountRef.current) return false;
+        setActiveIndex(index);
+        return true;
+      },
+      duplicateActive: () => {
+        const idx = activeIndexRef.current;
+        setSlides(prev => {
+          if (!prev[idx]) return prev;
+          const copy = { ...prev[idx], id: uuidv4() };
+          const next = [...prev];
+          next.splice(idx + 1, 0, copy);
+          return next;
+        });
+        return true;
+      },
+      deleteActive: () => {
+        const idx = activeIndexRef.current;
+        if (slidesCountRef.current <= 1) return false;
+        setSlides(prev => prev.filter((_, i) => i !== idx));
+        setActiveIndex(Math.max(0, idx - 1));
+        return true;
+      },
+      getActiveIndex: () => activeIndexRef.current,
+      getSlideCount: () => slidesCountRef.current,
+    });
+    return () => slideEditorBus.disconnect();
+  }, [applyImageUrlToSlide, setAccentImageForSlide]);
 
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
     setSlides(prev => {
@@ -1026,6 +1145,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                       editable={activeSlide.layout === 'demo-mock'}
                       onDemoContentChange={updateDemoDeckContent}
                     />
+                    <AccentImageLayer slide={activeSlide} />
                   </InlineEditOverlay>
                 </CenteredScaledSlide>
 
@@ -1535,9 +1655,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 )}
 
-                {/* Pre-built section library — drag onto canvas/thumbnails or click to insert */}
-                <SlideSectionLibraryPanel
+                {/* Smart Layouts library — tabbed, draggable, named-slot templates */}
+                <SlideSmartLayoutsPanel
                   onInsertSection={(payload) => insertSectionAfter(activeIndex, payload)}
+                />
+
+                {/* Accent image — Gamma-style overlay (background / top / left / right) */}
+                <AccentImagePanel
+                  slide={activeSlide}
+                  onChange={(accent) => updateSlide(activeIndex, { accentImage: accent })}
                 />
 
                 {/* BrandHub asset rail — search images for active brand and add to slide */}
