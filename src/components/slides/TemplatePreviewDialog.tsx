@@ -509,31 +509,50 @@ function SampleDeck({
   const [deckId, setDeckId] = useState<string>(SAMPLE_DECKS[0].id);
   const deck = SAMPLE_DECKS.find((d) => d.id === deckId) ?? SAMPLE_DECKS[0];
 
+  const pack = activeTheme ? getThemePack(activeTheme) : null;
+  // Derive brand colours from the theme pack so each slide is tinted with the
+  // template's palette WITHOUT collapsing every layout into the same hero
+  // background (which is what `applyDemoTheme` does).
+  const deckBrandColors = useMemo(() => {
+    if (!pack) return brandColors;
+    return {
+      primary: pack.palette.primary,
+      secondary: pack.palette.secondary,
+      accent: pack.palette.accent,
+    };
+  }, [pack, brandColors]);
+
   const slides = useMemo(() => {
     const hero = template.slide;
-    // Personalise the first slide of each deck with the template's hero copy
-    // so the preview always feels tied to the chosen template.
-    const customised = deck.slides.map((s, i) => {
-      if (i === 0 && hero.title) {
-        return { ...s, title: hero.title, subtitle: hero.subtitle || s.subtitle };
-      }
-      return s;
-    });
-    const themedSlides = activeTheme
-      ? applyDemoTheme(customised, activeTheme)
-      : customised;
-    const pack = activeTheme ? getThemePack(activeTheme) : null;
-    return themedSlides.map((slide, i) => ({
-      ...slide,
-      id: `${template.id}__${deck.id}__${i}`,
-      variation: slide.variation || (pack ? pack.variants[slide.layout] : undefined),
-      imageUrl:
-        slide.imageUrl ||
-        (['title', 'full-image', 'image-left', 'image-right', 'parallax'].includes(slide.layout) && pack
+    const heroLayouts = new Set(['title', 'section', 'big-number', 'full-image', 'parallax']);
+    return deck.slides.map((s, i) => {
+      const personalised =
+        i === 0 && hero.title
+          ? { ...s, title: hero.title, subtitle: hero.subtitle || s.subtitle }
+          : s;
+      const isHero = heroLayouts.has(personalised.layout);
+      const bgColor =
+        personalised.bgColor ||
+        (pack ? (isHero ? pack.palette.heroBg : pack.palette.contentBg) : undefined);
+      const variation =
+        personalised.variation || (pack ? pack.variants[personalised.layout] : undefined);
+      const imageUrl =
+        personalised.imageUrl ||
+        (['title', 'full-image', 'image-left', 'image-right', 'parallax'].includes(
+          personalised.layout,
+        ) && pack
           ? pack.images[i % Math.max(1, pack.images.length)]?.src
-          : slide.imageUrl),
-    }));
-  }, [template, activeTheme, deck]);
+          : personalised.imageUrl);
+      return {
+        ...personalised,
+        id: `${template.id}__${deck.id}__${i}`,
+        bgColor,
+        variation,
+        imageUrl,
+      };
+    });
+  }, [template, deck, pack]);
+
 
   return (
     <div className="rounded-xl border bg-card p-4">
@@ -584,7 +603,7 @@ function SampleDeck({
               <ScaledSlide>
                 <SlideRenderer
                   slide={slide}
-                  brandColors={brandColors}
+                  brandColors={deckBrandColors}
                   brandFonts={brandFonts}
                   animated={animated}
                 />
