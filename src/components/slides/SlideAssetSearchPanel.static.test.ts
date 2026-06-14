@@ -12,15 +12,24 @@ describe('SlideAssetSearchPanel static contract', () => {
     expect(source).toContain("{ value: 'brandHub', label: 'Hub' }");
   });
 
-  it('keeps category filtering and filter recovery affordances', () => {
+  it('keeps source-aware category filtering and filter recovery affordances', () => {
+    expect(source).toContain('sourceScopedAssets');
     expect(source).toContain('categoryCounts');
     expect(source).toContain('visibleCategoryFilter');
     expect(source).toContain('Clear filters');
     expect(source).toContain('Reset asset filters');
   });
 
+  it('keeps brand, hub, and current slide assets in the same searchable asset model', () => {
+    expect(source).toContain('Brand imagery');
+    expect(source).toContain('BrandHub');
+    expect(source).toContain('Active slide');
+    expect(source).toContain('filteredAssets');
+  });
+
   it('keeps web URL paste behavior guarded before applying to a slide', () => {
     expect(source).toContain('const isWebUrl');
+    expect(source).toContain('canApplyUrl');
     expect(source).toContain('disabled={!canApplyUrl}');
     expect(source).toContain("if (e.key === 'Enter') applyUrl();");
   });
