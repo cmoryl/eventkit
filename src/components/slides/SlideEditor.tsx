@@ -164,6 +164,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Brand Lock ${!brandLocked ? 'ON' : 'OFF'}`);
         return;
       }
+      if (mod && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        history.undo();
+        return;
+      }
+      if (mod && (e.shiftKey && e.key.toLowerCase() === 'z') || (mod && e.key.toLowerCase() === 'y')) {
+        e.preventDefault();
+        history.redo();
+        return;
+      }
+
       if (mod && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         duplicateSlide(activeIndex);
