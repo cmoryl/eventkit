@@ -2649,4 +2649,41 @@ function ParamSlider({ label, value, min, max, step, unit, fractionDigits = 0, o
   );
 }
 
+/**
+ * Thin drop-zone strip rendered between slide thumbnails. Shows a glowing
+ * insertion bar when something is being dragged over it — used so users can
+ * drop sections from the Insert drawer into specific positions in the deck,
+ * not just onto existing thumbnails.
+ */
+function GapDropZone({
+  index, active, onDragOver, onDragLeave, onDrop, trailing,
+}: {
+  index: number;
+  active: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  trailing?: boolean;
+}) {
+  return (
+    <div
+      data-gap-index={index}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={cn(
+        "relative w-full transition-all",
+        active ? "h-4" : trailing ? "h-6" : "h-2",
+      )}
+    >
+      <div
+        className={cn(
+          "absolute left-2 right-2 top-1/2 -translate-y-1/2 rounded-full transition-all",
+          active ? "h-1 bg-primary shadow-[0_0_8px_2px_hsl(var(--primary)/0.6)]" : "h-px bg-transparent",
+        )}
+      />
+    </div>
+  );
+}
+
 export default SlideEditor;
