@@ -258,6 +258,29 @@ export interface SlideData {
     weight?: 400 | 500 | 600 | 700 | 800;
     italic?: boolean;
   }>;
+  /**
+   * Optional Gamma-style accent image overlay. Renders independently of the
+   * slide's body imageUrl/images via AccentImageLayer; safe to add to any
+   * slide without changing its layout. position='none' is a no-op.
+   */
+  accentImage?: {
+    url: string;
+    position: 'none' | 'top' | 'left' | 'right' | 'background';
+    overlay?: 'none' | 'frosted' | 'faded' | 'clear';
+    /** 0-1 overlay intensity. Defaults to 1. */
+    intensity?: number;
+    /** Focal point 0-100 for object-position when not background. */
+    focalX?: number;
+    focalY?: number;
+  };
+  /**
+   * Smart-layout template id this slide was created from (see
+   * slideTemplateRegistry). Lets the inspector show a slot editor and lets
+   * voice/AI tools update fields by slot name.
+   */
+  templateId?: string;
+  /** Named-slot values matching the template's slots[] schema. */
+  slotValues?: Record<string, unknown>;
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
