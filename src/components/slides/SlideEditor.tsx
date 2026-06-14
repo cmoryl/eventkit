@@ -887,12 +887,54 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 <X className="h-4 w-4" />
               </Button>
               <div>
-                <h2 className="text-sm font-semibold">{assetName}</h2>
+                <h2 className="text-sm font-semibold flex items-center gap-2">
+                  {assetName}
+                  {brandLocked && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/15 text-primary border border-primary/30">
+                      BRAND LOCK
+                    </span>
+                  )}
+                  {generatedTraySlides.length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                      {generatedTraySlides.length} DRAFT{generatedTraySlides.length === 1 ? '' : 'S'}
+                    </span>
+                  )}
+                </h2>
                 <p className="text-xs text-muted-foreground">{slides.length} slides</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Smart Layouts quick-insert launcher */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-8 gap-1.5">
+                    <LayoutTemplate className="h-3.5 w-3.5" />
+                    <span className="text-xs">Insert</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-2" align="end">
+                  <div className="text-[10px] font-semibold uppercase text-muted-foreground px-1.5 py-1">
+                    Smart layouts
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 max-h-[320px] overflow-y-auto">
+                    {SLIDE_BLOCK_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        className="text-left rounded-md border bg-background hover:border-primary hover:bg-primary/5 transition p-2"
+                        onClick={() => {
+                          const payload = applySlideTemplate(tpl.id, {});
+                          if (payload) insertSectionAfter(activeIndex, payload);
+                        }}
+                      >
+                        <div className="text-xs font-medium">{tpl.label}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{tpl.description}</div>
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
               <BrandLockBar
                 brandName={brand?.name}
                 brandColors={brandColors}
