@@ -56,7 +56,8 @@ import { Search as SearchIcon } from 'lucide-react';
 import { EditorNavRail, type NavRailTab } from './EditorNavRail';
 import { InsertDrawerTabs } from './InsertDrawerTabs';
 import { applySmartObject, SLIDE_OBJECT_MIME } from './smartObjectRegistry';
-import { Layers, Plus as PlusIcon, Palette as PaletteIcon, Sparkles as SparklesIcon, MessageSquare } from 'lucide-react';
+import { Layers, Plus as PlusIcon, Palette as PaletteIcon, Sparkles as SparklesIcon, MessageSquare, Layers as LayersIcon } from 'lucide-react';
+import { LayersPanel } from './LayersPanel';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
