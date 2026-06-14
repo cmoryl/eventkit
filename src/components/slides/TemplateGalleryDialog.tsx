@@ -67,6 +67,7 @@ export function TemplateGalleryDialog({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>(() => loadIds(LS_FAVS));
   const [recent, setRecent] = useState<string[]>(() => loadIds(LS_RECENT));
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   // Re-hydrate favs/recent every time the dialog opens so changes made in
   // another tab show up.
