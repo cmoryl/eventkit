@@ -8,7 +8,7 @@ import {
   callClaudeJson,
   claudeErrorResponse,
   claudeText,
-  streamClaude,
+  streamClaudeText,
   type ClaudeModel,
 } from "../_shared/anthropic.ts";
 
