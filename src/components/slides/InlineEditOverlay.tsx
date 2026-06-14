@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SlideData } from './slideTypes';
 import { GraphicSwapPopover } from './GraphicSwapPopover';
 
@@ -944,9 +944,28 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
   const textBoxes = (slide as any).textBoxes as SlideData['textBoxes'] | undefined;
   const [selectedTextBoxId, setSelectedTextBoxId] = useState<string | null>(null);
   const [editingTextBoxId, setEditingTextBoxId] = useState<string | null>(null);
-  const tbDragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect; orig: { xPct: number; yPct: number; wPct: number; fontSize: number }; snapDisabled: boolean } | null>(null);
+  // Additional multi-selected ids (primary id is selectedTextBoxId). Effective
+  // selection = union(selectedTextBoxId, multiIds). Group ops act on the union.
+  const [multiIds, setMultiIds] = useState<string[]>([]);
+  const tbDragRef = useRef<{
+    id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect;
+    orig: { xPct: number; yPct: number; wPct: number; fontSize: number };
+    snapDisabled: boolean;
+    /** Group move payload — populated when 2+ boxes are selected at drag start. */
+    group?: Array<{ id: string; xPct: number; yPct: number }>;
+  } | null>(null);
+  // Marquee selection rect, in % of slide. Active while pointer-dragging on empty canvas.
+  const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const marqueeRef = useRef<{ rect: DOMRect; startX: number; startY: number; additive: boolean } | null>(null);
   // Smart guides shown during a drag: arrays of %-positions on each axis.
   const [guides, setGuides] = useState<{ v: number[]; h: number[] }>({ v: [], h: [] });
+
+  // Effective selection = primary + multi (deduped). Used by group ops below.
+  const effectiveIds = useMemo(() => {
+    const set = new Set<string>(multiIds);
+    if (selectedTextBoxId) set.add(selectedTextBoxId);
+    return [...set];
+  }, [selectedTextBoxId, multiIds]);
 
   const updateTextBox = (id: string, patch: Partial<NonNullable<SlideData['textBoxes']>[number]>) => {
     const list = (slideRef.current.textBoxes || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
@@ -1003,6 +1022,25 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
       if (drag.mode === 'move') {
+        // Group move: translate every selected box by the same delta. Skip snapping
+        // for group moves to keep relative offsets intact.
+        if (drag.group && drag.group.length > 1) {
+          const dxPct = (dx / drag.rect.width) * 100;
+          const dyPct = (dy / drag.rect.height) * 100;
+          const byId = new Map(drag.group.map((g) => [g.id, g]));
+          const list = (slideRef.current.textBoxes || []).map((t) => {
+            const g = byId.get(t.id);
+            if (!g) return t;
+            return {
+              ...t,
+              xPct: Math.max(0, Math.min(100, g.xPct + dxPct)),
+              yPct: Math.max(0, Math.min(100, g.yPct + dyPct)),
+            };
+          });
+          onUpdate({ textBoxes: list } as Partial<SlideData>);
+          setGuides({ v: [], h: [] });
+          return;
+        }
         let xPct = Math.max(0, Math.min(100, drag.orig.xPct + (dx / drag.rect.width) * 100));
         let yPct = Math.max(0, Math.min(100, drag.orig.yPct + (dy / drag.rect.height) * 100));
         const snapDisabled = drag.snapDisabled || e.altKey;
@@ -1041,48 +1079,67 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     if (!root) return;
     const tb = (slideRef.current.textBoxes || []).find((t) => t.id === id);
     if (!tb) return;
+    // If the dragged box is part of a multi-selection, capture origins for all.
+    const inGroup = mode === 'move' && (effectiveIds.length > 1) && effectiveIds.includes(id);
+    const group = inGroup
+      ? (slideRef.current.textBoxes || [])
+          .filter((t) => effectiveIds.includes(t.id))
+          .map((t) => ({ id: t.id, xPct: t.xPct, yPct: t.yPct }))
+      : undefined;
     tbDragRef.current = {
       id, mode,
       startX: e.clientX, startY: e.clientY,
       rect: root.getBoundingClientRect(),
       orig: { xPct: tb.xPct, yPct: tb.yPct, wPct: tb.wPct, fontSize: tb.fontSize },
       snapDisabled: e.altKey,
+      group,
     };
   };
 
-  // Keyboard shortcuts for the selected text box: Delete/Backspace removes,
-  // arrows nudge (Shift = 5x), Cmd/Ctrl+D duplicates, Escape deselects.
+  // Keyboard shortcuts for the selected text box(es). Operates on the
+  // effective selection (primary + multi). Skipped while editing inline.
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
-      if (!selectedTextBoxId || editingTextBoxId) return;
+      if (editingTextBoxId) return;
+      if (effectiveIds.length === 0) return;
       const ae = document.activeElement as HTMLElement | null;
       if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
-      const tb = (slideRef.current.textBoxes || []).find((t) => t.id === selectedTextBoxId);
-      if (!tb) return;
+      const all = slideRef.current.textBoxes || [];
+      const selected = all.filter((t) => effectiveIds.includes(t.id));
+      if (selected.length === 0) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        removeTextBox(selectedTextBoxId);
+        const keep = all.filter((t) => !effectiveIds.includes(t.id));
+        onUpdate({ textBoxes: keep } as Partial<SlideData>);
+        setSelectedTextBoxId(null);
+        setMultiIds([]);
         return;
       }
       if (e.key === 'Escape') {
         e.preventDefault();
         setSelectedTextBoxId(null);
+        setMultiIds([]);
         return;
       }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
         e.preventDefault();
-        const id = `tb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-        const copy = { ...tb, id, xPct: Math.min(98, tb.xPct + 3), yPct: Math.min(98, tb.yPct + 3) };
-        onUpdate({ textBoxes: [...(slideRef.current.textBoxes || []), copy] } as Partial<SlideData>);
-        setSelectedTextBoxId(id);
+        const copies = selected.map((tb) => ({
+          ...tb,
+          id: `tb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          xPct: Math.min(98, tb.xPct + 3),
+          yPct: Math.min(98, tb.yPct + 3),
+        }));
+        onUpdate({ textBoxes: [...all, ...copies] } as Partial<SlideData>);
+        setSelectedTextBoxId(copies[0].id);
+        setMultiIds(copies.slice(1).map((c) => c.id));
         return;
       }
-      // Z-order: Cmd/Ctrl+] = bring forward, Cmd/Ctrl+[ = send back.
-      if ((e.metaKey || e.ctrlKey) && (e.key === ']' || e.key === '[')) {
+      // Z-order: only meaningful on a single primary selection.
+      if ((e.metaKey || e.ctrlKey) && (e.key === ']' || e.key === '[') && selectedTextBoxId) {
         e.preventDefault();
-        const list = [...(slideRef.current.textBoxes || [])];
+        const list = [...all];
         const idx = list.findIndex((t) => t.id === selectedTextBoxId);
         if (idx < 0) return;
         const target = e.key === ']' ? idx + 1 : idx - 1;
@@ -1094,23 +1151,101 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       if (e.key.startsWith('Arrow')) {
         e.preventDefault();
         const step = e.shiftKey ? 5 : 0.5;
-        let { xPct, yPct } = tb;
-        if (e.key === 'ArrowLeft') xPct = Math.max(0, xPct - step);
-        if (e.key === 'ArrowRight') xPct = Math.min(100, xPct + step);
-        if (e.key === 'ArrowUp') yPct = Math.max(0, yPct - step);
-        if (e.key === 'ArrowDown') yPct = Math.min(100, yPct + step);
-        updateTextBox(selectedTextBoxId, { xPct, yPct });
+        let dx = 0, dy = 0;
+        if (e.key === 'ArrowLeft') dx = -step;
+        if (e.key === 'ArrowRight') dx = step;
+        if (e.key === 'ArrowUp') dy = -step;
+        if (e.key === 'ArrowDown') dy = step;
+        const selIds = new Set(effectiveIds);
+        const next = all.map((t) =>
+          selIds.has(t.id)
+            ? { ...t, xPct: Math.max(0, Math.min(100, t.xPct + dx)), yPct: Math.max(0, Math.min(100, t.yPct + dy)) }
+            : t,
+        );
+        onUpdate({ textBoxes: next } as Partial<SlideData>);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTextBoxId, editingTextBoxId, enabled]);
+  }, [selectedTextBoxId, editingTextBoxId, enabled, effectiveIds.join(',')]);
 
   const selectedTb = textBoxes?.find((t) => t.id === selectedTextBoxId) || null;
 
+  // Marquee multi-select: pointer-down on empty canvas starts a selection rect.
+  // Shift = additive (preserve current selection). Releases pick everything whose
+  // center falls inside the rect.
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const m = marqueeRef.current;
+      if (!m) return;
+      const x1 = Math.min(m.startX, e.clientX);
+      const y1 = Math.min(m.startY, e.clientY);
+      const x2 = Math.max(m.startX, e.clientX);
+      const y2 = Math.max(m.startY, e.clientY);
+      setMarquee({
+        x: ((x1 - m.rect.left) / m.rect.width) * 100,
+        y: ((y1 - m.rect.top) / m.rect.height) * 100,
+        w: ((x2 - x1) / m.rect.width) * 100,
+        h: ((y2 - y1) / m.rect.height) * 100,
+      });
+    };
+    const onUp = () => {
+      const m = marqueeRef.current;
+      if (!m) return;
+      marqueeRef.current = null;
+      setMarquee((rect) => {
+        if (rect && (rect.w > 0.5 || rect.h > 0.5)) {
+          const hits = (slideRef.current.textBoxes || [])
+            .filter((tb) => !(tb as { __hidden?: boolean }).__hidden)
+            .filter((tb) =>
+              tb.xPct >= rect.x && tb.xPct <= rect.x + rect.w &&
+              tb.yPct >= rect.y && tb.yPct <= rect.y + rect.h,
+            )
+            .map((tb) => tb.id);
+          if (hits.length > 0) {
+            if (m.additive) {
+              setMultiIds((prev) => Array.from(new Set([...prev, ...hits, ...(selectedTextBoxId ? [selectedTextBoxId] : [])])));
+            } else {
+              setSelectedTextBoxId(hits[0]);
+              setMultiIds(hits.slice(1));
+            }
+          }
+        }
+        return null;
+      });
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="relative w-full h-full" onMouseDown={() => { setSelectedTextBoxId(null); setEditingTextBoxId(null); }}>
+    <div
+      className="relative w-full h-full"
+      onPointerDown={(e) => {
+        // Only start a marquee from primary button on the bare canvas.
+        if (e.button !== 0) return;
+        if ((e.target as HTMLElement).closest('[data-tb-id]')) return;
+        const root = wrapperRef.current?.parentElement;
+        if (!root) return;
+        if (!e.shiftKey) {
+          setSelectedTextBoxId(null);
+          setMultiIds([]);
+          setEditingTextBoxId(null);
+        }
+        marqueeRef.current = {
+          rect: root.getBoundingClientRect(),
+          startX: e.clientX,
+          startY: e.clientY,
+          additive: e.shiftKey,
+        };
+      }}
+    >
       <div ref={wrapperRef} className="contents">
         {children}
       </div>
@@ -1126,24 +1261,50 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       {textBoxes && textBoxes.length > 0 && (
         <div className="absolute inset-0 z-30 pointer-events-none">
           {textBoxes.filter((tb) => !(tb as { __hidden?: boolean }).__hidden).map((tb) => {
-            const isSelected = tb.id === selectedTextBoxId;
+            const isPrimary = tb.id === selectedTextBoxId;
+            const isMulti = multiIds.includes(tb.id);
+            const isSelected = isPrimary || isMulti;
             const isEditing = tb.id === editingTextBoxId;
             return (
               <div
                 key={tb.id}
+                data-tb-id={tb.id}
                 className="absolute pointer-events-auto"
                 style={{
                   left: `${tb.xPct}%`,
                   top: `${tb.yPct}%`,
                   width: `${tb.wPct}%`,
                   transform: 'translate(-50%, -50%)',
-                  outline: isSelected ? '2px solid hsl(var(--primary))' : 'none',
+                  outline: isSelected
+                    ? `2px solid hsl(var(--primary)${isMulti && !isPrimary ? ' / 0.7' : ''})`
+                    : 'none',
                   outlineOffset: 2,
                   cursor: isEditing ? 'text' : 'move',
                 }}
                 onMouseDown={(e) => e.stopPropagation()}
-                onPointerDown={(e) => { setSelectedTextBoxId(tb.id); if (!isEditing) startTbDrag(e, tb.id, 'move'); }}
-                onDoubleClick={(e) => { e.stopPropagation(); setEditingTextBoxId(tb.id); setSelectedTextBoxId(tb.id); }}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  if (e.shiftKey) {
+                    // Toggle this box in/out of the multi-selection.
+                    setMultiIds((prev) => {
+                      const set = new Set(prev);
+                      if (selectedTextBoxId && selectedTextBoxId !== tb.id) set.add(selectedTextBoxId);
+                      if (set.has(tb.id)) set.delete(tb.id); else set.add(tb.id);
+                      return [...set];
+                    });
+                    if (!selectedTextBoxId) setSelectedTextBoxId(tb.id);
+                    return;
+                  }
+                  // Plain click on a box already in the group: keep group, just promote.
+                  if (!isSelected) {
+                    setSelectedTextBoxId(tb.id);
+                    setMultiIds([]);
+                  } else {
+                    setSelectedTextBoxId(tb.id);
+                  }
+                  if (!isEditing) startTbDrag(e, tb.id, 'move');
+                }}
+                onDoubleClick={(e) => { e.stopPropagation(); setEditingTextBoxId(tb.id); setSelectedTextBoxId(tb.id); setMultiIds([]); }}
               >
                 <div
                   contentEditable={isEditing && enabled}
@@ -1197,8 +1358,16 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         </div>
       )}
 
-      {/* Quick canvas-alignment toolbar for the selected text box. */}
-      {enabled && selectedTb && !editingTextBoxId && (
+      {/* Marquee selection rectangle. */}
+      {marquee && (
+        <div
+          className="absolute z-40 pointer-events-none border border-primary/80 bg-primary/10"
+          style={{ left: `${marquee.x}%`, top: `${marquee.y}%`, width: `${marquee.w}%`, height: `${marquee.h}%` }}
+        />
+      )}
+
+      {/* Quick toolbar — single selection: canvas align. Multi: align edges + distribute. */}
+      {enabled && !editingTextBoxId && effectiveIds.length === 1 && selectedTb && (
         <div
           className="absolute z-50 top-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-lg border bg-background/90 backdrop-blur px-1 py-1 shadow-md text-[10px]"
           onMouseDown={(e) => e.stopPropagation()}
@@ -1228,6 +1397,56 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
           )}
         </div>
       )}
+
+      {/* Multi-selection toolbar: align selected boxes to each other + distribute. */}
+      {enabled && !editingTextBoxId && effectiveIds.length >= 2 && (() => {
+        const applyAlign = (patcher: (sel: NonNullable<SlideData['textBoxes']>) => Map<string, Partial<NonNullable<SlideData['textBoxes']>[number]>>) => {
+          const all = slideRef.current.textBoxes || [];
+          const sel = all.filter((t) => effectiveIds.includes(t.id));
+          if (sel.length < 2) return;
+          const patches = patcher(sel as NonNullable<SlideData['textBoxes']>);
+          const next = all.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t));
+          onUpdate({ textBoxes: next } as Partial<SlideData>);
+        };
+        const alignX = (kind: 'left' | 'center' | 'right') => applyAlign((sel) => {
+          const xs = sel.map((t) => t.xPct);
+          const target = kind === 'left' ? Math.min(...xs) : kind === 'right' ? Math.max(...xs) : xs.reduce((a, b) => a + b, 0) / xs.length;
+          return new Map(sel.map((t) => [t.id, { xPct: target }] as const));
+        });
+        const alignY = (kind: 'top' | 'middle' | 'bottom') => applyAlign((sel) => {
+          const ys = sel.map((t) => t.yPct);
+          const target = kind === 'top' ? Math.min(...ys) : kind === 'bottom' ? Math.max(...ys) : ys.reduce((a, b) => a + b, 0) / ys.length;
+          return new Map(sel.map((t) => [t.id, { yPct: target }] as const));
+        });
+        const distribute = (axis: 'x' | 'y') => applyAlign((sel) => {
+          if (sel.length < 3) return new Map();
+          const sorted = [...sel].sort((a, b) => (axis === 'x' ? a.xPct - b.xPct : a.yPct - b.yPct));
+          const lo = axis === 'x' ? sorted[0].xPct : sorted[0].yPct;
+          const hi = axis === 'x' ? sorted[sorted.length - 1].xPct : sorted[sorted.length - 1].yPct;
+          const step = (hi - lo) / (sorted.length - 1);
+          return new Map(sorted.map((t, i) => [t.id, axis === 'x' ? { xPct: lo + step * i } : { yPct: lo + step * i }] as const));
+        });
+        return (
+          <div
+            className="absolute z-50 top-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-lg border bg-background/90 backdrop-blur px-1 py-1 shadow-md text-[10px]"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="px-1.5 text-[10px] text-muted-foreground">{effectiveIds.length} selected</span>
+            <div className="w-px h-4 bg-border mx-0.5" />
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align left edges" onClick={() => alignX('left')}>L</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align horizontal centers" onClick={() => alignX('center')}>C</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align right edges" onClick={() => alignX('right')}>R</button>
+            <div className="w-px h-4 bg-border mx-0.5" />
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align top edges" onClick={() => alignY('top')}>T</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align vertical middles" onClick={() => alignY('middle')}>M</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align bottom edges" onClick={() => alignY('bottom')}>B</button>
+            <div className="w-px h-4 bg-border mx-0.5" />
+            <button className="px-1.5 h-6 rounded hover:bg-muted font-semibold" title="Distribute horizontally (3+)" disabled={effectiveIds.length < 3} onClick={() => distribute('x')}>↔</button>
+            <button className="px-1.5 h-6 rounded hover:bg-muted font-semibold" title="Distribute vertically (3+)" disabled={effectiveIds.length < 3} onClick={() => distribute('y')}>↕</button>
+          </div>
+        );
+      })()}
 
       {/* Floating Undo/Redo + Add Text widget — top-left of the slide. */}
       {enabled && (
