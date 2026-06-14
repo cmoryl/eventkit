@@ -1185,6 +1185,38 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         </div>
       )}
 
+      {/* Quick canvas-alignment toolbar for the selected text box. */}
+      {enabled && selectedTb && !editingTextBoxId && (
+        <div
+          className="absolute z-50 top-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-lg border bg-background/90 backdrop-blur px-1 py-1 shadow-md text-[10px]"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {([
+            ['L', { xPct: 10 }, 'Align left'],
+            ['C', { xPct: 50 }, 'Center horizontally'],
+            ['R', { xPct: 90 }, 'Align right'],
+            ['|', null, ''],
+            ['T', { yPct: 10 }, 'Align top'],
+            ['M', { yPct: 50 }, 'Center vertically'],
+            ['B', { yPct: 90 }, 'Align bottom'],
+          ] as Array<[string, Partial<NonNullable<SlideData['textBoxes']>[number]> | null, string]>).map(([label, patch, title], i) =>
+            patch ? (
+              <button
+                key={`${label}-${i}`}
+                className="w-6 h-6 rounded hover:bg-muted text-foreground/80 hover:text-foreground font-semibold"
+                title={title}
+                onClick={() => updateTextBox(selectedTb.id, patch)}
+              >
+                {label}
+              </button>
+            ) : (
+              <div key={`sep-${i}`} className="w-px h-4 bg-border mx-0.5" />
+            ),
+          )}
+        </div>
+      )}
+
       {/* Floating Undo/Redo + Add Text widget — top-left of the slide. */}
       {enabled && (
         <div
