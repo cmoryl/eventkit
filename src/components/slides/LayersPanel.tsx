@@ -83,11 +83,30 @@ export const LayersPanel: React.FC<Props> = ({ slide, onUpdate }) => {
   // Render front-to-back: last in array sits on top visually, so show reversed.
   const orderedTextBoxes = [...textBoxes].map((tb, idx) => ({ tb, idx })).reverse();
 
-  return (
-    <div className="flex flex-col h-full">
+  const [detached, setDetached] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("ek.layersPanel.detached") === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("ek.layersPanel.detached", detached ? "1" : "0"); } catch { /* ignore */ }
+  }, [detached]);
+
+  const body = (
+    <div className="flex flex-col h-full min-h-0">
       <div className="px-3 py-2 border-b border-border/60 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold flex items-center justify-between">
         <span>Layers · {textBoxes.length + builtIns.length}</span>
-        <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">Top → Bottom</span>
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">Top → Bottom</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5"
+            onClick={() => setDetached((d) => !d)}
+            title={detached ? "Dock panel" : "Pop out as floating window"}
+          >
+            {detached ? <X className="h-3 w-3" /> : <PanelLeftOpen className="h-3 w-3" />}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
