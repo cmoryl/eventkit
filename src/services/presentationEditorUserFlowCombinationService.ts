@@ -92,14 +92,14 @@ export const presentationEditorCriticalUserFlows: PresentationEditorCriticalUser
   {
     id: 'edit-and-reuse',
     label: 'Edit slide and save reusable system',
-    actions: ['edit_duplicate', 'edit_text', 'edit_layout', 'reuse_deck_recipe', 'reuse_save_template', 'reuse_save_snapshot'],
+    actions: ['create_add_slide', 'edit_duplicate', 'edit_text', 'edit_layout', 'reuse_deck_recipe', 'reuse_save_template', 'reuse_save_snapshot'],
     expectedOutcome: 'A modified slide/deck can be turned into a reusable template, recipe, and snapshot.',
     exportSafe: false,
   },
   {
     id: 'view-present-review-loop',
     label: 'View, present, return to QA loop',
-    actions: ['view_grid', 'view_zoom', 'view_transitions', 'view_present', 'review_run_qa', 'review_fix_issues'],
+    actions: ['create_add_slide', 'view_grid', 'view_zoom', 'view_transitions', 'view_present', 'review_run_qa', 'review_fix_issues'],
     expectedOutcome: 'Presentation preview does not bypass the QA/fix loop.',
     exportSafe: false,
   },
