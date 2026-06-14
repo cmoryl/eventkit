@@ -2022,6 +2022,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       />
     )}
 
+    <ShortcutsOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+
 
     <AISlideGenerator
       isOpen={isAIGeneratorOpen}
