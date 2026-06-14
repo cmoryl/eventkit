@@ -23,6 +23,7 @@ const KEYBOARD: Row[] = [
   { keys: ["⌘", "D"], label: "Duplicate active slide" },
   { keys: ["Shift", "Del"], label: "Delete active slide" },
   { keys: ["Alt", "↑/↓"], label: "Previous / next slide" },
+  { keys: ["Alt", "Shift", "↑/↓"], label: "Move active slide up / down" },
   { keys: ["⌘", "I"], label: "Open Insert (smart layouts)" },
   { keys: ["⌘", "K"], label: "Command palette" },
 ];
