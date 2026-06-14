@@ -135,6 +135,11 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
   const showUrlHint = Boolean(trimmedUrlInput) && !canApplyUrl;
   const hasActiveFilters = Boolean(query.trim()) || sourceFilter !== 'all' || visibleCategoryFilter !== 'all';
 
+  const handleSourceFilterChange = (filter: AssetSourceFilter) => {
+    setSourceFilter(filter);
+    setCategoryFilter('all');
+  };
+
   const clearFilters = () => {
     setQuery('');
     setSourceFilter('all');
@@ -171,7 +176,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
           <button
             key={filter.value}
             type="button"
-            onClick={() => setSourceFilter(filter.value)}
+            onClick={() => handleSourceFilterChange(filter.value)}
             className={cn(
               'rounded-full border px-2.5 py-1 text-[10px] font-semibold transition',
               sourceFilter === filter.value
