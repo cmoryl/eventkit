@@ -252,6 +252,8 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       editorOpen ? "- Use insertSlide({ templateId, slotValues }) to add a new slide (e.g. 'kpi-trio' with three stats)." : "",
       editorOpen ? "- Use setAccentImage({ position, overlay, intensity, url }) to apply a Gamma-style accent image." : "",
       editorOpen ? "- Use goToSlide, duplicateActiveSlide, deleteActiveSlide to navigate and manage slides." : "",
+      editorOpen ? "- Use toggleBrandLock({locked}) and applyBrandToAllSlides() to enforce pixel-perfect brand colors." : "",
+      editorOpen ? "- Use listDraftTray, insertDraftSlide({index}), dismissDraftTray to manage AI draft slides." : "",
       "",
       "Current deck context:",
       `- Active brand: ${c.brandName ?? "none"}${c.isFromBrandHub ? " (BrandHub)" : ""}`,
