@@ -1471,6 +1471,34 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         />
       )}
 
+      {/* Group bounding box + 8 resize handles for the multi-selection. */}
+      {enabled && !editingTextBoxId && effectiveIds.length >= 2 && groupBBox && (
+        <div
+          className="absolute z-40 pointer-events-none border border-primary/70 border-dashed"
+          style={{ left: `${groupBBox.x}%`, top: `${groupBBox.y}%`, width: `${groupBBox.w}%`, height: `${groupBBox.h}%` }}
+        >
+          {([
+            ['nw', '-top-1.5 -left-1.5 cursor-nwse-resize'],
+            ['n',  '-top-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize'],
+            ['ne', '-top-1.5 -right-1.5 cursor-nesw-resize'],
+            ['e',  'top-1/2 -translate-y-1/2 -right-1.5 cursor-ew-resize'],
+            ['se', '-bottom-1.5 -right-1.5 cursor-nwse-resize'],
+            ['s',  '-bottom-1.5 left-1/2 -translate-x-1/2 cursor-ns-resize'],
+            ['sw', '-bottom-1.5 -left-1.5 cursor-nesw-resize'],
+            ['w',  'top-1/2 -translate-y-1/2 -left-1.5 cursor-ew-resize'],
+          ] as Array<['nw'|'n'|'ne'|'e'|'se'|'s'|'sw'|'w', string]>).map(([h, pos]) => (
+            <div
+              key={h}
+              className={`pointer-events-auto absolute w-3 h-3 rounded-sm bg-primary border border-background shadow ${pos}`}
+              title={`Drag to resize group · Shift = uniform`}
+              onPointerDown={(e) => startGroupResize(e, h)}
+            />
+          ))}
+        </div>
+      )}
+
+
+
       {/* Quick toolbar — single selection: canvas align. Multi: align edges + distribute. */}
       {enabled && !editingTextBoxId && effectiveIds.length === 1 && selectedTb && (
         <div
