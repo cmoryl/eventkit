@@ -36,6 +36,10 @@ export interface SlideEditorBusHandlers {
   // Undo / redo on the slide deck
   undoEdit: () => boolean;
   redoEdit: () => boolean;
+  // Deck-level bulk transforms
+  runBulkAction: (
+    id: 'reverse' | 'clearImages' | 'clearAccents' | 'syncBackground' | 'clearTransitions',
+  ) => boolean;
 }
 
 let handlers: Partial<SlideEditorBusHandlers> | null = null;
