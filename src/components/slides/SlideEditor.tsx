@@ -1124,6 +1124,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 onApplyAll={applyBrandLockToAllSlides}
               />
               <DeckBulkActionsMenu onRun={runDeckBulkAction} />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs"
+                title="Find & Replace (⌘F)"
+                onClick={() => setFindOpen(true)}
+              >
+                <SearchIcon className="h-3.5 w-3.5" />
+                Find
+              </Button>
               {/* Zoom */}
               <div className="flex items-center gap-1 bg-muted rounded-full px-2 py-1">
                 <Button
@@ -2169,6 +2179,21 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     )}
 
     <ShortcutsOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+    <FindReplaceDialog
+      open={findOpen}
+      onClose={() => setFindOpen(false)}
+      slides={slides}
+      onJumpTo={(idx) => setActiveIndex(idx)}
+      onReplaceAll={(next, replacedCount, affectedSlides) => {
+        setSlides(next);
+        toast.success(
+          replacedCount > 0
+            ? `Replaced ${replacedCount} occurrence${replacedCount === 1 ? '' : 's'} across ${affectedSlides} slide${affectedSlides === 1 ? '' : 's'}`
+            : 'No replacements made',
+        );
+      }}
+    />
 
 
 
