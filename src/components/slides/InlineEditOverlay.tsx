@@ -1044,7 +1044,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       {/* Text-box overlay layer (renders above slide content, below toolbars). */}
       {textBoxes && textBoxes.length > 0 && (
         <div className="absolute inset-0 z-30 pointer-events-none">
-          {textBoxes.map((tb) => {
+          {textBoxes.filter((tb) => !(tb as { __hidden?: boolean }).__hidden).map((tb) => {
             const isSelected = tb.id === selectedTextBoxId;
             const isEditing = tb.id === editingTextBoxId;
             return (
