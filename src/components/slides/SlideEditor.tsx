@@ -54,6 +54,8 @@ import { FindReplaceDialog } from './FindReplaceDialog';
 import { replaceInDeck } from './findReplace';
 import { Search as SearchIcon } from 'lucide-react';
 import { EditorNavRail, type NavRailTab } from './EditorNavRail';
+import { ShortcutsOverlay, useShortcutsOverlay } from './ShortcutsOverlay';
+
 import { InsertDrawerTabs } from './InsertDrawerTabs';
 import { applySmartObject, SLIDE_OBJECT_MIME } from './smartObjectRegistry';
 import { Layers, Plus as PlusIcon, Palette as PaletteIcon, Sparkles as SparklesIcon, MessageSquare, Layers as LayersIcon } from 'lucide-react';
