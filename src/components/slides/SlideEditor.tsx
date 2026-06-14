@@ -127,6 +127,41 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setBrandLocked(window.localStorage.getItem(brandLockKey) === '1');
   }, [brandLockKey]);
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Global keyboard shortcuts (only active while editor is open + not in an input).
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const inField = !!target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      );
+      if (inField) return;
+      const mod = e.metaKey || e.ctrlKey;
+
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+        return;
+      }
+      if (e.key === 'Escape' && shortcutsOpen) {
+        e.preventDefault();
+        setShortcutsOpen(false);
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        setBrandLocked((v) => !v);
+        toast.success(`Brand Lock ${!brandLocked ? 'ON' : 'OFF'}`);
+        return;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, shortcutsOpen, brandLocked]);
 
 
   useEffect(() => {
