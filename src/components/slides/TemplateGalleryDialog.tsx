@@ -428,10 +428,42 @@ function TemplateCard({
   brandColors?: { primary?: string; secondary?: string; accent?: string };
   brandFonts?: { heading?: string; body?: string };
 }) {
-  const slideWithId = useMemo(() => {
-    const themed = themedTemplate(template).slide;
-    return { ...themed, id: template.id };
+  // Build a 3-slide mini deck (hero + stats + quote) themed with the
+  // template's pack so the card preview reads as an actual deck rather than
+  // a single isolated slide. The first slide is always the template's own
+  // hero so the card stays representative of what you'll insert.
+  const deckSlides = useMemo(() => {
+    const hero = { ...themedTemplate(template).slide, id: `${template.id}__hero` };
+    const pack = template.theme ? getThemePack(template.theme) : null;
+    const supportingRaw: Array<Omit<SlideData, 'id'>> = [
+      {
+        layout: 'stats',
+        title: 'By the Numbers',
+        variant: 'brand',
+        stats: [
+          { value: '94%', label: 'Adoption' },
+          { value: '2.4×', label: 'Faster' },
+          { value: '12M', label: 'Users' },
+        ],
+      },
+      {
+        layout: 'quote',
+        title: '"Design is intelligence made visible."',
+        quoteAuthor: 'Alina Wheeler',
+        variant: 'dark',
+      },
+    ];
+    const themedSupporting = template.theme
+      ? applyDemoTheme(supportingRaw, template.theme)
+      : supportingRaw;
+    const supporting = themedSupporting.map((s, i) => ({
+      ...s,
+      id: `${template.id}__deck__${i}`,
+      variation: s.variation || (pack ? pack.variants[s.layout] : undefined),
+    }));
+    return [hero, ...supporting];
   }, [template]);
+  const slideWithId = deckSlides[0];
   const categoryLabel = INFOGRAPHIC_CATEGORIES.find((c) => c.value === template.category)?.label;
   const styleLabel = DEMO_STYLES.find((s) => s.value === template.theme)?.label;
   const pack = template.theme ? getThemePack(template.theme) : null;
@@ -537,26 +569,80 @@ function TemplateCard({
           </button>
         </div>
 
-        {/* Slide preview */}
-        <div ref={thumbRef} className="relative aspect-video bg-muted overflow-hidden">
+        {/* Slide preview — fanned 3-slide deck stack */}
+        <div
+          ref={thumbRef}
+          className="relative aspect-video overflow-hidden"
+          style={{ background: pack?.palette.contentBg ?? 'hsl(var(--muted))' }}
+        >
           {visible ? (
-            <ScaledSlide>
-              <SlideRenderer
-                slide={slideWithId}
-                brandColors={brandColors}
-                brandFonts={brandFonts}
-                animated={isHovered}
-              />
-            </ScaledSlide>
+            <div className="absolute inset-0 flex items-center justify-center px-[6%] py-[8%]">
+              {/* Back card */}
+              <div
+                className="absolute rounded-md overflow-hidden shadow-lg ring-1 ring-black/20"
+                style={{
+                  width: '78%',
+                  height: '74%',
+                  transform: 'translate(7%, -6%) rotate(4deg)',
+                  opacity: 0.55,
+                }}
+              >
+                <ScaledSlide>
+                  <SlideRenderer
+                    slide={deckSlides[2]}
+                    brandColors={brandColors}
+                    brandFonts={brandFonts}
+                    animated={false}
+                  />
+                </ScaledSlide>
+              </div>
+              {/* Middle card */}
+              <div
+                className="absolute rounded-md overflow-hidden shadow-xl ring-1 ring-black/25"
+                style={{
+                  width: '82%',
+                  height: '78%',
+                  transform: 'translate(-7%, 4%) rotate(-3deg)',
+                  opacity: 0.8,
+                }}
+              >
+                <ScaledSlide>
+                  <SlideRenderer
+                    slide={deckSlides[1]}
+                    brandColors={brandColors}
+                    brandFonts={brandFonts}
+                    animated={false}
+                  />
+                </ScaledSlide>
+              </div>
+              {/* Front (hero) card */}
+              <div
+                className="relative rounded-md overflow-hidden shadow-2xl ring-1 ring-black/30 transition-transform duration-300 group-hover:-translate-y-1"
+                style={{ width: '88%', height: '88%' }}
+              >
+                <ScaledSlide>
+                  <SlideRenderer
+                    slide={slideWithId}
+                    brandColors={brandColors}
+                    brandFonts={brandFonts}
+                    animated={isHovered}
+                  />
+                </ScaledSlide>
+              </div>
+            </div>
           ) : (
             <ThumbnailSkeleton />
           )}
           {template.animated && (
-            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-background/90 backdrop-blur-sm text-[9px] font-medium text-primary flex items-center gap-1">
+            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-background/90 backdrop-blur-sm text-[9px] font-medium text-primary flex items-center gap-1 z-10">
               <Sparkles className="h-2.5 w-2.5" />
               Animated
             </div>
           )}
+          {/* Page-count chip — sells the "deck" idea */}
+          <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-full bg-background/85 backdrop-blur-sm text-[9px] font-medium text-foreground/80 z-10">
+            3 slides
+          </div>
           <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 pointer-events-none transition-colors" />
         </div>
 
