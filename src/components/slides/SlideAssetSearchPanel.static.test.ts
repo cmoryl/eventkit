@@ -1,0 +1,27 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const source = readFileSync(join(process.cwd(), 'src/components/slides/SlideAssetSearchPanel.tsx'), 'utf8');
+
+describe('SlideAssetSearchPanel static contract', () => {
+  it('keeps source filters available in the right-rail asset browser', () => {
+    expect(source).toContain("{ value: 'all', label: 'All' }");
+    expect(source).toContain("{ value: 'current', label: 'Slide' }");
+    expect(source).toContain("{ value: 'brandImagery', label: 'Brand' }");
+    expect(source).toContain("{ value: 'brandHub', label: 'Hub' }");
+  });
+
+  it('keeps category filtering and filter recovery affordances', () => {
+    expect(source).toContain('categoryCounts');
+    expect(source).toContain('visibleCategoryFilter');
+    expect(source).toContain('Clear filters');
+    expect(source).toContain('Reset asset filters');
+  });
+
+  it('keeps web URL paste behavior guarded before applying to a slide', () => {
+    expect(source).toContain('const isWebUrl');
+    expect(source).toContain('disabled={!canApplyUrl}');
+    expect(source).toContain("if (e.key === 'Enter') applyUrl();");
+  });
+});
