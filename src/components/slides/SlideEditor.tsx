@@ -46,6 +46,8 @@ import { slideEditorBus } from '@/lib/slideEditorBus';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
+import { useSlidesHistory } from '@/hooks/useSlidesHistory';
+import { Undo2, Redo2 } from 'lucide-react';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -129,6 +131,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
+  // Undo / redo history for the deck.
+  const history = useSlidesHistory(slides, (next) => setSlides(next), { enabled: isOpen });
+
+
   // Global keyboard shortcuts (only active while editor is open + not in an input).
   useEffect(() => {
     if (!isOpen) return;
@@ -158,6 +164,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Brand Lock ${!brandLocked ? 'ON' : 'OFF'}`);
         return;
       }
+      if (mod && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        history.undo();
+        return;
+      }
+      if (mod && (e.shiftKey && e.key.toLowerCase() === 'z') || (mod && e.key.toLowerCase() === 'y')) {
+        e.preventDefault();
+        history.redo();
+        return;
+      }
+
       if (mod && e.key.toLowerCase() === 'd') {
         e.preventDefault();
         duplicateSlide(activeIndex);
@@ -189,7 +206,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, shortcutsOpen, brandLocked, activeIndex, slides.length]);
+  }, [isOpen, shortcutsOpen, brandLocked, activeIndex, slides.length, history]);
 
 
 
@@ -1001,6 +1018,28 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 </PopoverContent>
               </Popover>
+              <div className="flex items-center gap-0.5 bg-muted/60 rounded-full px-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 rounded-full"
+                  disabled={!history.canUndo}
+                  onClick={history.undo}
+                  title="Undo (⌘Z)"
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 w-7 p-0 rounded-full"
+                  disabled={!history.canRedo}
+                  onClick={history.redo}
+                  title="Redo (⌘⇧Z)"
+                >
+                  <Redo2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
               <Button
                 size="sm"
                 variant="ghost"
@@ -1010,6 +1049,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
               >
                 <span className="text-sm font-bold">?</span>
               </Button>
+
               <BrandLockBar
                 brandName={brand?.name}
                 brandColors={brandColors}
