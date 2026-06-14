@@ -48,6 +48,8 @@ import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
 import { useSlidesHistory } from '@/hooks/useSlidesHistory';
 import { Undo2, Redo2 } from 'lucide-react';
+import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
+import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
