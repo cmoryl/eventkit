@@ -13,8 +13,8 @@ export const PresentationProductionRunbookPanel: React.FC<{
   hasSourceMaterial?: boolean;
   hasBrandProfile?: boolean;
   hasExactLogoSource?: boolean;
-  qaStatus?: PresentationAgentQALoopStatus;
-  exportDecision?: PresentationExportReadinessDecision;
+  qaStatus?: AgentQAGateStatus;
+  exportDecision?: ExportReadinessDecision;
   humanApproved?: boolean;
   className?: string;
 }> = ({ className, ...input }) => {
