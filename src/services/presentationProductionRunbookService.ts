@@ -1,7 +1,7 @@
 import type { SlideData } from '@/components/slides/slideTypes';
 import type { PresentationEventRecord } from './presentationEventHistoryService';
-import type { PresentationExportReadinessDecision } from './presentationExportReadinessService';
-import type { PresentationAgentQALoopStatus } from './presentationAgentQALoopService';
+import type { ExportReadinessDecision } from './presentationExportReadinessService';
+import type { AgentQAGateStatus } from './presentationAgentQALoopService';
 
 export type PresentationRunbookPhaseId =
   | 'intake'
