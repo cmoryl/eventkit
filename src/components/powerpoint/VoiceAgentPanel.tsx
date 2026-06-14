@@ -224,6 +224,11 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
         const ok = slideEditorBus.call("redoEdit");
         return ok ? "Redid the last edit" : "Nothing to redo";
       },
+      runBulkAction: (params: { action: 'reverse' | 'clearImages' | 'clearAccents' | 'syncBackground' | 'clearTransitions' }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("runBulkAction", params.action);
+        return ok ? `Applied bulk action: ${params.action}` : `Unknown bulk action: ${params.action}`;
+      },
     },
   });
 

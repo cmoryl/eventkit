@@ -48,6 +48,8 @@ import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
 import { useSlidesHistory } from '@/hooks/useSlidesHistory';
 import { Undo2, Redo2 } from 'lucide-react';
+import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
+import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -665,6 +667,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     toast.success('Brand colors applied to all slides');
   }, [brandColors]);
 
+  const runDeckBulkAction = useCallback((id: DeckBulkActionId) => {
+    setSlides((prev) => applyDeckBulkAction(id, prev, { activeIndex: activeIndexRef.current }));
+    const meta = DECK_BULK_ACTIONS.find((a) => a.id === id);
+    toast.success(meta ? meta.label : 'Bulk action applied');
+  }, []);
+
+
+
 
   // ── Voice-agent bridge: expose imperative commands to the slideEditorBus
   // so the ElevenLabs voice agent (or any other surface) can drive this
@@ -798,6 +808,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         historyRef.current.redo();
         return true;
       },
+      runBulkAction: (id) => {
+        runDeckBulkActionRef.current(id);
+        return true;
+      },
     });
     return () => slideEditorBus.disconnect();
   }, [applyImageUrlToSlide, setAccentImageForSlide]);
@@ -808,10 +822,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const draftSlidesRef = useRef<SlideData[]>(generatedTraySlides);
   const brandColorsRef = useRef(brandColors);
   const historyRef = useRef(history);
+  const runDeckBulkActionRef = useRef(runDeckBulkAction);
   useEffect(() => { brandLockedRef.current = brandLocked; }, [brandLocked]);
   useEffect(() => { draftSlidesRef.current = generatedTraySlides; }, [generatedTraySlides]);
   useEffect(() => { brandColorsRef.current = brandColors; }, [brandColors]);
   useEffect(() => { historyRef.current = history; }, [history]);
+  useEffect(() => { runDeckBulkActionRef.current = runDeckBulkAction; }, [runDeckBulkAction]);
 
 
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
@@ -1070,6 +1086,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 onToggle={setBrandLocked}
                 onApplyAll={applyBrandLockToAllSlides}
               />
+              <DeckBulkActionsMenu onRun={runDeckBulkAction} />
               {/* Zoom */}
               <div className="flex items-center gap-1 bg-muted rounded-full px-2 py-1">
                 <Button
