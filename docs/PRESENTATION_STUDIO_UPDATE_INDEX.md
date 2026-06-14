@@ -72,6 +72,33 @@ node scripts/test-presentation-studio.mjs --apply-powerpoint-sidebar
 
 The prepared migrations validate their expected markers before passing.
 
+## Manual GitHub workflow
+
+A manual workflow is available for applying both prepared UI migrations to the PR branch from GitHub Actions:
+
+```text
+.github/workflows/apply-presentation-studio-migrations.yml
+```
+
+Run workflow: **Apply Presentation Studio Migrations**
+
+Default target branch:
+
+```text
+presentation-studio-runtime-migration
+```
+
+The workflow checks out the selected branch, installs dependencies, runs:
+
+```bash
+node scripts/test-presentation-studio.mjs --apply-asset-panel --apply-powerpoint-sidebar
+```
+
+Then commits any generated changes to:
+
+- `src/components/slides/SlideEditor.tsx`
+- `src/pages/PowerPointAgent.tsx`
+
 ## Current merge status
 
-The PR branch contains the prepared systems, validation, docs, and targeted workflow coverage. The live `main` branch is not changed until the PR is merged.
+The PR branch contains the prepared systems, validation, docs, targeted workflow coverage, and a manual apply workflow. The live `main` branch is not changed until the PR is merged.
