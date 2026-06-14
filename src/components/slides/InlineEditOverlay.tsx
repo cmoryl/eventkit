@@ -1079,12 +1079,20 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     if (!root) return;
     const tb = (slideRef.current.textBoxes || []).find((t) => t.id === id);
     if (!tb) return;
+    // If the dragged box is part of a multi-selection, capture origins for all.
+    const inGroup = mode === 'move' && (effectiveIds.length > 1) && effectiveIds.includes(id);
+    const group = inGroup
+      ? (slideRef.current.textBoxes || [])
+          .filter((t) => effectiveIds.includes(t.id))
+          .map((t) => ({ id: t.id, xPct: t.xPct, yPct: t.yPct }))
+      : undefined;
     tbDragRef.current = {
       id, mode,
       startX: e.clientX, startY: e.clientY,
       rect: root.getBoundingClientRect(),
       orig: { xPct: tb.xPct, yPct: tb.yPct, wPct: tb.wPct, fontSize: tb.fontSize },
       snapDisabled: e.altKey,
+      group,
     };
   };
 
