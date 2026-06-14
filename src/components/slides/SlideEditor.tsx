@@ -339,10 +339,57 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, []);
 
   const handleCanvasDrop = useCallback(async (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
+    const types = e.dataTransfer.types;
+    const hasFiles = types.includes('Files');
+    const hasSection = types.includes(SLIDE_SECTION_MIME);
+    const hasAssetUrl = types.includes(SLIDE_ASSET_IMAGE_MIME);
+    if (!hasFiles && !hasSection && !hasAssetUrl) return;
     e.preventDefault();
     e.stopPropagation();
     setCanvasFileOver(false);
+
+    // 1. Pre-built section template → insert as new slide after active.
+    if (hasSection) {
+      try {
+        const raw = e.dataTransfer.getData(SLIDE_SECTION_MIME);
+        const payload = JSON.parse(raw) as Omit<SlideData, 'id'>;
+        insertSectionAfter(activeIndex, payload);
+        toast.success(`Inserted ${payload.layout} section`);
+      } catch {
+        toast.error('Could not insert section');
+      }
+      return;
+    }
+
+    // 2. BrandHub image URL → apply to active slide (Shift = new slide).
+    if (hasAssetUrl) {
+      const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
+      if (url) {
+        if (e.shiftKey) {
+          const newSlide: SlideData = {
+            id: uuidv4(),
+            layout: 'full-image',
+            title: '',
+            variant: 'default',
+            imageUrl: url,
+            images: [url],
+          };
+          setSlides(prev => {
+            const next = [...prev];
+            next.splice(activeIndex + 1, 0, newSlide);
+            return next;
+          });
+          setActiveIndex(activeIndex + 1);
+          toast.success('Added image as new slide');
+        } else {
+          applyImageUrlToSlide(url, activeIndex);
+          toast.success('Image added to slide');
+        }
+      }
+      return;
+    }
+
+    // 3. OS files (existing behavior).
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
     const pptxFile = files.find(f => f.name.toLowerCase().endsWith('.pptx'));
@@ -383,13 +430,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Added ${imageFiles.length} images as slides`);
       }
     }
-  }, [activeIndex, loadImageFile, insertImageFilesAsSlides]);
+  }, [activeIndex, loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
 
   const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-    if (e.dataTransfer.types.includes('Files')) {
+    const types = e.dataTransfer.types;
+    if (
+      types.includes('Files') ||
+      types.includes(SLIDE_ASSET_IMAGE_MIME) ||
+      types.includes(SLIDE_SECTION_MIME)
+    ) {
       setThumbFileOver(index);
     }
   }, []);
