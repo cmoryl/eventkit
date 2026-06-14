@@ -34,7 +34,16 @@ Mounted editor validation panels:
 - `PresentationEditorUserFlowMatrixPanel`
 - `PresentationEditorReplayPanel`
 
-Created and ready to mount:
+Embedded inside `PresentationEditorReplayPanel`:
+
+- Editor E2E verdict
+- overall coverage score
+- action hook coverage
+- pairwise coverage
+- replay suite coverage
+- export gate coverage
+
+Available standalone component:
 
 - `PresentationEditorE2ECoveragePanel`
 
