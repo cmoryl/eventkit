@@ -807,9 +807,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const brandLockedRef = useRef(brandLocked);
   const draftSlidesRef = useRef<SlideData[]>(generatedTraySlides);
   const brandColorsRef = useRef(brandColors);
+  const historyRef = useRef(history);
   useEffect(() => { brandLockedRef.current = brandLocked; }, [brandLocked]);
   useEffect(() => { draftSlidesRef.current = generatedTraySlides; }, [generatedTraySlides]);
   useEffect(() => { brandColorsRef.current = brandColors; }, [brandColors]);
+  useEffect(() => { historyRef.current = history; }, [history]);
 
 
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
