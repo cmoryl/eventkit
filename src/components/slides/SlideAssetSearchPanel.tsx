@@ -177,6 +177,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
             key={filter.value}
             type="button"
             onClick={() => handleSourceFilterChange(filter.value)}
+            aria-pressed={sourceFilter === filter.value}
             className={cn(
               'rounded-full border px-2.5 py-1 text-[10px] font-semibold transition',
               sourceFilter === filter.value
@@ -194,6 +195,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
           <button
             type="button"
             onClick={() => setCategoryFilter('all')}
+            aria-pressed={visibleCategoryFilter === 'all'}
             className={cn('rounded-md px-2 py-1 text-[10px] font-semibold transition', visibleCategoryFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
           >
             Any category
@@ -203,6 +205,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
               key={category}
               type="button"
               onClick={() => setCategoryFilter(category)}
+              aria-pressed={visibleCategoryFilter === category}
               className={cn('rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition', visibleCategoryFilter === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
             >
               {normalizeCategory(category)} · {count}
