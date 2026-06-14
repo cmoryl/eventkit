@@ -808,6 +808,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         historyRef.current.redo();
         return true;
       },
+      runBulkAction: (id) => {
+        runDeckBulkActionRef.current(id);
+        return true;
+      },
     });
     return () => slideEditorBus.disconnect();
   }, [applyImageUrlToSlide, setAccentImageForSlide]);
