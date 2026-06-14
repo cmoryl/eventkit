@@ -184,6 +184,31 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
         const ok = slideEditorBus.call("deleteActive");
         return ok ? "Deleted active slide" : "Cannot delete the last remaining slide";
       },
+      toggleBrandLock: (params: { locked: boolean }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("toggleBrandLock", !!params.locked);
+        return params.locked ? "Brand Lock is now ON" : "Brand Lock is now OFF";
+      },
+      applyBrandToAllSlides: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("applyBrandLockToAll");
+        return ok ? "Applied brand colors to all slides" : "No active brand colors to apply";
+      },
+      listDraftTray: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const count = slideEditorBus.call("getDraftCount") ?? 0;
+        return `${count} AI draft slide${count === 1 ? "" : "s"} in the tray`;
+      },
+      insertDraftSlide: (params: { index: number }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("insertDraft", Math.max(0, Math.floor(params.index)));
+        return ok ? `Inserted draft slide ${params.index + 1}` : `No draft at index ${params.index}`;
+      },
+      dismissDraftTray: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("dismissDraftTray");
+        return "Cleared AI draft tray";
+      },
     },
   });
 
