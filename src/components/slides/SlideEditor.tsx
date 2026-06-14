@@ -713,6 +713,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     toast.success(meta ? meta.label : 'Bulk action applied');
   }, []);
 
+  // Click-to-insert from the SmartObjectsPanel — drops the object at slide center,
+  // using its declared defaultMode. Drag-and-drop uses the more precise drop coords.
+  const insertSmartObject = useCallback((objectId: string) => {
+    setSlides((prev) => prev.map((s, i) =>
+      i === activeIndexRef.current ? applySmartObject(objectId, s, { x: 50, y: 50 }) : s,
+    ));
+    toast.success('Object added to slide');
+  }, []);
+
   // Deck-wide find & replace — used by toolbar dialog and voice agent.
   const runFindReplace = useCallback(
     (find: string, replace: string, opts?: { caseSensitive?: boolean; wholeWord?: boolean }) => {
