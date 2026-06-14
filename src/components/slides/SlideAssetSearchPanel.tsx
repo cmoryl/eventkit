@@ -107,27 +107,33 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
     brandHub: assets.filter((asset) => asset.sourceFilter === 'brandHub').length,
   }), [assets]);
 
+  const sourceScopedAssets = useMemo(
+    () => assets.filter((asset) => sourceFilter === 'all' || asset.sourceFilter === sourceFilter),
+    [assets, sourceFilter],
+  );
+
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    for (const asset of assets) counts.set(asset.category, (counts.get(asset.category) || 0) + 1);
+    for (const asset of sourceScopedAssets) counts.set(asset.category, (counts.get(asset.category) || 0) + 1);
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8);
-  }, [assets]);
+  }, [sourceScopedAssets]);
+
+  const visibleCategoryFilter = categoryFilter === 'all' || categoryCounts.some(([category]) => category === categoryFilter) ? categoryFilter : 'all';
 
   const filteredAssets = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return assets
-      .filter((asset) => sourceFilter === 'all' || asset.sourceFilter === sourceFilter)
-      .filter((asset) => categoryFilter === 'all' || asset.category === categoryFilter)
+    return sourceScopedAssets
+      .filter((asset) => visibleCategoryFilter === 'all' || asset.category === visibleCategoryFilter)
       .filter((asset) => !q || [asset.label, asset.source, asset.category, asset.url].join(' ').toLowerCase().includes(q))
       .slice(0, q ? 24 : 12);
-  }, [assets, categoryFilter, query, sourceFilter]);
+  }, [sourceScopedAssets, query, visibleCategoryFilter]);
 
   const trimmedUrlInput = urlInput.trim();
   const canApplyUrl = isWebUrl(trimmedUrlInput);
   const showUrlHint = Boolean(trimmedUrlInput) && !canApplyUrl;
-  const hasActiveFilters = Boolean(query.trim()) || sourceFilter !== 'all' || categoryFilter !== 'all';
+  const hasActiveFilters = Boolean(query.trim()) || sourceFilter !== 'all' || visibleCategoryFilter !== 'all';
 
   const clearFilters = () => {
     setQuery('');
@@ -183,7 +189,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
           <button
             type="button"
             onClick={() => setCategoryFilter('all')}
-            className={cn('rounded-md px-2 py-1 text-[10px] font-semibold transition', categoryFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
+            className={cn('rounded-md px-2 py-1 text-[10px] font-semibold transition', visibleCategoryFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
           >
             Any category
           </button>
@@ -192,7 +198,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
               key={category}
               type="button"
               onClick={() => setCategoryFilter(category)}
-              className={cn('rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition', categoryFilter === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
+              className={cn('rounded-md px-2 py-1 text-[10px] font-semibold capitalize transition', visibleCategoryFilter === category ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground')}
             >
               {normalizeCategory(category)} · {count}
             </button>
