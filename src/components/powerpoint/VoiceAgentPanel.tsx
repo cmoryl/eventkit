@@ -5,6 +5,8 @@ import { Mic, MicOff, Phone, PhoneOff, Loader2, MessageSquare, ChevronDown, Chev
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { slideEditorBus } from "@/lib/slideEditorBus";
+import { SLIDE_BLOCK_TEMPLATES } from "@/components/slides/slideTemplateRegistry";
 
 export interface VoiceAgentContext {
   brandName?: string;
@@ -139,7 +141,48 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
           themeOverride: c.themeOverride ?? "",
           selectedSourcePages: c.selectedPages ?? 0,
           brandStylingActive: !!c.useBrand,
+          liveEditorConnected: slideEditorBus.isConnected(),
+          activeSlideIndex: slideEditorBus.isConnected() ? slideEditorBus.call("getActiveIndex") : null,
+          slideCountInEditor: slideEditorBus.isConnected() ? slideEditorBus.call("getSlideCount") : null,
         });
+      },
+      // ── Live editor commands (only effective when SlideEditor is mounted) ──
+      listSmartLayouts: () => {
+        // Returns the template catalog so the agent can pick one by id.
+        return JSON.stringify(
+          SLIDE_BLOCK_TEMPLATES.map((t) => ({
+            id: t.id,
+            category: t.category,
+            label: t.label,
+            description: t.description,
+            slots: t.slots.map((s) => ({ name: s.name, type: s.type, required: !!s.required })),
+          })),
+        );
+      },
+      insertSlide: (params: { templateId: string; slotValues?: Record<string, unknown> }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open. Switch to the editor tab first.";
+        const result = slideEditorBus.call("insertTemplate", params.templateId, params.slotValues ?? {});
+        return result ? `Inserted ${params.templateId} slide` : `Unknown template "${params.templateId}"`;
+      },
+      setAccentImage: (params: { position?: "none" | "top" | "left" | "right" | "background"; overlay?: "none" | "frosted" | "faded" | "clear"; intensity?: number; url?: string }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("setAccentImage", params);
+        return `Accent image updated (${params.position ?? "current"})`;
+      },
+      goToSlide: (params: { index: number }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("goToSlide", Math.max(0, Math.floor(params.index)));
+        return ok ? `Showing slide ${params.index + 1}` : `No slide at index ${params.index}`;
+      },
+      duplicateActiveSlide: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("duplicateActive");
+        return "Duplicated active slide";
+      },
+      deleteActiveSlide: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("deleteActive");
+        return ok ? "Deleted active slide" : "Cannot delete the last remaining slide";
       },
     },
   });
