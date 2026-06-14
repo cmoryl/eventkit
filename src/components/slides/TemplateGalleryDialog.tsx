@@ -298,6 +298,22 @@ export function TemplateGalleryDialog({
           </div>
         </div>
       </DialogContent>
+
+      {/* Larger-thumbnail preview with sample slide contents. Card clicks open
+          this; user confirms with "Use template" to insert. */}
+      <TemplatePreviewDialog
+        template={INFOGRAPHIC_TEMPLATES.find((t) => t.id === previewId) ?? null}
+        isOpen={!!previewId}
+        onClose={() => setPreviewId(null)}
+        onUse={(tpl) => {
+          setPreviewId(null);
+          handleSelect(tpl);
+        }}
+        isFavorite={!!previewId && favSet.has(previewId)}
+        onToggleFavorite={() => previewId && toggleFavorite(previewId)}
+        brandColors={brandColors}
+        brandFonts={brandFonts}
+      />
     </Dialog>
   );
 }
