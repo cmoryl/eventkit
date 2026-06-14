@@ -788,9 +788,20 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         setGeneratedTraySlides([]);
         return true;
       },
+      undoEdit: () => {
+        if (!historyRef.current.canUndo) return false;
+        historyRef.current.undo();
+        return true;
+      },
+      redoEdit: () => {
+        if (!historyRef.current.canRedo) return false;
+        historyRef.current.redo();
+        return true;
+      },
     });
     return () => slideEditorBus.disconnect();
   }, [applyImageUrlToSlide, setAccentImageForSlide]);
+
 
   // Refs the bus closures read so they always see latest state.
   const brandLockedRef = useRef(brandLocked);
