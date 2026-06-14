@@ -160,7 +160,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
           <p className="mt-0.5 text-[10px] text-muted-foreground">Search, preview, and apply approved image assets to this slide.</p>
         </div>
         {onOpenAssetLibrary && (
-          <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={onOpenAssetLibrary}>
+          <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-[11px]" onClick={onOpenAssetLibrary} aria-label="Open asset library">
             <ExternalLink className="h-3 w-3" /> Library
           </Button>
         )}
@@ -168,7 +168,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-        <Input value={query} onChange={(e) => setQuery(e.target.value)} className="h-8 pl-8 text-xs" placeholder="Search logos, photos, icons, web assets…" />
+        <Input value={query} onChange={(e) => setQuery(e.target.value)} className="h-8 pl-8 text-xs" placeholder="Search logos, photos, icons, web assets…" aria-label="Search assets" />
       </div>
 
       <div className="flex flex-wrap gap-1.5">
@@ -217,7 +217,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
       <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] text-muted-foreground">
         <span>{filteredAssets.length} preview{filteredAssets.length === 1 ? '' : 's'} shown</span>
         {hasActiveFilters ? (
-          <button type="button" onClick={clearFilters} className="font-semibold text-primary hover:underline">
+          <button type="button" onClick={clearFilters} className="font-semibold text-primary hover:underline" aria-label="Clear asset filters">
             Clear filters
           </button>
         ) : (
@@ -251,7 +251,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
           <div className="col-span-2 rounded-lg border border-dashed border-border p-4 text-center text-[11px] text-muted-foreground">
             <ImageIcon className="mx-auto mb-2 h-5 w-5" /> No assets match this search.
             {hasActiveFilters && (
-              <button type="button" onClick={clearFilters} className="mt-2 block w-full text-[10px] font-semibold text-primary hover:underline">
+              <button type="button" onClick={clearFilters} className="mt-2 block w-full text-[10px] font-semibold text-primary hover:underline" aria-label="Reset asset filters">
                 Reset asset filters
               </button>
             )}
@@ -270,8 +270,9 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
             }}
             className="h-8 text-xs"
             placeholder="https://…"
+            aria-label="Paste image address"
           />
-          <Button type="button" size="sm" className="h-8 px-2" onClick={applyUrl} disabled={!canApplyUrl}>
+          <Button type="button" size="sm" className="h-8 px-2" onClick={applyUrl} disabled={!canApplyUrl} aria-label="Use pasted image">
             <UploadCloud className="h-3.5 w-3.5" />
           </Button>
         </div>
