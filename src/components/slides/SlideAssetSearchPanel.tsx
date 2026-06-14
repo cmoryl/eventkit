@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { ExternalLink, Image as ImageIcon, Library, Link2, Search, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 import type { BrandFile } from '@/hooks/useBrandHubFiles';
 import type { SlideData } from './slideTypes';
 
@@ -17,12 +18,15 @@ interface BrandHubImagery {
   sponsors?: string[];
 }
 
+type AssetSourceFilter = 'all' | 'current' | 'brandImagery' | 'brandHub';
+
 interface AssetPreview {
   id: string;
   url: string;
   label: string;
   source: string;
   category: string;
+  sourceFilter: AssetSourceFilter;
 }
 
 interface SlideAssetSearchPanelProps {
@@ -45,9 +49,17 @@ const CATEGORY_LABELS: Record<string, string> = {
   sponsors: 'Sponsor',
 };
 
+const SOURCE_FILTERS: Array<{ value: AssetSourceFilter; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'current', label: 'Slide' },
+  { value: 'brandImagery', label: 'Brand' },
+  { value: 'brandHub', label: 'Hub' },
+];
+
 export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ slide, brandImagery, brandFiles = [], onApplyImage, onOpenAssetLibrary }) => {
   const [query, setQuery] = useState('');
   const [urlInput, setUrlInput] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<AssetSourceFilter>('all');
 
   const assets = useMemo<AssetPreview[]>(() => {
     const fromImagery = Object.entries(brandImagery || {}).flatMap(([category, urls]) =>
@@ -57,6 +69,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
         label: `${CATEGORY_LABELS[category] || category} ${index + 1}`,
         source: 'Brand imagery',
         category,
+        sourceFilter: 'brandImagery' as const,
       })),
     );
 
@@ -68,6 +81,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
         label: file.name,
         source: file.sourceName || file.sectionLabel || 'BrandHub',
         category: file.sectionLabel || file.ext || 'image',
+        sourceFilter: 'brandHub' as const,
       }));
 
     const current = (slide.images || (slide.imageUrl ? [slide.imageUrl] : [])).map((url, index) => ({
@@ -76,16 +90,26 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
       label: `Current slide image ${index + 1}`,
       source: 'Active slide',
       category: 'current',
+      sourceFilter: 'current' as const,
     }));
 
     return [...current, ...fromImagery, ...fromFiles];
   }, [brandFiles, brandImagery, slide.imageUrl, slide.images]);
 
+  const sourceCounts = useMemo(() => ({
+    all: assets.length,
+    current: assets.filter((asset) => asset.sourceFilter === 'current').length,
+    brandImagery: assets.filter((asset) => asset.sourceFilter === 'brandImagery').length,
+    brandHub: assets.filter((asset) => asset.sourceFilter === 'brandHub').length,
+  }), [assets]);
+
   const filteredAssets = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return assets.slice(0, 12);
-    return assets.filter((asset) => [asset.label, asset.source, asset.category, asset.url].join(' ').toLowerCase().includes(q)).slice(0, 20);
-  }, [assets, query]);
+    return assets
+      .filter((asset) => sourceFilter === 'all' || asset.sourceFilter === sourceFilter)
+      .filter((asset) => !q || [asset.label, asset.source, asset.category, asset.url].join(' ').toLowerCase().includes(q))
+      .slice(0, q ? 24 : 12);
+  }, [assets, query, sourceFilter]);
 
   const applyUrl = () => {
     const trimmed = urlInput.trim();
@@ -113,6 +137,29 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
         <Input value={query} onChange={(e) => setQuery(e.target.value)} className="h-8 pl-8 text-xs" placeholder="Search logos, photos, icons, web assets…" />
       </div>
 
+      <div className="flex flex-wrap gap-1.5">
+        {SOURCE_FILTERS.map((filter) => (
+          <button
+            key={filter.value}
+            type="button"
+            onClick={() => setSourceFilter(filter.value)}
+            className={cn(
+              'rounded-full border px-2.5 py-1 text-[10px] font-semibold transition',
+              sourceFilter === filter.value
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground',
+            )}
+          >
+            {filter.label} · {sourceCounts[filter.value]}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] text-muted-foreground">
+        <span>{filteredAssets.length} preview{filteredAssets.length === 1 ? '' : 's'} shown</span>
+        <span>Click a preview to apply</span>
+      </div>
+
       <div className="grid grid-cols-2 gap-2">
         {filteredAssets.map((asset) => (
           <button
@@ -127,7 +174,10 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
             </div>
             <div className="p-2">
               <div className="truncate text-[11px] font-semibold">{asset.label}</div>
-              <div className="truncate text-[10px] text-muted-foreground">{asset.source}</div>
+              <div className="mt-1 flex items-center justify-between gap-1 text-[10px] text-muted-foreground">
+                <span className="truncate">{asset.source}</span>
+                <span className="rounded-full bg-muted px-1.5 py-0.5 uppercase">{asset.category}</span>
+              </div>
             </div>
           </button>
         ))}
