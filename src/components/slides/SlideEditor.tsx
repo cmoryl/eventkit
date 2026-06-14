@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
+import { SlideAssetSearchPanel } from './SlideAssetSearchPanel';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
