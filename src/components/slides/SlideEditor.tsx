@@ -50,6 +50,9 @@ import { useSlidesHistory } from '@/hooks/useSlidesHistory';
 import { Undo2, Redo2 } from 'lucide-react';
 import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
 import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
+import { FindReplaceDialog } from './FindReplaceDialog';
+import { replaceInDeck } from './findReplace';
+import { Search as SearchIcon } from 'lucide-react';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -132,6 +135,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, [brandLockKey]);
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [findOpen, setFindOpen] = useState(false);
 
   // Undo / redo history for the deck.
   const history = useSlidesHistory(slides, (next) => setSlides(next), { enabled: isOpen });
@@ -147,8 +151,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable
       );
-      if (inField) return;
       const mod = e.metaKey || e.ctrlKey;
+
+      // Find & Replace — works even while typing in an input.
+      if (mod && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setFindOpen((v) => !v);
+        return;
+      }
+
+      if (inField) return;
 
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
         e.preventDefault();
@@ -673,6 +685,21 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     toast.success(meta ? meta.label : 'Bulk action applied');
   }, []);
 
+  // Deck-wide find & replace — used by toolbar dialog and voice agent.
+  const runFindReplace = useCallback(
+    (find: string, replace: string, opts?: { caseSensitive?: boolean; wholeWord?: boolean }) => {
+      if (!find) return 0;
+      let replacedCount = 0;
+      setSlides((prev) => {
+        const result = replaceInDeck(prev, find, replace, opts ?? {});
+        replacedCount = result.replacedCount;
+        return result.slides;
+      });
+      return replacedCount;
+    },
+    [],
+  );
+
 
 
 
@@ -812,6 +839,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         runDeckBulkActionRef.current(id);
         return true;
       },
+      findReplace: (params) => {
+        const replaced = runFindReplaceRef.current(
+          params.find,
+          params.replace ?? '',
+          { caseSensitive: params.caseSensitive, wholeWord: params.wholeWord },
+        );
+        return replaced;
+      },
     });
     return () => slideEditorBus.disconnect();
   }, [applyImageUrlToSlide, setAccentImageForSlide]);
@@ -823,11 +858,13 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const brandColorsRef = useRef(brandColors);
   const historyRef = useRef(history);
   const runDeckBulkActionRef = useRef(runDeckBulkAction);
+  const runFindReplaceRef = useRef(runFindReplace);
   useEffect(() => { brandLockedRef.current = brandLocked; }, [brandLocked]);
   useEffect(() => { draftSlidesRef.current = generatedTraySlides; }, [generatedTraySlides]);
   useEffect(() => { brandColorsRef.current = brandColors; }, [brandColors]);
   useEffect(() => { historyRef.current = history; }, [history]);
   useEffect(() => { runDeckBulkActionRef.current = runDeckBulkAction; }, [runDeckBulkAction]);
+  useEffect(() => { runFindReplaceRef.current = runFindReplace; }, [runFindReplace]);
 
 
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
@@ -1087,6 +1124,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 onApplyAll={applyBrandLockToAllSlides}
               />
               <DeckBulkActionsMenu onRun={runDeckBulkAction} />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-1.5 px-2 text-xs"
+                title="Find & Replace (⌘F)"
+                onClick={() => setFindOpen(true)}
+              >
+                <SearchIcon className="h-3.5 w-3.5" />
+                Find
+              </Button>
               {/* Zoom */}
               <div className="flex items-center gap-1 bg-muted rounded-full px-2 py-1">
                 <Button
@@ -2132,6 +2179,21 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     )}
 
     <ShortcutsOverlay open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+
+    <FindReplaceDialog
+      open={findOpen}
+      onClose={() => setFindOpen(false)}
+      slides={slides}
+      onJumpTo={(idx) => setActiveIndex(idx)}
+      onReplaceAll={(next, replacedCount, affectedSlides) => {
+        setSlides(next);
+        toast.success(
+          replacedCount > 0
+            ? `Replaced ${replacedCount} occurrence${replacedCount === 1 ? '' : 's'} across ${affectedSlides} slide${affectedSlides === 1 ? '' : 's'}`
+            : 'No replacements made',
+        );
+      }}
+    />
 
 
 

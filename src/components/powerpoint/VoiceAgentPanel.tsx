@@ -229,6 +229,19 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
         const ok = slideEditorBus.call("runBulkAction", params.action);
         return ok ? `Applied bulk action: ${params.action}` : `Unknown bulk action: ${params.action}`;
       },
+      findReplace: (params: { find: string; replace?: string; caseSensitive?: boolean; wholeWord?: boolean }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        if (!params?.find) return "Tell me what text to find.";
+        const replaced = slideEditorBus.call("findReplace", {
+          find: params.find,
+          replace: params.replace ?? '',
+          caseSensitive: params.caseSensitive,
+          wholeWord: params.wholeWord,
+        });
+        const n = typeof replaced === 'number' ? replaced : 0;
+        if (n === 0) return `No occurrences of "${params.find}" found.`;
+        return `Replaced ${n} occurrence${n === 1 ? '' : 's'} of "${params.find}".`;
+      },
     },
   });
 
