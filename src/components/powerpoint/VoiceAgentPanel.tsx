@@ -213,11 +213,20 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
 
   const buildDynamicPrompt = useCallback(() => {
     const c = contextRef.current;
+    const editorOpen = slideEditorBus.isConnected();
     const lines = [
       "You are EventKIT's PowerPoint deck design assistant. The user is on the deck-builder page right now.",
       "Be concise and conversational. Ask one question at a time. Confirm before triggering generation.",
       "When the user gives you details (topic, audience, slide count, tone, theme), call the matching client tool to fill the form.",
       "Call generateDeck only when the user explicitly says to generate, build, or create the deck.",
+      "",
+      editorOpen
+        ? "The LIVE EDITOR is currently open. You can directly modify the active deck without regenerating:"
+        : "The live editor is not open. You can still help plan the deck and trigger generation.",
+      editorOpen ? "- Use listSmartLayouts to see available slide templates and their slot names." : "",
+      editorOpen ? "- Use insertSlide({ templateId, slotValues }) to add a new slide (e.g. 'kpi-trio' with three stats)." : "",
+      editorOpen ? "- Use setAccentImage({ position, overlay, intensity, url }) to apply a Gamma-style accent image." : "",
+      editorOpen ? "- Use goToSlide, duplicateActiveSlide, deleteActiveSlide to navigate and manage slides." : "",
       "",
       "Current deck context:",
       `- Active brand: ${c.brandName ?? "none"}${c.isFromBrandHub ? " (BrandHub)" : ""}`,
@@ -228,7 +237,7 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       `- Tone: ${c.tone || "(empty)"}`,
       `- Theme override: ${c.themeOverride || "(none)"}`,
       `- PDF source pages selected: ${c.selectedPages ?? 0}`,
-    ];
+    ].filter(Boolean);
     return lines.join("\n");
   }, []);
 
