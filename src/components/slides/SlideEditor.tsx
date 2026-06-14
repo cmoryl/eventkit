@@ -46,6 +46,8 @@ import { slideEditorBus } from '@/lib/slideEditorBus';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
+import { useSlidesHistory } from '@/hooks/useSlidesHistory';
+import { Undo2, Redo2 } from 'lucide-react';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
