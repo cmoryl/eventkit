@@ -1870,6 +1870,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       </Dialog>
     )}
 
+    {/* AI draft tray — floats over canvas when a generation just completed. */}
+    {isOpen && generatedTraySlides.length > 0 && (
+      <GeneratedSlidesTray
+        slides={generatedTraySlides}
+        brandColors={brandColors}
+        brandFonts={brandFonts}
+        onInsert={(payload) => insertSectionAfter(activeIndex, payload)}
+        onDismiss={() => setGeneratedTraySlides([])}
+      />
+    )}
+
+
     <AISlideGenerator
       isOpen={isAIGeneratorOpen}
       onClose={() => setIsAIGeneratorOpen(false)}
