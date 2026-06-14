@@ -20,6 +20,12 @@ describe('SlideAssetSearchPanel static contract', () => {
     expect(source).toContain('Reset asset filters');
   });
 
+  it('resets category scope when the source filter changes', () => {
+    expect(source).toContain('handleSourceFilterChange');
+    expect(source).toContain('setCategoryFilter(\'all\')');
+    expect(source).toContain('onClick={() => handleSourceFilterChange(filter.value)}');
+  });
+
   it('keeps brand, hub, and current slide assets in the same searchable asset model', () => {
     expect(source).toContain('Brand imagery');
     expect(source).toContain('BrandHub');
