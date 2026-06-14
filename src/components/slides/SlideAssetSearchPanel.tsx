@@ -123,6 +123,14 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
       .slice(0, q ? 24 : 12);
   }, [assets, categoryFilter, query, sourceFilter]);
 
+  const hasActiveFilters = Boolean(query.trim()) || sourceFilter !== 'all' || categoryFilter !== 'all';
+
+  const clearFilters = () => {
+    setQuery('');
+    setSourceFilter('all');
+    setCategoryFilter('all');
+  };
+
   const applyUrl = () => {
     const trimmed = urlInput.trim();
     if (!trimmed) return;
@@ -189,9 +197,15 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
         </div>
       )}
 
-      <div className="flex items-center justify-between rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-2 py-1.5 text-[10px] text-muted-foreground">
         <span>{filteredAssets.length} preview{filteredAssets.length === 1 ? '' : 's'} shown</span>
-        <span>Click a preview to apply</span>
+        {hasActiveFilters ? (
+          <button type="button" onClick={clearFilters} className="font-semibold text-primary hover:underline">
+            Clear filters
+          </button>
+        ) : (
+          <span>Click a preview to apply</span>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -218,6 +232,11 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
         {filteredAssets.length === 0 && (
           <div className="col-span-2 rounded-lg border border-dashed border-border p-4 text-center text-[11px] text-muted-foreground">
             <ImageIcon className="mx-auto mb-2 h-5 w-5" /> No assets match this search.
+            {hasActiveFilters && (
+              <button type="button" onClick={clearFilters} className="mt-2 block w-full text-[10px] font-semibold text-primary hover:underline">
+                Reset asset filters
+              </button>
+            )}
           </div>
         )}
       </div>
