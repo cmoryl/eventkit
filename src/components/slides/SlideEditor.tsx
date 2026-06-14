@@ -318,14 +318,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     // Always preventDefault so the browser shows a "copy" cursor instead of "no-drop".
-    // Some browsers don't expose dataTransfer.types reliably during dragover, so we
-    // accept the dragover unconditionally and filter file vs. non-file in onDrop.
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-    // Only highlight when files are involved (this part is safe — empty types just
-    // means no highlight, but the drop is still permitted).
-    if (e.dataTransfer.types.includes('Files')) {
+    const types = e.dataTransfer.types;
+    // Highlight on files, dragged BrandHub images, or section templates.
+    if (
+      types.includes('Files') ||
+      types.includes(SLIDE_ASSET_IMAGE_MIME) ||
+      types.includes(SLIDE_SECTION_MIME)
+    ) {
       setCanvasFileOver(true);
     }
   }, []);
