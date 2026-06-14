@@ -111,7 +111,20 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
   const [canvasFileOver, setCanvasFileOver] = useState(false);
   const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
-  const [brandLocked, setBrandLocked] = useState(false);
+  const brandLockKey = brand?.id ? `eventkit:brand-lock:${brand.id}` : null;
+  const [brandLocked, setBrandLocked] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || !brandLockKey) return false;
+    return window.localStorage.getItem(brandLockKey) === '1';
+  });
+  useEffect(() => {
+    if (!brandLockKey || typeof window === 'undefined') return;
+    window.localStorage.setItem(brandLockKey, brandLocked ? '1' : '0');
+  }, [brandLocked, brandLockKey]);
+  // Re-hydrate when brand changes
+  useEffect(() => {
+    if (!brandLockKey || typeof window === 'undefined') return;
+    setBrandLocked(window.localStorage.getItem(brandLockKey) === '1');
+  }, [brandLockKey]);
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
 
 
