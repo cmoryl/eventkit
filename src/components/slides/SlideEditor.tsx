@@ -684,6 +684,23 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     toast.success(meta ? meta.label : 'Bulk action applied');
   }, []);
 
+  // Deck-wide find & replace — used by toolbar dialog and voice agent.
+  const runFindReplace = useCallback(
+    (find: string, replace: string, opts?: { caseSensitive?: boolean; wholeWord?: boolean }) => {
+      if (!find) return 0;
+      let replacedCount = 0;
+      setSlides((prev) => {
+        // Lazy import via require would be wrong here — use the static import.
+        const { replaceInDeck } = require('./findReplace') as typeof import('./findReplace');
+        const result = replaceInDeck(prev, find, replace, opts ?? {});
+        replacedCount = result.replacedCount;
+        return result.slides;
+      });
+      return replacedCount;
+    },
+    [],
+  );
+
 
 
 
