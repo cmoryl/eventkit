@@ -62,7 +62,9 @@ export const replayPresentationEditorUserFlow = (flowId: string): PresentationEd
   const flow = presentationEditorCriticalUserFlows.find((item) => item.id === flowId);
   if (!flow) throw new Error(`Unknown editor user flow: ${flowId}`);
   const finalState = flow.actions.reduce(applyPresentationEditorReplayAction, initialState());
-  const pass = flow.exportSafe ? finalState.exported && finalState.warnings.length === 0 : !finalState.exported;
+  const includesExportAction = flow.actions.includes('review_export_pptx');
+  const exportReady = finalState.hasDeck && finalState.qaPassed && finalState.exportChecked && finalState.warnings.length === 0;
+  const pass = flow.exportSafe ? (includesExportAction ? finalState.exported && finalState.warnings.length === 0 : exportReady) : !finalState.exported;
   return { flowId: flow.id, label: flow.label, actions: flow.actions, finalState, pass };
 };
 
