@@ -1193,11 +1193,57 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
       if (drag.mode === 'move') {
-        // Group move: translate every selected box by the same delta. Skip snapping
-        // for group moves to keep relative offsets intact.
+        // Group move: translate every selected box by the same delta. Snap the
+        // group's bounding box (left/center/right + top/middle/bottom) against
+        // canvas thirds/center/edges and the centers of non-selected boxes.
         if (drag.group && drag.group.length > 1) {
-          const dxPct = (dx / drag.rect.width) * 100;
-          const dyPct = (dy / drag.rect.height) * 100;
+          let dxPct = (dx / drag.rect.width) * 100;
+          let dyPct = (dy / drag.rect.height) * 100;
+          const snapDisabled = drag.snapDisabled || e.altKey;
+          const guideHits: { v: number[]; h: number[] } = { v: [], h: [] };
+          if (!snapDisabled) {
+            // Compute the group's original bbox (in canvas %) from the captured
+            // origins, using each box's current wPct to estimate edges.
+            const wById = new Map(
+              (slideRef.current.textBoxes || []).map((t) => [t.id, t.wPct]),
+            );
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            for (const g of drag.group) {
+              const w = wById.get(g.id) ?? 0;
+              minX = Math.min(minX, g.xPct - w / 2);
+              maxX = Math.max(maxX, g.xPct + w / 2);
+              minY = Math.min(minY, g.yPct);
+              maxY = Math.max(maxY, g.yPct);
+            }
+            const cx = (minX + maxX) / 2;
+            const cy = (minY + maxY) / 2;
+            const selectedIds = new Set(drag.group.map((g) => g.id));
+            const vTargets = new Set<number>([0, 25, 50, 75, 100]);
+            const hTargets = new Set<number>([0, 25, 50, 75, 100]);
+            for (const t of slideRef.current.textBoxes || []) {
+              if (selectedIds.has(t.id) || (t as { __hidden?: boolean }).__hidden) continue;
+              vTargets.add(t.xPct);
+              vTargets.add(Math.max(0, t.xPct - t.wPct / 2));
+              vTargets.add(Math.min(100, t.xPct + t.wPct / 2));
+              hTargets.add(t.yPct);
+            }
+            const snapEdge = (val: number, targets: number[]) => {
+              let best = val, bestDist = SNAP_PCT, hit: number | null = null;
+              for (const t of targets) {
+                const d = Math.abs(val - t);
+                if (d < bestDist) { bestDist = d; best = t; hit = t; }
+              }
+              return { val: best, delta: best - val, hit };
+            };
+            // Try snapping each of left/center/right and top/middle/bottom; pick
+            // the smallest non-zero adjustment per axis.
+            const xCandidates = [minX + dxPct, cx + dxPct, maxX + dxPct].map((v) => snapEdge(v, [...vTargets]));
+            const yCandidates = [minY + dyPct, cy + dyPct, maxY + dyPct].map((v) => snapEdge(v, [...hTargets]));
+            const bestX = xCandidates.reduce((a, b) => (Math.abs(b.delta) < Math.abs(a.delta) ? b : a));
+            const bestY = yCandidates.reduce((a, b) => (Math.abs(b.delta) < Math.abs(a.delta) ? b : a));
+            if (bestX.hit !== null) { dxPct += bestX.delta; guideHits.v.push(bestX.hit); }
+            if (bestY.hit !== null) { dyPct += bestY.delta; guideHits.h.push(bestY.hit); }
+          }
           const byId = new Map(drag.group.map((g) => [g.id, g]));
           const list = (slideRef.current.textBoxes || []).map((t) => {
             const g = byId.get(t.id);
@@ -1209,7 +1255,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
             };
           });
           onUpdate({ textBoxes: list } as Partial<SlideData>);
-          setGuides({ v: [], h: [] });
+          setGuides(guideHits);
           return;
         }
         let xPct = Math.max(0, Math.min(100, drag.orig.xPct + (dx / drag.rect.width) * 100));
