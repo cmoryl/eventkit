@@ -428,10 +428,42 @@ function TemplateCard({
   brandColors?: { primary?: string; secondary?: string; accent?: string };
   brandFonts?: { heading?: string; body?: string };
 }) {
-  const slideWithId = useMemo(() => {
-    const themed = themedTemplate(template).slide;
-    return { ...themed, id: template.id };
+  // Build a 3-slide mini deck (hero + stats + quote) themed with the
+  // template's pack so the card preview reads as an actual deck rather than
+  // a single isolated slide. The first slide is always the template's own
+  // hero so the card stays representative of what you'll insert.
+  const deckSlides = useMemo(() => {
+    const hero = { ...themedTemplate(template).slide, id: `${template.id}__hero` };
+    const pack = template.theme ? getThemePack(template.theme) : null;
+    const supportingRaw: Array<Omit<SlideData, 'id'>> = [
+      {
+        layout: 'stats',
+        title: 'By the Numbers',
+        variant: 'brand',
+        stats: [
+          { value: '94%', label: 'Adoption' },
+          { value: '2.4×', label: 'Faster' },
+          { value: '12M', label: 'Users' },
+        ],
+      },
+      {
+        layout: 'quote',
+        title: '"Design is intelligence made visible."',
+        quoteAuthor: 'Alina Wheeler',
+        variant: 'dark',
+      },
+    ];
+    const themedSupporting = template.theme
+      ? applyDemoTheme(supportingRaw, template.theme)
+      : supportingRaw;
+    const supporting = themedSupporting.map((s, i) => ({
+      ...s,
+      id: `${template.id}__deck__${i}`,
+      variation: s.variation || (pack ? pack.variants[s.layout] : undefined),
+    }));
+    return [hero, ...supporting];
   }, [template]);
+  const slideWithId = deckSlides[0];
   const categoryLabel = INFOGRAPHIC_CATEGORIES.find((c) => c.value === template.category)?.label;
   const styleLabel = DEMO_STYLES.find((s) => s.value === template.theme)?.label;
   const pack = template.theme ? getThemePack(template.theme) : null;
