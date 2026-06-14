@@ -129,6 +129,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
+  // Undo / redo history for the deck.
+  const history = useSlidesHistory(slides, (next) => setSlides(next), { enabled: isOpen });
+
+
   // Global keyboard shortcuts (only active while editor is open + not in an input).
   useEffect(() => {
     if (!isOpen) return;
