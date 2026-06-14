@@ -667,6 +667,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     toast.success('Brand colors applied to all slides');
   }, [brandColors]);
 
+  const runDeckBulkAction = useCallback((id: DeckBulkActionId) => {
+    setSlides((prev) => applyDeckBulkAction(id, prev, { activeIndex: activeIndexRef.current }));
+    const meta = DECK_BULK_ACTIONS.find((a) => a.id === id);
+    toast.success(meta ? meta.label : 'Bulk action applied');
+  }, []);
+
+
+
 
   // ── Voice-agent bridge: expose imperative commands to the slideEditorBus
   // so the ElevenLabs voice agent (or any other surface) can drive this
