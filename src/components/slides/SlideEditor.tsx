@@ -309,6 +309,25 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     }));
   }, []);
 
+  /** Set (or clear with url='') a slide's accent image. */
+  const setAccentImageForSlide = useCallback((url: string, slideIndex: number, position: 'top' | 'left' | 'right' | 'background' = 'background') => {
+    setSlides(prev => prev.map((s, i) => {
+      if (i !== slideIndex) return s;
+      if (!url) return { ...s, accentImage: undefined };
+      return {
+        ...s,
+        accentImage: {
+          url,
+          position,
+          overlay: position === 'background' ? 'faded' : 'none',
+          intensity: 1,
+          focalX: 50,
+          focalY: 50,
+        },
+      };
+    }));
+  }, []);
+
   /** Insert a pre-built section template as a new slide after `afterIndex`. */
   const insertSectionAfter = useCallback((afterIndex: number, payload: Omit<SlideData, 'id'>) => {
     const newSlide: SlideData = { id: uuidv4(), ...payload };
