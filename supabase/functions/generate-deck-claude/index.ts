@@ -6,7 +6,12 @@
 // The visual rendering (pptxgenjs, palette/font lock) stays in generate-deck.
 
 import { corsHeaders } from "../_shared/cors.ts";
-import { callClaudeJson, claudeErrorResponse, type ClaudeModel } from "../_shared/anthropic.ts";
+import {
+  callClaudeJson,
+  claudeErrorResponse,
+  streamClaudeText,
+  type ClaudeModel,
+} from "../_shared/anthropic.ts";
 
 interface RequestBody {
   topic: string;
@@ -19,6 +24,8 @@ interface RequestBody {
   sourceSummary?: string;
   keyFacts?: string[];
   model?: ClaudeModel;
+  /** When true, stream slides as NDJSON (one slide JSON per line). */
+  stream?: boolean;
 }
 
 const OUTLINE_SCHEMA = {
