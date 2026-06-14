@@ -944,9 +944,28 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
   const textBoxes = (slide as any).textBoxes as SlideData['textBoxes'] | undefined;
   const [selectedTextBoxId, setSelectedTextBoxId] = useState<string | null>(null);
   const [editingTextBoxId, setEditingTextBoxId] = useState<string | null>(null);
-  const tbDragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect; orig: { xPct: number; yPct: number; wPct: number; fontSize: number }; snapDisabled: boolean } | null>(null);
+  // Additional multi-selected ids (primary id is selectedTextBoxId). Effective
+  // selection = union(selectedTextBoxId, multiIds). Group ops act on the union.
+  const [multiIds, setMultiIds] = useState<string[]>([]);
+  const tbDragRef = useRef<{
+    id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect;
+    orig: { xPct: number; yPct: number; wPct: number; fontSize: number };
+    snapDisabled: boolean;
+    /** Group move payload — populated when 2+ boxes are selected at drag start. */
+    group?: Array<{ id: string; xPct: number; yPct: number }>;
+  } | null>(null);
+  // Marquee selection rect, in % of slide. Active while pointer-dragging on empty canvas.
+  const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const marqueeRef = useRef<{ rect: DOMRect; startX: number; startY: number; additive: boolean } | null>(null);
   // Smart guides shown during a drag: arrays of %-positions on each axis.
   const [guides, setGuides] = useState<{ v: number[]; h: number[] }>({ v: [], h: [] });
+
+  // Effective selection = primary + multi (deduped). Used by group ops below.
+  const effectiveIds = useMemo(() => {
+    const set = new Set<string>(multiIds);
+    if (selectedTextBoxId) set.add(selectedTextBoxId);
+    return [...set];
+  }, [selectedTextBoxId, multiIds]);
 
   const updateTextBox = (id: string, patch: Partial<NonNullable<SlideData['textBoxes']>[number]>) => {
     const list = (slideRef.current.textBoxes || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
