@@ -50,21 +50,27 @@ export function ClaudeBrandCopyDialog({ trigger, context = {}, defaultTask = "ta
     setResult(null);
     setDna(null);
     try {
-      const { data, error } = await supabase.functions.invoke("brand-insights-claude", {
-        body: {
-          task,
-          context: { ...context, notes: extra || undefined },
-          count: 5,
-        },
-      });
-      if (error) throw new Error(error.message);
-      if (task === "brand_dna" && data?.result) {
-        setDna(data.result);
-      } else if (typeof data?.text === "string") {
-        setResult(data.text);
-      } else {
-        setResult(JSON.stringify(data, null, 2));
+      // Brand DNA is structured JSON — keep the non-streaming path so we get
+      // the typed object back from the tool-use response.
+      if (task === "brand_dna") {
+        const { data, error } = await supabase.functions.invoke("brand-insights-claude", {
+          body: { task, context: { ...context, notes: extra || undefined }, count: 5 },
+        });
+        if (error) throw new Error(error.message);
+        if (data?.result) setDna(data.result);
+        else setResult(JSON.stringify(data, null, 2));
+        return;
       }
+
+      // Everything else streams text deltas in real time.
+      setResult("");
+      await streamEdgeFunction(
+        "brand-insights-claude",
+        { task, context: { ...context, notes: extra || undefined }, count: 5, stream: true },
+        {
+          onChunk: (_chunk, accumulated) => setResult(accumulated),
+        },
+      );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes("ANTHROPIC_API_KEY")) {
