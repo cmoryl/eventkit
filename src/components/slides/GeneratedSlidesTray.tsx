@@ -92,17 +92,6 @@ export const GeneratedSlidesTray: React.FC<Props> = ({
                   className="group relative shrink-0 w-[170px] rounded-lg overflow-hidden border border-border/60 bg-background cursor-grab active:cursor-grabbing hover:border-primary/60 hover:shadow-md transition-all"
                   title="Drag to insert · or click +"
                 >
-                  <div
-                    className="pointer-events-none"
-                    style={{
-                      width: 170,
-                      height: 96,
-                      transform: "scale(0.13278)",
-                      transformOrigin: "top left",
-                      width: 1280,
-                      height: 720,
-                    } as React.CSSProperties}
-                  />
                   {/* Mini preview at native 1280x720 scaled via wrapper */}
                   <div className="relative w-[170px] h-[96px] overflow-hidden bg-muted">
                     <div
