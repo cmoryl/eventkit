@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ClaudeBrandCopyDialog } from '@/components/brand/ClaudeBrandCopyDialog';
 
 interface BrandsPanelProps {
   brands: Brand[];
