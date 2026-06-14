@@ -611,7 +611,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     if (
       types.includes('Files') ||
       types.includes(SLIDE_ASSET_IMAGE_MIME) ||
-      types.includes(SLIDE_SECTION_MIME)
+      types.includes(SLIDE_SECTION_MIME) ||
+      types.includes(SLIDE_OBJECT_MIME)
     ) {
       setThumbFileOver(index);
     }
@@ -627,8 +628,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     const types = e.dataTransfer.types;
     const hasFiles = types.includes('Files');
     const hasSection = types.includes(SLIDE_SECTION_MIME);
+    const hasObject = types.includes(SLIDE_OBJECT_MIME);
     const hasAssetUrl = types.includes(SLIDE_ASSET_IMAGE_MIME);
-    if (!hasFiles && !hasSection && !hasAssetUrl) return;
+    if (!hasFiles && !hasSection && !hasObject && !hasAssetUrl) return;
     e.preventDefault();
     e.stopPropagation();
     setThumbFileOver(null);
@@ -641,6 +643,22 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Inserted ${payload.layout} section`);
       } catch {
         toast.error('Could not insert section');
+      }
+      return;
+    }
+
+    // Smart object dropped on a thumbnail → merge into THAT slide at center.
+    if (hasObject) {
+      try {
+        const { id, mode } = JSON.parse(e.dataTransfer.getData(SLIDE_OBJECT_MIME)) as { id: string; mode?: 'snap' | 'float' };
+        const finalMode = mode ?? (e.altKey ? 'float' : undefined);
+        setSlides((prev) => prev.map((s, i) =>
+          i === index ? applySmartObject(id, s, { x: 50, y: 50, mode: finalMode }) : s,
+        ));
+        setActiveIndex(index);
+        toast.success('Object added');
+      } catch {
+        toast.error('Could not insert object');
       }
       return;
     }
