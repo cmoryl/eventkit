@@ -34,6 +34,7 @@ import { toast } from 'sonner';
 import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
+import { SlideAssetSearchPanel } from './SlideAssetSearchPanel';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
@@ -1407,6 +1408,23 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                       />
                     </div>
                   </div>
+                )}
+
+                {/* BrandHub asset rail — search images for active brand and add to slide */}
+                {brand?.brandhub_share_token && (
+                  <SlideAssetSearchPanel
+                    images={brandFilesByCategory.image}
+                    brandName={brand?.name}
+                    onOpenLibrary={() => setIsAssetsLibraryOpen(true)}
+                    onUseImage={(file) => {
+                      const currentImages = activeSlide.images || [];
+                      updateSlide(activeIndex, {
+                        images: [...currentImages, file.url],
+                        imageUrl: activeSlide.imageUrl || file.url,
+                      });
+                      toast.success(`Added "${file.name}" to slide`);
+                    }}
+                  />
                 )}
 
                 {/* Slide Images */}
