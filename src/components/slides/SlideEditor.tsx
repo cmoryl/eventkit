@@ -464,11 +464,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     e.stopPropagation();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
     const types = e.dataTransfer.types;
-    // Highlight on files, dragged BrandHub images, or section templates.
+    // Highlight on files, dragged BrandHub images, section templates, or smart objects.
     if (
       types.includes('Files') ||
       types.includes(SLIDE_ASSET_IMAGE_MIME) ||
-      types.includes(SLIDE_SECTION_MIME)
+      types.includes(SLIDE_SECTION_MIME) ||
+      types.includes(SLIDE_OBJECT_MIME)
     ) {
       setCanvasFileOver(true);
     }
@@ -484,8 +485,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     const types = e.dataTransfer.types;
     const hasFiles = types.includes('Files');
     const hasSection = types.includes(SLIDE_SECTION_MIME);
+    const hasObject = types.includes(SLIDE_OBJECT_MIME);
     const hasAssetUrl = types.includes(SLIDE_ASSET_IMAGE_MIME);
-    if (!hasFiles && !hasSection && !hasAssetUrl) return;
+    if (!hasFiles && !hasSection && !hasObject && !hasAssetUrl) return;
     e.preventDefault();
     e.stopPropagation();
     setCanvasFileOver(false);
@@ -499,6 +501,26 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Inserted ${payload.layout} section`);
       } catch {
         toast.error('Could not insert section');
+      }
+      return;
+    }
+
+    // 1b. Smart object → merge into active slide (snap or float).
+    if (hasObject) {
+      try {
+        const raw = e.dataTransfer.getData(SLIDE_OBJECT_MIME);
+        const { id, mode } = JSON.parse(raw) as { id: string; mode?: 'snap' | 'float' };
+        // Compute drop position in % of slide.
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+        const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+        const finalMode = mode ?? (e.altKey ? 'float' : undefined);
+        setSlides((prev) => prev.map((s, i) =>
+          i === activeIndex ? applySmartObject(id, s, { x: xPct, y: yPct, mode: finalMode }) : s,
+        ));
+        toast.success('Object added');
+      } catch {
+        toast.error('Could not insert object');
       }
       return;
     }
