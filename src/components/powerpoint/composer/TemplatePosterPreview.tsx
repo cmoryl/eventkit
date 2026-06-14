@@ -135,7 +135,7 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
     >
       <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${template.palette.bg}, ${light ? '#FFFFFF' : '#0B1020'})` }} />
       <div className="absolute inset-0 opacity-80" style={{ background: `radial-gradient(circle at 18% 18%, ${template.palette.accent}66, transparent 34%), radial-gradient(circle at 82% 18%, ${template.palette.secondary}55, transparent 36%)` }} />
-      <Visual template={template} />
+      <DeckPreviewVisual t={template} />
 
       <div className="relative flex h-full min-h-[inherit] flex-col justify-between p-5">
         <div className="flex items-start justify-between gap-3">
