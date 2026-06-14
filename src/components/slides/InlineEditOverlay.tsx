@@ -1560,6 +1560,18 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
               onPointerDown={(e) => startGroupResize(e, h)}
             />
           ))}
+          {/* Rotation handle — sits above the top edge, linked by a thin tether. */}
+          <div
+            className="pointer-events-auto absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
+            style={{ top: -28 }}
+          >
+            <div
+              className="w-4 h-4 rounded-full bg-primary border-2 border-background shadow cursor-grab active:cursor-grabbing"
+              title="Drag to rotate group · Shift = snap 15° · Alt = 1° precision"
+              onPointerDown={startGroupRotate}
+            />
+            <div className="w-px h-3 bg-primary/60" />
+          </div>
         </div>
       )}
 
