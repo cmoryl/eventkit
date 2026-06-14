@@ -1,0 +1,26 @@
+name: Presentation Studio
+
+on:
+  pull_request:
+    paths:
+      - 'src/components/slides/**'
+      - 'src/components/powerpoint/**'
+      - 'src/services/presentation*.ts'
+      - 'scripts/*presentation*.mjs'
+      - 'scripts/*toolbar*.mjs'
+      - 'docs/PRESENTATION_STUDIO*'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund --silent
+      - name: Run Presentation Studio verification
+        run: node scripts/test-presentation-studio.mjs

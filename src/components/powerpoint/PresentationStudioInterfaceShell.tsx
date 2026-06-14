@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gauge, LayoutDashboard, MousePointerClick, Sparkles } from 'lucide-react';
+import { Gauge, LayoutDashboard, MousePointerClick, ShieldCheck, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface PresentationStudioInterfaceShellProps {
@@ -11,11 +11,18 @@ export interface PresentationStudioInterfaceShellProps {
   className?: string;
 }
 
-const stages = ['Autopilot', 'Editor', 'Command', 'Flow', 'Functions', 'Structure', 'QA', 'Export', 'Fix', 'Review'];
+const stages = ['Operator', 'Autopilot', 'Editor', 'Assets', 'Command', 'Flow', 'Functions', 'Structure', 'QA', 'Export', 'Fix', 'Review'];
+
+const interfaceAdvantages = [
+  'Exact assets, not approximations',
+  'Drop zones tied to templates',
+  'QA gates before export',
+  'PPTX readiness visible',
+];
 
 export const PresentationStudioInterfaceShell: React.FC<PresentationStudioInterfaceShellProps> = ({
   title = 'Presentation Studio Mission Control',
-  subtitle = 'One interface for guided creation, canvas-first editing, smart blocks, QA, fixes, export readiness, and reusable presentation systems.',
+  subtitle = 'One interface for guided creation, canvas-first editing, drag/drop assets, smart blocks, QA, fixes, export readiness, and reusable presentation systems.',
   readinessScore = 0,
   activeStage = 'Autopilot',
   children,
@@ -60,6 +67,13 @@ export const PresentationStudioInterfaceShell: React.FC<PresentationStudioInterf
             <div className="rounded-2xl bg-background p-3"><span className="font-bold">2.</span> Make the canvas feel like the source of truth.</div>
             <div className="rounded-2xl bg-background p-3"><span className="font-bold">3.</span> Surface contextual controls only when useful.</div>
             <div className="rounded-2xl bg-background p-3"><span className="font-bold">4.</span> Make QA and export confidence obvious.</div>
+
+            <div className="pt-2">
+              <div className="mb-2 flex items-center gap-2 font-black text-primary"><ShieldCheck className="h-4 w-4" /> Advantage Layer</div>
+              {interfaceAdvantages.map((advantage) => (
+                <div key={advantage} className="mb-2 rounded-2xl bg-primary/10 p-3 font-bold text-primary">{advantage}</div>
+              ))}
+            </div>
           </div>
         </aside>
       </div>

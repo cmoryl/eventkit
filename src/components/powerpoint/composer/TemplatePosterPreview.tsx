@@ -13,6 +13,15 @@ const isLight = (hex: string) => {
 };
 
 const badgeFor = (template: DeckTemplate) => {
+  if (template.id.includes('enterprise-ai')) return 'AI command deck';
+  if (template.id.includes('global-launch') || template.id.includes('event-experience')) return 'Event system';
+  if (template.id.includes('data-observatory')) return 'Data story deck';
+  if (template.id.includes('case-study')) return 'Proof story deck';
+  if (template.id.includes('product-os')) return 'Product launch';
+  if (template.id.includes('boardroom')) return 'Boardroom pack';
+  if (template.id.includes('brand-governance')) return 'Brand rules kit';
+  if (template.id.includes('thought-leadership')) return 'Editorial POV';
+  if (template.id.includes('workshop')) return 'Training lab';
   if (template.id.includes('transperfect')) return 'Global brand deck';
   if (template.id.includes('corporate')) return 'Executive report';
   if (template.id.includes('editorial')) return 'Editorial keynote';
@@ -25,8 +34,14 @@ const badgeFor = (template: DeckTemplate) => {
 
 const getVisualMode = (template: DeckTemplate) => {
   if (template.id.includes('transperfect')) return 'orb';
-  if (template.id.includes('corporate')) return 'executive';
-  if (template.id.includes('editorial')) return 'editorial';
+  if (template.id.includes('enterprise-ai')) return 'tech';
+  if (template.id.includes('global-launch') || template.id.includes('event-experience')) return 'event';
+  if (template.id.includes('data-observatory')) return 'data';
+  if (template.id.includes('product-os')) return 'product';
+  if (template.id.includes('brand-governance')) return 'governance';
+  if (template.id.includes('workshop')) return 'workshop';
+  if (template.id.includes('corporate') || template.id.includes('boardroom')) return 'executive';
+  if (template.id.includes('editorial') || template.id.includes('thought-leadership') || template.id.includes('case-study')) return 'editorial';
   if (template.id.includes('startup')) return 'startup';
   if (template.id.includes('terracotta')) return 'organic';
   if (template.id.includes('brutalist')) return 'brutalist';
@@ -48,6 +63,55 @@ const TechVisual = ({ t }: { t: DeckTemplate }) => (
     <div className="absolute right-5 top-5 h-24 w-40 rounded-2xl border p-3 shadow-2xl" style={{ borderColor: `${t.palette.accent}55`, background: `${t.palette.bg}CC` }}>
       <div className="mb-2 flex gap-1"><span className="h-2 w-2 rounded-full" style={{ background: t.palette.accent }} /><span className="h-2 w-2 rounded-full" style={{ background: t.palette.secondary }} /></div>
       <div className="space-y-1.5"><div className="h-1.5 rounded-full" style={{ background: t.palette.text }} /><div className="h-1.5 w-2/3 rounded-full opacity-50" style={{ background: t.palette.text }} /><div className="h-8 rounded-lg opacity-40" style={{ background: t.palette.accent }} /></div>
+    </div>
+  </div>
+);
+
+const DataVisual = ({ t }: { t: DeckTemplate }) => (
+  <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute right-5 top-7 h-32 w-44 rounded-3xl border p-3" style={{ borderColor: `${t.palette.accent}55`, background: `${t.palette.bg}AA` }}>
+      <div className="mb-3 flex items-end gap-1.5">
+        {[32, 54, 44, 76, 61, 88].map((height, index) => <span key={index} className="w-4 rounded-t" style={{ height, background: index === 5 ? t.palette.accent : `${t.palette.secondary}AA` }} />)}
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {[t.palette.accent, t.palette.secondary, t.palette.text].map((color) => <span key={color} className="h-6 rounded-lg opacity-70" style={{ background: color }} />)}
+      </div>
+    </div>
+    <div className="absolute bottom-8 right-12 h-16 w-28 rounded-full border opacity-50" style={{ borderColor: t.palette.accent }} />
+  </div>
+);
+
+const EventVisual = ({ t }: { t: DeckTemplate }) => (
+  <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute right-4 top-4 h-40 w-48 rounded-[2rem] border" style={{ borderColor: `${t.palette.text}33`, background: `linear-gradient(135deg, ${t.palette.secondary}88, ${t.palette.accent}55)` }} />
+    <div className="absolute right-10 top-12 h-20 w-28 rounded-2xl bg-black/20 backdrop-blur" />
+    <div className="absolute bottom-8 right-8 flex gap-2">
+      {[t.palette.accent, t.palette.secondary, t.palette.text].map((color) => <span key={color} className="h-8 w-12 rounded-xl border" style={{ background: `${color}AA`, borderColor: `${t.palette.text}33` }} />)}
+    </div>
+  </div>
+);
+
+const ProductVisual = ({ t }: { t: DeckTemplate }) => (
+  <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute right-8 top-7 h-36 w-52 rounded-[2rem] border-4 shadow-2xl" style={{ borderColor: `${t.palette.text}55`, background: `${t.palette.bg}CC` }}>
+      <div className="m-3 h-24 rounded-2xl" style={{ background: `linear-gradient(135deg, ${t.palette.accent}88, ${t.palette.secondary}66)` }} />
+    </div>
+    <div className="absolute right-28 top-36 h-2 w-20 rounded-full" style={{ background: t.palette.text }} />
+  </div>
+);
+
+const GovernanceVisual = ({ t }: { t: DeckTemplate }) => (
+  <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute right-10 top-12 grid h-36 w-44 grid-cols-2 gap-3">
+      {[0, 1, 2, 3].map((i) => <div key={i} className="rounded-2xl border border-dashed p-2" style={{ borderColor: `${t.palette.accent}99`, background: `${t.palette.secondary}55` }}><div className="h-full rounded-xl" style={{ background: i % 2 ? t.palette.bg : t.palette.text }} /></div>)}
+    </div>
+  </div>
+);
+
+const WorkshopVisual = ({ t }: { t: DeckTemplate }) => (
+  <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute right-6 top-8 grid h-36 w-44 grid-cols-2 gap-3 rotate-[-5deg]">
+      {[t.palette.accent, t.palette.secondary, `${t.palette.accent}AA`, `${t.palette.secondary}AA`].map((color, index) => <div key={index} className="rounded-2xl p-3 shadow-xl" style={{ background: color }}><div className="h-1.5 w-2/3 rounded-full bg-white/70" /><div className="mt-2 h-1.5 w-1/2 rounded-full bg-white/45" /></div>)}
     </div>
   </div>
 );
@@ -104,6 +168,11 @@ const Visual = ({ template }: { template: DeckTemplate }) => {
   const mode = getVisualMode(template);
   if (mode === 'orb') return <OrbVisual t={template} />;
   if (mode === 'tech') return <TechVisual t={template} />;
+  if (mode === 'data') return <DataVisual t={template} />;
+  if (mode === 'event') return <EventVisual t={template} />;
+  if (mode === 'product') return <ProductVisual t={template} />;
+  if (mode === 'governance') return <GovernanceVisual t={template} />;
+  if (mode === 'workshop') return <WorkshopVisual t={template} />;
   if (mode === 'editorial') return <EditorialVisual t={template} />;
   if (mode === 'executive') return <ExecutiveVisual t={template} />;
   if (mode === 'startup') return <StartupVisual t={template} />;

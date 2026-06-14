@@ -1,0 +1,61 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const source = readFileSync(join(process.cwd(), 'src/components/slides/SlideAssetSearchPanel.tsx'), 'utf8');
+
+describe('SlideAssetSearchPanel static contract', () => {
+  it('keeps source filters available in the right-rail asset browser', () => {
+    expect(source).toContain("{ value: 'all', label: 'All' }");
+    expect(source).toContain("{ value: 'current', label: 'Slide' }");
+    expect(source).toContain("{ value: 'brandImagery', label: 'Brand' }");
+    expect(source).toContain("{ value: 'brandHub', label: 'Hub' }");
+  });
+
+  it('keeps source-aware category filtering and filter recovery affordances', () => {
+    expect(source).toContain('sourceScopedAssets');
+    expect(source).toContain('categoryCounts');
+    expect(source).toContain('visibleCategoryFilter');
+    expect(source).toContain('Clear filters');
+    expect(source).toContain('Reset asset filters');
+  });
+
+  it('resets category scope when the source filter changes', () => {
+    expect(source).toContain('handleSourceFilterChange');
+    expect(source).toContain('setCategoryFilter(\'all\')');
+    expect(source).toContain('onClick={() => handleSourceFilterChange(filter.value)}');
+  });
+
+  it('marks selected filter chips with pressed state semantics', () => {
+    expect(source).toContain('aria-pressed={sourceFilter === filter.value}');
+    expect(source).toContain("aria-pressed={visibleCategoryFilter === 'all'}");
+    expect(source).toContain('aria-pressed={visibleCategoryFilter === category}');
+  });
+
+  it('labels asset preview apply buttons for assistive technology', () => {
+    expect(source).toContain('aria-label={`Apply ${asset.label} from ${asset.source}`}');
+  });
+
+  it('labels the primary asset rail controls', () => {
+    expect(source).toContain('aria-label="Open asset library"');
+    expect(source).toContain('aria-label="Search assets"');
+    expect(source).toContain('aria-label="Clear asset filters"');
+    expect(source).toContain('aria-label="Reset asset filters"');
+    expect(source).toContain('aria-label="Paste image address"');
+    expect(source).toContain('aria-label="Use pasted image"');
+  });
+
+  it('keeps brand, hub, and current slide assets in the same searchable asset model', () => {
+    expect(source).toContain('Brand imagery');
+    expect(source).toContain('BrandHub');
+    expect(source).toContain('Active slide');
+    expect(source).toContain('filteredAssets');
+  });
+
+  it('keeps web URL paste behavior guarded before applying to a slide', () => {
+    expect(source).toContain('const isWebUrl');
+    expect(source).toContain('canApplyUrl');
+    expect(source).toContain('disabled={!canApplyUrl}');
+    expect(source).toContain("if (e.key === 'Enter') applyUrl();");
+  });
+});
