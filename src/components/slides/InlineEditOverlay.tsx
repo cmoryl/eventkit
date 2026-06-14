@@ -1379,7 +1379,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
                   left: `${tb.xPct}%`,
                   top: `${tb.yPct}%`,
                   width: `${tb.wPct}%`,
-                  transform: 'translate(-50%, -50%)',
+                  transform: `translate(-50%, -50%) rotate(${(tb as { rotation?: number }).rotation || 0}deg)`,
                   outline: isSelected
                     ? `2px solid hsl(var(--primary)${isMulti && !isPrimary ? ' / 0.7' : ''})`
                     : 'none',
