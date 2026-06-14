@@ -291,6 +291,31 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     return newSlides;
   }, []);
 
+  /** Apply a remote image URL (e.g. a BrandHub asset) to a slide. */
+  const applyImageUrlToSlide = useCallback((url: string, slideIndex: number) => {
+    setSlides(prev => prev.map((s, i) => {
+      if (i !== slideIndex) return s;
+      const needsImageLayout = !['image-left', 'image-right', 'full-image'].includes(s.layout);
+      return {
+        ...s,
+        imageUrl: url,
+        images: [url, ...(s.images ?? []).slice(1)],
+        ...(needsImageLayout && { layout: 'image-left' as const }),
+      };
+    }));
+  }, []);
+
+  /** Insert a pre-built section template as a new slide after `afterIndex`. */
+  const insertSectionAfter = useCallback((afterIndex: number, payload: Omit<SlideData, 'id'>) => {
+    const newSlide: SlideData = { id: uuidv4(), ...payload };
+    setSlides(prev => {
+      const next = [...prev];
+      next.splice(afterIndex + 1, 0, newSlide);
+      return next;
+    });
+    setActiveIndex(afterIndex + 1);
+  }, []);
+
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     // Always preventDefault so the browser shows a "copy" cursor instead of "no-drop".
     // Some browsers don't expose dataTransfer.types reliably during dragover, so we
