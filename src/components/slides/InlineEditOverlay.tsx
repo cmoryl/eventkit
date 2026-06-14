@@ -1144,6 +1144,18 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         </div>
       )}
 
+      {/* Smart guide lines — shown while dragging a text box, snap to thirds/center/edges. */}
+      {(guides.v.length > 0 || guides.h.length > 0) && (
+        <div className="absolute inset-0 z-40 pointer-events-none">
+          {guides.v.map((x) => (
+            <div key={`v-${x}`} className="absolute top-0 bottom-0" style={{ left: `${x}%`, width: 1, background: 'hsl(var(--primary))', boxShadow: '0 0 4px hsl(var(--primary))' }} />
+          ))}
+          {guides.h.map((y) => (
+            <div key={`h-${y}`} className="absolute left-0 right-0" style={{ top: `${y}%`, height: 1, background: 'hsl(var(--primary))', boxShadow: '0 0 4px hsl(var(--primary))' }} />
+          ))}
+        </div>
+      )}
+
       {/* Floating Undo/Redo + Add Text widget — top-left of the slide. */}
       {enabled && (
         <div
