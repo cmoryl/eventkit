@@ -25,6 +25,8 @@ Provides the right-rail asset surface for:
 - guarded paste web image URL behavior
 - Enter-key support for valid pasted URLs
 - clear/reset filters when search scopes become too narrow
+- accessible pressed states on source and category filters
+- accessible labels for the library, search, reset, pasted image, and preview apply controls
 - shortcut to open the larger Brand Assets library
 
 ### `BrandAssetsLibrary` upgrades
@@ -83,6 +85,9 @@ The static contract test verifies:
 - source filters remain available
 - source-aware category filtering remains present
 - category scope resets when the source filter changes
+- selected filter chips expose pressed state semantics
+- asset preview apply controls keep accessible labels
+- primary controls keep accessible labels
 - Brand imagery, BrandHub, and active slide assets stay in one searchable asset model
 - pasted URL behavior remains guarded before applying to a slide
 
