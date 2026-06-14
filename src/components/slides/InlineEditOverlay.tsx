@@ -1022,6 +1022,25 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
       if (drag.mode === 'move') {
+        // Group move: translate every selected box by the same delta. Skip snapping
+        // for group moves to keep relative offsets intact.
+        if (drag.group && drag.group.length > 1) {
+          const dxPct = (dx / drag.rect.width) * 100;
+          const dyPct = (dy / drag.rect.height) * 100;
+          const byId = new Map(drag.group.map((g) => [g.id, g]));
+          const list = (slideRef.current.textBoxes || []).map((t) => {
+            const g = byId.get(t.id);
+            if (!g) return t;
+            return {
+              ...t,
+              xPct: Math.max(0, Math.min(100, g.xPct + dxPct)),
+              yPct: Math.max(0, Math.min(100, g.yPct + dyPct)),
+            };
+          });
+          onUpdate({ textBoxes: list } as Partial<SlideData>);
+          setGuides({ v: [], h: [] });
+          return;
+        }
         let xPct = Math.max(0, Math.min(100, drag.orig.xPct + (dx / drag.rect.width) * 100));
         let yPct = Math.max(0, Math.min(100, drag.orig.yPct + (dy / drag.rect.height) * 100));
         const snapDisabled = drag.snapDisabled || e.altKey;
