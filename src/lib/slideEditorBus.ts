@@ -40,6 +40,13 @@ export interface SlideEditorBusHandlers {
   runBulkAction: (
     id: 'reverse' | 'clearImages' | 'clearAccents' | 'syncBackground' | 'clearTransitions',
   ) => boolean;
+  // Deck-wide find & replace — returns number of replacements made.
+  findReplace: (params: {
+    find: string;
+    replace?: string;
+    caseSensitive?: boolean;
+    wholeWord?: boolean;
+  }) => number;
 }
 
 let handlers: Partial<SlideEditorBusHandlers> | null = null;

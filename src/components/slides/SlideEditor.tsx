@@ -864,6 +864,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   useEffect(() => { brandColorsRef.current = brandColors; }, [brandColors]);
   useEffect(() => { historyRef.current = history; }, [history]);
   useEffect(() => { runDeckBulkActionRef.current = runDeckBulkAction; }, [runDeckBulkAction]);
+  useEffect(() => { runFindReplaceRef.current = runFindReplace; }, [runFindReplace]);
 
 
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
