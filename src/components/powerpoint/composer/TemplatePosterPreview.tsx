@@ -27,44 +27,120 @@ const badgeFor = (template: DeckTemplate) => {
   return 'Prebuilt deck';
 };
 
-/** Real, themed 3-slide fanned mini-deck shown in the top-right of each card.
- *  Replaces the previous abstract decorative shapes so each template now
- *  visibly previews its actual slide design (hero + stats + quote). */
+/** Per-template blueprints — each template gets a distinct mix of layouts
+ *  so the mini-deck previews don't all look the same. */
+const blueprintFor = (t: DeckTemplate): Array<Omit<SlideData, 'id'>> => {
+  const id = t.id.toLowerCase();
+
+  if (id.includes('transperfect')) {
+    return [
+      { layout: 'title', title: t.name, subtitle: t.description, variant: 'gradient' },
+      { layout: 'big-number', title: '120+', body: 'Languages delivered at scale', variant: 'brand' },
+      { layout: 'timeline', title: 'Global rollout', variant: 'default', timeline: [
+        { year: 'Q1', label: 'Kickoff' }, { year: 'Q2', label: 'Pilot' }, { year: 'Q3', label: 'Launch' },
+      ] as any },
+    ];
+  }
+  if (id.includes('modern-dark') || id === 'dark') {
+    return [
+      { layout: 'title', title: t.name, subtitle: t.description, variant: 'bold' },
+      { layout: 'chart', title: 'Monthly active users', variant: 'default', chart: {
+        type: 'line', labels: ['Jan','Feb','Mar','Apr','May'], datasets: [{ label: 'MAU', data: [12,18,24,31,42] }],
+      } as any },
+      { layout: 'two-column', title: 'Ship faster', body: '✓ Type-safe\n✓ Fast HMR\n✓ Edge-ready\n---\n✗ Boilerplate\n✗ Slow builds\n✗ Lock-in', variant: 'minimal' },
+    ];
+  }
+  if (id.includes('editorial')) {
+    return [
+      { layout: 'full-image', title: t.name, subtitle: 'An editorial keynote', variant: 'default' },
+      { layout: 'quote', title: '"Design is intelligence made visible."', quoteAuthor: 'Alina Wheeler', variant: 'minimal' },
+      { layout: 'image-left', title: 'A long-form story', body: 'Chapter one\nChapter two\nChapter three', variant: 'default' },
+    ];
+  }
+  if (id.includes('corporate') || id.includes('navy')) {
+    return [
+      { layout: 'title', title: t.name, subtitle: t.description, variant: 'default' },
+      { layout: 'stats', title: 'FY results', variant: 'brand', stats: [
+        { value: '$1.2B', label: 'Revenue' }, { value: '38%', label: 'YoY' }, { value: '4.1x', label: 'EPS' },
+      ] as any },
+      { layout: 'comparison', title: 'Before vs after', body: 'Manual ops\nWeekly reports\nHigh variance\n---\nAutomated\nReal-time\n99.9% SLA', variant: 'default' },
+    ];
+  }
+  if (id.includes('startup') || id.includes('vibrant')) {
+    return [
+      { layout: 'title', title: t.name, subtitle: t.description, variant: 'bold' },
+      { layout: 'process', title: 'How it works', variant: 'default', process: [
+        { step: '1', label: 'Sign up' }, { step: '2', label: 'Connect' }, { step: '3', label: 'Launch' },
+      ] as any },
+      { layout: 'big-number', title: '10×', body: 'Faster onboarding than incumbents', variant: 'brand' },
+    ];
+  }
+  if (id.includes('terracotta') || id.includes('warm')) {
+    return [
+      { layout: 'image-right', title: t.name, body: 'A warm, lifestyle-led narrative', variant: 'default' },
+      { layout: 'quote', title: '"Slow down. Notice the light."', quoteAuthor: 'Studio Notes', variant: 'minimal' },
+      { layout: 'stats', title: 'Wellness pulse', variant: 'minimal', stats: [
+        { value: '88%', label: 'Calmer' }, { value: '2h', label: 'Saved/wk' }, { value: '4.9★', label: 'Rating' },
+      ] as any },
+    ];
+  }
+  if (id.includes('brutalist') || id.includes('mono')) {
+    return [
+      { layout: 'section', title: t.name, subtitle: t.description, variant: 'bold' },
+      { layout: 'big-number', title: '01', body: 'No rules. Just type.', variant: 'default' },
+      { layout: 'content', title: 'Manifesto', body: '• Stark\n• Loud\n• Honest\n• Unmissable', variant: 'default' },
+    ];
+  }
+
+  // Library / fallback — varied based on id hash so cards don't repeat.
+  const buckets: Array<Array<Omit<SlideData, 'id'>>> = [
+    [
+      { layout: 'title', title: t.name, subtitle: t.description, variant: 'gradient' },
+      { layout: 'stats', title: 'Highlights', variant: 'brand', stats: [
+        { value: '94%', label: 'Adoption' }, { value: '2.4×', label: 'Faster' }, { value: '12M', label: 'Users' },
+      ] as any },
+      { layout: 'quote', title: '"Make it obvious."', quoteAuthor: 'Studio', variant: 'dark' },
+    ],
+    [
+      { layout: 'full-image', title: t.name, subtitle: t.description, variant: 'default' },
+      { layout: 'timeline', title: 'Journey', variant: 'default', timeline: [
+        { year: '2023', label: 'Idea' }, { year: '2024', label: 'Build' }, { year: '2025', label: 'Scale' },
+      ] as any },
+      { layout: 'content', title: "What's inside", body: '• Story\n• Data\n• Vision', variant: 'default' },
+    ],
+    [
+      { layout: 'title', title: t.name, subtitle: t.description, variant: 'bold' },
+      { layout: 'chart', title: 'Growth', variant: 'default', chart: {
+        type: 'bar', labels: ['Q1','Q2','Q3','Q4'], datasets: [{ label: 'Rev', data: [8,14,22,35] }],
+      } as any },
+      { layout: 'two-column', title: 'Pros & cons', body: '✓ Clear\n✓ Modular\n✓ Fast\n---\n✗ Cluttered\n✗ Slow\n✗ Rigid', variant: 'minimal' },
+    ],
+    [
+      { layout: 'image-left', title: t.name, body: t.description, variant: 'default' },
+      { layout: 'process', title: 'Approach', variant: 'default', process: [
+        { step: '1', label: 'Discover' }, { step: '2', label: 'Design' }, { step: '3', label: 'Deliver' },
+      ] as any },
+      { layout: 'big-number', title: '3×', body: 'More output, same team', variant: 'brand' },
+    ],
+  ];
+  let hash = 0;
+  for (let i = 0; i < t.id.length; i++) hash = (hash * 31 + t.id.charCodeAt(i)) >>> 0;
+  return buckets[hash % buckets.length];
+};
+
+/** Real, themed 3-slide fanned mini-deck shown in the top-right of each card. */
 const DeckPreviewVisual = ({ t }: { t: DeckTemplate }) => {
   const slides = useMemo(() => {
     const themeId = resolveDemoThemeId(t.id, { bg: t.palette.bg, text: t.palette.text });
     const pack = getThemePack(themeId);
-    const blueprint: Array<Omit<SlideData, 'id'>> = [
-      {
-        layout: 'title',
-        title: t.name,
-        subtitle: t.description,
-        variant: 'gradient',
-      },
-      {
-        layout: 'stats',
-        title: 'By the Numbers',
-        variant: 'brand',
-        stats: [
-          { value: '94%', label: 'Adoption' },
-          { value: '2.4×', label: 'Faster' },
-          { value: '12M', label: 'Users' },
-        ],
-      },
-      {
-        layout: 'quote',
-        title: '"Design is intelligence made visible."',
-        quoteAuthor: 'Alina Wheeler',
-        variant: 'dark',
-      },
-    ];
+    const blueprint = blueprintFor(t);
     const themed = applyDemoTheme(blueprint, themeId);
     return themed.map((s, i) => ({
       ...s,
       id: `${t.id}__poster__${i}`,
       variation: s.variation || pack.variants[s.layout],
       imageUrl:
-        s.imageUrl || (s.layout === 'title' ? pack.images[0]?.src : s.imageUrl),
+        s.imageUrl || (['title','full-image','image-left','image-right'].includes(s.layout) ? pack.images[i % Math.max(1, pack.images.length)]?.src : s.imageUrl),
     }));
   }, [t]);
 
