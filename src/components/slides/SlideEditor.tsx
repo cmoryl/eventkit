@@ -38,6 +38,8 @@ import { SlideAssetSearchPanel, SLIDE_ASSET_IMAGE_MIME } from './SlideAssetSearc
 import { SlideSmartLayoutsPanel, SLIDE_SECTION_MIME } from './SlideSmartLayoutsPanel';
 import { AccentImagePanel } from './AccentImagePanel';
 import { AccentImageLayer } from './AccentImageLayer';
+import { BrandLockBar, applyBrandLockToSlide } from './BrandLockBar';
+import { GeneratedSlidesTray } from './GeneratedSlidesTray';
 import { applySlideTemplate } from './slideTemplateRegistry';
 import { slideEditorBus } from '@/lib/slideEditorBus';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
@@ -109,6 +111,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
   const [canvasFileOver, setCanvasFileOver] = useState(false);
   const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
+  const [brandLocked, setBrandLocked] = useState(false);
+  const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
+
 
   useEffect(() => {
     if (!initialSlides || initialSlides.length === 0) return;
@@ -544,10 +549,26 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     }
   }, [loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide, setAccentImageForSlide]);
 
+  // Normalize a slide payload against the active brand colors if Brand Lock is on.
+  const normalizeWithBrandLock = useCallback(<T extends Partial<SlideData>>(slide: T): T => {
+    if (!brandLocked || !brandColors) return slide;
+    return applyBrandLockToSlide(slide, brandColors);
+  }, [brandLocked, brandColors]);
+
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
-    setSlides(newSlides);
+    const normalized = newSlides.map((s) => normalizeWithBrandLock(s) as SlideData);
+    setSlides(normalized);
     setActiveIndex(0);
-  }, []);
+    // Also stash drafts in the tray so user can drag/recombine individual slides.
+    setGeneratedTraySlides(normalized.map((s) => ({ ...s, id: `tray-${s.id}` })));
+  }, [normalizeWithBrandLock]);
+
+  const applyBrandLockToAllSlides = useCallback(() => {
+    if (!brandColors) return;
+    setSlides((prev) => prev.map((s) => applyBrandLockToSlide(s, brandColors)));
+    toast.success('Brand colors applied to all slides');
+  }, [brandColors]);
+
 
   // ── Voice-agent bridge: expose imperative commands to the slideEditorBus
   // so the ElevenLabs voice agent (or any other surface) can drive this
@@ -813,6 +834,13 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             </div>
 
             <div className="flex items-center gap-2">
+              <BrandLockBar
+                brandName={brand?.name}
+                brandColors={brandColors}
+                locked={brandLocked}
+                onToggle={setBrandLocked}
+                onApplyAll={applyBrandLockToAllSlides}
+              />
               {/* Zoom */}
               <div className="flex items-center gap-1 bg-muted rounded-full px-2 py-1">
                 <Button
@@ -1841,6 +1869,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         </DialogContent>
       </Dialog>
     )}
+
+    {/* AI draft tray — floats over canvas when a generation just completed. */}
+    {isOpen && generatedTraySlides.length > 0 && (
+      <GeneratedSlidesTray
+        slides={generatedTraySlides}
+        brandColors={brandColors}
+        brandFonts={brandFonts}
+        onInsert={(payload) => insertSectionAfter(activeIndex, payload)}
+        onDismiss={() => setGeneratedTraySlides([])}
+      />
+    )}
+
 
     <AISlideGenerator
       isOpen={isAIGeneratorOpen}
