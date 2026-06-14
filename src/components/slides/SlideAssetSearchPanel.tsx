@@ -57,6 +57,7 @@ const SOURCE_FILTERS: Array<{ value: AssetSourceFilter; label: string }> = [
 ];
 
 const normalizeCategory = (category: string) => CATEGORY_LABELS[category] || category.replace(/[-_]/g, ' ');
+const isWebUrl = (value: string) => /^https?:\/\//i.test(value.trim());
 
 export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ slide, brandImagery, brandFiles = [], onApplyImage, onOpenAssetLibrary }) => {
   const [query, setQuery] = useState('');
@@ -123,6 +124,9 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
       .slice(0, q ? 24 : 12);
   }, [assets, categoryFilter, query, sourceFilter]);
 
+  const trimmedUrlInput = urlInput.trim();
+  const canApplyUrl = isWebUrl(trimmedUrlInput);
+  const showUrlHint = Boolean(trimmedUrlInput) && !canApplyUrl;
   const hasActiveFilters = Boolean(query.trim()) || sourceFilter !== 'all' || categoryFilter !== 'all';
 
   const clearFilters = () => {
@@ -132,9 +136,8 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
   };
 
   const applyUrl = () => {
-    const trimmed = urlInput.trim();
-    if (!trimmed) return;
-    onApplyImage(trimmed);
+    if (!canApplyUrl) return;
+    onApplyImage(trimmedUrlInput);
     setUrlInput('');
   };
 
@@ -244,11 +247,20 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
       <div className="space-y-2 rounded-lg border border-border bg-background p-2">
         <div className="flex items-center gap-1.5 text-[11px] font-semibold"><Link2 className="h-3 w-3 text-primary" /> Paste web image URL</div>
         <div className="flex gap-1.5">
-          <Input value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className="h-8 text-xs" placeholder="https://…" />
-          <Button type="button" size="sm" className="h-8 px-2" onClick={applyUrl} disabled={!urlInput.trim()}>
+          <Input
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applyUrl();
+            }}
+            className="h-8 text-xs"
+            placeholder="https://…"
+          />
+          <Button type="button" size="sm" className="h-8 px-2" onClick={applyUrl} disabled={!canApplyUrl}>
             <UploadCloud className="h-3.5 w-3.5" />
           </Button>
         </div>
+        {showUrlHint && <p className="text-[10px] text-muted-foreground">Use a full http or https image URL.</p>}
       </div>
     </div>
   );
