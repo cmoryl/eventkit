@@ -603,7 +603,7 @@ function SampleDeck({
               <ScaledSlide>
                 <SlideRenderer
                   slide={slide}
-                  brandColors={brandColors}
+                  brandColors={deckBrandColors}
                   brandFonts={brandFonts}
                   animated={animated}
                 />
