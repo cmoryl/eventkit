@@ -967,6 +967,111 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     return [...set];
   }, [selectedTextBoxId, multiIds]);
 
+  // Bounding box (in % of canvas) around the multi-selection. Measured from the
+  // live DOM so it tracks wrapping and font-driven heights. Recomputes when
+  // selection or text-box payload changes.
+  const [groupBBox, setGroupBBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    if (effectiveIds.length < 2) { setGroupBBox(null); return; }
+    const root = wrapperRef.current?.parentElement;
+    if (!root) return;
+    const rootRect = root.getBoundingClientRect();
+    const rects: DOMRect[] = [];
+    for (const id of effectiveIds) {
+      const el = root.querySelector(`[data-tb-id="${id}"]`) as HTMLElement | null;
+      if (el) rects.push(el.getBoundingClientRect());
+    }
+    if (rects.length === 0) { setGroupBBox(null); return; }
+    const left = Math.min(...rects.map((r) => r.left));
+    const top = Math.min(...rects.map((r) => r.top));
+    const right = Math.max(...rects.map((r) => r.right));
+    const bottom = Math.max(...rects.map((r) => r.bottom));
+    setGroupBBox({
+      x: ((left - rootRect.left) / rootRect.width) * 100,
+      y: ((top - rootRect.top) / rootRect.height) * 100,
+      w: ((right - left) / rootRect.width) * 100,
+      h: ((bottom - top) / rootRect.height) * 100,
+    });
+  }, [effectiveIds.join(','), textBoxes]);
+
+  // Group-resize drag: scales every selected text box relative to the anchor
+  // (the corner/edge opposite the grabbed handle).
+  type GroupHandle = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w';
+  const groupResizeRef = useRef<{
+    handle: GroupHandle;
+    rect: DOMRect;
+    bbox: { x: number; y: number; w: number; h: number };
+    anchor: { x: number; y: number };
+    items: Array<{ id: string; xPct: number; yPct: number; wPct: number; fontSize: number }>;
+  } | null>(null);
+
+  const startGroupResize = (e: React.PointerEvent, handle: GroupHandle) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const root = wrapperRef.current?.parentElement;
+    if (!root || !groupBBox) return;
+    const items = (slideRef.current.textBoxes || [])
+      .filter((t) => effectiveIds.includes(t.id))
+      .map((t) => ({ id: t.id, xPct: t.xPct, yPct: t.yPct, wPct: t.wPct, fontSize: t.fontSize }));
+    const ax = handle.includes('w') ? groupBBox.x + groupBBox.w : groupBBox.x;
+    const ay = handle.includes('n') ? groupBBox.y + groupBBox.h : groupBBox.y;
+    groupResizeRef.current = {
+      handle,
+      rect: root.getBoundingClientRect(),
+      bbox: groupBBox,
+      anchor: { x: ax, y: ay },
+      items,
+    };
+  };
+
+  useEffect(() => {
+    const MIN_SCALE = 0.1;
+    const onMove = (e: PointerEvent) => {
+      const g = groupResizeRef.current;
+      if (!g) return;
+      const mx = ((e.clientX - g.rect.left) / g.rect.width) * 100;
+      const my = ((e.clientY - g.rect.top) / g.rect.height) * 100;
+      const axisX = g.handle.includes('w') || g.handle.includes('e');
+      const axisY = g.handle.includes('n') || g.handle.includes('s');
+      let sx = axisX ? Math.max(MIN_SCALE, Math.abs(mx - g.anchor.x) / g.bbox.w) : 1;
+      let sy = axisY ? Math.max(MIN_SCALE, Math.abs(my - g.anchor.y) / g.bbox.h) : 1;
+      const isCorner = axisX && axisY;
+      // Corners are uniform; Shift forces uniform on side handles too.
+      if (isCorner || e.shiftKey) {
+        const s = isCorner ? (sx + sy) / 2 : Math.max(sx, sy);
+        sx = s; sy = s;
+      }
+      const next = (slideRef.current.textBoxes || []).map((t) => {
+        const orig = g.items.find((i) => i.id === t.id);
+        if (!orig) return t;
+        const nx = axisX ? g.anchor.x + (orig.xPct - g.anchor.x) * sx : orig.xPct;
+        const ny = axisY ? g.anchor.y + (orig.yPct - g.anchor.y) * sy : orig.yPct;
+        const nw = axisX ? Math.max(8, Math.min(100, orig.wPct * sx)) : orig.wPct;
+        const fs = (isCorner || e.shiftKey)
+          ? Math.max(8, Math.min(220, orig.fontSize * sx))
+          : axisY
+            ? Math.max(8, Math.min(220, orig.fontSize * sy))
+            : orig.fontSize;
+        return {
+          ...t,
+          xPct: Math.max(0, Math.min(100, nx)),
+          yPct: Math.max(0, Math.min(100, ny)),
+          wPct: nw,
+          fontSize: fs,
+        };
+      });
+      onUpdate({ textBoxes: next } as Partial<SlideData>);
+    };
+    const onUp = () => { groupResizeRef.current = null; };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const updateTextBox = (id: string, patch: Partial<NonNullable<SlideData['textBoxes']>[number]>) => {
     const list = (slideRef.current.textBoxes || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
     onUpdate({ textBoxes: list } as Partial<SlideData>);
