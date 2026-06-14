@@ -202,27 +202,51 @@ export function AISlideGenerator({
 
     setIsGenerating(true);
     try {
-      // ---- Anthropic Claude path ---------------------------------------
-      // Claude doesn't run through generate-slides; it plans a deck outline
-      // via generate-deck-claude, then we convert that outline → SlideData.
+      // ---- Anthropic Claude path (streamed NDJSON slide-by-slide) -------
       if (provider === 'anthropic') {
         const sourceText = briefMode === 'content' && hasContent ? content.trim() : undefined;
-        const { data: claudeData, error: claudeErr } = await supabase.functions.invoke('generate-deck-claude', {
-          body: {
+        const { streamEdgeFunction } = await import('@/lib/aiStream');
+        const { outlineToThemedSlides } = await import('@/components/slides/outlineToSlides');
+
+        const outline: { title: string; subtitle?: string; slides: any[] } = {
+          title: hasTopic ? topic.trim() : (sourceText?.slice(0, 60) ?? 'Untitled deck'),
+          slides: [],
+        };
+        let lastEmitCount = 0;
+
+        await streamEdgeFunction(
+          'generate-deck-claude',
+          {
             topic: hasTopic ? topic.trim() : (sourceText?.slice(0, 200) ?? 'Untitled deck'),
             slideCount: parseInt(slideCount),
             brandName: brandName || undefined,
             sourceSummary: sourceText,
             model,
+            stream: true,
           },
-        });
-        if (claudeErr) throw new Error(claudeErr.message || 'Claude failed to plan deck');
-        if (!claudeData?.outline?.slides) throw new Error('Claude returned an empty outline');
+          {
+            onLine: (line) => {
+              let evt: any;
+              try { evt = JSON.parse(line); } catch { return; }
+              if (evt?.type === 'meta') {
+                outline.title = evt.title || outline.title;
+                outline.subtitle = evt.subtitle;
+              } else if (evt?.type === 'slide') {
+                outline.slides.push(evt);
+                // Re-theme & emit on every new slide so the editor renders
+                // progressively as Claude thinks.
+                const themed = outlineToThemedSlides(outline as any);
+                if (themed.length > lastEmitCount) {
+                  lastEmitCount = themed.length;
+                  onSlidesGenerated(themed);
+                }
+              }
+            },
+          },
+        );
 
-        const { outlineToThemedSlides } = await import('@/components/slides/outlineToSlides');
-        const slides = outlineToThemedSlides(claudeData.outline);
-        onSlidesGenerated(slides);
-        toast.success(`Generated ${slides.length} slides with Claude ✨`);
+        if (!outline.slides.length) throw new Error('Claude returned no slides');
+        toast.success(`Generated ${outline.slides.length} slides with Claude ✨`);
         setTopic('');
         setContent('');
         onClose();

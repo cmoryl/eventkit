@@ -194,6 +194,51 @@ export async function streamClaude(
   return res.body;
 }
 
+/**
+ * Stream Claude as a plain-text ReadableStream of just the text deltas
+ * (no Anthropic SSE framing). Easier for the browser to read with
+ * `response.body.getReader()` + `TextDecoder`.
+ */
+export async function streamClaudeText(
+  req: ClaudeRequest,
+): Promise<ReadableStream<Uint8Array>> {
+  const sse = await streamClaude(req);
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buf = "";
+
+  return sse.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        buf += decoder.decode(chunk, { stream: true });
+        const lines = buf.split("\n");
+        buf = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          const payload = trimmed.slice(5).trim();
+          if (!payload || payload === "[DONE]") continue;
+          try {
+            const evt = JSON.parse(payload) as {
+              type: string;
+              delta?: { type?: string; text?: string; partial_json?: string };
+            };
+            if (evt.type === "content_block_delta") {
+              const d = evt.delta;
+              const text = d?.type === "text_delta" ? d.text
+                : d?.type === "input_json_delta" ? d.partial_json
+                : undefined;
+              if (text) controller.enqueue(encoder.encode(text));
+            }
+          } catch {
+            // ignore malformed lines
+          }
+        }
+      },
+    }),
+  );
+}
+
 /** Map a ClaudeError to the project's standard JSON response shape. */
 export function claudeErrorResponse(err: unknown, corsHeaders: Record<string, string>): Response {
   if (err instanceof ClaudeError) {
