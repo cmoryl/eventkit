@@ -139,7 +139,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, [brandLockKey]);
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
   /** Currently-open NavRail tab — null when drawer is collapsed. */
-  const [navRailTab, setNavRailTab] = useState<string | null>('slides');
+  const [navRailTab, setNavRailTab] = useState<string | null>(null);
+  /** Whether the thumbnail rail is visible (toggled by NavRail "Slides" icon). */
+  const [thumbRailVisible, setThumbRailVisible] = useState(true);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
 
@@ -1346,9 +1348,80 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
 
           {/* Main area */}
           <div className="flex flex-1 min-h-0">
-            {/* Sidebar - thumbnails (hidden in grid view) */}
-            {!isGridView && (
+            {/* Persistent left NavRail — icons + contextual drawer */}
+            <EditorNavRail
+              activeId={navRailTab}
+              onChange={setNavRailTab}
+              tabs={[
+                {
+                  id: 'slides',
+                  label: thumbRailVisible ? 'Hide slide rail' : 'Show slide rail',
+                  icon: Layers,
+                  onClick: () => setThumbRailVisible((v) => !v),
+                },
+                {
+                  id: 'insert',
+                  label: 'Insert',
+                  icon: PlusIcon,
+                  content: (
+                    <InsertDrawerTabs
+                      onInsertSection={(payload) => insertSectionAfter(activeIndexRef.current, payload)}
+                      onInsertObject={insertSmartObject}
+                      mediaSlot={brand?.brandhub_share_token ? (
+                        <SlideAssetSearchPanel
+                          images={brandFilesByCategory.image}
+                          brandName={brand?.name}
+                          onOpenLibrary={() => setIsAssetsLibraryOpen(true)}
+                          onUseImage={(file) => {
+                            const currentImages = activeSlide.images || [];
+                            updateSlide(activeIndex, {
+                              images: [...currentImages, file.url],
+                              imageUrl: activeSlide.imageUrl || file.url,
+                            });
+                            toast.success(`Added "${file.name}" to slide`);
+                          }}
+                          onUseAsAccent={(file) => {
+                            setAccentImageForSlide(file.url, activeIndex, 'background');
+                            toast.success(`Set "${file.name}" as accent image`);
+                          }}
+                        />
+                      ) : undefined}
+                    />
+                  ),
+                },
+                {
+                  id: 'themes',
+                  label: 'Themes',
+                  icon: PaletteIcon,
+                  content: (
+                    <div className="p-3 text-xs text-muted-foreground">
+                      Theme picker coming next — for now, change theme from the Design tab in the inspector.
+                    </div>
+                  ),
+                },
+                {
+                  id: 'ai',
+                  label: 'AI Generate',
+                  icon: SparklesIcon,
+                  onClick: () => setIsAIGeneratorOpen(true),
+                },
+                {
+                  id: 'comments',
+                  label: 'Comments (soon)',
+                  icon: MessageSquare,
+                  content: (
+                    <div className="p-3 text-xs text-muted-foreground">
+                      Collaborative comments are coming. For now, use slide notes.
+                    </div>
+                  ),
+                },
+              ]}
+            />
+
+            {/* Sidebar - thumbnails (hidden in grid view or when toggled off) */}
+            {!isGridView && thumbRailVisible && (
             <div className="w-[220px] border-r bg-muted/30 flex flex-col shrink-0">
+
               <div className="flex-1 overflow-y-auto p-3 space-y-3">
                 {slides.map((slide, i) => (
                   <div
