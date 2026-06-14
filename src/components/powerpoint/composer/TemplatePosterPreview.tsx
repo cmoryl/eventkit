@@ -1,7 +1,11 @@
-import React from 'react';
-import { Check, MonitorPlay, Sparkles, BarChart3, Quote, CalendarDays, Layers3, Zap } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Check, MonitorPlay, Sparkles, BarChart3, Quote, CalendarDays, Layers3 } from 'lucide-react';
 import type { DeckTemplate } from './TemplateGallery';
 import { cn } from '@/lib/utils';
+import { ScaledSlide } from '@/components/slides/ScaledSlide';
+import { SlideRenderer } from '@/components/slides/SlideRenderer';
+import { applyDemoTheme, resolveDemoThemeId, type SlideData } from '@/components/slides/slideTypes';
+import { getThemePack } from '@/components/slides/themePacks';
 
 const isLight = (hex: string) => {
   const bg = hex.replace('#', '');
@@ -23,94 +27,86 @@ const badgeFor = (template: DeckTemplate) => {
   return 'Prebuilt deck';
 };
 
-const getVisualMode = (template: DeckTemplate) => {
-  if (template.id.includes('transperfect')) return 'orb';
-  if (template.id.includes('corporate')) return 'executive';
-  if (template.id.includes('editorial')) return 'editorial';
-  if (template.id.includes('startup')) return 'startup';
-  if (template.id.includes('terracotta')) return 'organic';
-  if (template.id.includes('brutalist')) return 'brutalist';
-  if (template.id.includes('dark')) return 'tech';
-  return isLight(template.palette.bg) ? 'libraryLight' : 'libraryDark';
+/** Real, themed 3-slide fanned mini-deck shown in the top-right of each card.
+ *  Replaces the previous abstract decorative shapes so each template now
+ *  visibly previews its actual slide design (hero + stats + quote). */
+const DeckPreviewVisual = ({ t }: { t: DeckTemplate }) => {
+  const slides = useMemo(() => {
+    const themeId = resolveDemoThemeId(t.id, { bg: t.palette.bg, text: t.palette.text });
+    const pack = getThemePack(themeId);
+    const blueprint: Array<Omit<SlideData, 'id'>> = [
+      {
+        layout: 'title',
+        title: t.name,
+        subtitle: t.description,
+        variant: 'gradient',
+      },
+      {
+        layout: 'stats',
+        title: 'By the Numbers',
+        variant: 'brand',
+        stats: [
+          { value: '94%', label: 'Adoption' },
+          { value: '2.4×', label: 'Faster' },
+          { value: '12M', label: 'Users' },
+        ],
+      },
+      {
+        layout: 'quote',
+        title: '"Design is intelligence made visible."',
+        quoteAuthor: 'Alina Wheeler',
+        variant: 'dark',
+      },
+    ];
+    const themed = applyDemoTheme(blueprint, themeId);
+    return themed.map((s, i) => ({
+      ...s,
+      id: `${t.id}__poster__${i}`,
+      variation: s.variation || pack.variants[s.layout],
+      imageUrl:
+        s.imageUrl || (s.layout === 'title' ? pack.images[0]?.src : s.imageUrl),
+    }));
+  }, [t]);
+
+  const brandColors = {
+    primary: t.palette.accent,
+    secondary: t.palette.secondary,
+    accent: t.palette.accent,
+  };
+
+  return (
+    <div className="pointer-events-none absolute right-4 top-4 h-[58%] w-[52%]">
+      {/* Back slide */}
+      <div
+        className="absolute right-[-2%] top-[-4%] aspect-video w-[70%] overflow-hidden rounded-md shadow-xl ring-1 ring-black/30"
+        style={{ transform: 'rotate(7deg)', opacity: 0.5 }}
+      >
+        <ScaledSlide>
+          <SlideRenderer slide={slides[2]} brandColors={brandColors} animated={false} />
+        </ScaledSlide>
+      </div>
+      {/* Middle slide */}
+      <div
+        className="absolute right-[8%] top-[6%] aspect-video w-[78%] overflow-hidden rounded-md shadow-2xl ring-1 ring-black/35"
+        style={{ transform: 'rotate(-4deg)', opacity: 0.85 }}
+      >
+        <ScaledSlide>
+          <SlideRenderer slide={slides[1]} brandColors={brandColors} animated={false} />
+        </ScaledSlide>
+      </div>
+      {/* Front (hero) slide */}
+      <div
+        className="absolute right-[2%] top-[18%] aspect-video w-[88%] overflow-hidden rounded-md shadow-2xl ring-1 ring-black/40 transition-transform duration-300 group-hover:-translate-y-1"
+      >
+        <ScaledSlide>
+          <SlideRenderer slide={slides[0]} brandColors={brandColors} animated={false} />
+        </ScaledSlide>
+      </div>
+    </div>
+  );
 };
 
-const OrbVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute -right-12 -top-10 h-44 w-44 rounded-full blur-xl" style={{ background: `radial-gradient(circle, ${t.palette.accent}, transparent 68%)` }} />
-    <div className="absolute bottom-2 left-8 h-36 w-36 rounded-full blur-lg" style={{ background: `radial-gradient(circle, ${t.palette.secondary}, transparent 70%)` }} />
-    <div className="absolute left-6 top-20 h-16 w-48 rounded-full border" style={{ borderColor: `${t.palette.accent}66` }} />
-  </div>
-);
 
-const TechVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute inset-0 opacity-35" style={{ backgroundImage: `linear-gradient(90deg, ${t.palette.accent}33 1px, transparent 1px), linear-gradient(${t.palette.accent}22 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
-    <div className="absolute right-5 top-5 h-24 w-40 rounded-2xl border p-3 shadow-2xl" style={{ borderColor: `${t.palette.accent}55`, background: `${t.palette.bg}CC` }}>
-      <div className="mb-2 flex gap-1"><span className="h-2 w-2 rounded-full" style={{ background: t.palette.accent }} /><span className="h-2 w-2 rounded-full" style={{ background: t.palette.secondary }} /></div>
-      <div className="space-y-1.5"><div className="h-1.5 rounded-full" style={{ background: t.palette.text }} /><div className="h-1.5 w-2/3 rounded-full opacity-50" style={{ background: t.palette.text }} /><div className="h-8 rounded-lg opacity-40" style={{ background: t.palette.accent }} /></div>
-    </div>
-  </div>
-);
-
-const EditorialVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute right-5 top-5 h-36 w-28 rounded-t-full" style={{ background: `linear-gradient(180deg, ${t.palette.accent}, ${t.palette.secondary})` }} />
-    <div className="absolute right-10 top-24 h-24 w-32 bg-white/20 backdrop-blur-sm" />
-    <div className="absolute left-5 top-5 h-1 w-20" style={{ background: t.palette.accent }} />
-  </div>
-);
-
-const ExecutiveVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute right-5 top-7 flex h-28 w-40 items-end gap-2 rounded-2xl border p-3" style={{ borderColor: `${t.palette.accent}55`, background: `${t.palette.bg}66` }}>
-      {[45, 70, 55, 86, 62].map((h, i) => <span key={i} className="flex-1 rounded-t" style={{ height: `${h}%`, background: i === 3 ? t.palette.accent : `${t.palette.secondary}AA` }} />)}
-    </div>
-    <div className="absolute bottom-8 right-6 h-px w-44" style={{ background: t.palette.accent }} />
-  </div>
-);
-
-const StartupVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute -right-8 top-8 h-32 w-56 rotate-[-12deg] rounded-[32px]" style={{ background: t.palette.accent }} />
-    <div className="absolute right-8 top-20 h-28 w-44 rotate-[8deg] rounded-[28px] border-4" style={{ borderColor: t.palette.secondary, background: `${t.palette.bg}BB` }} />
-    <Zap className="absolute right-20 top-28 h-10 w-10" style={{ color: t.palette.text }} />
-  </div>
-);
-
-const OrganicVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute right-8 top-4 h-44 w-32 rounded-full" style={{ background: `${t.palette.secondary}99` }} />
-    <div className="absolute right-20 top-20 h-24 w-24 rounded-full" style={{ background: `${t.palette.accent}88` }} />
-    <div className="absolute right-10 top-20 h-28 w-px rotate-12" style={{ background: t.palette.text }} />
-  </div>
-);
-
-const BrutalistVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute right-0 top-0 flex h-full w-1/2 items-center justify-center text-[9rem] font-black leading-none opacity-90" style={{ color: t.palette.accent }}>01</div>
-    <div className="absolute right-8 bottom-8 h-14 w-36 border-4" style={{ borderColor: t.palette.text }} />
-  </div>
-);
-
-const LibraryVisual = ({ t }: { t: DeckTemplate }) => (
-  <div className="absolute inset-0 overflow-hidden">
-    <div className="absolute right-4 top-4 grid h-32 w-40 grid-cols-2 gap-2">
-      {[t.palette.accent, t.palette.secondary, `${t.palette.text}99`, `${t.palette.bg}CC`].map((color, i) => <div key={i} className="rounded-2xl border" style={{ background: color, borderColor: `${t.palette.text}33` }} />)}
-    </div>
-  </div>
-);
-
-const Visual = ({ template }: { template: DeckTemplate }) => {
-  const mode = getVisualMode(template);
-  if (mode === 'orb') return <OrbVisual t={template} />;
-  if (mode === 'tech') return <TechVisual t={template} />;
-  if (mode === 'editorial') return <EditorialVisual t={template} />;
-  if (mode === 'executive') return <ExecutiveVisual t={template} />;
-  if (mode === 'startup') return <StartupVisual t={template} />;
-  if (mode === 'organic') return <OrganicVisual t={template} />;
-  if (mode === 'brutalist') return <BrutalistVisual t={template} />;
-  return <LibraryVisual t={template} />;
-};
 
 export interface TemplatePosterPreviewProps {
   template: DeckTemplate;
