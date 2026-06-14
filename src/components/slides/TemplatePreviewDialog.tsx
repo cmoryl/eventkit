@@ -399,12 +399,22 @@ const SAMPLE_DECKS: SampleDeckDef[] = [
       { layout: 'title', title: 'Project Kickoff', subtitle: 'Vision · Roadmap · Next steps', variant: 'gradient' },
       { layout: 'agenda', title: "Today's Agenda", body: '1. Where we are today\n2. What we are building\n3. How we get there\n4. Questions & discussion', variant: 'default' },
       { layout: 'content', title: 'Why now', body: '• Market window is open\n• Team is ready\n• Tech finally caught up\n• Customers are pulling us in', variant: 'default' },
+      { layout: 'two-column', title: 'Goals & Non-goals', body: 'Ship v1 in Q1\nReach 5k weekly users\nClose 3 design partners\n---\nNo enterprise SSO yet\nNo mobile app at launch\nNo paid tier in v1', variant: 'minimal' },
       { layout: 'stats', title: 'By the Numbers', variant: 'brand', stats: [
         { value: '2.4×', label: 'Faster delivery' },
         { value: '98%', label: 'Customer NPS' },
         { value: '12M', label: 'Active users' },
+        { value: '38', label: 'Countries' },
+      ] },
+      { layout: 'big-number', title: '94%', subtitle: 'of pilot teams renewed', variant: 'brand' },
+      { layout: 'image-right', title: 'Meet the team', body: 'A small, senior crew with deep domain expertise across design, engineering and AI.', variant: 'default' },
+      { layout: 'timeline', title: 'Milestones', variant: 'default', timeline: [
+        { date: 'Jan', title: 'Alpha', description: 'Internal usage starts.' },
+        { date: 'Mar', title: 'Beta', description: 'Closed design partners.' },
+        { date: 'May', title: 'GA', description: 'Public launch.' },
       ] },
       { layout: 'quote', title: '"Great design is invisible — but its impact is unforgettable."', quoteAuthor: 'Design Team', variant: 'dark' },
+      { layout: 'content', title: 'Next steps', body: '1. Approve the v1 scope\n2. Lock the launch date\n3. Brief partner success\n4. Schedule next review', variant: 'default' },
       { layout: 'section', title: 'Thank You', subtitle: "Let's build something remarkable.", variant: 'gradient' },
     ],
   },
@@ -416,10 +426,24 @@ const SAMPLE_DECKS: SampleDeckDef[] = [
       { layout: 'title', title: 'A Story Worth Telling', subtitle: 'Chapter one begins here', variant: 'bold' },
       { layout: 'full-image', title: 'The world we live in', variant: 'dark' },
       { layout: 'image-left', title: 'The problem', body: 'Teams ship slower than they think.\n\nManual handoffs, lost context, and brittle tooling tax every release.', variant: 'default' },
+      { layout: 'stats', title: 'The cost of the status quo', variant: 'minimal', stats: [
+        { value: '37%', label: 'Time lost to context-switching' },
+        { value: '4.2 wks', label: 'Avg. handoff lag' },
+        { value: '$2.1M', label: 'Wasted per 100 engineers' },
+      ] },
       { layout: 'image-right', title: 'The shift', body: 'A new generation of tools fuses design, code and AI into one continuous loop.', variant: 'default' },
+      { layout: 'process', title: 'How the shift unfolds', variant: 'default', process: [
+        { title: 'Capture', description: 'Intent stays where the work happens.' },
+        { title: 'Compose', description: 'AI assembles a first draft instantly.' },
+        { title: 'Refine', description: 'Humans steer with high-leverage edits.' },
+        { title: 'Ship', description: 'Continuous delivery, no handoff drag.' },
+      ] },
       { layout: 'comparison', title: 'Before vs After', body: 'Manual handoffs\nSlow turnaround\nHigh error rate\nSiloed teams\n---\nAutomated workflows\nInstant results\n99.9% accuracy\nOne shared source of truth', variant: 'default' },
       { layout: 'big-number', title: '10×', subtitle: 'Faster from idea to ship', variant: 'brand' },
+      { layout: 'parallax', title: 'A moment of depth', subtitle: 'Where story meets surface', variant: 'dark' },
       { layout: 'quote', title: '"The best way to predict the future is to design it."', quoteAuthor: 'Buckminster Fuller', variant: 'dark' },
+      { layout: 'content', title: 'What this unlocks', body: '• Smaller teams, bigger output\n• Tighter feedback loops with customers\n• Brand consistency without a bottleneck\n• Space for actual craft', variant: 'default' },
+      { layout: 'full-image', title: 'The road ahead', variant: 'dark' },
       { layout: 'section', title: 'Join us', subtitle: 'The next chapter starts today', variant: 'gradient' },
     ],
   },
@@ -429,15 +453,33 @@ const SAMPLE_DECKS: SampleDeckDef[] = [
     description: 'Numbers-forward layouts: charts, stats and metrics.',
     slides: [
       { layout: 'title', title: 'Q4 Business Review', subtitle: 'Performance, learnings, plan', variant: 'minimal' },
+      { layout: 'agenda', title: 'Review agenda', body: '1. Headline numbers\n2. Growth & revenue\n3. Customer health\n4. Plan vs actual\n5. Bets for next quarter', variant: 'default' },
       { layout: 'big-number', title: '$5.2M', subtitle: 'ARR — up 38% YoY', variant: 'brand' },
+      { layout: 'stats', title: 'Headline metrics', variant: 'brand', stats: [
+        { value: '+38%', label: 'ARR YoY' },
+        { value: '420K', label: 'Active users' },
+        { value: '12', label: 'New markets' },
+        { value: '+62', label: 'NPS' },
+      ] },
       { layout: 'chart', title: 'Quarterly Revenue', variant: 'default', chart: {
         type: 'bar', title: 'Revenue ($M)', data: [
           { label: 'Q1', value: 42 }, { label: 'Q2', value: 58 }, { label: 'Q3', value: 71 }, { label: 'Q4', value: 96 },
         ],
       } },
+      { layout: 'chart', title: 'Monthly Active Users', variant: 'minimal', chart: {
+        type: 'line', title: 'MAU growth (last 6 months)', data: [
+          { label: 'Jul', value: 6200 }, { label: 'Aug', value: 6900 }, { label: 'Sep', value: 7800 },
+          { label: 'Oct', value: 8500 }, { label: 'Nov', value: 9400 }, { label: 'Dec', value: 10800 },
+        ],
+      } },
       { layout: 'chart', title: 'Where Users Spend Time', variant: 'minimal', chart: {
         type: 'doughnut', title: 'Time-in-app', data: [
           { label: 'Editor', value: 48 }, { label: 'Library', value: 22 }, { label: 'Review', value: 18 }, { label: 'Admin', value: 12 },
+        ],
+      } },
+      { layout: 'chart', title: 'Revenue Mix', variant: 'default', chart: {
+        type: 'pie', title: 'By product line', data: [
+          { label: 'Studio', value: 54 }, { label: 'Cloud', value: 28 }, { label: 'Services', value: 18 },
         ],
       } },
       { layout: 'stats', title: 'Customer Pulse', variant: 'brand', stats: [
@@ -447,6 +489,8 @@ const SAMPLE_DECKS: SampleDeckDef[] = [
         { value: '92%', label: 'Renewal rate' },
       ] },
       { layout: 'comparison', title: 'Planned vs Actual', body: 'Launch 3 integrations\n$5M ARR\n90-day onboarding\nNPS > 50\n---\nShipped 4 ✅\n$5.2M ARR ✅\n60-day onboarding ✅\nNPS = 62 ✅', variant: 'default' },
+      { layout: 'two-column', title: 'What worked vs what didn\'t', body: 'Self-serve onboarding\nVertical-specific templates\nUsage-based pricing\n---\nEnterprise sales motion\nPartner-led GTM\nMobile beta', variant: 'minimal' },
+      { layout: 'quote', title: '"Without data you\'re just another person with an opinion."', quoteAuthor: 'W. Edwards Deming', variant: 'dark' },
       { layout: 'section', title: 'What we learned', subtitle: 'Three bets for next quarter', variant: 'gradient' },
     ],
   },
@@ -457,6 +501,7 @@ const SAMPLE_DECKS: SampleDeckDef[] = [
     slides: [
       { layout: 'title', title: 'Design Sprint', subtitle: 'A 5-day path from problem to prototype', variant: 'brand' },
       { layout: 'agenda', title: "What we'll cover", body: '1. Map the problem\n2. Sketch solutions\n3. Decide & storyboard\n4. Prototype\n5. Test with users', variant: 'default' },
+      { layout: 'content', title: 'Ground rules', body: '• One conversation at a time\n• Time-box every exercise\n• Defer judgement, then decide\n• Show, don\'t tell\n• Have fun — this is play', variant: 'default' },
       { layout: 'process', title: 'Our Method', variant: 'default', process: [
         { title: 'Understand', description: 'Align on the goal and audience.' },
         { title: 'Diverge', description: 'Generate many possible directions.' },
@@ -471,8 +516,21 @@ const SAMPLE_DECKS: SampleDeckDef[] = [
         { date: 'Thu', title: 'Prototype', description: 'Make it feel real.' },
         { date: 'Fri', title: 'Test', description: '5 user interviews.' },
       ] },
-      { layout: 'two-column', title: 'Do & Don\'t', body: '✓ Time-box every exercise\n✓ Capture decisions in writing\n✓ Invite a real user on Friday\n---\n✗ Debate in the abstract\n✗ Skip the prototype\n✗ Wait for consensus', variant: 'minimal' },
       { layout: 'image-left', title: 'A note on facilitation', body: 'Your job is to keep energy high, scope tight, and decisions visible.', variant: 'default' },
+      { layout: 'two-column', title: 'Do & Don\'t', body: '✓ Time-box every exercise\n✓ Capture decisions in writing\n✓ Invite a real user on Friday\n---\n✗ Debate in the abstract\n✗ Skip the prototype\n✗ Wait for consensus', variant: 'minimal' },
+      { layout: 'stats', title: 'What good looks like', variant: 'brand', stats: [
+        { value: '5', label: 'User tests' },
+        { value: '1', label: 'Hero prototype' },
+        { value: '0', label: 'Decisions deferred' },
+      ] },
+      { layout: 'chart', title: 'Confidence — pre vs post sprint', variant: 'default', chart: {
+        type: 'bar', title: 'Self-rated 1–10', data: [
+          { label: 'Pre', value: 4.2 }, { label: 'Post', value: 8.6 },
+        ],
+      } },
+      { layout: 'image-right', title: 'Tools we use', body: 'Sticky notes, a single shared canvas, a 60-minute timer, and one decider in the room.', variant: 'default' },
+      { layout: 'big-number', title: '60 min', subtitle: 'Default exercise time-box', variant: 'brand' },
+      { layout: 'quote', title: '"You can\'t fix what you can\'t see — prototype, then look."', quoteAuthor: 'Sprint facilitator', variant: 'dark' },
       { layout: 'section', title: "Let's begin", subtitle: 'Grab a marker — Day 1 starts now', variant: 'bold' },
     ],
   },
@@ -486,12 +544,64 @@ const SAMPLE_DECKS: SampleDeckDef[] = [
       { layout: 'parallax', title: 'Layered depth', subtitle: 'Story through dimension', variant: 'dark' },
       { layout: 'image-right', title: 'Photography', body: 'Real moments. Natural light. Honest emotion. No stock-photo gloss.', variant: 'default' },
       { layout: 'image-left', title: 'Typography', body: 'Display set in our wordmark family. Body in a humanist sans that breathes.', variant: 'default' },
+      { layout: 'two-column', title: 'Colour system', body: 'Ink — primary canvas\nMist — soft surfaces\nSignal — interactive\n---\nSpark — energy & calls to action\nVerdant — growth states\nClay — warmth & humanity', variant: 'minimal' },
+      { layout: 'stats', title: 'System scale', variant: 'brand', stats: [
+        { value: '128', label: 'Components' },
+        { value: '24', label: 'Tokens' },
+        { value: '9', label: 'Brand fonts' },
+      ] },
       { layout: 'big-number', title: 'One', subtitle: 'voice, system and team', variant: 'brand' },
+      { layout: 'full-image', title: 'In the wild', variant: 'dark' },
+      { layout: 'image-left', title: 'Motion principles', body: 'Confident, never showy. Fast in, settled out. Motion supports meaning, never decorates it.', variant: 'default' },
+      { layout: 'comparison', title: 'Old vs New', body: 'Generic tech blue\nStock photography\nHeavy gradients\nEight typefaces\n---\nOwned palette\nCommissioned imagery\nSurface-led depth\nTwo families, used well', variant: 'default' },
+      { layout: 'quote', title: '"A brand is a promise delivered consistently."', quoteAuthor: 'Brand Studio', variant: 'dark' },
       { layout: 'blank', title: '', variant: 'minimal' },
       { layout: 'section', title: 'See it in motion', subtitle: 'Demo reel · 90 seconds', variant: 'gradient' },
     ],
   },
+  {
+    id: 'pitch',
+    label: 'Investor Pitch',
+    description: 'Classic pitch flow: problem, solution, traction, ask.',
+    slides: [
+      { layout: 'title', title: 'Company Name', subtitle: 'One line that captures the bet', variant: 'bold' },
+      { layout: 'big-number', title: '$84B', subtitle: 'Total addressable market', variant: 'brand' },
+      { layout: 'content', title: 'The problem', body: '• Today\'s tools are built for yesterday\'s workflows\n• Teams spend more time wrangling than building\n• AI is bolted on, not woven in', variant: 'default' },
+      { layout: 'image-right', title: 'The solution', body: 'A single, AI-native workspace that turns intent into shipped work — for the whole team.', variant: 'default' },
+      { layout: 'process', title: 'How it works', variant: 'default', process: [
+        { title: 'Capture', description: 'Brief, voice or doc — anything counts.' },
+        { title: 'Draft', description: 'AI assembles a high-fidelity first pass.' },
+        { title: 'Refine', description: 'You steer with high-leverage edits.' },
+        { title: 'Ship', description: 'One click to production.' },
+      ] },
+      { layout: 'chart', title: 'ARR growth', variant: 'default', chart: {
+        type: 'line', title: 'Last 12 months', data: [
+          { label: 'M1', value: 0.4 }, { label: 'M3', value: 1.1 }, { label: 'M6', value: 2.6 },
+          { label: 'M9', value: 4.4 }, { label: 'M12', value: 6.8 },
+        ],
+      } },
+      { layout: 'stats', title: 'Traction', variant: 'brand', stats: [
+        { value: '$6.8M', label: 'ARR' },
+        { value: '14%', label: 'MoM growth' },
+        { value: '128%', label: 'Net retention' },
+        { value: '<3%', label: 'Logo churn' },
+      ] },
+      { layout: 'comparison', title: 'Us vs the incumbent', body: '5× faster onboarding\nNo-code configuration\nModular pricing\nAI woven in\n---\n3-6 month implementation\nRequires services\nEnterprise bundles only\nAI as add-on', variant: 'default' },
+      { layout: 'timeline', title: 'Roadmap', variant: 'default', timeline: [
+        { date: 'Q1', title: 'Mobile beta', description: 'Native iOS + Android.' },
+        { date: 'Q2', title: 'Marketplace', description: 'Open ecosystem of apps.' },
+        { date: 'Q3', title: 'Enterprise', description: 'SSO, audit, regions.' },
+        { date: 'Q4', title: 'Platform', description: 'Public API and SDK.' },
+      ] },
+      { layout: 'image-left', title: 'The team', body: 'Founders from Figma, Stripe and OpenAI. 8 engineers, 3 designers, 1 GTM lead.', variant: 'default' },
+      { layout: 'big-number', title: '$12M', subtitle: 'Series A — closing this quarter', variant: 'brand' },
+      { layout: 'content', title: 'Use of funds', body: '• 60% — engineering & AI research\n• 25% — GTM and partnerships\n• 15% — operations and runway buffer', variant: 'default' },
+      { layout: 'quote', title: '"This is the first tool I\'ve introduced that the whole team asked for by name."', quoteAuthor: 'Head of Design, Fortune 500', variant: 'dark' },
+      { layout: 'section', title: "Let's talk", subtitle: 'founders@company.com', variant: 'gradient' },
+    ],
+  },
 ];
+
 
 function SampleDeck({
   template,
