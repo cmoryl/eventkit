@@ -56,7 +56,8 @@ import { Search as SearchIcon } from 'lucide-react';
 import { EditorNavRail, type NavRailTab } from './EditorNavRail';
 import { InsertDrawerTabs } from './InsertDrawerTabs';
 import { applySmartObject, SLIDE_OBJECT_MIME } from './smartObjectRegistry';
-import { Layers, Plus as PlusIcon, Palette as PaletteIcon, Sparkles as SparklesIcon, MessageSquare } from 'lucide-react';
+import { Layers, Plus as PlusIcon, Palette as PaletteIcon, Sparkles as SparklesIcon, MessageSquare, Layers as LayersIcon } from 'lucide-react';
+import { LayersPanel } from './LayersPanel';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
@@ -1408,6 +1409,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   ),
                 },
                 {
+                  id: 'layers',
+                  label: 'Layers',
+                  icon: LayersIcon,
+                  badge: activeSlide?.textBoxes?.length,
+                  content: (
+                    <LayersPanel
+                      slide={activeSlide ?? null}
+                      onUpdate={(updates) => updateSlide(activeIndex, updates)}
+                    />
+                  ),
+                },
+                {
                   id: 'themes',
                   label: 'Themes',
                   icon: PaletteIcon,
@@ -1440,47 +1453,97 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             {!isGridView && thumbRailVisible && (
             <div className="w-[220px] border-r bg-muted/30 flex flex-col shrink-0">
 
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+              <div className="flex-1 overflow-y-auto p-3 space-y-1">
                 {slides.map((slide, i) => (
-                  <div
-                    key={slide.id}
-                    className={cn("relative group", dragIndex === i && 'opacity-50')}
-                    onDragOver={handleThumbFileDragOver(i)}
-                    onDragLeave={handleThumbFileDragLeave}
-                    onDrop={handleThumbFileDrop(i)}
-                  >
-                    <SlideThumbnail
-                      slideNumber={i + 1}
-                      isActive={i === activeIndex}
-                      onClick={() => setActiveIndex(i)}
-                      dragPosition={dragOverIndex === i ? dragPosition : null}
-                      onDragStart={handleDragStart(i)}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={handleDragOver(i)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop(i)}
+                  <React.Fragment key={slide.id}>
+                    {/* Gap drop-zone above this slide — accepts smart sections & objects */}
+                    <GapDropZone
+                      index={i}
+                      active={dragOverIndex === i && dragPosition === 'above'}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = e.dataTransfer.types.includes(SLIDE_SECTION_MIME) ? 'copy' : 'move';
+                        if (dragIndex !== null) { setDragOverIndex(i); setDragPosition('above'); }
+                      }}
+                      onDragLeave={() => { setDragOverIndex(null); setDragPosition(null); }}
+                      onDrop={(e) => {
+                        const types = e.dataTransfer.types;
+                        if (types.includes(SLIDE_SECTION_MIME)) {
+                          e.preventDefault();
+                          try {
+                            const payload = JSON.parse(e.dataTransfer.getData(SLIDE_SECTION_MIME)) as Omit<SlideData, 'id'>;
+                            insertSectionAfter(i - 1, payload);
+                            toast.success(`Inserted ${payload.layout} section`);
+                          } catch { toast.error('Could not insert section'); }
+                          return;
+                        }
+                        handleDrop(i)(e);
+                      }}
+                    />
+                    <div
+                      className={cn("relative group mt-2", dragIndex === i && 'opacity-50')}
+                      onDragOver={handleThumbFileDragOver(i)}
+                      onDragLeave={handleThumbFileDragLeave}
+                      onDrop={handleThumbFileDrop(i)}
                     >
-                      <SlideRenderer slide={slide} brandColors={brandColors} brandFonts={brandFonts} />
-                    </SlideThumbnail>
-                    {/* File drop overlay on thumbnail */}
-                    {thumbFileOver === i && (
-                      <div className="absolute inset-0 rounded-lg border-2 border-dashed border-primary bg-primary/20 z-20 flex items-center justify-center pointer-events-none">
-                        <ImagePlus className="w-4 h-4 text-primary" />
-                      </div>
-                    )}
-                    {/* Hover actions */}
-                    <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-5 w-5 bg-background/80 hover:bg-background" onClick={() => duplicateSlide(i)}>
-                        <Copy className="h-2.5 w-2.5" />
-                      </Button>
-                      {slides.length > 1 && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 bg-background/80 hover:bg-destructive hover:text-destructive-foreground" onClick={() => deleteSlide(i)}>
-                          <Trash2 className="h-2.5 w-2.5" />
-                        </Button>
+                      <SlideThumbnail
+                        slideNumber={i + 1}
+                        isActive={i === activeIndex}
+                        onClick={() => setActiveIndex(i)}
+                        dragPosition={dragOverIndex === i ? dragPosition : null}
+                        onDragStart={handleDragStart(i)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={handleDragOver(i)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop(i)}
+                      >
+                        <SlideRenderer slide={slide} brandColors={brandColors} brandFonts={brandFonts} />
+                      </SlideThumbnail>
+                      {/* File drop overlay on thumbnail */}
+                      {thumbFileOver === i && (
+                        <div className="absolute inset-0 rounded-lg border-2 border-dashed border-primary bg-primary/20 z-20 flex items-center justify-center pointer-events-none">
+                          <ImagePlus className="w-4 h-4 text-primary" />
+                        </div>
                       )}
+                      {/* Hover actions */}
+                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-5 w-5 bg-background/80 hover:bg-background" onClick={() => duplicateSlide(i)}>
+                          <Copy className="h-2.5 w-2.5" />
+                        </Button>
+                        {slides.length > 1 && (
+                          <Button variant="ghost" size="icon" className="h-5 w-5 bg-background/80 hover:bg-destructive hover:text-destructive-foreground" onClick={() => deleteSlide(i)}>
+                            <Trash2 className="h-2.5 w-2.5" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  </React.Fragment>
                 ))}
+                {/* Trailing gap drop-zone */}
+                <GapDropZone
+                  index={slides.length}
+                  active={dragOverIndex === slides.length - 1 && dragPosition === 'below'}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = e.dataTransfer.types.includes(SLIDE_SECTION_MIME) ? 'copy' : 'move';
+                    if (dragIndex !== null) { setDragOverIndex(slides.length - 1); setDragPosition('below'); }
+                  }}
+                  onDragLeave={() => { setDragOverIndex(null); setDragPosition(null); }}
+                  onDrop={(e) => {
+                    const types = e.dataTransfer.types;
+                    if (types.includes(SLIDE_SECTION_MIME)) {
+                      e.preventDefault();
+                      try {
+                        const payload = JSON.parse(e.dataTransfer.getData(SLIDE_SECTION_MIME)) as Omit<SlideData, 'id'>;
+                        insertSectionAfter(slides.length - 1, payload);
+                        toast.success(`Inserted ${payload.layout} section`);
+                      } catch { toast.error('Could not insert section'); }
+                      return;
+                    }
+                    handleDrop(slides.length - 1)(e);
+                  }}
+                  trailing
+                />
               </div>
               <div className="p-3 border-t">
                 <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => addSlide(slides.length - 1)}>
@@ -2582,6 +2645,43 @@ function ParamSlider({ label, value, min, max, step, unit, fractionDigits = 0, o
         <span className="font-mono">{value.toFixed(fractionDigits)}{unit}</span>
       </div>
       <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} />
+    </div>
+  );
+}
+
+/**
+ * Thin drop-zone strip rendered between slide thumbnails. Shows a glowing
+ * insertion bar when something is being dragged over it — used so users can
+ * drop sections from the Insert drawer into specific positions in the deck,
+ * not just onto existing thumbnails.
+ */
+function GapDropZone({
+  index, active, onDragOver, onDragLeave, onDrop, trailing,
+}: {
+  index: number;
+  active: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
+  trailing?: boolean;
+}) {
+  return (
+    <div
+      data-gap-index={index}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      className={cn(
+        "relative w-full transition-all",
+        active ? "h-4" : trailing ? "h-6" : "h-2",
+      )}
+    >
+      <div
+        className={cn(
+          "absolute left-2 right-2 top-1/2 -translate-y-1/2 rounded-full transition-all",
+          active ? "h-1 bg-primary shadow-[0_0_8px_2px_hsl(var(--primary)/0.6)]" : "h-px bg-transparent",
+        )}
+      />
     </div>
   );
 }

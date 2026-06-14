@@ -135,6 +135,18 @@ export const SMART_OBJECTS: SmartObjectTemplate[] = [
     defaultMode: "snap",
     supports: ["snap", "float"],
   },
+
+  // ── INDUSTRY-STANDARD ADDITIONS (free-floating atoms) ─────────
+  { id: "atom-progress-bar", category: "shape", label: "Progress Bar", description: "Horizontal % bar", defaultMode: "float", supports: ["float"] },
+  { id: "atom-sparkline",    category: "chart", label: "Sparkline",    description: "Tiny inline trend",  defaultMode: "float", supports: ["float"] },
+  { id: "atom-tag-list",     category: "text",  label: "Tag List",     description: "Row of pill tags",   defaultMode: "float", supports: ["float"] },
+  { id: "atom-avatar-group", category: "media", label: "Avatar Group", description: "Stacked avatars",    defaultMode: "float", supports: ["float"] },
+  { id: "atom-icon-text",    category: "text",  label: "Icon + Text",  description: "Bullet with icon",   defaultMode: "float", supports: ["float"] },
+  { id: "atom-ticker",       category: "text",  label: "News Ticker",  description: "Pill with marquee text", defaultMode: "float", supports: ["float"] },
+  { id: "atom-arrow",        category: "shape", label: "Arrow",        description: "Directional accent", defaultMode: "float", supports: ["float"] },
+  { id: "atom-social",       category: "text",  label: "Social Handle",description: "@handle pill",       defaultMode: "float", supports: ["float"] },
+  { id: "atom-timestamp",    category: "text",  label: "Timestamp",    description: "Date · time row",    defaultMode: "float", supports: ["float"] },
+  { id: "atom-badge-stack",  category: "shape", label: "Badge Stack",  description: "Vertical badge column", defaultMode: "float", supports: ["float"] },
 ];
 
 export function getSmartObject(id: string): SmartObjectTemplate | undefined {
@@ -289,6 +301,72 @@ export function applySmartObject(
       }
       const textBoxes = [...(slide.textBoxes ?? []),
         tb({ text: "🖼  Drop image here", xPct: x, yPct: y, wPct: 30, fontSize: 22, color: "#aab2c8", bg: "rgba(255,255,255,0.05)", weight: 500 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+
+    // ── INDUSTRY-STANDARD ATOMS (all float) ─────────────────────
+    case "atom-progress-bar": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "████████░░  72%", xPct: x, yPct: y, wPct: 36, fontSize: 22, color: "#ffd24a", weight: 700, align: "left" }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-sparkline": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "▁▂▄▅▇▆█▇", xPct: x, yPct: y, wPct: 18, fontSize: 28, color: "#a7f3d0", weight: 700 }),
+        tb({ text: "+42% MoM", xPct: x, yPct: y + 6, wPct: 18, fontSize: 14, color: "#aab2c8", weight: 500 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-tag-list": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "AI · Design · Brand · Speed", xPct: x, yPct: y, wPct: 38, fontSize: 18, color: "#ffffff", bg: "rgba(99,102,241,0.25)", weight: 600 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-avatar-group": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "● ● ● ● +12", xPct: x, yPct: y, wPct: 24, fontSize: 32, color: "#ffd24a", weight: 800 }),
+        tb({ text: "16 collaborators", xPct: x, yPct: y + 7, wPct: 24, fontSize: 14, color: "#aab2c8", weight: 500 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-icon-text": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "→  Shipped in 30 days", xPct: x, yPct: y, wPct: 30, fontSize: 22, color: "#ffffff", weight: 600, align: "left" }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-ticker": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "★ LIVE · Q4 earnings beat · +18% YoY · CSAT 4.8 · ★", xPct: x, yPct: y, wPct: 60, fontSize: 16, color: "#0a0a0a", bg: "#ffd24a", weight: 700 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-arrow": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "→", xPct: x, yPct: y, wPct: 12, fontSize: 96, color: "#ffd24a", weight: 800 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-social": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "@eventkit", xPct: x, yPct: y, wPct: 18, fontSize: 22, color: "#ffffff", bg: "rgba(255,255,255,0.08)", weight: 700 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-timestamp": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "Apr 14, 2026 · 9:00 AM PT", xPct: x, yPct: y, wPct: 30, fontSize: 16, color: "#aab2c8", weight: 500 }),
+      ];
+      return { ...slide, textBoxes };
+    }
+    case "atom-badge-stack": {
+      const textBoxes = [...(slide.textBoxes ?? []),
+        tb({ text: "NEW", xPct: x, yPct: y - 6, wPct: 10, fontSize: 14, color: "#0a0a0a", bg: "#a7f3d0", weight: 800 }),
+        tb({ text: "BETA", xPct: x, yPct: y, wPct: 10, fontSize: 14, color: "#0a0a0a", bg: "#ffd24a", weight: 800 }),
+        tb({ text: "2026", xPct: x, yPct: y + 6, wPct: 10, fontSize: 14, color: "#ffffff", bg: "rgba(99,102,241,0.9)", weight: 800 }),
       ];
       return { ...slide, textBoxes };
     }

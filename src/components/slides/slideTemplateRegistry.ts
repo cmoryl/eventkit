@@ -488,6 +488,218 @@ export const SLIDE_BLOCK_TEMPLATES: SlideBlockTemplate[] = [
     ],
     seed: { title: "Gallery", variant: "default", images: [] },
   },
+
+  // ── INDUSTRY-STANDARD ADDITIONS ────────────────────────────────
+  {
+    id: "testimonial-card",
+    category: "data",
+    label: "Testimonial",
+    description: "Customer quote with attribution",
+    layout: "quote",
+    slots: [
+      { name: "title", type: "longtext", label: "Quote", required: true, default: "“This changed how our entire team works.”" },
+      { name: "quoteAuthor", type: "text", label: "Author · Role", default: "Jane Doe · VP Product, Acme" },
+    ],
+    seed: { title: "“This changed how our entire team works.”", quoteAuthor: "Jane Doe · VP Product, Acme", variant: "minimal" },
+  },
+  {
+    id: "pricing-tiers",
+    category: "data",
+    label: "Pricing Tiers",
+    description: "Three pricing plans side-by-side",
+    layout: "two-column",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Simple, honest pricing" },
+      { name: "body", type: "longtext", label: "Plans (one per line: Name · Price · Sub)", default: "Starter · $0/mo · Up to 3 projects\nPro · $24/mo · Unlimited + integrations\nEnterprise · Custom · SSO, audit, dedicated CSM" },
+    ],
+    seed: { title: "Simple, honest pricing", body: "Starter · $0/mo · Up to 3 projects\nPro · $24/mo · Unlimited + integrations\nEnterprise · Custom · SSO, audit, dedicated CSM", variant: "default" },
+  },
+  {
+    id: "before-after",
+    category: "structure",
+    label: "Before → After",
+    description: "Side-by-side transformation",
+    layout: "comparison",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Before → After" },
+      { name: "body", type: "longtext", label: "Before / After (use '---')", default: "Before\nManual handoffs\nWeek-long cycles\nSilent failures\n---\nAfter\nOne-click flow\nSame-day ship\nFull observability" },
+    ],
+    seed: { title: "Before → After", body: "Before\nManual handoffs\nWeek-long cycles\nSilent failures\n---\nAfter\nOne-click flow\nSame-day ship\nFull observability", variant: "default" },
+  },
+  {
+    id: "roadmap-quarters",
+    category: "structure",
+    label: "Roadmap",
+    description: "Quarterly roadmap with themes",
+    layout: "timeline",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "2026 Roadmap" },
+      { name: "timeline", type: "timeline", label: "Quarters", default: [
+        { date: "Q1", title: "Foundations", description: "Auth, billing, core editor" },
+        { date: "Q2", title: "Collaboration", description: "Real-time, comments, history" },
+        { date: "Q3", title: "Intelligence", description: "AI assist, smart layouts" },
+        { date: "Q4", title: "Scale", description: "Enterprise, SSO, SOC2" },
+      ] },
+    ],
+    seed: {
+      title: "2026 Roadmap", variant: "default",
+      timeline: [
+        { date: "Q1", title: "Foundations", description: "Auth, billing, core editor" },
+        { date: "Q2", title: "Collaboration", description: "Real-time, comments, history" },
+        { date: "Q3", title: "Intelligence", description: "AI assist, smart layouts" },
+        { date: "Q4", title: "Scale", description: "Enterprise, SSO, SOC2" },
+      ],
+    },
+  },
+  {
+    id: "bento-grid",
+    category: "structure",
+    label: "Bento Grid",
+    description: "Six-cell bento feature grid",
+    layout: "two-column",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Everything in one place" },
+      { name: "body", type: "longtext", label: "Cells (one per line: Title · Description)", default: "Smart editor · AI-assisted slide writing\nBrand lock · Colors, fonts, logos enforced\nLive collab · Co-edit in real-time\nExport · PPTX, PDF, MP4\nAnalytics · Track engagement\nSecurity · SSO + audit log" },
+    ],
+    seed: { title: "Everything in one place", body: "Smart editor · AI-assisted slide writing\nBrand lock · Colors, fonts, logos enforced\nLive collab · Co-edit in real-time\nExport · PPTX, PDF, MP4\nAnalytics · Track engagement\nSecurity · SSO + audit log", variant: "default", variation: "bento" },
+  },
+  {
+    id: "kpi-grid-six",
+    category: "data",
+    label: "KPI Grid (6)",
+    description: "Six headline metrics in a grid",
+    layout: "stats",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Q4 Performance" },
+      { name: "stats", type: "stat-list", label: "Stats (6)", default: [
+        { value: "+42%", label: "Revenue" },
+        { value: "+18%", label: "Retention" },
+        { value: "120K", label: "Active users" },
+        { value: "4.8★", label: "CSAT" },
+        { value: "12ms", label: "Avg latency" },
+        { value: "99.99%", label: "Uptime" },
+      ] },
+    ],
+    seed: {
+      title: "Q4 Performance", variant: "default",
+      stats: [
+        { value: "+42%", label: "Revenue" },
+        { value: "+18%", label: "Retention" },
+        { value: "120K", label: "Active users" },
+        { value: "4.8★", label: "CSAT" },
+        { value: "12ms", label: "Avg latency" },
+        { value: "99.99%", label: "Uptime" },
+      ],
+    },
+  },
+  {
+    id: "stat-comparison",
+    category: "data",
+    label: "Stat Comparison",
+    description: "Us vs them headline metrics",
+    layout: "comparison",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "How we compare" },
+      { name: "body", type: "longtext", label: "Us / Them (use '---')", default: "Us\n2× faster onboarding\n99.99% uptime\n$0 setup fee\n---\nIndustry average\nDays to onboard\n99.5% uptime\n$5K+ setup fee" },
+    ],
+    seed: { title: "How we compare", body: "Us\n2× faster onboarding\n99.99% uptime\n$0 setup fee\n---\nIndustry average\nDays to onboard\n99.5% uptime\n$5K+ setup fee", variant: "default" },
+  },
+  {
+    id: "definition-card",
+    category: "basic",
+    label: "Definition",
+    description: "Single term + definition",
+    layout: "title",
+    slots: [
+      { name: "subtitle", type: "text", label: "Term", required: true, default: "Smart Layout" },
+      { name: "title", type: "longtext", label: "Definition", required: true, default: "A named-slot template that fills typed slide fields from a single voice or AI command." },
+    ],
+    seed: { title: "A named-slot template that fills typed slide fields from a single voice or AI command.", subtitle: "Smart Layout", variant: "minimal", variation: "editorial" },
+  },
+  {
+    id: "contact-card",
+    category: "basic",
+    label: "Contact",
+    description: "Closing slide with contact details",
+    layout: "section",
+    slots: [
+      { name: "title", type: "text", label: "Name or Team", required: true, default: "Let's talk" },
+      { name: "subtitle", type: "longtext", label: "Contact lines", default: "hello@eventkit.app\n+1 (415) 555-0142\n@eventkit" },
+    ],
+    seed: { title: "Let's talk", subtitle: "hello@eventkit.app\n+1 (415) 555-0142\n@eventkit", variant: "dark" },
+  },
+  {
+    id: "milestone-callout",
+    category: "data",
+    label: "Milestone",
+    description: "Hero milestone with date and headline",
+    layout: "big-number",
+    slots: [
+      { name: "statValue", type: "text", label: "Date or count", required: true, default: "Apr 2026" },
+      { name: "statLabel", type: "text", label: "Milestone", default: "Series A · $24M" },
+      { name: "title", type: "text", label: "Headline", default: "A new chapter begins" },
+    ],
+    seed: { title: "A new chapter begins", stats: [{ value: "Apr 2026", label: "Series A · $24M" }], variant: "bold" },
+  },
+  {
+    id: "image-grid-2x2",
+    category: "media",
+    label: "Image Grid 2×2",
+    description: "Four-image mood board",
+    layout: "full-image",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Inspiration" },
+    ],
+    seed: { title: "Inspiration", variant: "default", images: [], variation: "grid-2x2" },
+  },
+  {
+    id: "sponsor-wall",
+    category: "media",
+    label: "Sponsor Wall",
+    description: "Grid of sponsor logos",
+    layout: "full-image",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Made possible by" },
+    ],
+    seed: { title: "Made possible by", variant: "minimal", images: [], variation: "sponsor-wall" },
+  },
+  {
+    id: "awards-row",
+    category: "data",
+    label: "Awards",
+    description: "Row of recognitions and badges",
+    layout: "stats",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Recognition" },
+      { name: "stats", type: "stat-list", label: "Awards", default: [
+        { value: "★", label: "G2 Leader 2026" },
+        { value: "★", label: "Forrester Wave" },
+        { value: "★", label: "Webby Honoree" },
+        { value: "★", label: "Fast Co Innovation" },
+      ] },
+    ],
+    seed: {
+      title: "Recognition", variant: "minimal",
+      stats: [
+        { value: "★", label: "G2 Leader 2026" },
+        { value: "★", label: "Forrester Wave" },
+        { value: "★", label: "Webby Honoree" },
+        { value: "★", label: "Fast Co Innovation" },
+      ],
+    },
+  },
+  {
+    id: "social-handles",
+    category: "media",
+    label: "Social",
+    description: "Social handles row",
+    layout: "section",
+    slots: [
+      { name: "title", type: "text", label: "Headline", default: "Stay in the loop" },
+      { name: "subtitle", type: "longtext", label: "Handles (one per line)", default: "@eventkit on X\n@eventkit on Instagram\n/eventkit on LinkedIn" },
+    ],
+    seed: { title: "Stay in the loop", subtitle: "@eventkit on X\n@eventkit on Instagram\n/eventkit on LinkedIn", variant: "gradient" },
+  },
 ];
 
 /**

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Search, BarChart3, Quote, Hash, Type, MousePointerClick,
   Minus, BadgeCheck, ImageIcon, Tag, Megaphone, Sparkles,
+  ArrowRight, AtSign, Clock, Activity, Users, ListChecks, Radio, Layers,
 } from "lucide-react";
 import {
   SMART_OBJECTS,
@@ -30,6 +31,16 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   "shape-badge": BadgeCheck,
   "chart-bar": BarChart3,
   "media-image-frame": ImageIcon,
+  "atom-progress-bar": Activity,
+  "atom-sparkline": Activity,
+  "atom-tag-list": ListChecks,
+  "atom-avatar-group": Users,
+  "atom-icon-text": ListChecks,
+  "atom-ticker": Radio,
+  "atom-arrow": ArrowRight,
+  "atom-social": AtSign,
+  "atom-timestamp": Clock,
+  "atom-badge-stack": Layers,
 };
 
 const CATEGORY_LABELS: Record<SmartObjectCategory, string> = {
