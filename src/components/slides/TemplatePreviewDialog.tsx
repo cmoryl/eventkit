@@ -512,18 +512,3 @@ function SampleDeck({
     </div>
   );
 }
-  return (
-    <dl className="space-y-2">
-      {rows.map(({ label, value }) => (
-        <div key={label}>
-          <dt className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground/80">
-            {label}
-          </dt>
-          <dd className="text-xs text-foreground/90 mt-0.5 break-words whitespace-pre-wrap">
-            {value}
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
