@@ -453,10 +453,55 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, []);
 
   const handleThumbFileDrop = useCallback((index: number) => async (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
+    const types = e.dataTransfer.types;
+    const hasFiles = types.includes('Files');
+    const hasSection = types.includes(SLIDE_SECTION_MIME);
+    const hasAssetUrl = types.includes(SLIDE_ASSET_IMAGE_MIME);
+    if (!hasFiles && !hasSection && !hasAssetUrl) return;
     e.preventDefault();
     e.stopPropagation();
     setThumbFileOver(null);
+
+    // Pre-built section → insert after this thumbnail.
+    if (hasSection) {
+      try {
+        const payload = JSON.parse(e.dataTransfer.getData(SLIDE_SECTION_MIME)) as Omit<SlideData, 'id'>;
+        insertSectionAfter(index, payload);
+        toast.success(`Inserted ${payload.layout} section`);
+      } catch {
+        toast.error('Could not insert section');
+      }
+      return;
+    }
+
+    // BrandHub image URL → apply to this slide (or new slide with Shift).
+    if (hasAssetUrl) {
+      const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
+      if (!url) return;
+      if (e.shiftKey) {
+        const newSlide: SlideData = {
+          id: uuidv4(),
+          layout: 'full-image',
+          title: '',
+          variant: 'default',
+          imageUrl: url,
+          images: [url],
+        };
+        setSlides(prev => {
+          const next = [...prev];
+          next.splice(index + 1, 0, newSlide);
+          return next;
+        });
+        setActiveIndex(index + 1);
+        toast.success('Added image as new slide');
+      } else {
+        applyImageUrlToSlide(url, index);
+        setActiveIndex(index);
+        toast.success('Image added to slide');
+      }
+      return;
+    }
+
     const file = e.dataTransfer.files[0];
     if (!file?.type.startsWith('image/')) return;
     if (e.shiftKey) {
@@ -467,7 +512,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setActiveIndex(index);
       toast.success('Image added to slide');
     }
-  }, [loadImageFile, insertImageFilesAsSlides]);
+  }, [loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
 
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
     setSlides(newSlides);
