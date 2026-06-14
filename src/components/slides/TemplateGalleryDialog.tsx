@@ -434,6 +434,7 @@ function TemplateCard({
   }, [template]);
   const categoryLabel = INFOGRAPHIC_CATEGORIES.find((c) => c.value === template.category)?.label;
   const styleLabel = DEMO_STYLES.find((s) => s.value === template.theme)?.label;
+  const pack = template.theme ? getThemePack(template.theme) : null;
 
   // Lazy-render the SlideRenderer until the card scrolls within ~400px of the
   // viewport. Skeleton placeholder fills the aspect-video frame in the meantime
@@ -465,10 +466,14 @@ function TemplateCard({
     return () => io.disconnect();
   }, [visible]);
 
+  // Card chrome mirrors the TemplatePreviewDialog hero card: rounded-xl shell,
+  // a header strip with the palette chip + name + meta line, then the slide.
+  // Keeping the layouts identical means clicking a card feels like the
+  // preview just zoomed in.
   return (
     <div
       className={cn(
-        'group relative text-left flex flex-col rounded-lg border bg-card overflow-hidden transition-all',
+        'group relative text-left flex flex-col rounded-xl border bg-card overflow-hidden shadow-sm transition-all',
         'hover:border-primary hover:shadow-lg hover:-translate-y-0.5',
         'focus-within:ring-2 focus-within:ring-primary',
       )}
@@ -482,6 +487,57 @@ function TemplateCard({
         onBlur={() => onHoverChange(false)}
         className="text-left flex flex-col focus:outline-none w-full"
       >
+        {/* Header strip — palette chip + name + meta, matching preview */}
+        <div className="flex items-center gap-2.5 px-3 py-2 border-b border-border/50">
+          <div
+            className="h-7 w-9 rounded-md border shrink-0"
+            style={{
+              background: pack?.palette.heroBg ?? 'hsl(var(--muted))',
+              borderColor: 'rgba(255,255,255,0.12)',
+            }}
+          >
+            <div className="flex gap-1 p-1">
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: pack?.palette.accent ?? 'hsl(var(--primary))' }}
+              />
+              <span
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: pack?.palette.secondary ?? 'hsl(var(--secondary))' }}
+              />
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold leading-tight truncate">{template.name}</div>
+            <div className="text-[10px] text-muted-foreground truncate">
+              1 slide
+              {categoryLabel ? ` · ${categoryLabel}` : ''}
+              {styleLabel ? ` · ${styleLabel}` : ''}
+            </div>
+          </div>
+          {/* Favorite lives in the header so the slide preview stays clean. */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFavorite();
+            }}
+            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            aria-pressed={isFavorite}
+            className={cn(
+              'h-7 w-7 rounded-full grid place-items-center border transition-colors shrink-0',
+              isFavorite
+                ? 'bg-amber-400/95 border-amber-300 text-amber-950'
+                : 'bg-transparent border-transparent text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-amber-500 hover:bg-muted',
+            )}
+          >
+            <Star className={cn('h-3.5 w-3.5', isFavorite && 'fill-current')} />
+          </button>
+        </div>
+
+        {/* Slide preview */}
         <div ref={thumbRef} className="relative aspect-video bg-muted overflow-hidden">
           {visible ? (
             <ScaledSlide>
@@ -496,47 +552,25 @@ function TemplateCard({
             <ThumbnailSkeleton />
           )}
           {template.animated && (
-            <div className="absolute top-2 right-10 px-1.5 py-0.5 rounded-full bg-background/90 backdrop-blur-sm text-[9px] font-medium text-primary flex items-center gap-1">
+            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-background/90 backdrop-blur-sm text-[9px] font-medium text-primary flex items-center gap-1">
               <Sparkles className="h-2.5 w-2.5" />
               Animated
             </div>
           )}
-          {styleLabel && (
-            <div className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded-full bg-background/85 backdrop-blur-sm text-[9px] font-medium text-foreground/80 border border-border/50">
-              {styleLabel}
-            </div>
-          )}
           <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 pointer-events-none transition-colors" />
         </div>
-        <div className="p-3 space-y-1">
-          <div className="flex items-start justify-between gap-2">
-            <span className="text-sm font-medium leading-snug">{template.name}</span>
-            <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">{categoryLabel}</span>
-          </div>
-          <p className="text-xs text-muted-foreground line-clamp-2">{template.description}</p>
-        </div>
-      </button>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleFavorite();
-        }}
-        title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        aria-pressed={isFavorite}
-        className={cn(
-          'absolute top-2 right-2 h-7 w-7 rounded-full grid place-items-center backdrop-blur-sm border transition-all',
-          isFavorite
-            ? 'bg-amber-400/95 border-amber-300 text-amber-950 opacity-100'
-            : 'bg-background/85 border-border/60 text-muted-foreground opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-amber-500',
+
+        {/* Description footer — mirrors the preview's About copy. */}
+        {template.description && (
+          <p className="text-xs text-muted-foreground leading-snug line-clamp-2 px-3 py-2 border-t border-border/40 bg-card/60">
+            {template.description}
+          </p>
         )}
-      >
-        <Star className={cn('h-3.5 w-3.5', isFavorite && 'fill-current')} />
       </button>
     </div>
   );
 }
+
 
 /** Lightweight shimmer placeholder shown until the card scrolls into view.
  *  Mimics the rough composition of a slide (title bar + body block) so the
