@@ -16,6 +16,7 @@ import {
   type InfographicTemplate,
   type InfographicCategory,
 } from './infographicTemplates';
+import { TemplatePreviewDialog } from './TemplatePreviewDialog';
 
 interface TemplateGalleryDialogProps {
   isOpen: boolean;
@@ -66,6 +67,7 @@ export function TemplateGalleryDialog({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>(() => loadIds(LS_FAVS));
   const [recent, setRecent] = useState<string[]>(() => loadIds(LS_RECENT));
+  const [previewId, setPreviewId] = useState<string | null>(null);
 
   // Re-hydrate favs/recent every time the dialog opens so changes made in
   // another tab show up.
@@ -286,7 +288,7 @@ export function TemplateGalleryDialog({
                     isFavorite={favSet.has(template.id)}
                     onHoverChange={(hovered) => setHoveredId(hovered ? template.id : null)}
                     onToggleFavorite={() => toggleFavorite(template.id)}
-                    onSelect={() => handleSelect(template)}
+                    onSelect={() => setPreviewId(template.id)}
                     brandColors={brandColors}
                     brandFonts={brandFonts}
                   />
@@ -296,6 +298,23 @@ export function TemplateGalleryDialog({
           </div>
         </div>
       </DialogContent>
+
+      {/* Larger-thumbnail preview with sample slide contents. Card clicks open
+          this; user confirms with "Use template" to insert. */}
+      <TemplatePreviewDialog
+        template={INFOGRAPHIC_TEMPLATES.find((t) => t.id === previewId) ?? null}
+        isOpen={!!previewId}
+        onClose={() => setPreviewId(null)}
+        onUse={() => {
+          const raw = INFOGRAPHIC_TEMPLATES.find((t) => t.id === previewId);
+          setPreviewId(null);
+          if (raw) handleSelect(raw);
+        }}
+        isFavorite={!!previewId && favSet.has(previewId)}
+        onToggleFavorite={() => previewId && toggleFavorite(previewId)}
+        brandColors={brandColors}
+        brandFonts={brandFonts}
+      />
     </Dialog>
   );
 }
