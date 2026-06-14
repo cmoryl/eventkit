@@ -343,7 +343,7 @@ export const SLIDE_BLOCK_TEMPLATES: SlideBlockTemplate[] = [
     category: "media",
     label: "Team Grid",
     description: "Photo grid for team or speakers",
-    layout: "image-grid",
+    layout: "full-image",
     slots: [
       { name: "title", type: "text", label: "Title", default: "Meet the team" },
     ],
