@@ -8,11 +8,12 @@
 // renderer reads it via the `align`/`weight` envelope (we extend the shape
 // at runtime so we don't need a schema migration).
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown,
   Type as TypeIcon, Image as ImageIcon, Hash, BarChart3,
-  AlignLeft, Quote, Square,
+  AlignLeft, Quote, Square, PanelLeftOpen, X, GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,11 +83,30 @@ export const LayersPanel: React.FC<Props> = ({ slide, onUpdate }) => {
   // Render front-to-back: last in array sits on top visually, so show reversed.
   const orderedTextBoxes = [...textBoxes].map((tb, idx) => ({ tb, idx })).reverse();
 
-  return (
-    <div className="flex flex-col h-full">
+  const [detached, setDetached] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("ek.layersPanel.detached") === "1";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("ek.layersPanel.detached", detached ? "1" : "0"); } catch { /* ignore */ }
+  }, [detached]);
+
+  const body = (
+    <div className="flex flex-col h-full min-h-0">
       <div className="px-3 py-2 border-b border-border/60 text-[10px] uppercase tracking-wide text-muted-foreground font-semibold flex items-center justify-between">
         <span>Layers · {textBoxes.length + builtIns.length}</span>
-        <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">Top → Bottom</span>
+        <div className="flex items-center gap-1">
+          <span className="text-[9px] normal-case tracking-normal text-muted-foreground/70">Top → Bottom</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5"
+            onClick={() => setDetached((d) => !d)}
+            title={detached ? "Dock panel" : "Pop out as floating window"}
+          >
+            {detached ? <X className="h-3 w-3" /> : <PanelLeftOpen className="h-3 w-3" />}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -164,6 +184,81 @@ export const LayersPanel: React.FC<Props> = ({ slide, onUpdate }) => {
         )}
       </div>
     </div>
+  );
+
+  if (detached) {
+    return (
+      <>
+        <div className="p-3 text-xs text-muted-foreground flex items-center justify-between gap-2">
+          <span>Layers panel is floating.</span>
+          <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => setDetached(false)}>Dock</Button>
+        </div>
+        <FloatingLayersWindow onClose={() => setDetached(false)}>{body}</FloatingLayersWindow>
+      </>
+    );
+  }
+  return body;
+};
+
+/**
+ * Free-floating, draggable window that hosts the Layers panel above the editor.
+ * Position persists in sessionStorage; clamps to viewport.
+ */
+const FloatingLayersWindow: React.FC<{ onClose: () => void; children: React.ReactNode }> = ({ onClose, children }) => {
+  const [pos, setPos] = useState<{ x: number; y: number }>(() => {
+    if (typeof window === "undefined") return { x: 280, y: 120 };
+    try {
+      const raw = sessionStorage.getItem("ek.layersPanel.pos");
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return { x: Math.max(80, window.innerWidth - 360), y: 120 };
+  });
+  const dragRef = useRef<{ ox: number; oy: number; sx: number; sy: number } | null>(null);
+
+  useEffect(() => {
+    try { sessionStorage.setItem("ek.layersPanel.pos", JSON.stringify(pos)); } catch { /* ignore */ }
+  }, [pos]);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const d = dragRef.current; if (!d) return;
+      const x = Math.max(0, Math.min(window.innerWidth - 280, d.ox + (e.clientX - d.sx)));
+      const y = Math.max(0, Math.min(window.innerHeight - 80, d.oy + (e.clientY - d.sy)));
+      setPos({ x, y });
+    };
+    const onUp = () => { dragRef.current = null; };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+  }, []);
+
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div
+      className="fixed z-[60] w-[300px] max-h-[70vh] rounded-lg border border-border bg-background shadow-2xl flex flex-col overflow-hidden"
+      style={{ left: pos.x, top: pos.y }}
+    >
+      <div
+        className="flex items-center justify-between gap-1 px-2 py-1.5 border-b border-border/60 bg-muted/40 cursor-grab active:cursor-grabbing select-none"
+        onPointerDown={(e) => {
+          (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+          dragRef.current = { ox: pos.x, oy: pos.y, sx: e.clientX, sy: e.clientY };
+        }}
+      >
+        <div className="flex items-center gap-1">
+          <GripVertical className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[10px] uppercase tracking-wide font-semibold text-muted-foreground">Layers</span>
+        </div>
+        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={onClose} title="Dock">
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+    </div>,
+    document.body,
   );
 };
 

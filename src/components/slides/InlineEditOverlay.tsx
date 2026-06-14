@@ -944,7 +944,9 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
   const textBoxes = (slide as any).textBoxes as SlideData['textBoxes'] | undefined;
   const [selectedTextBoxId, setSelectedTextBoxId] = useState<string | null>(null);
   const [editingTextBoxId, setEditingTextBoxId] = useState<string | null>(null);
-  const tbDragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect; orig: { xPct: number; yPct: number; wPct: number; fontSize: number } } | null>(null);
+  const tbDragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect; orig: { xPct: number; yPct: number; wPct: number; fontSize: number }; snapDisabled: boolean } | null>(null);
+  // Smart guides shown during a drag: arrays of %-positions on each axis.
+  const [guides, setGuides] = useState<{ v: number[]; h: number[] }>({ v: [], h: [] });
 
   const updateTextBox = (id: string, patch: Partial<NonNullable<SlideData['textBoxes']>[number]>) => {
     const list = (slideRef.current.textBoxes || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
@@ -969,14 +971,51 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
   // Pointer-driven move/resize for text boxes — uses the wrapper rect as the
   // coordinate space so % values stay correct at any zoom level.
   useEffect(() => {
+    // Snap targets: canvas thirds + center + edges, plus other text boxes' centers/edges.
+    const SNAP_PCT = 1.2; // ~1.2% threshold (≈15px on a 1280-wide canvas)
+    const buildSnapTargets = (excludeId: string) => {
+      const v = new Set<number>([0, 25, 50, 75, 100]);
+      const h = new Set<number>([0, 25, 50, 75, 100]);
+      for (const t of slideRef.current.textBoxes || []) {
+        if (t.id === excludeId || (t as { __hidden?: boolean }).__hidden) continue;
+        v.add(t.xPct);
+        h.add(t.yPct);
+        v.add(Math.max(0, t.xPct - t.wPct / 2));
+        v.add(Math.min(100, t.xPct + t.wPct / 2));
+      }
+      return { v: [...v], h: [...h] };
+    };
+    const snap = (val: number, targets: number[]) => {
+      let best = val;
+      let bestDist = SNAP_PCT;
+      const hits: number[] = [];
+      for (const t of targets) {
+        const d = Math.abs(val - t);
+        if (d < bestDist) { bestDist = d; best = t; }
+      }
+      if (Math.abs(val - best) < SNAP_PCT) hits.push(best);
+      return { val: best, hits };
+    };
+
     const onMove = (e: PointerEvent) => {
       const drag = tbDragRef.current;
       if (!drag) return;
       const dx = e.clientX - drag.startX;
       const dy = e.clientY - drag.startY;
       if (drag.mode === 'move') {
-        const xPct = Math.max(0, Math.min(100, drag.orig.xPct + (dx / drag.rect.width) * 100));
-        const yPct = Math.max(0, Math.min(100, drag.orig.yPct + (dy / drag.rect.height) * 100));
+        let xPct = Math.max(0, Math.min(100, drag.orig.xPct + (dx / drag.rect.width) * 100));
+        let yPct = Math.max(0, Math.min(100, drag.orig.yPct + (dy / drag.rect.height) * 100));
+        const snapDisabled = drag.snapDisabled || e.altKey;
+        if (!snapDisabled) {
+          const targets = buildSnapTargets(drag.id);
+          const sx = snap(xPct, targets.v);
+          const sy = snap(yPct, targets.h);
+          xPct = sx.val;
+          yPct = sy.val;
+          setGuides({ v: sx.hits, h: sy.hits });
+        } else {
+          setGuides({ v: [], h: [] });
+        }
         updateTextBox(drag.id, { xPct, yPct });
       } else {
         const wPct = Math.max(8, Math.min(100, drag.orig.wPct + (dx / drag.rect.width) * 200));
@@ -984,7 +1023,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         updateTextBox(drag.id, { wPct, fontSize });
       }
     };
-    const onUp = () => { tbDragRef.current = null; };
+    const onUp = () => { tbDragRef.current = null; setGuides({ v: [], h: [] }); };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     return () => {
@@ -1007,6 +1046,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       startX: e.clientX, startY: e.clientY,
       rect: root.getBoundingClientRect(),
       orig: { xPct: tb.xPct, yPct: tb.yPct, wPct: tb.wPct, fontSize: tb.fontSize },
+      snapDisabled: e.altKey,
     };
   };
 
@@ -1101,6 +1141,18 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Smart guide lines — shown while dragging a text box, snap to thirds/center/edges. */}
+      {(guides.v.length > 0 || guides.h.length > 0) && (
+        <div className="absolute inset-0 z-40 pointer-events-none">
+          {guides.v.map((x) => (
+            <div key={`v-${x}`} className="absolute top-0 bottom-0" style={{ left: `${x}%`, width: 1, background: 'hsl(var(--primary))', boxShadow: '0 0 4px hsl(var(--primary))' }} />
+          ))}
+          {guides.h.map((y) => (
+            <div key={`h-${y}`} className="absolute left-0 right-0" style={{ top: `${y}%`, height: 1, background: 'hsl(var(--primary))', boxShadow: '0 0 4px hsl(var(--primary))' }} />
+          ))}
         </div>
       )}
 
