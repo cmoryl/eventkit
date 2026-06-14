@@ -305,9 +305,10 @@ export function TemplateGalleryDialog({
         template={INFOGRAPHIC_TEMPLATES.find((t) => t.id === previewId) ?? null}
         isOpen={!!previewId}
         onClose={() => setPreviewId(null)}
-        onUse={(tpl) => {
+        onUse={() => {
+          const raw = INFOGRAPHIC_TEMPLATES.find((t) => t.id === previewId);
           setPreviewId(null);
-          handleSelect(tpl);
+          if (raw) handleSelect(raw);
         }}
         isFavorite={!!previewId && favSet.has(previewId)}
         onToggleFavorite={() => previewId && toggleFavorite(previewId)}
