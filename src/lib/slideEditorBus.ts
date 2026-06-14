@@ -20,6 +20,7 @@ export interface SlideEditorBusHandlers {
     url?: string;
   }) => boolean;
   applyBrandImage: (params: { url: string; role?: "body" | "accent" }) => boolean;
+  setSlideField: (params: { field: "title" | "subtitle" | "body" | "quote" | "quoteAuthor"; value: string }) => boolean;
   goToSlide: (index: number) => boolean;
   duplicateActive: () => boolean;
   deleteActive: () => boolean;
