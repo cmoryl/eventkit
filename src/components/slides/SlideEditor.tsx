@@ -111,7 +111,20 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
   const [canvasFileOver, setCanvasFileOver] = useState(false);
   const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
-  const [brandLocked, setBrandLocked] = useState(false);
+  const brandLockKey = brand?.id ? `eventkit:brand-lock:${brand.id}` : null;
+  const [brandLocked, setBrandLocked] = useState<boolean>(() => {
+    if (typeof window === 'undefined' || !brandLockKey) return false;
+    return window.localStorage.getItem(brandLockKey) === '1';
+  });
+  useEffect(() => {
+    if (!brandLockKey || typeof window === 'undefined') return;
+    window.localStorage.setItem(brandLockKey, brandLocked ? '1' : '0');
+  }, [brandLocked, brandLockKey]);
+  // Re-hydrate when brand changes
+  useEffect(() => {
+    if (!brandLockKey || typeof window === 'undefined') return;
+    setBrandLocked(window.localStorage.getItem(brandLockKey) === '1');
+  }, [brandLockKey]);
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
 
 
@@ -655,9 +668,47 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       },
       getActiveIndex: () => activeIndexRef.current,
       getSlideCount: () => slidesCountRef.current,
+      toggleBrandLock: (locked) => {
+        setBrandLocked(!!locked);
+        return true;
+      },
+      applyBrandLockToAll: () => {
+        const colors = brandColorsRef.current;
+        if (!colors) return false;
+        setSlides((prev) => prev.map((s) => applyBrandLockToSlide(s, colors)));
+        return true;
+      },
+      getBrandLock: () => brandLockedRef.current,
+      getDraftCount: () => draftSlidesRef.current.length,
+      insertDraft: (index) => {
+        const drafts = draftSlidesRef.current;
+        const target = drafts[index];
+        if (!target) return false;
+        const { id: _id, ...payload } = target;
+        setSlides((prev) => {
+          const next = [...prev];
+          next.splice(activeIndexRef.current + 1, 0, { id: uuidv4(), ...payload } as SlideData);
+          return next;
+        });
+        setActiveIndex(activeIndexRef.current + 1);
+        return true;
+      },
+      dismissDraftTray: () => {
+        setGeneratedTraySlides([]);
+        return true;
+      },
     });
     return () => slideEditorBus.disconnect();
   }, [applyImageUrlToSlide, setAccentImageForSlide]);
+
+  // Refs the bus closures read so they always see latest state.
+  const brandLockedRef = useRef(brandLocked);
+  const draftSlidesRef = useRef<SlideData[]>(generatedTraySlides);
+  const brandColorsRef = useRef(brandColors);
+  useEffect(() => { brandLockedRef.current = brandLocked; }, [brandLocked]);
+  useEffect(() => { draftSlidesRef.current = generatedTraySlides; }, [generatedTraySlides]);
+  useEffect(() => { brandColorsRef.current = brandColors; }, [brandColors]);
+
 
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
     setSlides(prev => {

@@ -25,6 +25,13 @@ export interface SlideEditorBusHandlers {
   deleteActive: () => boolean;
   getActiveIndex: () => number;
   getSlideCount: () => number;
+  // Brand-lock + AI draft tray controls
+  toggleBrandLock: (locked: boolean) => boolean;
+  applyBrandLockToAll: () => boolean;
+  getBrandLock: () => boolean;
+  getDraftCount: () => number;
+  insertDraft: (index: number) => boolean;
+  dismissDraftTray: () => boolean;
 }
 
 let handlers: Partial<SlideEditorBusHandlers> | null = null;

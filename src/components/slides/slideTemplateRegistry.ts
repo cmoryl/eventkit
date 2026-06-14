@@ -289,6 +289,66 @@ export const SLIDE_BLOCK_TEMPLATES: SlideBlockTemplate[] = [
     ],
     seed: { title: "Hero Image", variant: "default" },
   },
+  // ── EXTENDED ───────────────────────────────────────────────────
+  {
+    id: "cta-banner",
+    category: "basic",
+    label: "Call to Action",
+    description: "Closing CTA with bold headline",
+    layout: "title",
+    slots: [
+      { name: "title", type: "text", label: "Headline", required: true, default: "Let's get started" },
+      { name: "subtitle", type: "text", label: "Sub-line", default: "Reach out · book a call · sign up" },
+    ],
+    seed: { title: "Let's get started", subtitle: "Reach out · book a call · sign up", variant: "bold" },
+  },
+  {
+    id: "three-column",
+    category: "structure",
+    label: "Three Columns",
+    description: "Trio of value props or features",
+    layout: "two-column",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Three reasons" },
+      { name: "body", type: "longtext", label: "Columns (one per line)", default: "Fast · Built for speed\nSecure · End-to-end encryption\nDelightful · Modern UI" },
+    ],
+    seed: { title: "Three reasons", body: "Fast · Built for speed\nSecure · End-to-end encryption\nDelightful · Modern UI", variant: "default" },
+  },
+  {
+    id: "swot-grid",
+    category: "structure",
+    label: "SWOT 2×2",
+    description: "Strengths · Weaknesses · Opportunities · Threats",
+    layout: "comparison",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "SWOT Analysis" },
+      { name: "body", type: "longtext", label: "Quadrants", default: "Strengths\nWeaknesses\nOpportunities\nThreats" },
+    ],
+    seed: { title: "SWOT Analysis", body: "Strengths\nWeaknesses\nOpportunities\nThreats", variant: "default" },
+  },
+  {
+    id: "faq-list",
+    category: "structure",
+    label: "FAQ",
+    description: "Question & answer list",
+    layout: "content",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Frequently Asked Questions" },
+      { name: "body", type: "longtext", label: "Q & A (one per line)", default: "Q: What is this?\nA: A new way to build decks.\nQ: How fast?\nA: Seconds, not hours." },
+    ],
+    seed: { title: "Frequently Asked Questions", body: "Q: What is this?\nA: A new way to build decks.\nQ: How fast?\nA: Seconds, not hours.", variant: "default" },
+  },
+  {
+    id: "team-grid",
+    category: "media",
+    label: "Team Grid",
+    description: "Photo grid for team or speakers",
+    layout: "full-image",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Meet the team" },
+    ],
+    seed: { title: "Meet the team", variant: "default", images: [] },
+  },
 ];
 
 /**
