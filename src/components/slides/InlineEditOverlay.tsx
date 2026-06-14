@@ -1072,6 +1072,72 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Group rotation: spins each selected text box around the group center.
+  // Shift snaps to 15° increments; Alt = 1° precision.
+  const groupRotateRef = useRef<{
+    rect: DOMRect;
+    centerPx: { x: number; y: number };
+    startAngle: number;
+    items: Array<{ id: string; xPctPx: number; yPctPx: number; rotation: number }>;
+  } | null>(null);
+
+  const startGroupRotate = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const root = wrapperRef.current?.parentElement;
+    if (!root || !groupBBox) return;
+    const rect = root.getBoundingClientRect();
+    const cxPx = ((groupBBox.x + groupBBox.w / 2) / 100) * rect.width;
+    const cyPx = ((groupBBox.y + groupBBox.h / 2) / 100) * rect.height;
+    const items = (slideRef.current.textBoxes || [])
+      .filter((t) => effectiveIds.includes(t.id))
+      .map((t) => ({
+        id: t.id,
+        xPctPx: (t.xPct / 100) * rect.width,
+        yPctPx: (t.yPct / 100) * rect.height,
+        rotation: (t as { rotation?: number }).rotation || 0,
+      }));
+    const startAngle = Math.atan2(e.clientY - rect.top - cyPx, e.clientX - rect.left - cxPx);
+    groupRotateRef.current = { rect, centerPx: { x: cxPx, y: cyPx }, startAngle, items };
+  };
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const r = groupRotateRef.current;
+      if (!r) return;
+      const ang = Math.atan2(e.clientY - r.rect.top - r.centerPx.y, e.clientX - r.rect.left - r.centerPx.x);
+      let deltaDeg = ((ang - r.startAngle) * 180) / Math.PI;
+      if (e.shiftKey) deltaDeg = Math.round(deltaDeg / 15) * 15;
+      else if (e.altKey) deltaDeg = Math.round(deltaDeg);
+      const rad = (deltaDeg * Math.PI) / 180;
+      const cos = Math.cos(rad), sin = Math.sin(rad);
+      const next = (slideRef.current.textBoxes || []).map((t) => {
+        const orig = r.items.find((i) => i.id === t.id);
+        if (!orig) return t;
+        const dx = orig.xPctPx - r.centerPx.x;
+        const dy = orig.yPctPx - r.centerPx.y;
+        const nxPx = r.centerPx.x + dx * cos - dy * sin;
+        const nyPx = r.centerPx.y + dx * sin + dy * cos;
+        return {
+          ...t,
+          xPct: Math.max(0, Math.min(100, (nxPx / r.rect.width) * 100)),
+          yPct: Math.max(0, Math.min(100, (nyPx / r.rect.height) * 100)),
+          rotation: (orig.rotation + deltaDeg + 360) % 360,
+        } as typeof t;
+      });
+      onUpdate({ textBoxes: next } as Partial<SlideData>);
+    };
+    const onUp = () => { groupRotateRef.current = null; };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   const updateTextBox = (id: string, patch: Partial<NonNullable<SlideData['textBoxes']>[number]>) => {
     const list = (slideRef.current.textBoxes || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
     onUpdate({ textBoxes: list } as Partial<SlideData>);
@@ -1379,7 +1445,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
                   left: `${tb.xPct}%`,
                   top: `${tb.yPct}%`,
                   width: `${tb.wPct}%`,
-                  transform: 'translate(-50%, -50%)',
+                  transform: `translate(-50%, -50%) rotate(${(tb as { rotation?: number }).rotation || 0}deg)`,
                   outline: isSelected
                     ? `2px solid hsl(var(--primary)${isMulti && !isPrimary ? ' / 0.7' : ''})`
                     : 'none',
@@ -1494,6 +1560,18 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
               onPointerDown={(e) => startGroupResize(e, h)}
             />
           ))}
+          {/* Rotation handle — sits above the top edge, linked by a thin tether. */}
+          <div
+            className="pointer-events-auto absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
+            style={{ top: -28 }}
+          >
+            <div
+              className="w-4 h-4 rounded-full bg-primary border-2 border-background shadow cursor-grab active:cursor-grabbing"
+              title="Drag to rotate group · Shift = snap 15° · Alt = 1° precision"
+              onPointerDown={startGroupRotate}
+            />
+            <div className="w-px h-3 bg-primary/60" />
+          </div>
         </div>
       )}
 
