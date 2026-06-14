@@ -1,0 +1,53 @@
+name: Apply Presentation Studio Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch to patch with the prepared Presentation Studio UI migrations
+        required: true
+        default: presentation-studio-runtime-migration
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  apply-migrations:
+    name: Apply prepared UI migrations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: Apply Presentation Studio migrations
+        run: node scripts/test-presentation-studio.mjs --apply-asset-panel --apply-powerpoint-sidebar
+
+      - name: Check generated diff
+        run: |
+          git diff --check
+          git status --short
+
+      - name: Commit applied migrations
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/components/slides/SlideEditor.tsx src/pages/PowerPointAgent.tsx
+          if git diff --cached --quiet; then
+            echo "No migration changes to commit."
+          else
+            git commit -m "Apply Presentation Studio UI migrations"
+            git push origin HEAD:${{ inputs.target_branch }}
+          fi
