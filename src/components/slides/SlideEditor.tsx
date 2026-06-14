@@ -138,6 +138,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setBrandLocked(window.localStorage.getItem(brandLockKey) === '1');
   }, [brandLockKey]);
   const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
+  /** Currently-open NavRail tab — null when drawer is collapsed. */
+  const [navRailTab, setNavRailTab] = useState<string | null>('slides');
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
 
