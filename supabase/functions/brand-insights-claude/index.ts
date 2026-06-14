@@ -138,7 +138,7 @@ Deno.serve(async (req: Request) => {
     }
 
     if (body.stream) {
-      const stream = await streamClaude({
+      const stream = await streamClaudeText({
         model: body.model,
         system,
         messages: [{ role: "user", content: prompt }],
@@ -147,7 +147,7 @@ Deno.serve(async (req: Request) => {
       return new Response(stream, {
         headers: {
           ...corsHeaders,
-          "Content-Type": "text/event-stream",
+          "Content-Type": "text/plain; charset=utf-8",
           "Cache-Control": "no-cache",
           "X-AI-Provider": "anthropic",
         },
