@@ -27,6 +27,7 @@ import { PresentationProductionRunbookPanel } from './PresentationProductionRunb
 import { PresentationEditorUXPanel } from './PresentationEditorUXPanel';
 import { PresentationEditorActionAuditPanel } from './PresentationEditorActionAuditPanel';
 import { PresentationEditorUserFlowMatrixPanel } from './PresentationEditorUserFlowMatrixPanel';
+import { PresentationEditorReplayPanel } from './PresentationEditorReplayPanel';
 import { PresentationAssetSuggestionPanel } from './PresentationAssetSuggestionPanel';
 import { PresentationAssetDropZonePanel } from './PresentationAssetDropZonePanel';
 import { PresentationAssetReadinessPanel } from './composer/PresentationAssetReadinessPanel';
@@ -121,6 +122,7 @@ export const PresentationStudioIntelligenceDashboard: React.FC<PresentationStudi
       />
       <PresentationEditorActionAuditPanel />
       <PresentationEditorUserFlowMatrixPanel />
+      <PresentationEditorReplayPanel />
       <PresentationCommandRouterPanel />
       <PresentationUserFlowPanel
         creationMode={creationMode}
