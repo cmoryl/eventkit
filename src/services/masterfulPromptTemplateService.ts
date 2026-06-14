@@ -330,8 +330,8 @@ const formatColorTokenBlock = (colorPalette?: ColorInfo[] | string[]) => {
 
 const formatBrandIdentityBlock = (profile?: BrandProfile | null, brandContext?: BrandContext | null) => {
   const name = profile?.name || brandContext?.brandName || 'the active brand';
-  const font = profile?.typography?.primaryFont || brandContext?.typography?.primary || 'the approved brand font';
-  const tagline = profile?.tagline || brandContext?.tagline;
+  const font = (profile?.typography as any)?.primaryFont || (brandContext as any)?.typography?.primary || 'the approved brand font';
+  const tagline = (profile as any)?.tagline || brandContext?.tagline;
   return [
     `Brand: ${name}.`,
     tagline ? `Brand/tagline cue: ${tagline}.` : '',

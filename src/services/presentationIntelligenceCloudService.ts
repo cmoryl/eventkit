@@ -22,7 +22,7 @@ export const savePresentationEvent = async (input: {
     metadata: input.metadata,
   });
 
-  const { error } = await supabase.from('presentation_events').insert({
+  const { error } = await (supabase as any).from('presentation_events').insert({
     id: event.id,
     user_id: input.userId,
     artifact_id: event.artifactId,
@@ -43,7 +43,7 @@ export const savePresentationEvent = async (input: {
 };
 
 export const loadPresentationEvents = async (input: { userId: string; artifactId: string; limit?: number }): Promise<PresentationEventRecord[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('presentation_events')
     .select('*')
     .eq('user_id', input.userId)
@@ -75,7 +75,7 @@ export const savePresentationIntelligenceSnapshot = async (input: PresentationSt
 }) => {
   const state = buildPresentationStudioIntelligenceState(input);
 
-  const { error } = await supabase.from('presentation_intelligence_snapshots').insert({
+  const { error } = await (supabase as any).from('presentation_intelligence_snapshots').insert({
     user_id: input.userId,
     artifact_id: input.artifactId,
     status: state.status,

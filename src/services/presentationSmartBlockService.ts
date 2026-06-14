@@ -19,7 +19,7 @@ export interface PresentationSmartBlock {
   label: string;
   description: string;
   bestFor: string[];
-  recommendedLayouts: SlideLayout[];
+  recommendedLayouts: (SlideLayout | string)[];
   requiredInputs: string[];
   editableRegions: string[];
   qualityChecks: string[];

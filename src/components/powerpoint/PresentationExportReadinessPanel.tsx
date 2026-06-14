@@ -27,7 +27,7 @@ export const PresentationExportReadinessPanel: React.FC<{
       </div>
 
       <div className="mb-3 rounded-2xl border border-border bg-background p-3 text-xs">
-        <div className="font-bold capitalize">{readiness.decision.replaceAll('_', ' ')}</div>
+        <div className="font-bold capitalize">{String(readiness.decision).replace(/_/g, ' ')}</div>
         <div className="mt-1 text-muted-foreground">{readiness.canProceed ? 'Export may proceed.' : 'Fix required items before final delivery.'}</div>
       </div>
 

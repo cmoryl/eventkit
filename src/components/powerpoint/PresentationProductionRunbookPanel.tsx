@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { ClipboardCheck, CircleDashed } from 'lucide-react';
 import type { SlideData } from '@/components/slides/slideTypes';
 import type { PresentationEventRecord } from '@/services/presentationEventHistoryService';
-import type { PresentationExportReadinessDecision } from '@/services/presentationExportReadinessService';
-import type { PresentationAgentQALoopStatus } from '@/services/presentationAgentQALoopService';
+import type { ExportReadinessDecision } from '@/services/presentationExportReadinessService';
+import type { AgentQAGateStatus } from '@/services/presentationAgentQALoopService';
 import { buildPresentationProductionRunbook, getActiveRunbookPhase } from '@/services/presentationProductionRunbookService';
 import { cn } from '@/lib/utils';
 
@@ -13,8 +13,8 @@ export const PresentationProductionRunbookPanel: React.FC<{
   hasSourceMaterial?: boolean;
   hasBrandProfile?: boolean;
   hasExactLogoSource?: boolean;
-  qaStatus?: PresentationAgentQALoopStatus;
-  exportDecision?: PresentationExportReadinessDecision;
+  qaStatus?: AgentQAGateStatus;
+  exportDecision?: ExportReadinessDecision;
   humanApproved?: boolean;
   className?: string;
 }> = ({ className, ...input }) => {

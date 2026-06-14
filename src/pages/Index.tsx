@@ -259,9 +259,7 @@ const Index: React.FC = () => {
     );
     
     // Restore the queue and create asset placeholders
-    restoreQueue((assets) => {
-      setGeneratedAssets(prev => [...prev, ...assets]);
-    });
+    restoreQueue(setGeneratedAssets);
     
     // Switch to studio view
     setView('studio');
