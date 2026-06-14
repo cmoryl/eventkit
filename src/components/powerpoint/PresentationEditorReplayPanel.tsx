@@ -1,9 +1,11 @@
 import React, { useMemo } from 'react';
-import { PlayCircle, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Gauge, PlayCircle, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { validatePresentationEditorReplaySuite } from '@/services/presentationEditorFlowReplayService';
+import { buildPresentationEditorE2ECoverageReport } from '@/services/presentationEditorE2ECoverageService';
 
 export const PresentationEditorReplayPanel: React.FC = () => {
   const suite = useMemo(() => validatePresentationEditorReplaySuite(), []);
+  const coverage = useMemo(() => buildPresentationEditorE2ECoverageReport(), []);
 
   return (
     <section className="rounded-[2rem] border border-border bg-card/80 p-5 shadow-sm">
@@ -23,6 +25,19 @@ export const PresentationEditorReplayPanel: React.FC = () => {
             {suite.pass ? 'PASS' : 'REVIEW'}
           </div>
           <div className="mt-1 text-xs font-bold">replay suite</div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/10 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-black text-primary"><Gauge className="h-4 w-4" /> Editor E2E coverage: {coverage.verdict}</div>
+          <div className="text-2xl font-black text-primary">{coverage.score}</div>
+        </div>
+        <div className="mt-3 grid gap-2 text-xs md:grid-cols-4">
+          <span className="rounded-xl bg-background/70 px-3 py-2 font-bold">Actions {coverage.actionCoverage}%</span>
+          <span className="rounded-xl bg-background/70 px-3 py-2 font-bold">Pairs {coverage.pairwiseCoverage}%</span>
+          <span className="rounded-xl bg-background/70 px-3 py-2 font-bold">Replay {coverage.replayCoverage}%</span>
+          <span className="rounded-xl bg-background/70 px-3 py-2 font-bold">Export gates {coverage.exportGateCoverage}%</span>
         </div>
       </div>
 
