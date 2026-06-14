@@ -170,18 +170,27 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       }
       if (e.key === 'ArrowDown' && e.altKey) {
         e.preventDefault();
-        setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+        if (e.shiftKey) {
+          reorderSlide(activeIndex, Math.min(activeIndex + 1, slides.length - 1));
+        } else {
+          setActiveIndex((i) => Math.min(i + 1, slides.length - 1));
+        }
         return;
       }
       if (e.key === 'ArrowUp' && e.altKey) {
         e.preventDefault();
-        setActiveIndex((i) => Math.max(i - 1, 0));
+        if (e.shiftKey) {
+          reorderSlide(activeIndex, Math.max(activeIndex - 1, 0));
+        } else {
+          setActiveIndex((i) => Math.max(i - 1, 0));
+        }
         return;
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, shortcutsOpen, brandLocked, activeIndex, slides.length]);
+
 
 
 
