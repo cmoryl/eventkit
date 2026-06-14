@@ -53,6 +53,10 @@ import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from '.
 import { FindReplaceDialog } from './FindReplaceDialog';
 import { replaceInDeck } from './findReplace';
 import { Search as SearchIcon } from 'lucide-react';
+import { EditorNavRail, type NavRailTab } from './EditorNavRail';
+import { InsertDrawerTabs } from './InsertDrawerTabs';
+import { applySmartObject, SLIDE_OBJECT_MIME } from './smartObjectRegistry';
+import { Layers, Plus as PlusIcon, Palette as PaletteIcon, Sparkles as SparklesIcon, MessageSquare } from 'lucide-react';
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150];
 
