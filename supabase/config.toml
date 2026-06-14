@@ -15,3 +15,5 @@ verify_jwt = false
 
 [functions.generate-slide-graphic]
 verify_jwt = false
+[functions.voice-agent-claude]
+verify_jwt = false
