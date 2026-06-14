@@ -231,6 +231,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({ sl
             key={asset.id}
             type="button"
             onClick={() => onApplyImage(asset.url)}
+            aria-label={`Apply ${asset.label} from ${asset.source}`}
             className="group overflow-hidden rounded-lg border border-border bg-background text-left transition hover:border-primary/50 hover:shadow-sm"
           >
             <div className="relative aspect-video bg-muted">
