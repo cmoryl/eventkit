@@ -349,6 +349,145 @@ export const SLIDE_BLOCK_TEMPLATES: SlideBlockTemplate[] = [
     ],
     seed: { title: "Meet the team", variant: "default", images: [] },
   },
+  // ── NEW: high-value slide types added for industry-standard editor ──
+  {
+    id: "big-quote-hero",
+    category: "basic",
+    label: "Big Quote",
+    description: "Full-bleed oversized pull quote",
+    layout: "quote",
+    slots: [
+      { name: "title", type: "longtext", label: "Quote", required: true, default: "“The best way to predict the future is to invent it.”" },
+      { name: "quoteAuthor", type: "text", label: "Author", default: "Alan Kay" },
+    ],
+    seed: { title: "“The best way to predict the future is to invent it.”", quoteAuthor: "Alan Kay", variant: "bold", variation: "punch" },
+  },
+  {
+    id: "closing-cta",
+    category: "basic",
+    label: "Closing CTA",
+    description: "Final-slide call to action",
+    layout: "section",
+    slots: [
+      { name: "title", type: "text", label: "Headline", required: true, default: "Thank you" },
+      { name: "subtitle", type: "text", label: "Sub-line", default: "Questions? Reach out anytime." },
+    ],
+    seed: { title: "Thank you", subtitle: "Questions? Reach out anytime.", variant: "dark" },
+  },
+  {
+    id: "qa-slide",
+    category: "basic",
+    label: "Q & A",
+    description: "Big Q&A prompt slide",
+    layout: "section",
+    slots: [
+      { name: "title", type: "text", label: "Headline", default: "Questions?" },
+      { name: "subtitle", type: "text", label: "Sub-line", default: "We'd love to hear yours." },
+    ],
+    seed: { title: "Questions?", subtitle: "We'd love to hear yours.", variant: "gradient" },
+  },
+  {
+    id: "mission-statement",
+    category: "basic",
+    label: "Mission",
+    description: "Single-sentence mission slide",
+    layout: "title",
+    slots: [
+      { name: "title", type: "longtext", label: "Mission", required: true, default: "We make great ideas happen." },
+      { name: "subtitle", type: "text", label: "Eyebrow", default: "Our mission" },
+    ],
+    seed: { title: "We make great ideas happen.", subtitle: "Our mission", variant: "minimal", variation: "editorial" },
+  },
+  {
+    id: "three-up-grid",
+    category: "structure",
+    label: "Three-Up Grid",
+    description: "Three feature cards in a row",
+    layout: "two-column",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "What you get" },
+      { name: "body", type: "longtext", label: "Cards (one per line)", default: "Speed · Built for fast iteration\nClarity · Beautiful by default\nControl · Brand-perfect every time" },
+    ],
+    seed: { title: "What you get", body: "Speed · Built for fast iteration\nClarity · Beautiful by default\nControl · Brand-perfect every time", variant: "default" },
+  },
+  {
+    id: "stairs-process",
+    category: "structure",
+    label: "Stair-Step Process",
+    description: "Staircase-shaped process flow",
+    layout: "process",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Our approach" },
+      { name: "process", type: "process", label: "Steps", default: [
+        { title: "Discover", description: "Understand needs" },
+        { title: "Define", description: "Frame the problem" },
+        { title: "Design", description: "Shape the solution" },
+        { title: "Deliver", description: "Ship and learn" },
+      ] },
+    ],
+    seed: {
+      title: "Our approach",
+      variant: "default",
+      variation: "stairs",
+      process: [
+        { title: "Discover", description: "Understand needs" },
+        { title: "Define", description: "Frame the problem" },
+        { title: "Design", description: "Shape the solution" },
+        { title: "Deliver", description: "Ship and learn" },
+      ],
+    },
+  },
+  {
+    id: "ranked-stats",
+    category: "data",
+    label: "Ranked Stats",
+    description: "Five ranked metric bars",
+    layout: "stats",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Top performers" },
+      { name: "stats", type: "stat-list", label: "Stats (5)", default: [
+        { value: "1", label: "Acme Corp" },
+        { value: "2", label: "Globex" },
+        { value: "3", label: "Initech" },
+        { value: "4", label: "Umbrella" },
+        { value: "5", label: "Stark Inc" },
+      ] },
+    ],
+    seed: {
+      title: "Top performers",
+      variant: "default",
+      variation: "ranked",
+      stats: [
+        { value: "1", label: "Acme Corp" },
+        { value: "2", label: "Globex" },
+        { value: "3", label: "Initech" },
+        { value: "4", label: "Umbrella" },
+        { value: "5", label: "Stark Inc" },
+      ],
+    },
+  },
+  {
+    id: "logo-wall",
+    category: "media",
+    label: "Logo Wall",
+    description: "Customer / partner logo grid",
+    layout: "full-image",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Trusted by teams worldwide" },
+    ],
+    seed: { title: "Trusted by teams worldwide", variant: "minimal", images: [] },
+  },
+  {
+    id: "gallery-grid",
+    category: "media",
+    label: "Gallery Grid",
+    description: "Multi-image gallery",
+    layout: "full-image",
+    slots: [
+      { name: "title", type: "text", label: "Title", default: "Gallery" },
+    ],
+    seed: { title: "Gallery", variant: "default", images: [] },
+  },
 ];
 
 /**
