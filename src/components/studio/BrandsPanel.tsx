@@ -395,11 +395,6 @@ export const BrandsPanel: React.FC<BrandsPanelProps> = ({
                           selectedBrand.styles?.accent_color,
                         ].filter(Boolean) as string[],
                       }}
-                          selectedBrand.styles?.primary_color,
-                          selectedBrand.styles?.secondary_color,
-                          selectedBrand.styles?.accent_color,
-                        ].filter(Boolean) as string[],
-                      }}
                       trigger={
                         <Button variant="outline" size="sm" className="w-full rounded-xl gap-1.5 mb-2">
                           <Sparkles className="w-3.5 h-3.5 text-primary" />
