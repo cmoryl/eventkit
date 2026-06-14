@@ -32,7 +32,9 @@ const KEYBOARD: Row[] = [
 ];
 
 const DRAG: Row[] = [
-  { keys: ["Drag"], label: "Smart layout → canvas or rail to insert" },
+  { keys: ["Drag"], label: "Smart slide → canvas or rail to insert" },
+  { keys: ["Drag"], label: "Smart object → canvas to snap into active slide" },
+  { keys: ["Alt", "Drag"], label: "Smart object → canvas as free-floating layer" },
   { keys: ["Drag"], label: "BrandHub image → canvas to add as body image" },
   { keys: ["Alt", "Drag"], label: "BrandHub image → canvas as accent overlay" },
   { keys: ["Drag"], label: "AI draft tray slide → canvas to insert" },
