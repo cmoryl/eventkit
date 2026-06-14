@@ -33,6 +33,8 @@ const GROUPS: Group[] = [
     title: "Editing",
     rows: [
       { keys: ["⌘ / Ctrl", "+", "D"], label: "Duplicate selected text box" },
+      { keys: ["⌘ / Ctrl", "+", "]"], label: "Bring forward (z-order)" },
+      { keys: ["⌘ / Ctrl", "+", "["], label: "Send back (z-order)" },
       { keys: ["⌘ / Ctrl", "+", "Z"], label: "Undo" },
       { keys: ["⌘ / Ctrl", "+", "Shift", "+", "Z"], label: "Redo" },
     ],
