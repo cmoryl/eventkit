@@ -334,7 +334,8 @@ export function AISlideGenerator({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="lovable">Lovable AI (built-in)</SelectItem>
+                <SelectItem value="lovable">Lovable AI (Gemini, built-in)</SelectItem>
+                <SelectItem value="anthropic">Anthropic Claude ✨</SelectItem>
                 <SelectItem value="google">Google Gemini (own key)</SelectItem>
               </SelectContent>
             </Select>
