@@ -33,6 +33,9 @@ export interface SlideEditorBusHandlers {
   getDraftCount: () => number;
   insertDraft: (index: number) => boolean;
   dismissDraftTray: () => boolean;
+  // Undo / redo on the slide deck
+  undoEdit: () => boolean;
+  redoEdit: () => boolean;
 }
 
 let handlers: Partial<SlideEditorBusHandlers> | null = null;
