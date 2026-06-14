@@ -105,6 +105,35 @@ RULES
 
     const prompt = `${ctxLines.join("\n")}\n\nReturn a deck outline with exactly ${body.slideCount} slides.`;
 
+    // ---- Streaming (NDJSON, slide-by-slide) -----------------------------
+    if (body.stream) {
+      const streamSystem = `${system}
+
+OUTPUT FORMAT — STRICT
+You MUST stream the deck as newline-delimited JSON. No prose, no code fences, no commentary.
+Line 1: {"type":"meta","title":"...","subtitle":"..."}
+Then one line per slide: {"type":"slide","index":0,"layout":"title","title":"...","subtitle":"...","body":"...","bullets":["..."],"stat":{"value":"...","label":"..."},"quote":{"text":"...","author":"..."},"notes":"..."}
+Allowed layouts: title, section, bullets, two_column, stat, quote, closing, kpi_grid, agenda, timeline, comparison, metrics, team, image_hero, chart, process.
+Only include the fields a layout needs. End with {"type":"done"}. Emit EXACTLY ${body.slideCount} slide lines.`;
+
+      const upstream = await streamClaudeText({
+        model: body.model ?? "claude-sonnet-4-5",
+        system: streamSystem,
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 6144,
+        temperature: 0.8,
+      });
+
+      return new Response(upstream, {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/x-ndjson; charset=utf-8",
+          "Cache-Control": "no-cache",
+          "X-AI-Provider": "anthropic",
+        },
+      });
+    }
+
     const outline = await callClaudeJson({
       model: body.model ?? "claude-sonnet-4-5",
       system,
