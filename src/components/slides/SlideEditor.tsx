@@ -111,6 +111,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [referenceFiles, setReferenceFiles] = useState<BrandFile[]>([]);
   const [canvasFileOver, setCanvasFileOver] = useState(false);
   const [thumbFileOver, setThumbFileOver] = useState<number | null>(null);
+  const [brandLocked, setBrandLocked] = useState(false);
+  const [generatedTraySlides, setGeneratedTraySlides] = useState<SlideData[]>([]);
+
 
   useEffect(() => {
     if (!initialSlides || initialSlides.length === 0) return;
