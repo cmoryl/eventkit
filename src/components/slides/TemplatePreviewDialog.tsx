@@ -184,6 +184,17 @@ export function TemplatePreviewDialog({
               </div>
             </div>
 
+            {/* Sample deck — shows the active theme applied across common
+                slide layouts so users see how the template performs beyond the
+                hero card. */}
+            <SampleDeck
+              template={themedTpl}
+              activeTheme={activeTheme}
+              brandColors={brandColors}
+              brandFonts={brandFonts}
+              animated={animated}
+            />
+
             {/* Alternate styles */}
             <div className="rounded-xl border bg-card p-4">
               <div className="flex items-center justify-between mb-3">
@@ -366,5 +377,138 @@ function SlideContentsList({ slide }: { slide: Omit<SlideData, 'id'> }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+/** A small built-in set of sample slides used to show the template's theme
+ *  applied across the most common layouts. We re-use the template's hero
+ *  copy where it makes sense and fall back to generic but tasteful filler. */
+const SAMPLE_DECK_BLUEPRINT: Array<Omit<SlideData, 'id'>> = [
+  {
+    layout: 'title',
+    title: 'Project Kickoff',
+    subtitle: 'Vision · Roadmap · Next steps',
+    variant: 'gradient',
+  },
+  {
+    layout: 'content',
+    title: 'Agenda',
+    body: '• Where we are today\n• What we are building\n• How we get there\n• Questions & discussion',
+    variant: 'default',
+  },
+  {
+    layout: 'stats',
+    title: 'By the Numbers',
+    variant: 'brand',
+    stats: [
+      { value: '2.4×', label: 'Faster delivery' },
+      { value: '98%', label: 'Customer NPS' },
+      { value: '12M', label: 'Active users' },
+    ],
+  },
+  {
+    layout: 'chart',
+    title: 'Growth Trajectory',
+    variant: 'default',
+    chart: {
+      type: 'bar',
+      title: 'Quarterly revenue',
+      data: [
+        { label: 'Q1', value: 42 },
+        { label: 'Q2', value: 58 },
+        { label: 'Q3', value: 71 },
+        { label: 'Q4', value: 96 },
+      ],
+    },
+  },
+  {
+    layout: 'quote',
+    title: '“Great design is invisible — but its impact is unforgettable.”',
+    quoteAuthor: 'Design Team',
+    variant: 'dark',
+  },
+  {
+    layout: 'section',
+    title: 'Thank You',
+    subtitle: "Let's build something remarkable.",
+    variant: 'gradient',
+  },
+];
+
+function SampleDeck({
+  template,
+  activeTheme,
+  brandColors,
+  brandFonts,
+  animated,
+}: {
+  template: InfographicTemplate;
+  activeTheme?: DemoThemeId;
+  brandColors?: { primary?: string; secondary?: string; accent?: string };
+  brandFonts?: { heading?: string; body?: string };
+  animated: boolean;
+}) {
+  const slides = useMemo(() => {
+    // Borrow the hero title from the template for the first sample so the
+    // deck feels personalised rather than generic.
+    const hero = template.slide;
+    const customised = SAMPLE_DECK_BLUEPRINT.map((s, i) => {
+      if (i === 0 && hero.title) {
+        return { ...s, title: hero.title, subtitle: hero.subtitle || s.subtitle };
+      }
+      return s;
+    });
+    const themedSlides = activeTheme
+      ? applyDemoTheme(customised, activeTheme)
+      : customised;
+    const pack = activeTheme ? getThemePack(activeTheme) : null;
+    return themedSlides.map((slide, i) => ({
+      ...slide,
+      id: `${template.id}__sample__${i}`,
+      variation: slide.variation || (pack ? pack.variants[slide.layout] : undefined),
+      imageUrl:
+        slide.imageUrl ||
+        (slide.layout === 'title' && pack ? pack.images[0]?.src : slide.imageUrl),
+    }));
+  }, [template, activeTheme]);
+
+  return (
+    <div className="rounded-xl border bg-card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Sample deck
+        </p>
+        <span className="text-[11px] text-muted-foreground">
+          {slides.length} preview slides
+        </span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {slides.map((slide, i) => (
+          <div
+            key={slide.id}
+            className="group rounded-lg border border-border/60 bg-muted overflow-hidden hover:border-primary/60 hover:shadow-md transition-all"
+          >
+            <div className="aspect-video">
+              <ScaledSlide>
+                <SlideRenderer
+                  slide={slide}
+                  brandColors={brandColors}
+                  brandFonts={brandFonts}
+                  animated={animated}
+                />
+              </ScaledSlide>
+            </div>
+            <div className="flex items-center justify-between px-2.5 py-1.5 bg-card border-t border-border/50">
+              <span className="text-[11px] font-medium capitalize truncate">
+                {slide.layout.replace('-', ' ')}
+              </span>
+              <span className="text-[10px] font-mono text-muted-foreground">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
