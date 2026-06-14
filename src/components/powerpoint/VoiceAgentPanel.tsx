@@ -214,6 +214,16 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
         slideEditorBus.call("dismissDraftTray");
         return "Cleared AI draft tray";
       },
+      undoEdit: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("undoEdit");
+        return ok ? "Undid the last edit" : "Nothing to undo";
+      },
+      redoEdit: () => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        const ok = slideEditorBus.call("redoEdit");
+        return ok ? "Redid the last edit" : "Nothing to redo";
+      },
     },
   });
 
