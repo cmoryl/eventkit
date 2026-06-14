@@ -206,7 +206,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, shortcutsOpen, brandLocked, activeIndex, slides.length]);
+  }, [isOpen, shortcutsOpen, brandLocked, activeIndex, slides.length, history]);
 
 
 
