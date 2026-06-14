@@ -363,6 +363,21 @@ function SlideContentsList({ slide }: { slide: Omit<SlideData, 'id'> }) {
 
   if (rows.length === 0) {
     return <p className="text-xs text-muted-foreground italic">Blank starter — add your own content.</p>;
+  }
+  return (
+    <dl className="space-y-2">
+      {rows.map(({ label, value }) => (
+        <div key={label}>
+          <dt className="text-[10px] uppercase tracking-wider font-medium text-muted-foreground/80">
+            {label}
+          </dt>
+          <dd className="text-xs text-foreground/90 mt-0.5 break-words whitespace-pre-wrap">
+            {value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 /** A small built-in set of sample slides used to show the template's theme
