@@ -26,6 +26,12 @@ describe('SlideAssetSearchPanel static contract', () => {
     expect(source).toContain('onClick={() => handleSourceFilterChange(filter.value)}');
   });
 
+  it('marks selected filter chips with pressed state semantics', () => {
+    expect(source).toContain('aria-pressed={sourceFilter === filter.value}');
+    expect(source).toContain("aria-pressed={visibleCategoryFilter === 'all'}");
+    expect(source).toContain('aria-pressed={visibleCategoryFilter === category}');
+  });
+
   it('keeps brand, hub, and current slide assets in the same searchable asset model', () => {
     expect(source).toContain('Brand imagery');
     expect(source).toContain('BrandHub');
