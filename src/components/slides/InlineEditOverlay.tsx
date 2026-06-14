@@ -1096,39 +1096,50 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     };
   };
 
-  // Keyboard shortcuts for the selected text box: Delete/Backspace removes,
-  // arrows nudge (Shift = 5x), Cmd/Ctrl+D duplicates, Escape deselects.
+  // Keyboard shortcuts for the selected text box(es). Operates on the
+  // effective selection (primary + multi). Skipped while editing inline.
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent) => {
-      if (!selectedTextBoxId || editingTextBoxId) return;
+      if (editingTextBoxId) return;
+      if (effectiveIds.length === 0) return;
       const ae = document.activeElement as HTMLElement | null;
       if (ae && (ae.isContentEditable || ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
-      const tb = (slideRef.current.textBoxes || []).find((t) => t.id === selectedTextBoxId);
-      if (!tb) return;
+      const all = slideRef.current.textBoxes || [];
+      const selected = all.filter((t) => effectiveIds.includes(t.id));
+      if (selected.length === 0) return;
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault();
-        removeTextBox(selectedTextBoxId);
+        const keep = all.filter((t) => !effectiveIds.includes(t.id));
+        onUpdate({ textBoxes: keep } as Partial<SlideData>);
+        setSelectedTextBoxId(null);
+        setMultiIds([]);
         return;
       }
       if (e.key === 'Escape') {
         e.preventDefault();
         setSelectedTextBoxId(null);
+        setMultiIds([]);
         return;
       }
       if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
         e.preventDefault();
-        const id = `tb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-        const copy = { ...tb, id, xPct: Math.min(98, tb.xPct + 3), yPct: Math.min(98, tb.yPct + 3) };
-        onUpdate({ textBoxes: [...(slideRef.current.textBoxes || []), copy] } as Partial<SlideData>);
-        setSelectedTextBoxId(id);
+        const copies = selected.map((tb) => ({
+          ...tb,
+          id: `tb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+          xPct: Math.min(98, tb.xPct + 3),
+          yPct: Math.min(98, tb.yPct + 3),
+        }));
+        onUpdate({ textBoxes: [...all, ...copies] } as Partial<SlideData>);
+        setSelectedTextBoxId(copies[0].id);
+        setMultiIds(copies.slice(1).map((c) => c.id));
         return;
       }
-      // Z-order: Cmd/Ctrl+] = bring forward, Cmd/Ctrl+[ = send back.
-      if ((e.metaKey || e.ctrlKey) && (e.key === ']' || e.key === '[')) {
+      // Z-order: only meaningful on a single primary selection.
+      if ((e.metaKey || e.ctrlKey) && (e.key === ']' || e.key === '[') && selectedTextBoxId) {
         e.preventDefault();
-        const list = [...(slideRef.current.textBoxes || [])];
+        const list = [...all];
         const idx = list.findIndex((t) => t.id === selectedTextBoxId);
         if (idx < 0) return;
         const target = e.key === ']' ? idx + 1 : idx - 1;
@@ -1140,18 +1151,24 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       if (e.key.startsWith('Arrow')) {
         e.preventDefault();
         const step = e.shiftKey ? 5 : 0.5;
-        let { xPct, yPct } = tb;
-        if (e.key === 'ArrowLeft') xPct = Math.max(0, xPct - step);
-        if (e.key === 'ArrowRight') xPct = Math.min(100, xPct + step);
-        if (e.key === 'ArrowUp') yPct = Math.max(0, yPct - step);
-        if (e.key === 'ArrowDown') yPct = Math.min(100, yPct + step);
-        updateTextBox(selectedTextBoxId, { xPct, yPct });
+        let dx = 0, dy = 0;
+        if (e.key === 'ArrowLeft') dx = -step;
+        if (e.key === 'ArrowRight') dx = step;
+        if (e.key === 'ArrowUp') dy = -step;
+        if (e.key === 'ArrowDown') dy = step;
+        const selIds = new Set(effectiveIds);
+        const next = all.map((t) =>
+          selIds.has(t.id)
+            ? { ...t, xPct: Math.max(0, Math.min(100, t.xPct + dx)), yPct: Math.max(0, Math.min(100, t.yPct + dy)) }
+            : t,
+        );
+        onUpdate({ textBoxes: next } as Partial<SlideData>);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTextBoxId, editingTextBoxId, enabled]);
+  }, [selectedTextBoxId, editingTextBoxId, enabled, effectiveIds.join(',')]);
 
   const selectedTb = textBoxes?.find((t) => t.id === selectedTextBoxId) || null;
 
