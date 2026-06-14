@@ -169,6 +169,11 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
         slideEditorBus.call("setAccentImage", params);
         return `Accent image updated (${params.position ?? "current"})`;
       },
+      setSlideField: (params: { field: "title" | "subtitle" | "body" | "quote" | "quoteAuthor"; value: string }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("setSlideField", params);
+        return `Updated ${params.field}`;
+      },
       goToSlide: (params: { index: number }) => {
         if (!slideEditorBus.isConnected()) return "Editor is not open.";
         const ok = slideEditorBus.call("goToSlide", Math.max(0, Math.floor(params.index)));
@@ -251,6 +256,7 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
       editorOpen ? "- Use listSmartLayouts to see available slide templates and their slot names." : "",
       editorOpen ? "- Use insertSlide({ templateId, slotValues }) to add a new slide (e.g. 'kpi-trio' with three stats)." : "",
       editorOpen ? "- Use setAccentImage({ position, overlay, intensity, url }) to apply a Gamma-style accent image." : "",
+      editorOpen ? "- Use setSlideField({ field, value }) to edit title/subtitle/body/quote on the active slide." : "",
       editorOpen ? "- Use goToSlide, duplicateActiveSlide, deleteActiveSlide to navigate and manage slides." : "",
       editorOpen ? "- Use toggleBrandLock({locked}) and applyBrandToAllSlides() to enforce pixel-perfect brand colors." : "",
       editorOpen ? "- Use listDraftTray, insertDraftSlide({index}), dismissDraftTray to manage AI draft slides." : "",

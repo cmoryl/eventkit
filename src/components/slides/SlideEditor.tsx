@@ -643,6 +643,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         }
         return true;
       },
+      setSlideField: (params) => {
+        const idx = activeIndexRef.current;
+        setSlides((prev) => prev.map((s, i) => {
+          if (i !== idx) return s;
+          return { ...s, [params.field]: params.value };
+        }));
+        return true;
+      },
       goToSlide: (index) => {
         if (index < 0 || index >= slidesCountRef.current) return false;
         setActiveIndex(index);
@@ -1758,6 +1766,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                         imageUrl: activeSlide.imageUrl || file.url,
                       });
                       toast.success(`Added "${file.name}" to slide`);
+                    }}
+                    onUseAsAccent={(file) => {
+                      setAccentImageForSlide(file.url, activeIndex, 'background');
+                      toast.success(`Set "${file.name}" as accent image`);
                     }}
                   />
                 )}

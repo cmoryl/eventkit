@@ -5,7 +5,7 @@ import React, { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImageIcon, Plus, Search, Loader2, GripVertical } from "lucide-react";
+import { ImageIcon, Plus, Search, Loader2, GripVertical, Sparkles } from "lucide-react";
 import type { BrandFile } from "@/hooks/useBrandHubFiles";
 
 export const SLIDE_ASSET_IMAGE_MIME = "application/x-eventkit-image-url";
@@ -15,6 +15,7 @@ interface SlideAssetSearchPanelProps {
   isLoading?: boolean;
   brandName?: string;
   onUseImage: (file: BrandFile) => void;
+  onUseAsAccent?: (file: BrandFile) => void;
   onOpenLibrary?: () => void;
 }
 
@@ -23,6 +24,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({
   isLoading,
   brandName,
   onUseImage,
+  onUseAsAccent,
   onOpenLibrary,
 }) => {
   const [query, setQuery] = useState("");
@@ -111,9 +113,22 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({
                 loading="lazy"
                 className="h-full w-full object-cover pointer-events-none"
               />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
-                <Plus className="h-3.5 w-3.5 text-white" />
-                <GripVertical className="h-3 w-3 text-white/80" />
+              <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1">
+                <div className="flex items-center gap-1 text-[10px] text-white">
+                  <Plus className="h-3 w-3" /> Add
+                  <GripVertical className="h-3 w-3 text-white/70 ml-1" />
+                </div>
+                {onUseAsAccent && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); onUseAsAccent(file); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onUseAsAccent(file); } }}
+                    className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-primary/90 hover:bg-primary text-[9px] text-primary-foreground cursor-pointer"
+                  >
+                    <Sparkles className="h-2.5 w-2.5" /> Accent
+                  </span>
+                )}
               </div>
             </button>
           ))}
