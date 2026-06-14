@@ -135,6 +135,18 @@ export const SMART_OBJECTS: SmartObjectTemplate[] = [
     defaultMode: "snap",
     supports: ["snap", "float"],
   },
+
+  // ── INDUSTRY-STANDARD ADDITIONS (free-floating atoms) ─────────
+  { id: "atom-progress-bar", category: "shape", label: "Progress Bar", description: "Horizontal % bar", defaultMode: "float", supports: ["float"] },
+  { id: "atom-sparkline",    category: "chart", label: "Sparkline",    description: "Tiny inline trend",  defaultMode: "float", supports: ["float"] },
+  { id: "atom-tag-list",     category: "text",  label: "Tag List",     description: "Row of pill tags",   defaultMode: "float", supports: ["float"] },
+  { id: "atom-avatar-group", category: "media", label: "Avatar Group", description: "Stacked avatars",    defaultMode: "float", supports: ["float"] },
+  { id: "atom-icon-text",    category: "text",  label: "Icon + Text",  description: "Bullet with icon",   defaultMode: "float", supports: ["float"] },
+  { id: "atom-ticker",       category: "text",  label: "News Ticker",  description: "Pill with marquee text", defaultMode: "float", supports: ["float"] },
+  { id: "atom-arrow",        category: "shape", label: "Arrow",        description: "Directional accent", defaultMode: "float", supports: ["float"] },
+  { id: "atom-social",       category: "text",  label: "Social Handle",description: "@handle pill",       defaultMode: "float", supports: ["float"] },
+  { id: "atom-timestamp",    category: "text",  label: "Timestamp",    description: "Date · time row",    defaultMode: "float", supports: ["float"] },
+  { id: "atom-badge-stack",  category: "shape", label: "Badge Stack",  description: "Vertical badge column", defaultMode: "float", supports: ["float"] },
 ];
 
 export function getSmartObject(id: string): SmartObjectTemplate | undefined {
