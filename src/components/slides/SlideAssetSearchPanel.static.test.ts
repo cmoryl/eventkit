@@ -36,6 +36,15 @@ describe('SlideAssetSearchPanel static contract', () => {
     expect(source).toContain('aria-label={`Apply ${asset.label} from ${asset.source}`}');
   });
 
+  it('labels the primary asset rail controls', () => {
+    expect(source).toContain('aria-label="Open asset library"');
+    expect(source).toContain('aria-label="Search assets"');
+    expect(source).toContain('aria-label="Clear asset filters"');
+    expect(source).toContain('aria-label="Reset asset filters"');
+    expect(source).toContain('aria-label="Paste image address"');
+    expect(source).toContain('aria-label="Use pasted image"');
+  });
+
   it('keeps brand, hub, and current slide assets in the same searchable asset model', () => {
     expect(source).toContain('Brand imagery');
     expect(source).toContain('BrandHub');
