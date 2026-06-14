@@ -380,58 +380,116 @@ function SlideContentsList({ slide }: { slide: Omit<SlideData, 'id'> }) {
   );
 }
 
-/** A small built-in set of sample slides used to show the template's theme
- *  applied across the most common layouts. We re-use the template's hero
- *  copy where it makes sense and fall back to generic but tasteful filler. */
-const SAMPLE_DECK_BLUEPRINT: Array<Omit<SlideData, 'id'>> = [
+/** Multiple sample decks, each demonstrating the template's theme across a
+ *  different set of slide layouts. Users can tab through to preview how the
+ *  template performs for various meeting types. */
+type SampleDeckDef = {
+  id: string;
+  label: string;
+  description: string;
+  slides: Array<Omit<SlideData, 'id'>>;
+};
+
+const SAMPLE_DECKS: SampleDeckDef[] = [
   {
-    layout: 'title',
-    title: 'Project Kickoff',
-    subtitle: 'Vision · Roadmap · Next steps',
-    variant: 'gradient',
-  },
-  {
-    layout: 'content',
-    title: 'Agenda',
-    body: '• Where we are today\n• What we are building\n• How we get there\n• Questions & discussion',
-    variant: 'default',
-  },
-  {
-    layout: 'stats',
-    title: 'By the Numbers',
-    variant: 'brand',
-    stats: [
-      { value: '2.4×', label: 'Faster delivery' },
-      { value: '98%', label: 'Customer NPS' },
-      { value: '12M', label: 'Active users' },
+    id: 'essentials',
+    label: 'Essentials',
+    description: 'Core slides every deck needs — open, agenda, stats, close.',
+    slides: [
+      { layout: 'title', title: 'Project Kickoff', subtitle: 'Vision · Roadmap · Next steps', variant: 'gradient' },
+      { layout: 'agenda', title: "Today's Agenda", body: '1. Where we are today\n2. What we are building\n3. How we get there\n4. Questions & discussion', variant: 'default' },
+      { layout: 'content', title: 'Why now', body: '• Market window is open\n• Team is ready\n• Tech finally caught up\n• Customers are pulling us in', variant: 'default' },
+      { layout: 'stats', title: 'By the Numbers', variant: 'brand', stats: [
+        { value: '2.4×', label: 'Faster delivery' },
+        { value: '98%', label: 'Customer NPS' },
+        { value: '12M', label: 'Active users' },
+      ] },
+      { layout: 'quote', title: '"Great design is invisible — but its impact is unforgettable."', quoteAuthor: 'Design Team', variant: 'dark' },
+      { layout: 'section', title: 'Thank You', subtitle: "Let's build something remarkable.", variant: 'gradient' },
     ],
   },
   {
-    layout: 'chart',
-    title: 'Growth Trajectory',
-    variant: 'default',
-    chart: {
-      type: 'bar',
-      title: 'Quarterly revenue',
-      data: [
-        { label: 'Q1', value: 42 },
-        { label: 'Q2', value: 58 },
-        { label: 'Q3', value: 71 },
-        { label: 'Q4', value: 96 },
-      ],
-    },
+    id: 'storytelling',
+    label: 'Storytelling',
+    description: 'Narrative arc with imagery, comparison, and big moments.',
+    slides: [
+      { layout: 'title', title: 'A Story Worth Telling', subtitle: 'Chapter one begins here', variant: 'bold' },
+      { layout: 'full-image', title: 'The world we live in', variant: 'dark' },
+      { layout: 'image-left', title: 'The problem', body: 'Teams ship slower than they think.\n\nManual handoffs, lost context, and brittle tooling tax every release.', variant: 'default' },
+      { layout: 'image-right', title: 'The shift', body: 'A new generation of tools fuses design, code and AI into one continuous loop.', variant: 'default' },
+      { layout: 'comparison', title: 'Before vs After', body: 'Manual handoffs\nSlow turnaround\nHigh error rate\nSiloed teams\n---\nAutomated workflows\nInstant results\n99.9% accuracy\nOne shared source of truth', variant: 'default' },
+      { layout: 'big-number', title: '10×', subtitle: 'Faster from idea to ship', variant: 'brand' },
+      { layout: 'quote', title: '"The best way to predict the future is to design it."', quoteAuthor: 'Buckminster Fuller', variant: 'dark' },
+      { layout: 'section', title: 'Join us', subtitle: 'The next chapter starts today', variant: 'gradient' },
+    ],
   },
   {
-    layout: 'quote',
-    title: '“Great design is invisible — but its impact is unforgettable.”',
-    quoteAuthor: 'Design Team',
-    variant: 'dark',
+    id: 'data',
+    label: 'Data & Insights',
+    description: 'Numbers-forward layouts: charts, stats and metrics.',
+    slides: [
+      { layout: 'title', title: 'Q4 Business Review', subtitle: 'Performance, learnings, plan', variant: 'minimal' },
+      { layout: 'big-number', title: '$5.2M', subtitle: 'ARR — up 38% YoY', variant: 'brand' },
+      { layout: 'chart', title: 'Quarterly Revenue', variant: 'default', chart: {
+        type: 'bar', title: 'Revenue ($M)', data: [
+          { label: 'Q1', value: 42 }, { label: 'Q2', value: 58 }, { label: 'Q3', value: 71 }, { label: 'Q4', value: 96 },
+        ],
+      } },
+      { layout: 'chart', title: 'Where Users Spend Time', variant: 'minimal', chart: {
+        type: 'doughnut', title: 'Time-in-app', data: [
+          { label: 'Editor', value: 48 }, { label: 'Library', value: 22 }, { label: 'Review', value: 18 }, { label: 'Admin', value: 12 },
+        ],
+      } },
+      { layout: 'stats', title: 'Customer Pulse', variant: 'brand', stats: [
+        { value: '62', label: 'NPS' },
+        { value: '4.8', label: 'CSAT (out of 5)' },
+        { value: '3%', label: 'Monthly churn' },
+        { value: '92%', label: 'Renewal rate' },
+      ] },
+      { layout: 'comparison', title: 'Planned vs Actual', body: 'Launch 3 integrations\n$5M ARR\n90-day onboarding\nNPS > 50\n---\nShipped 4 ✅\n$5.2M ARR ✅\n60-day onboarding ✅\nNPS = 62 ✅', variant: 'default' },
+      { layout: 'section', title: 'What we learned', subtitle: 'Three bets for next quarter', variant: 'gradient' },
+    ],
   },
   {
-    layout: 'section',
-    title: 'Thank You',
-    subtitle: "Let's build something remarkable.",
-    variant: 'gradient',
+    id: 'workshop',
+    label: 'Workshop',
+    description: 'Process, timeline and two-column layouts for hands-on sessions.',
+    slides: [
+      { layout: 'title', title: 'Design Sprint', subtitle: 'A 5-day path from problem to prototype', variant: 'brand' },
+      { layout: 'agenda', title: "What we'll cover", body: '1. Map the problem\n2. Sketch solutions\n3. Decide & storyboard\n4. Prototype\n5. Test with users', variant: 'default' },
+      { layout: 'process', title: 'Our Method', variant: 'default', process: [
+        { title: 'Understand', description: 'Align on the goal and audience.' },
+        { title: 'Diverge', description: 'Generate many possible directions.' },
+        { title: 'Decide', description: 'Pick the strongest concept together.' },
+        { title: 'Prototype', description: 'Build just enough to test.' },
+        { title: 'Validate', description: 'Learn from real users.' },
+      ] },
+      { layout: 'timeline', title: 'Sprint Schedule', variant: 'default', timeline: [
+        { date: 'Mon', title: 'Map', description: 'Frame the challenge.' },
+        { date: 'Tue', title: 'Sketch', description: 'Solo idea generation.' },
+        { date: 'Wed', title: 'Decide', description: 'Storyboard the winner.' },
+        { date: 'Thu', title: 'Prototype', description: 'Make it feel real.' },
+        { date: 'Fri', title: 'Test', description: '5 user interviews.' },
+      ] },
+      { layout: 'two-column', title: 'Do & Don\'t', body: '✓ Time-box every exercise\n✓ Capture decisions in writing\n✓ Invite a real user on Friday\n---\n✗ Debate in the abstract\n✗ Skip the prototype\n✗ Wait for consensus', variant: 'minimal' },
+      { layout: 'image-left', title: 'A note on facilitation', body: 'Your job is to keep energy high, scope tight, and decisions visible.', variant: 'default' },
+      { layout: 'section', title: "Let's begin", subtitle: 'Grab a marker — Day 1 starts now', variant: 'bold' },
+    ],
+  },
+  {
+    id: 'visual',
+    label: 'Visual',
+    description: 'Image-forward layouts that show off photography and theme.',
+    slides: [
+      { layout: 'title', title: 'Brand Refresh 2026', subtitle: 'A more confident, more human us', variant: 'gradient' },
+      { layout: 'full-image', title: 'A new visual language', variant: 'dark' },
+      { layout: 'parallax', title: 'Layered depth', subtitle: 'Story through dimension', variant: 'dark' },
+      { layout: 'image-right', title: 'Photography', body: 'Real moments. Natural light. Honest emotion. No stock-photo gloss.', variant: 'default' },
+      { layout: 'image-left', title: 'Typography', body: 'Display set in our wordmark family. Body in a humanist sans that breathes.', variant: 'default' },
+      { layout: 'big-number', title: 'One', subtitle: 'voice, system and team', variant: 'brand' },
+      { layout: 'blank', title: '', variant: 'minimal' },
+      { layout: 'section', title: 'See it in motion', subtitle: 'Demo reel · 90 seconds', variant: 'gradient' },
+    ],
   },
 ];
 
@@ -448,11 +506,14 @@ function SampleDeck({
   brandFonts?: { heading?: string; body?: string };
   animated: boolean;
 }) {
+  const [deckId, setDeckId] = useState<string>(SAMPLE_DECKS[0].id);
+  const deck = SAMPLE_DECKS.find((d) => d.id === deckId) ?? SAMPLE_DECKS[0];
+
   const slides = useMemo(() => {
-    // Borrow the hero title from the template for the first sample so the
-    // deck feels personalised rather than generic.
     const hero = template.slide;
-    const customised = SAMPLE_DECK_BLUEPRINT.map((s, i) => {
+    // Personalise the first slide of each deck with the template's hero copy
+    // so the preview always feels tied to the chosen template.
+    const customised = deck.slides.map((s, i) => {
       if (i === 0 && hero.title) {
         return { ...s, title: hero.title, subtitle: hero.subtitle || s.subtitle };
       }
@@ -464,24 +525,55 @@ function SampleDeck({
     const pack = activeTheme ? getThemePack(activeTheme) : null;
     return themedSlides.map((slide, i) => ({
       ...slide,
-      id: `${template.id}__sample__${i}`,
+      id: `${template.id}__${deck.id}__${i}`,
       variation: slide.variation || (pack ? pack.variants[slide.layout] : undefined),
       imageUrl:
         slide.imageUrl ||
-        (slide.layout === 'title' && pack ? pack.images[0]?.src : slide.imageUrl),
+        (['title', 'full-image', 'image-left', 'image-right', 'parallax'].includes(slide.layout) && pack
+          ? pack.images[i % Math.max(1, pack.images.length)]?.src
+          : slide.imageUrl),
     }));
-  }, [template, activeTheme]);
+  }, [template, activeTheme, deck]);
 
   return (
     <div className="rounded-xl border bg-card p-4">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Sample deck
-        </p>
-        <span className="text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Sample decks
+          </p>
+          <p className="text-[11px] text-muted-foreground/80 mt-0.5">
+            {deck.description}
+          </p>
+        </div>
+        <span className="text-[11px] text-muted-foreground shrink-0">
           {slides.length} preview slides
         </span>
       </div>
+
+      {/* Deck tabs */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {SAMPLE_DECKS.map((d) => {
+          const active = d.id === deck.id;
+          return (
+            <button
+              key={d.id}
+              type="button"
+              onClick={() => setDeckId(d.id)}
+              className={cn(
+                'text-[11px] px-2.5 py-1 rounded-full border transition-colors',
+                active
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-muted/40 text-muted-foreground border-border/60 hover:border-primary/60 hover:text-foreground',
+              )}
+            >
+              {d.label}
+              <span className="ml-1 opacity-70">({d.slides.length})</span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {slides.map((slide, i) => (
           <div
