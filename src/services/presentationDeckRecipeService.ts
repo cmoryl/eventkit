@@ -5,7 +5,7 @@ import { presentationSmartBlocks } from './presentationSmartBlockService';
 export interface PresentationDeckRecipeSlide {
   id: string;
   title: string;
-  layout: SlideLayout;
+  layout: SlideLayout | string;
   smartBlockId: PresentationSmartBlockType;
   purpose: string;
   requiredInputs: string[];
