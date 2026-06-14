@@ -8,11 +8,12 @@
 // renderer reads it via the `align`/`weight` envelope (we extend the shape
 // at runtime so we don't need a schema migration).
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown,
   Type as TypeIcon, Image as ImageIcon, Hash, BarChart3,
-  AlignLeft, Quote, Square,
+  AlignLeft, Quote, Square, PanelLeftOpen, X, GripVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
