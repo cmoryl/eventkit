@@ -35,7 +35,11 @@ import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
 import { SlideAssetSearchPanel, SLIDE_ASSET_IMAGE_MIME } from './SlideAssetSearchPanel';
-import { SlideSectionLibraryPanel, SLIDE_SECTION_MIME } from './SlideSectionLibraryPanel';
+import { SlideSmartLayoutsPanel, SLIDE_SECTION_MIME } from './SlideSmartLayoutsPanel';
+import { AccentImagePanel } from './AccentImagePanel';
+import { AccentImageLayer } from './AccentImageLayer';
+import { applySlideTemplate } from './slideTemplateRegistry';
+import { slideEditorBus } from '@/lib/slideEditorBus';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
@@ -1026,6 +1030,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                       editable={activeSlide.layout === 'demo-mock'}
                       onDemoContentChange={updateDemoDeckContent}
                     />
+                    <AccentImageLayer slide={activeSlide} />
                   </InlineEditOverlay>
                 </CenteredScaledSlide>
 
@@ -1535,9 +1540,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 )}
 
-                {/* Pre-built section library — drag onto canvas/thumbnails or click to insert */}
-                <SlideSectionLibraryPanel
+                {/* Smart Layouts library — tabbed, draggable, named-slot templates */}
+                <SlideSmartLayoutsPanel
                   onInsertSection={(payload) => insertSectionAfter(activeIndex, payload)}
+                />
+
+                {/* Accent image — Gamma-style overlay (background / top / left / right) */}
+                <AccentImagePanel
+                  slide={activeSlide}
+                  onChange={(accent) => updateSlide(activeIndex, { accentImage: accent })}
                 />
 
                 {/* BrandHub asset rail — search images for active brand and add to slide */}
