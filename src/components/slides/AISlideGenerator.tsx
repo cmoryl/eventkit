@@ -202,6 +202,34 @@ export function AISlideGenerator({
 
     setIsGenerating(true);
     try {
+      // ---- Anthropic Claude path ---------------------------------------
+      // Claude doesn't run through generate-slides; it plans a deck outline
+      // via generate-deck-claude, then we convert that outline → SlideData.
+      if (provider === 'anthropic') {
+        const sourceText = briefMode === 'content' && hasContent ? content.trim() : undefined;
+        const { data: claudeData, error: claudeErr } = await supabase.functions.invoke('generate-deck-claude', {
+          body: {
+            topic: hasTopic ? topic.trim() : (sourceText?.slice(0, 200) ?? 'Untitled deck'),
+            slideCount: parseInt(slideCount),
+            brandName: brandName || undefined,
+            sourceSummary: sourceText,
+            model,
+          },
+        });
+        if (claudeErr) throw new Error(claudeErr.message || 'Claude failed to plan deck');
+        if (!claudeData?.outline?.slides) throw new Error('Claude returned an empty outline');
+
+        const { outlineToThemedSlides } = await import('@/components/slides/outlineToSlides');
+        const slides = outlineToThemedSlides(claudeData.outline);
+        onSlidesGenerated(slides);
+        toast.success(`Generated ${slides.length} slides with Claude ✨`);
+        setTopic('');
+        setContent('');
+        onClose();
+        return;
+      }
+
+      // ---- Lovable / Google (existing path) ----------------------------
       const { data, error } = await supabase.functions.invoke('generate-slides', {
         body: {
           topic: hasTopic ? topic.trim() : undefined,
