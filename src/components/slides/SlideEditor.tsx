@@ -1080,6 +1080,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 onToggle={setBrandLocked}
                 onApplyAll={applyBrandLockToAllSlides}
               />
+              <DeckBulkActionsMenu onRun={runDeckBulkAction} />
               {/* Zoom */}
               <div className="flex items-center gap-1 bg-muted rounded-full px-2 py-1">
                 <Button
