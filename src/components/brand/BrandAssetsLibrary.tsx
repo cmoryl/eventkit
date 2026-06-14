@@ -59,6 +59,8 @@ interface BrandAssetsLibraryProps {
   shareToken: string | null;
   /** Called when the user picks a deck file to import into the editor. */
   onLoadDeck?: (file: BrandFile) => void;
+  /** Called when an image should be applied to the currently active slide. */
+  onUseImage?: (file: BrandFile) => void;
   /** Called whenever the reference selection changes. */
   onReferenceSelectionChange?: (files: BrandFile[]) => void;
   /** Initial set of references (so reopening preserves user choices). */
@@ -73,6 +75,7 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
   brandName,
   shareToken,
   onLoadDeck,
+  onUseImage,
   onReferenceSelectionChange,
   initialReferences = [],
   showReferenceMode = true,
@@ -237,6 +240,11 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
                               {isDeck && onLoadDeck && (
                                 <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={() => onLoadDeck(file)}>
                                   <Upload className="h-3 w-3" /> Load
+                                </Button>
+                              )}
+                              {isImage && onUseImage && (
+                                <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={() => onUseImage(file)}>
+                                  <ImageIcon className="h-3 w-3" /> Use
                                 </Button>
                               )}
                               <Button size="icon" variant="ghost" className="h-7 w-7" asChild title="Open in new tab">
