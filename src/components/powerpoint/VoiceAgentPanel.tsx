@@ -169,6 +169,11 @@ const VoiceAgentPanelInner: React.FC<Props> = ({ context, actions }) => {
         slideEditorBus.call("setAccentImage", params);
         return `Accent image updated (${params.position ?? "current"})`;
       },
+      setSlideField: (params: { field: "title" | "subtitle" | "body" | "quote" | "quoteAuthor"; value: string }) => {
+        if (!slideEditorBus.isConnected()) return "Editor is not open.";
+        slideEditorBus.call("setSlideField", params);
+        return `Updated ${params.field}`;
+      },
       goToSlide: (params: { index: number }) => {
         if (!slideEditorBus.isConnected()) return "Editor is not open.";
         const ok = slideEditorBus.call("goToSlide", Math.max(0, Math.floor(params.index)));
