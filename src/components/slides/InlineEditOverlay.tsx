@@ -1358,8 +1358,16 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         </div>
       )}
 
-      {/* Quick canvas-alignment toolbar for the selected text box. */}
-      {enabled && selectedTb && !editingTextBoxId && (
+      {/* Marquee selection rectangle. */}
+      {marquee && (
+        <div
+          className="absolute z-40 pointer-events-none border border-primary/80 bg-primary/10"
+          style={{ left: `${marquee.x}%`, top: `${marquee.y}%`, width: `${marquee.w}%`, height: `${marquee.h}%` }}
+        />
+      )}
+
+      {/* Quick toolbar — single selection: canvas align. Multi: align edges + distribute. */}
+      {enabled && !editingTextBoxId && effectiveIds.length === 1 && selectedTb && (
         <div
           className="absolute z-50 top-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-lg border bg-background/90 backdrop-blur px-1 py-1 shadow-md text-[10px]"
           onMouseDown={(e) => e.stopPropagation()}
@@ -1389,6 +1397,56 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
           )}
         </div>
       )}
+
+      {/* Multi-selection toolbar: align selected boxes to each other + distribute. */}
+      {enabled && !editingTextBoxId && effectiveIds.length >= 2 && (() => {
+        const applyAlign = (patcher: (sel: NonNullable<SlideData['textBoxes']>) => Map<string, Partial<NonNullable<SlideData['textBoxes']>[number]>>) => {
+          const all = slideRef.current.textBoxes || [];
+          const sel = all.filter((t) => effectiveIds.includes(t.id));
+          if (sel.length < 2) return;
+          const patches = patcher(sel as NonNullable<SlideData['textBoxes']>);
+          const next = all.map((t) => (patches.has(t.id) ? { ...t, ...patches.get(t.id) } : t));
+          onUpdate({ textBoxes: next } as Partial<SlideData>);
+        };
+        const alignX = (kind: 'left' | 'center' | 'right') => applyAlign((sel) => {
+          const xs = sel.map((t) => t.xPct);
+          const target = kind === 'left' ? Math.min(...xs) : kind === 'right' ? Math.max(...xs) : xs.reduce((a, b) => a + b, 0) / xs.length;
+          return new Map(sel.map((t) => [t.id, { xPct: target }] as const));
+        });
+        const alignY = (kind: 'top' | 'middle' | 'bottom') => applyAlign((sel) => {
+          const ys = sel.map((t) => t.yPct);
+          const target = kind === 'top' ? Math.min(...ys) : kind === 'bottom' ? Math.max(...ys) : ys.reduce((a, b) => a + b, 0) / ys.length;
+          return new Map(sel.map((t) => [t.id, { yPct: target }] as const));
+        });
+        const distribute = (axis: 'x' | 'y') => applyAlign((sel) => {
+          if (sel.length < 3) return new Map();
+          const sorted = [...sel].sort((a, b) => (axis === 'x' ? a.xPct - b.xPct : a.yPct - b.yPct));
+          const lo = axis === 'x' ? sorted[0].xPct : sorted[0].yPct;
+          const hi = axis === 'x' ? sorted[sorted.length - 1].xPct : sorted[sorted.length - 1].yPct;
+          const step = (hi - lo) / (sorted.length - 1);
+          return new Map(sorted.map((t, i) => [t.id, axis === 'x' ? { xPct: lo + step * i } : { yPct: lo + step * i }] as const));
+        });
+        return (
+          <div
+            className="absolute z-50 top-2 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-lg border bg-background/90 backdrop-blur px-1 py-1 shadow-md text-[10px]"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="px-1.5 text-[10px] text-muted-foreground">{effectiveIds.length} selected</span>
+            <div className="w-px h-4 bg-border mx-0.5" />
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align left edges" onClick={() => alignX('left')}>L</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align horizontal centers" onClick={() => alignX('center')}>C</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align right edges" onClick={() => alignX('right')}>R</button>
+            <div className="w-px h-4 bg-border mx-0.5" />
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align top edges" onClick={() => alignY('top')}>T</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align vertical middles" onClick={() => alignY('middle')}>M</button>
+            <button className="w-6 h-6 rounded hover:bg-muted font-semibold" title="Align bottom edges" onClick={() => alignY('bottom')}>B</button>
+            <div className="w-px h-4 bg-border mx-0.5" />
+            <button className="px-1.5 h-6 rounded hover:bg-muted font-semibold" title="Distribute horizontally (3+)" disabled={effectiveIds.length < 3} onClick={() => distribute('x')}>↔</button>
+            <button className="px-1.5 h-6 rounded hover:bg-muted font-semibold" title="Distribute vertically (3+)" disabled={effectiveIds.length < 3} onClick={() => distribute('y')}>↕</button>
+          </div>
+        );
+      })()}
 
       {/* Floating Undo/Redo + Add Text widget — top-left of the slide. */}
       {enabled && (
