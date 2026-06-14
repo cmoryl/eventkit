@@ -24,6 +24,14 @@ const GOOGLE_MODELS = [
   { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
 ];
 
+const ANTHROPIC_MODELS = [
+  { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5 (Recommended)' },
+  { value: 'claude-opus-4-5', label: 'Claude Opus 4.5 (Max quality)' },
+  { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 (Fastest)' },
+];
+
+type SlideProvider = 'lovable' | 'google' | 'anthropic';
+
 interface BrandHubImagery {
   logos?: string[];
   brandIcons?: string[];
@@ -81,7 +89,7 @@ export function AISlideGenerator({
   const [topic, setTopic] = useState('');
   const [slideCount, setSlideCount] = useState('6');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [provider, setProvider] = useState<'lovable' | 'google'>('lovable');
+  const [provider, setProvider] = useState<SlideProvider>('lovable');
   const [model, setModel] = useState('google/gemini-3-flash-preview');
   const [googleApiKey, setGoogleApiKey] = useState('');
   const [brandHubOnly, setBrandHubOnly] = useState(false);
@@ -154,12 +162,19 @@ export function AISlideGenerator({
   const selectAllCategories = () => setSelectedCategories(new Set(availableCategories));
   const clearAllCategories = () => setSelectedCategories(new Set());
 
-  const models = provider === 'lovable' ? LOVABLE_MODELS : GOOGLE_MODELS;
+  const models =
+    provider === 'lovable' ? LOVABLE_MODELS
+    : provider === 'google' ? GOOGLE_MODELS
+    : ANTHROPIC_MODELS;
 
   const handleProviderChange = (val: string) => {
-    const p = val as 'lovable' | 'google';
+    const p = val as SlideProvider;
     setProvider(p);
-    setModel(p === 'lovable' ? 'google/gemini-3-flash-preview' : 'google/gemini-2.5-flash');
+    setModel(
+      p === 'lovable' ? 'google/gemini-3-flash-preview'
+      : p === 'google' ? 'google/gemini-2.5-flash'
+      : 'claude-sonnet-4-5'
+    );
   };
 
   const handleGenerate = async () => {
