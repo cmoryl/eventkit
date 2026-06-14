@@ -435,6 +435,36 @@ function TemplateCard({
   const categoryLabel = INFOGRAPHIC_CATEGORIES.find((c) => c.value === template.category)?.label;
   const styleLabel = DEMO_STYLES.find((s) => s.value === template.theme)?.label;
 
+  // Lazy-render the SlideRenderer until the card scrolls within ~400px of the
+  // viewport. Skeleton placeholder fills the aspect-video frame in the meantime
+  // so the grid layout stays stable. Once visible, stay mounted — re-mounting
+  // on scroll would cancel any in-flight image loads and animations.
+  const thumbRef = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (visible) return;
+    const node = thumbRef.current;
+    if (!node) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setVisible(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: '400px 0px', threshold: 0.01 },
+    );
+    io.observe(node);
+    return () => io.disconnect();
+  }, [visible]);
+
   return (
     <div
       className={cn(
@@ -450,12 +480,21 @@ function TemplateCard({
         onClick={onSelect}
         onFocus={() => onHoverChange(true)}
         onBlur={() => onHoverChange(false)}
-        className="text-left flex flex-col focus:outline-none"
+        className="text-left flex flex-col focus:outline-none w-full"
       >
-        <div className="relative aspect-video bg-muted overflow-hidden">
-          <ScaledSlide>
-            <SlideRenderer slide={slideWithId} brandColors={brandColors} brandFonts={brandFonts} animated={isHovered} />
-          </ScaledSlide>
+        <div ref={thumbRef} className="relative aspect-video bg-muted overflow-hidden">
+          {visible ? (
+            <ScaledSlide>
+              <SlideRenderer
+                slide={slideWithId}
+                brandColors={brandColors}
+                brandFonts={brandFonts}
+                animated={isHovered}
+              />
+            </ScaledSlide>
+          ) : (
+            <ThumbnailSkeleton />
+          )}
           {template.animated && (
             <div className="absolute top-2 right-10 px-1.5 py-0.5 rounded-full bg-background/90 backdrop-blur-sm text-[9px] font-medium text-primary flex items-center gap-1">
               <Sparkles className="h-2.5 w-2.5" />
