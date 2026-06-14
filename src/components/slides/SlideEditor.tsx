@@ -1409,6 +1409,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   ),
                 },
                 {
+                  id: 'layers',
+                  label: 'Layers',
+                  icon: LayersIcon,
+                  badge: activeSlide?.textBoxes?.length,
+                  content: (
+                    <LayersPanel
+                      slide={activeSlide ?? null}
+                      onUpdate={(updates) => updateSlide(activeIndex, updates)}
+                    />
+                  ),
+                },
+                {
                   id: 'themes',
                   label: 'Themes',
                   icon: PaletteIcon,
