@@ -834,6 +834,13 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             </div>
 
             <div className="flex items-center gap-2">
+              <BrandLockBar
+                brandName={brand?.name}
+                brandColors={brandColors}
+                locked={brandLocked}
+                onToggle={setBrandLocked}
+                onApplyAll={applyBrandLockToAllSlides}
+              />
               {/* Zoom */}
               <div className="flex items-center gap-1 bg-muted rounded-full px-2 py-1">
                 <Button
