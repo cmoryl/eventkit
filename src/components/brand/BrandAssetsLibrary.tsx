@@ -27,8 +27,11 @@ import {
   Globe,
   Calendar,
   Package,
+  Search,
 } from "lucide-react";
 import { useBrandHubFiles, type BrandFile, type BrandFileCategory } from "@/hooks/useBrandHubFiles";
+
+type BrandAssetTab = BrandFileCategory | "all";
 
 const CATEGORY_META: Record<BrandFileCategory, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   deck: { label: "Decks", icon: Presentation },
@@ -36,6 +39,11 @@ const CATEGORY_META: Record<BrandFileCategory, { label: string; icon: React.Comp
   image: { label: "Images", icon: ImageIcon },
   video: { label: "Videos", icon: Video },
   other: { label: "Other", icon: FileIcon },
+};
+
+const TAB_META: Record<BrandAssetTab, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+  all: { label: "All", icon: Search },
+  ...CATEGORY_META,
 };
 
 const SOURCE_ICONS: Record<BrandFile["source"], React.ComponentType<{ className?: string }>> = {
@@ -73,7 +81,7 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
     shareToken,
     enabled: isOpen,
   });
-  const [tab, setTab] = useState<BrandFileCategory>("deck");
+  const [tab, setTab] = useState<BrandAssetTab>("all");
   const [search, setSearch] = useState("");
   const [selectedUrls, setSelectedUrls] = useState<Set<string>>(
     () => new Set(initialReferences.map((f) => f.url)),
@@ -81,15 +89,17 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const list = byCategory[tab] || [];
+    const list = tab === "all" ? files : byCategory[tab] || [];
     if (!term) return list;
     return list.filter(
       (f) =>
         f.name.toLowerCase().includes(term) ||
         f.sectionLabel.toLowerCase().includes(term) ||
-        f.sourceName.toLowerCase().includes(term),
+        f.sourceName.toLowerCase().includes(term) ||
+        f.category.toLowerCase().includes(term) ||
+        f.ext.toLowerCase().includes(term),
     );
-  }, [byCategory, tab, search]);
+  }, [byCategory, files, tab, search]);
 
   const toggleReference = (file: BrandFile) => {
     const next = new Set(selectedUrls);
@@ -99,20 +109,19 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
     onReferenceSelectionChange?.(files.filter((f) => next.has(f.url)));
   };
 
-  const tabs: BrandFileCategory[] = ["deck", "document", "image", "video", "other"];
+  const tabs: BrandAssetTab[] = ["all", "deck", "document", "image", "video", "other"];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[88vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Library className="h-4 w-4 text-primary" />
             {brandName} — Brand Assets
           </DialogTitle>
           <DialogDescription>
-            Files discovered in this brand's BrandHub identity, including any linked events and products.
-            {showReferenceMode &&
-              " Tick items to use them as style references for AI generations."}
+            Search every discovered BrandHub file, preview images, and select references for generation.
+            {showReferenceMode && " Tick items to use them as style references for AI generations."}
           </DialogDescription>
         </DialogHeader>
 
@@ -121,15 +130,15 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
             This brand isn't linked to BrandHub, so there are no remote assets to browse.
           </div>
         ) : (
-          <Tabs value={tab} onValueChange={(v) => setTab(v as BrandFileCategory)} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-5 h-9">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as BrandAssetTab)} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid grid-cols-6 h-9">
               {tabs.map((t) => {
-                const Icon = CATEGORY_META[t].icon;
-                const count = byCategory[t]?.length || 0;
+                const Icon = TAB_META[t].icon;
+                const count = t === "all" ? files.length : byCategory[t]?.length || 0;
                 return (
                   <TabsTrigger key={t} value={t} className="text-xs gap-1.5">
                     <Icon className="h-3 w-3" />
-                    {CATEGORY_META[t].label}
+                    {TAB_META[t].label}
                     {count > 0 && (
                       <Badge variant="secondary" className="ml-1 h-4 px-1 text-[10px]">
                         {count}
@@ -140,16 +149,21 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
               })}
             </TabsList>
 
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search files…"
-              className="h-8 text-xs mt-3"
-            />
+            <div className="mt-3 grid gap-2 md:grid-cols-[1fr_auto] md:items-center">
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search all files, images, logos, decks, docs, events, products…"
+                className="h-8 text-xs"
+              />
+              <div className="rounded-full border bg-muted/40 px-3 py-1 text-[11px] text-muted-foreground">
+                {filtered.length} shown · {selectedUrls.size} selected
+              </div>
+            </div>
 
             {tabs.map((t) => (
               <TabsContent key={t} value={t} className="flex-1 mt-2 overflow-hidden">
-                <ScrollArea className="h-[420px] pr-3">
+                <ScrollArea className="h-[500px] pr-3">
                   {isLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -162,18 +176,21 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
                         ? "No matches"
                         : t === "deck"
                           ? "No PowerPoint or Keynote decks attached to this brand yet."
-                          : `No ${CATEGORY_META[t].label.toLowerCase()} found.`}
+                          : t === "all"
+                            ? "No files found for this brand yet."
+                            : `No ${CATEGORY_META[t as BrandFileCategory].label.toLowerCase()} found.`}
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="grid gap-2 md:grid-cols-2">
                       {filtered.map((file) => {
                         const SourceIcon = SOURCE_ICONS[file.source];
                         const isSelected = selectedUrls.has(file.url);
                         const isDeck = file.category === "deck";
+                        const isImage = file.category === "image";
                         return (
                           <div
                             key={file.url}
-                            className="flex items-center gap-2 p-2 rounded-md border border-border/60 hover:border-primary/40 hover:bg-accent/30 transition-colors"
+                            className="flex items-center gap-2 p-2 rounded-xl border border-border/60 bg-card/60 hover:border-primary/40 hover:bg-accent/30 transition-colors"
                           >
                             {showReferenceMode && (
                               <Checkbox
@@ -182,7 +199,7 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
                                 aria-label="Use as style reference"
                               />
                             )}
-                            <div className="h-9 w-9 rounded bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                            <div className="h-16 w-24 rounded-lg bg-muted overflow-hidden flex items-center justify-center shrink-0 border border-border/50">
                               {file.thumbnailUrl ? (
                                 <img
                                   src={file.thumbnailUrl}
@@ -190,7 +207,7 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
                                   className="h-full w-full object-cover"
                                   loading="lazy"
                                 />
-                              ) : file.category === "image" ? (
+                              ) : isImage ? (
                                 <img
                                   src={file.url}
                                   alt=""
@@ -199,54 +216,35 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
                                 />
                               ) : (
                                 React.createElement(CATEGORY_META[file.category].icon, {
-                                  className: "h-4 w-4 text-muted-foreground/60",
+                                  className: "h-5 w-5 text-muted-foreground/60",
                                 })
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="text-xs font-medium truncate">{file.name}</div>
-                              <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                              <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
                                 <SourceIcon className="h-2.5 w-2.5" />
                                 <span className="truncate">{file.sourceName}</span>
                                 <span>·</span>
                                 <span className="truncate">{file.sectionLabel}</span>
-                                {file.ext && (
-                                  <>
-                                    <span>·</span>
-                                    <span className="uppercase">{file.ext}</span>
-                                  </>
-                                )}
+                              </div>
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                <Badge variant="outline" className="h-4 px-1 text-[9px] uppercase">{file.category}</Badge>
+                                {file.ext && <Badge variant="secondary" className="h-4 px-1 text-[9px] uppercase">{file.ext}</Badge>}
                               </div>
                             </div>
-                            <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex flex-col items-center gap-1 shrink-0">
                               {isDeck && onLoadDeck && (
-                                <Button
-                                  size="sm"
-                                  variant="default"
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() => onLoadDeck(file)}
-                                >
+                                <Button size="sm" variant="default" className="h-7 text-xs gap-1" onClick={() => onLoadDeck(file)}>
                                   <Upload className="h-3 w-3" /> Load
                                 </Button>
                               )}
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7"
-                                asChild
-                                title="Open in new tab"
-                              >
+                              <Button size="icon" variant="ghost" className="h-7 w-7" asChild title="Open in new tab">
                                 <a href={file.url} target="_blank" rel="noopener noreferrer">
                                   <ExternalLink className="h-3.5 w-3.5" />
                                 </a>
                               </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-7 w-7"
-                                asChild
-                                title="Download"
-                              >
+                              <Button size="icon" variant="ghost" className="h-7 w-7" asChild title="Download">
                                 <a href={file.url} download>
                                   <Download className="h-3.5 w-3.5" />
                                 </a>
@@ -260,25 +258,6 @@ export const BrandAssetsLibrary: React.FC<BrandAssetsLibraryProps> = ({
                 </ScrollArea>
               </TabsContent>
             ))}
-
-            {showReferenceMode && selectedUrls.size > 0 && (
-              <div className="border-t pt-2 mt-2 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">
-                  {selectedUrls.size} reference{selectedUrls.size === 1 ? "" : "s"} selected
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={() => {
-                    setSelectedUrls(new Set());
-                    onReferenceSelectionChange?.([]);
-                  }}
-                >
-                  Clear
-                </Button>
-              </div>
-            )}
           </Tabs>
         )}
       </DialogContent>
