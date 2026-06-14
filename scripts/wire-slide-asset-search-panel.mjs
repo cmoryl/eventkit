@@ -70,14 +70,30 @@ replaceOnce(
   'wire Brand Assets image use callback',
 );
 
+const requiredMarkers = [
+  "import { SlideAssetSearchPanel } from './SlideAssetSearchPanel';",
+  'files: brandFiles',
+  '<SlideAssetSearchPanel',
+  'brandFiles={brandFiles}',
+  'onUseImage={(file) => {',
+  'onReferenceSelectionChange={setReferenceFiles}',
+];
+
+const missingMarkers = requiredMarkers.filter((marker) => !source.includes(marker));
+if (missingMarkers.length > 0) {
+  console.error('\n✖ Slide asset rail wiring validation failed. Missing markers:');
+  for (const marker of missingMarkers) console.error(`- ${marker}`);
+  process.exit(1);
+}
+
 if (source === original) {
-  console.log('No SlideEditor changes detected. The file may already be wired.');
+  console.log('No SlideEditor changes detected. The file may already be wired. Validation passed.');
   process.exit(0);
 }
 
 if (apply) {
   writeFileSync(target, source);
-  console.log('\n✓ SlideAssetSearchPanel wired into SlideEditor properties rail.');
+  console.log('\n✓ SlideAssetSearchPanel wired into SlideEditor properties rail and validated.');
 } else {
-  console.log('\nDry run only. Re-run with --apply to update SlideEditor.tsx.');
+  console.log('\nDry run only. SlideAssetSearchPanel wiring validated. Re-run with --apply to update SlideEditor.tsx.');
 }
