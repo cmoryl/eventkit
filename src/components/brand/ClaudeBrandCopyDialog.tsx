@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { streamEdgeFunction } from "@/lib/aiStream";
 
 type Task = "tagline" | "brand_dna" | "event_description" | "sponsor_copy" | "slide_copy";
 
