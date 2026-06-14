@@ -2086,10 +2086,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   </div>
                 )}
 
-                {/* Smart Layouts library — tabbed, draggable, named-slot templates */}
-                <SlideSmartLayoutsPanel
-                  onInsertSection={(payload) => insertSectionAfter(activeIndex, payload)}
-                />
+                {/* Smart Layouts moved to the left NavRail → Insert drawer */}
 
                 {/* Accent image — Gamma-style overlay (background / top / left / right) */}
                 <AccentImagePanel
