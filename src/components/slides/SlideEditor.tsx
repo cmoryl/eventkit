@@ -549,6 +549,95 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setActiveIndex(0);
   }, []);
 
+  // ── Voice-agent bridge: expose imperative commands to the slideEditorBus
+  // so the ElevenLabs voice agent (or any other surface) can drive this
+  // editor's state without prop-drilling.
+  const activeIndexRef = useRef(0);
+  const slidesCountRef = useRef(0);
+  useEffect(() => { activeIndexRef.current = activeIndex; }, [activeIndex]);
+  useEffect(() => { slidesCountRef.current = slides.length; }, [slides.length]);
+  useEffect(() => {
+    slideEditorBus.connect({
+      insertTemplate: (templateId, slotValues) => {
+        const payload = applySlideTemplate(templateId, slotValues ?? {});
+        if (!payload) return null;
+        const newSlide: SlideData = { id: uuidv4(), ...payload };
+        setSlides(prev => {
+          const next = [...prev];
+          next.splice(activeIndexRef.current + 1, 0, newSlide);
+          return next;
+        });
+        setActiveIndex(activeIndexRef.current + 1);
+        return newSlide;
+      },
+      insertSection: (payload) => {
+        const newSlide: SlideData = { id: uuidv4(), ...payload };
+        setSlides(prev => {
+          const next = [...prev];
+          next.splice(activeIndexRef.current + 1, 0, newSlide);
+          return next;
+        });
+        setActiveIndex(activeIndexRef.current + 1);
+        return newSlide;
+      },
+      setAccentImage: (params) => {
+        const idx = activeIndexRef.current;
+        setSlides(prev => prev.map((s, i) => {
+          if (i !== idx) return s;
+          if (params.position === 'none') return { ...s, accentImage: undefined };
+          const current = s.accentImage;
+          return {
+            ...s,
+            accentImage: {
+              url: params.url ?? current?.url ?? '',
+              position: params.position ?? current?.position ?? 'background',
+              overlay: params.overlay ?? current?.overlay ?? 'none',
+              intensity: params.intensity ?? current?.intensity ?? 1,
+              focalX: current?.focalX ?? 50,
+              focalY: current?.focalY ?? 50,
+            },
+          };
+        }));
+        return true;
+      },
+      applyBrandImage: (params) => {
+        const idx = activeIndexRef.current;
+        if (params.role === 'accent') {
+          setAccentImageForSlide(params.url, idx, 'background');
+        } else {
+          applyImageUrlToSlide(params.url, idx);
+        }
+        return true;
+      },
+      goToSlide: (index) => {
+        if (index < 0 || index >= slidesCountRef.current) return false;
+        setActiveIndex(index);
+        return true;
+      },
+      duplicateActive: () => {
+        const idx = activeIndexRef.current;
+        setSlides(prev => {
+          if (!prev[idx]) return prev;
+          const copy = { ...prev[idx], id: uuidv4() };
+          const next = [...prev];
+          next.splice(idx + 1, 0, copy);
+          return next;
+        });
+        return true;
+      },
+      deleteActive: () => {
+        const idx = activeIndexRef.current;
+        if (slidesCountRef.current <= 1) return false;
+        setSlides(prev => prev.filter((_, i) => i !== idx));
+        setActiveIndex(Math.max(0, idx - 1));
+        return true;
+      },
+      getActiveIndex: () => activeIndexRef.current,
+      getSlideCount: () => slidesCountRef.current,
+    });
+    return () => slideEditorBus.disconnect();
+  }, [applyImageUrlToSlide, setAccentImageForSlide]);
+
   const updateDemoDeckContent = useCallback((nextOrUpdater: unknown) => {
     setSlides(prev => {
       const target = prev[activeIndex];
