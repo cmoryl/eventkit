@@ -944,7 +944,9 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
   const textBoxes = (slide as any).textBoxes as SlideData['textBoxes'] | undefined;
   const [selectedTextBoxId, setSelectedTextBoxId] = useState<string | null>(null);
   const [editingTextBoxId, setEditingTextBoxId] = useState<string | null>(null);
-  const tbDragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect; orig: { xPct: number; yPct: number; wPct: number; fontSize: number } } | null>(null);
+  const tbDragRef = useRef<{ id: string; mode: 'move' | 'resize'; startX: number; startY: number; rect: DOMRect; orig: { xPct: number; yPct: number; wPct: number; fontSize: number }; snapDisabled: boolean } | null>(null);
+  // Smart guides shown during a drag: arrays of %-positions on each axis.
+  const [guides, setGuides] = useState<{ v: number[]; h: number[] }>({ v: [], h: [] });
 
   const updateTextBox = (id: string, patch: Partial<NonNullable<SlideData['textBoxes']>[number]>) => {
     const list = (slideRef.current.textBoxes || []).map((t) => (t.id === id ? { ...t, ...patch } : t));
