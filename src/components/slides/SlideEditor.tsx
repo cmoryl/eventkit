@@ -34,7 +34,8 @@ import { toast } from 'sonner';
 import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
-import { SlideAssetSearchPanel } from './SlideAssetSearchPanel';
+import { SlideAssetSearchPanel, SLIDE_ASSET_IMAGE_MIME } from './SlideAssetSearchPanel';
+import { SlideSectionLibraryPanel, SLIDE_SECTION_MIME } from './SlideSectionLibraryPanel';
 import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialog';
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
@@ -290,16 +291,43 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     return newSlides;
   }, []);
 
+  /** Apply a remote image URL (e.g. a BrandHub asset) to a slide. */
+  const applyImageUrlToSlide = useCallback((url: string, slideIndex: number) => {
+    setSlides(prev => prev.map((s, i) => {
+      if (i !== slideIndex) return s;
+      const needsImageLayout = !['image-left', 'image-right', 'full-image'].includes(s.layout);
+      return {
+        ...s,
+        imageUrl: url,
+        images: [url, ...(s.images ?? []).slice(1)],
+        ...(needsImageLayout && { layout: 'image-left' as const }),
+      };
+    }));
+  }, []);
+
+  /** Insert a pre-built section template as a new slide after `afterIndex`. */
+  const insertSectionAfter = useCallback((afterIndex: number, payload: Omit<SlideData, 'id'>) => {
+    const newSlide: SlideData = { id: uuidv4(), ...payload };
+    setSlides(prev => {
+      const next = [...prev];
+      next.splice(afterIndex + 1, 0, newSlide);
+      return next;
+    });
+    setActiveIndex(afterIndex + 1);
+  }, []);
+
   const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
     // Always preventDefault so the browser shows a "copy" cursor instead of "no-drop".
-    // Some browsers don't expose dataTransfer.types reliably during dragover, so we
-    // accept the dragover unconditionally and filter file vs. non-file in onDrop.
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-    // Only highlight when files are involved (this part is safe — empty types just
-    // means no highlight, but the drop is still permitted).
-    if (e.dataTransfer.types.includes('Files')) {
+    const types = e.dataTransfer.types;
+    // Highlight on files, dragged BrandHub images, or section templates.
+    if (
+      types.includes('Files') ||
+      types.includes(SLIDE_ASSET_IMAGE_MIME) ||
+      types.includes(SLIDE_SECTION_MIME)
+    ) {
       setCanvasFileOver(true);
     }
   }, []);
@@ -311,10 +339,57 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, []);
 
   const handleCanvasDrop = useCallback(async (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
+    const types = e.dataTransfer.types;
+    const hasFiles = types.includes('Files');
+    const hasSection = types.includes(SLIDE_SECTION_MIME);
+    const hasAssetUrl = types.includes(SLIDE_ASSET_IMAGE_MIME);
+    if (!hasFiles && !hasSection && !hasAssetUrl) return;
     e.preventDefault();
     e.stopPropagation();
     setCanvasFileOver(false);
+
+    // 1. Pre-built section template → insert as new slide after active.
+    if (hasSection) {
+      try {
+        const raw = e.dataTransfer.getData(SLIDE_SECTION_MIME);
+        const payload = JSON.parse(raw) as Omit<SlideData, 'id'>;
+        insertSectionAfter(activeIndex, payload);
+        toast.success(`Inserted ${payload.layout} section`);
+      } catch {
+        toast.error('Could not insert section');
+      }
+      return;
+    }
+
+    // 2. BrandHub image URL → apply to active slide (Shift = new slide).
+    if (hasAssetUrl) {
+      const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
+      if (url) {
+        if (e.shiftKey) {
+          const newSlide: SlideData = {
+            id: uuidv4(),
+            layout: 'full-image',
+            title: '',
+            variant: 'default',
+            imageUrl: url,
+            images: [url],
+          };
+          setSlides(prev => {
+            const next = [...prev];
+            next.splice(activeIndex + 1, 0, newSlide);
+            return next;
+          });
+          setActiveIndex(activeIndex + 1);
+          toast.success('Added image as new slide');
+        } else {
+          applyImageUrlToSlide(url, activeIndex);
+          toast.success('Image added to slide');
+        }
+      }
+      return;
+    }
+
+    // 3. OS files (existing behavior).
     const files = Array.from(e.dataTransfer.files);
     const imageFiles = files.filter(f => f.type.startsWith('image/'));
     const pptxFile = files.find(f => f.name.toLowerCase().endsWith('.pptx'));
@@ -355,13 +430,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         toast.success(`Added ${imageFiles.length} images as slides`);
       }
     }
-  }, [activeIndex, loadImageFile, insertImageFilesAsSlides]);
+  }, [activeIndex, loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
 
   const handleThumbFileDragOver = useCallback((index: number) => (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
-    if (e.dataTransfer.types.includes('Files')) {
+    const types = e.dataTransfer.types;
+    if (
+      types.includes('Files') ||
+      types.includes(SLIDE_ASSET_IMAGE_MIME) ||
+      types.includes(SLIDE_SECTION_MIME)
+    ) {
       setThumbFileOver(index);
     }
   }, []);
@@ -373,10 +453,55 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, []);
 
   const handleThumbFileDrop = useCallback((index: number) => async (e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
+    const types = e.dataTransfer.types;
+    const hasFiles = types.includes('Files');
+    const hasSection = types.includes(SLIDE_SECTION_MIME);
+    const hasAssetUrl = types.includes(SLIDE_ASSET_IMAGE_MIME);
+    if (!hasFiles && !hasSection && !hasAssetUrl) return;
     e.preventDefault();
     e.stopPropagation();
     setThumbFileOver(null);
+
+    // Pre-built section → insert after this thumbnail.
+    if (hasSection) {
+      try {
+        const payload = JSON.parse(e.dataTransfer.getData(SLIDE_SECTION_MIME)) as Omit<SlideData, 'id'>;
+        insertSectionAfter(index, payload);
+        toast.success(`Inserted ${payload.layout} section`);
+      } catch {
+        toast.error('Could not insert section');
+      }
+      return;
+    }
+
+    // BrandHub image URL → apply to this slide (or new slide with Shift).
+    if (hasAssetUrl) {
+      const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
+      if (!url) return;
+      if (e.shiftKey) {
+        const newSlide: SlideData = {
+          id: uuidv4(),
+          layout: 'full-image',
+          title: '',
+          variant: 'default',
+          imageUrl: url,
+          images: [url],
+        };
+        setSlides(prev => {
+          const next = [...prev];
+          next.splice(index + 1, 0, newSlide);
+          return next;
+        });
+        setActiveIndex(index + 1);
+        toast.success('Added image as new slide');
+      } else {
+        applyImageUrlToSlide(url, index);
+        setActiveIndex(index);
+        toast.success('Image added to slide');
+      }
+      return;
+    }
+
     const file = e.dataTransfer.files[0];
     if (!file?.type.startsWith('image/')) return;
     if (e.shiftKey) {
@@ -387,7 +512,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setActiveIndex(index);
       toast.success('Image added to slide');
     }
-  }, [loadImageFile, insertImageFilesAsSlides]);
+  }, [loadImageFile, insertImageFilesAsSlides, insertSectionAfter, applyImageUrlToSlide]);
 
   const handleAISlidesGenerated = useCallback((newSlides: SlideData[]) => {
     setSlides(newSlides);
@@ -1409,6 +1534,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                     </div>
                   </div>
                 )}
+
+                {/* Pre-built section library — drag onto canvas/thumbnails or click to insert */}
+                <SlideSectionLibraryPanel
+                  onInsertSection={(payload) => insertSectionAfter(activeIndex, payload)}
+                />
 
                 {/* BrandHub asset rail — search images for active brand and add to slide */}
                 {brand?.brandhub_share_token && (

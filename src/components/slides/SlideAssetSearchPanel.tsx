@@ -5,8 +5,10 @@ import React, { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImageIcon, Plus, Search, Loader2 } from "lucide-react";
+import { ImageIcon, Plus, Search, Loader2, GripVertical } from "lucide-react";
 import type { BrandFile } from "@/hooks/useBrandHubFiles";
+
+export const SLIDE_ASSET_IMAGE_MIME = "application/x-eventkit-image-url";
 
 interface SlideAssetSearchPanelProps {
   images: BrandFile[];
@@ -91,19 +93,27 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({
             <button
               key={file.url}
               type="button"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData(SLIDE_ASSET_IMAGE_MIME, file.url);
+                e.dataTransfer.setData("text/uri-list", file.url);
+                e.dataTransfer.setData("text/plain", file.url);
+                e.dataTransfer.effectAllowed = "copy";
+              }}
               onClick={() => onUseImage(file)}
               aria-label={`Use ${file.name} in active slide`}
-              title={`Use “${file.name}” — ${file.sectionLabel}`}
-              className="group relative aspect-square rounded-md overflow-hidden border bg-background hover:ring-2 hover:ring-primary transition"
+              title={`${file.name} — ${file.sectionLabel}\nClick to add, or drag onto canvas / a slide thumbnail`}
+              className="group relative aspect-square rounded-md overflow-hidden border bg-background hover:ring-2 hover:ring-primary transition cursor-grab active:cursor-grabbing"
             >
               <img
                 src={file.url}
                 alt={file.name}
                 loading="lazy"
-                className="h-full w-full object-cover"
+                className="h-full w-full object-cover pointer-events-none"
               />
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Plus className="h-4 w-4 text-white" />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                <Plus className="h-3.5 w-3.5 text-white" />
+                <GripVertical className="h-3 w-3 text-white/80" />
               </div>
             </button>
           ))}
