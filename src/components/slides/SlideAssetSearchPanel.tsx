@@ -5,7 +5,7 @@ import React, { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ImageIcon, Plus, Search, Loader2, GripVertical } from "lucide-react";
+import { ImageIcon, Plus, Search, Loader2, GripVertical, Sparkles } from "lucide-react";
 import type { BrandFile } from "@/hooks/useBrandHubFiles";
 
 export const SLIDE_ASSET_IMAGE_MIME = "application/x-eventkit-image-url";
@@ -15,6 +15,7 @@ interface SlideAssetSearchPanelProps {
   isLoading?: boolean;
   brandName?: string;
   onUseImage: (file: BrandFile) => void;
+  onUseAsAccent?: (file: BrandFile) => void;
   onOpenLibrary?: () => void;
 }
 
