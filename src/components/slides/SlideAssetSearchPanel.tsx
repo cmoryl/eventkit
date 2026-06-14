@@ -24,6 +24,7 @@ export const SlideAssetSearchPanel: React.FC<SlideAssetSearchPanelProps> = ({
   isLoading,
   brandName,
   onUseImage,
+  onUseAsAccent,
   onOpenLibrary,
 }) => {
   const [query, setQuery] = useState("");
