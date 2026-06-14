@@ -307,7 +307,7 @@ export const SLIDE_BLOCK_TEMPLATES: SlideBlockTemplate[] = [
     category: "structure",
     label: "Three Columns",
     description: "Trio of value props or features",
-    layout: "three-column",
+    layout: "two-column",
     slots: [
       { name: "title", type: "text", label: "Title", default: "Three reasons" },
       { name: "body", type: "longtext", label: "Columns (one per line)", default: "Fast · Built for speed\nSecure · End-to-end encryption\nDelightful · Modern UI" },
