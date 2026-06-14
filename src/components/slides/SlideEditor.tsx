@@ -384,11 +384,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       return;
     }
 
-    // 2. BrandHub image URL → apply to active slide (Shift = new slide).
+    // 2. BrandHub image URL → apply to active slide (Shift = new slide, Alt = accent image).
     if (hasAssetUrl) {
       const url = e.dataTransfer.getData(SLIDE_ASSET_IMAGE_MIME);
       if (url) {
-        if (e.shiftKey) {
+        if (e.altKey) {
+          setAccentImageForSlide(url, activeIndex, 'background');
+          toast.success('Set as accent image');
+        } else if (e.shiftKey) {
           const newSlide: SlideData = {
             id: uuidv4(),
             layout: 'full-image',
