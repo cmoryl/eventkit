@@ -95,37 +95,68 @@ const hashFor = (value: string) => {
   return hash;
 };
 
+const ALL_KINDS: PreviewKind[] = [
+  'title', 'editorial', 'columns', 'image-split', 'quote', 'stats', 'stat-hero',
+  'closing', 'section', 'bullet', 'team', 'comparison', 'full-bleed',
+  'webinar-title', 'agenda', 'speaker', 'qa', 'poll', 'stream', 'chart', 'process',
+];
+
 const kindFor = (template: DeckTemplate): PreviewKind => {
   const hay = `${template.id} ${template.name} ${template.description || ''} ${(template.tags || []).join(' ')}`.toLowerCase();
+  // Strong keyword matches win over hashing
   if (hay.includes('lower third') || hay.includes('starting soon') || hay.includes('stream') || hay.includes('brb')) return 'stream';
   if (hay.includes('webinar title')) return 'webinar-title';
   if (hay.includes('agenda')) return 'agenda';
   if (hay.includes('speaker') || hay.includes('bio')) return 'speaker';
   if (hay.includes('q&a') || hay.includes('qa slide')) return 'qa';
   if (hay.includes('poll') || hay.includes('survey')) return 'poll';
-  if (hay.includes('section')) return 'section';
+  if (hay.includes('section divider')) return 'section';
   if (hay.includes('bullet')) return 'bullet';
   if (hay.includes('stat highlight') || hay.includes('big number')) return 'stat-hero';
-  if (hay.includes('stats') || hay.includes('metrics')) return 'stats';
-  if (hay.includes('team') || hay.includes('grid')) return 'team';
+  if (hay.includes('metrics dashboard') || hay.includes('kpi')) return 'stats';
+  if (hay.includes('team grid')) return 'team';
   if (hay.includes('comparison')) return 'comparison';
   if (hay.includes('full bleed') || hay.includes('fullbleed')) return 'full-bleed';
-  if (hay.includes('thank') || hay.includes('closing') || hay.includes('cta')) return 'closing';
-  if (hay.includes('image') || hay.includes('split')) return 'image-split';
-  if (hay.includes('two-column') || hay.includes('two column') || hay.includes('column')) return 'columns';
-  if (hay.includes('quote')) return 'quote';
-  if (hay.includes('editorial') || hay.includes('light')) return 'editorial';
-  if (hay.includes('corporate') || hay.includes('investor') || hay.includes('report')) return 'chart';
-  if (hay.includes('startup') || hay.includes('launch') || hay.includes('process')) return 'process';
-  return 'title';
+  if (hay.includes('thank you') || hay.includes('closing slide')) return 'closing';
+  if (hay.includes('image split')) return 'image-split';
+  if (hay.includes('two-column') || hay.includes('two column')) return 'columns';
+  if (hay.includes('pull quote') || hay.includes('quote slide')) return 'quote';
+  // Otherwise: hash the template into ALL kinds so every card is distinct
+  const h = hashFor(`${template.id}::${template.name}`);
+  return ALL_KINDS[h % ALL_KINDS.length];
 };
 
-const arrangementFor = (kind: PreviewKind): PreviewArrangement => {
-  if (['stats', 'team', 'comparison', 'poll'].includes(kind)) return 'mosaic';
-  if (['section', 'full-bleed', 'closing', 'webinar-title', 'stream'].includes(kind)) return 'hero';
-  if (['agenda', 'speaker', 'qa'].includes(kind)) return 'vertical';
-  if (['bullet', 'columns', 'image-split', 'editorial'].includes(kind)) return 'rail';
-  return 'fan';
+const ALL_ARRANGEMENTS: PreviewArrangement[] = ['fan', 'mosaic', 'hero', 'vertical', 'rail'];
+
+const arrangementFor = (kind: PreviewKind, template: DeckTemplate): PreviewArrangement => {
+  // Hash drives arrangement so visually-similar kinds still get different stacks
+  const h = hashFor(`${template.id}//${kind}`);
+  // Bias: some kinds have a clearly best arrangement, but still allow variation
+  const bias: Partial<Record<PreviewKind, PreviewArrangement[]>> = {
+    stats: ['mosaic', 'rail', 'hero'],
+    team: ['mosaic', 'rail'],
+    comparison: ['mosaic', 'hero'],
+    poll: ['mosaic', 'vertical'],
+    section: ['hero', 'fan'],
+    'full-bleed': ['hero', 'rail'],
+    closing: ['hero', 'fan'],
+    'webinar-title': ['hero', 'vertical'],
+    stream: ['hero', 'rail'],
+    agenda: ['vertical', 'rail'],
+    speaker: ['vertical', 'hero'],
+    qa: ['vertical', 'fan'],
+    bullet: ['rail', 'vertical'],
+    columns: ['rail', 'mosaic'],
+    'image-split': ['rail', 'hero'],
+    editorial: ['rail', 'fan'],
+    chart: ['mosaic', 'fan'],
+    process: ['rail', 'fan'],
+    quote: ['hero', 'fan'],
+    'stat-hero': ['hero', 'mosaic'],
+    title: ['fan', 'hero'],
+  };
+  const pool = bias[kind] || ALL_ARRANGEMENTS;
+  return pool[h % pool.length];
 };
 
 const miniDeckFor = (kind: PreviewKind): PreviewKind[] => {
