@@ -1410,53 +1410,62 @@ export const MiniSlide = ({ kind, template, compact = false, look: forcedLook }:
   );
 };
 
-const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKind; look: DeckLookId }) => {
+const DeckPreviewVisual = ({ t, kind, look, dense }: { t: DeckTemplate; kind: PreviewKind; look: DeckLookId; dense?: boolean }) => {
   const arrangement = arrangementFor(kind, t);
-  const hash = hashFor(t.id);
-  // miniDeckFor now derives followers per-template, so no rotation needed
+  const hash = hashFor(`${t.id}::${kind}::poster-stage`);
   const deck = miniDeckFor(kind, t);
+  const mirror = hash % 2 === 0;
+  const primaryShadow = `0 18px 34px ${hexToRgba('#000000', isLight(t.palette.bg) ? 0.16 : 0.32)}`;
+  const railBg = `linear-gradient(135deg, ${hexToRgba(t.palette.text, 0.08)}, ${hexToRgba(t.palette.accent, 0.18)})`;
+  const frameStyle: React.CSSProperties = { boxShadow: primaryShadow };
 
   if (arrangement === 'mosaic') {
     return (
-      <div className="pointer-events-none absolute right-4 top-4 grid h-[42%] w-[50%] grid-cols-2 gap-1.5">
-        {[...deck, 'title' as PreviewKind].slice(0, 4).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
-      </div>
-    );
-  }
-
-  if (arrangement === 'hero') {
-    return (
-      <div className="pointer-events-none absolute right-4 top-4 h-[38%] w-[56%]">
-        <div className="absolute right-0 top-0 aspect-video w-full overflow-hidden rounded-lg transition-transform duration-300 group-hover:-translate-y-1">
-          <MiniSlide kind={deck[0]} template={t} look={look} />
-        </div>
-        <div className="absolute -bottom-5 left-2 aspect-video w-[44%] overflow-hidden rounded-md opacity-85 shadow-xl">
-          <MiniSlide kind={deck[1]} template={t} look={look} compact />
-        </div>
-      </div>
-    );
-  }
-
-  if (arrangement === 'vertical') {
-    return (
-      <div className="pointer-events-none absolute right-4 top-4 flex h-[50%] w-[45%] flex-col gap-1.5">
-        {deck.map((slideKind, i) => (
-          <div key={`${slideKind}-${i}`} className="min-h-0 flex-1" style={{ transform: `translateX(${i * -8}px)` }}>
-            <MiniSlide kind={slideKind} template={t} look={look} compact />
+      <div className={cn('pointer-events-none absolute grid gap-1.5', dense ? 'inset-x-3 top-9 h-[58%]' : 'inset-x-4 top-10 h-[62%]', mirror ? 'grid-cols-[0.72fr_1fr_1fr]' : 'grid-cols-[1fr_1fr_0.72fr]')}>
+        {[...deck, 'title' as PreviewKind].slice(0, 4).map((slideKind, i) => (
+          <div key={`${slideKind}-${i}`} className={cn('min-h-0 overflow-hidden rounded-lg', i === 0 && 'row-span-2')} style={i === 0 ? frameStyle : undefined}>
+            <MiniSlide kind={slideKind} template={t} look={look} compact={i !== 0} />
           </div>
         ))}
       </div>
     );
   }
 
-  if (arrangement === 'rail') {
+  if (arrangement === 'hero') {
     return (
-      <div className="pointer-events-none absolute right-4 top-4 h-[52%] w-[50%]">
-        <div className="absolute right-0 top-0 aspect-video w-[82%] overflow-hidden rounded-lg shadow-2xl">
+      <div className="pointer-events-none absolute inset-0">
+        <div className={cn('absolute aspect-video overflow-hidden rounded-xl transition-transform duration-300 group-hover:-translate-y-1', dense ? 'top-10 w-[68%]' : 'top-12 w-[72%]', mirror ? 'left-4' : 'right-4')} style={frameStyle}>
           <MiniSlide kind={deck[0]} template={t} look={look} />
         </div>
-        <div className="absolute bottom-0 left-0 grid w-[74%] grid-cols-2 gap-1.5">
-          {deck.slice(1).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
+        <div className={cn('absolute aspect-video w-[32%] overflow-hidden rounded-lg opacity-90', dense ? 'bottom-5' : 'bottom-7', mirror ? 'right-5' : 'left-5')} style={{ boxShadow: `0 12px 24px ${hexToRgba('#000000', 0.24)}` }}>
+          <MiniSlide kind={deck[1]} template={t} look={look} compact />
+        </div>
+        <div className={cn('absolute h-1.5 rounded-full', mirror ? 'right-6' : 'left-6')} style={{ bottom: dense ? 18 : 24, width: '22%', background: t.palette.accent }} />
+      </div>
+    );
+  }
+
+  if (arrangement === 'vertical') {
+    return (
+      <div className={cn('pointer-events-none absolute top-9 flex h-[62%] w-[43%] flex-col gap-1.5', mirror ? 'left-4' : 'right-4')}>
+        {deck.map((slideKind, i) => (
+          <div key={`${slideKind}-${i}`} className="min-h-0 flex-1 overflow-hidden rounded-lg" style={{ transform: `translateX(${mirror ? i * 8 : i * -8}px)`, boxShadow: i === 0 ? primaryShadow : undefined }}>
+            <MiniSlide kind={slideKind} template={t} look={look} compact />
+          </div>
+        ))}
+        <div className={cn('absolute top-2 h-full w-[78%] rounded-full opacity-30 blur-xl', mirror ? 'left-full' : 'right-full')} style={{ background: t.palette.accent }} />
+      </div>
+    );
+  }
+
+  if (arrangement === 'rail') {
+    return (
+      <div className="pointer-events-none absolute inset-x-4 bottom-5 h-[54%] rounded-xl p-2" style={{ background: railBg, border: `1px solid ${hexToRgba(t.palette.text, 0.16)}` }}>
+        <div className={cn('absolute top-[-18%] aspect-video w-[55%] overflow-hidden rounded-xl', mirror ? 'left-3' : 'right-3')} style={frameStyle}>
+          <MiniSlide kind={deck[0]} template={t} look={look} />
+        </div>
+        <div className={cn('absolute bottom-2 grid w-[54%] grid-cols-2 gap-1.5', mirror ? 'right-2' : 'left-2')}>
+          {deck.slice(1).map((slideKind, i) => <div key={`${slideKind}-${i}`} className="overflow-hidden rounded-lg"><MiniSlide kind={slideKind} template={t} look={look} compact /></div>)}
         </div>
       </div>
     );
@@ -1464,10 +1473,10 @@ const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKi
 
   if (arrangement === 'split-stage') {
     return (
-      <div className="pointer-events-none absolute right-4 top-5 grid h-[46%] w-[56%] grid-cols-[1fr_0.72fr] gap-2">
-        <div className="min-w-0 overflow-hidden" style={{ transform: hash % 2 ? 'rotate(-1.5deg)' : 'rotate(1.5deg)' }}><MiniSlide kind={deck[0]} template={t} look={look} /></div>
-        <div className="flex min-w-0 flex-col gap-2 pt-4">
-          {deck.slice(1).map((slideKind, i) => <div key={`${slideKind}-${i}`} className="min-h-0 flex-1 overflow-hidden" style={{ transform: `translateX(${i ? -10 : 4}px) rotate(${i ? 2 : -3}deg)` }}><MiniSlide kind={slideKind} template={t} look={look} compact /></div>)}
+      <div className={cn('pointer-events-none absolute top-10 grid h-[60%] w-[76%] gap-2', mirror ? 'left-4 grid-cols-[1fr_0.72fr]' : 'right-4 grid-cols-[0.72fr_1fr]')}>
+        <div className={cn('min-w-0 overflow-hidden rounded-xl', !mirror && 'order-2')} style={{ ...frameStyle, transform: hash % 2 ? 'rotate(-1.5deg)' : 'rotate(1.5deg)' }}><MiniSlide kind={deck[0]} template={t} look={look} /></div>
+        <div className="flex min-w-0 flex-col gap-2 pt-3">
+          {deck.slice(1).map((slideKind, i) => <div key={`${slideKind}-${i}`} className="min-h-0 flex-1 overflow-hidden rounded-lg" style={{ transform: `translateX(${mirror ? (i ? -10 : 4) : (i ? 10 : -4)}px) rotate(${i ? 2 : -3}deg)` }}><MiniSlide kind={slideKind} template={t} look={look} compact /></div>)}
         </div>
       </div>
     );
@@ -1475,7 +1484,7 @@ const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKi
 
   if (arrangement === 'contact-sheet') {
     return (
-      <div className="pointer-events-none absolute right-4 top-4 grid h-[50%] w-[54%] grid-cols-3 grid-rows-2 gap-1.5 p-1" style={{ background: hexToRgba(t.palette.text, 0.08), border: `1px solid ${hexToRgba(t.palette.text, 0.18)}` }}>
+      <div className="pointer-events-none absolute inset-x-4 bottom-5 grid h-[62%] grid-cols-3 grid-rows-2 gap-1.5 rounded-xl p-1.5" style={{ background: hexToRgba(t.palette.text, 0.08), border: `1px solid ${hexToRgba(t.palette.text, 0.18)}` }}>
         {[...deck, 'stats' as PreviewKind, 'quote' as PreviewKind, 'process' as PreviewKind].slice(0, 6).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
       </div>
     );
@@ -1483,9 +1492,9 @@ const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKi
 
   if (arrangement === 'cascade') {
     return (
-      <div className="pointer-events-none absolute right-5 top-4 h-[56%] w-[52%]">
+      <div className={cn('pointer-events-none absolute top-10 h-[62%] w-[68%]', mirror ? 'left-5' : 'right-5')}>
         {deck.map((slideKind, i) => (
-          <div key={`${slideKind}-${i}`} className="absolute aspect-video overflow-hidden shadow-2xl" style={{ width: `${86 - i * 10}%`, right: `${i * 11}%`, top: `${i * 18}%`, transform: `rotate(${[-4, 3, -1][i]}deg)`, opacity: 1 - i * 0.12 }}>
+          <div key={`${slideKind}-${i}`} className="absolute aspect-video overflow-hidden rounded-xl" style={{ width: `${92 - i * 12}%`, right: mirror ? undefined : `${i * 10}%`, left: mirror ? `${i * 10}%` : undefined, top: `${i * 17}%`, transform: `rotate(${mirror ? [4, -3, 1][i] : [-4, 3, -1][i]}deg)`, opacity: 1 - i * 0.12, boxShadow: i === 0 ? primaryShadow : undefined }}>
             <MiniSlide kind={slideKind} template={t} look={look} compact={i > 0} />
           </div>
         ))}
@@ -1496,15 +1505,18 @@ const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKi
   const backRot = hash % 2 ? 8 : -8;
   const midRot = hash % 3 ? -5 : 5;
   return (
-    <div className="pointer-events-none absolute right-4 top-4 h-[58%] w-[52%]">
-      <div className="absolute right-[-2%] top-[-4%] aspect-video w-[70%] overflow-hidden rounded-md opacity-55 shadow-xl" style={{ transform: `rotate(${backRot}deg)` }}>
+    <div className="pointer-events-none absolute inset-0">
+      <div className="absolute left-5 top-10 h-12 w-12 rounded-full opacity-60" style={{ background: `linear-gradient(135deg, ${t.palette.accent}, ${t.palette.secondary})` }} />
+      <div className={cn('absolute top-9 h-[60%] w-[66%]', mirror ? 'right-4' : 'left-4')}>
+      <div className="absolute right-[-2%] top-[-4%] aspect-video w-[70%] overflow-hidden rounded-lg opacity-55 shadow-xl" style={{ transform: `rotate(${backRot}deg)` }}>
         <MiniSlide kind={deck[2]} template={t} look={look} compact />
       </div>
-      <div className="absolute right-[8%] top-[7%] aspect-video w-[78%] overflow-hidden rounded-md opacity-90 shadow-2xl" style={{ transform: `rotate(${midRot}deg)` }}>
+      <div className="absolute right-[8%] top-[7%] aspect-video w-[78%] overflow-hidden rounded-lg opacity-90 shadow-2xl" style={{ transform: `rotate(${midRot}deg)` }}>
         <MiniSlide kind={deck[1]} template={t} look={look} compact />
       </div>
-      <div className="absolute right-[2%] top-[20%] aspect-video w-[88%] overflow-hidden rounded-md shadow-2xl transition-transform duration-300 group-hover:-translate-y-1">
+      <div className="absolute right-[2%] top-[20%] aspect-video w-[88%] overflow-hidden rounded-xl shadow-2xl transition-transform duration-300 group-hover:-translate-y-1">
         <MiniSlide kind={deck[0]} template={t} look={look} />
+      </div>
       </div>
     </div>
   );
