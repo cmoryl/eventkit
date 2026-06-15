@@ -461,17 +461,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [corporateStyleRef, assetName, activeIndex]);
 
-  /** Resolve a master layout by name and set pendingStyledLayout + default assignments. */
-  const applyResolvedLayout = useCallback((layoutName: string | null, slideForFill: SlideData) => {
+  /** Pure helper: resolve a master layout by name into an overlay-ready def. */
+  type ResolvedLayout = NonNullable<typeof pendingStyledLayout>;
+  const resolveLayoutForSlide = useCallback((layoutName: string | null, slideForFill: SlideData): ResolvedLayout | null => {
     const catalogLayouts = corporateStyleRef?.layoutCatalog?.layouts || [];
     const matched = layoutName
       ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
       : undefined;
-    if (!matched) {
-      setPendingStyledLayout(null);
-      setPlaceholderAssignments({});
-      return;
-    }
+    if (!matched) return null;
     const fillFor = (t: string): string | undefined => {
       const k = t.toLowerCase();
       if (k === 'ctrtitle' || k === 'title') return slideForFill.title ? 'Title' : 'Title (empty)';
@@ -483,17 +480,28 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       if (k === 'dt') return 'Date';
       return undefined;
     };
-    setPendingStyledLayout({
+    return {
       name: matched.name,
       type: matched.type,
       placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
-    });
+    };
+  }, [corporateStyleRef]);
+
+  /** Resolve a master layout by name and set pendingStyledLayout + default assignments. */
+  const applyResolvedLayout = useCallback((layoutName: string | null, slideForFill: SlideData) => {
+    const resolved = resolveLayoutForSlide(layoutName, slideForFill);
+    if (!resolved) {
+      setPendingStyledLayout(null);
+      setPlaceholderAssignments({});
+      return;
+    }
+    setPendingStyledLayout(resolved);
     const defaults: Record<string, PhAssign> = {};
-    matched.placeholders.forEach((p, i) => {
+    resolved.placeholders.forEach((p, i) => {
       defaults[`${p.type}-${p.idx ?? i}`] = { source: 'auto' };
     });
     setPlaceholderAssignments(defaults);
-  }, [corporateStyleRef]);
+  }, [resolveLayoutForSlide]);
 
   /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
   const applyMasterAsset = useCallback((dataUrl: string | null) => {
@@ -524,6 +532,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [batchCount, setBatchCount] = useState(3);
   const [batchPrompt, setBatchPrompt] = useState('');
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  /** Staged batch awaiting user confirmation. Each entry has a resolved master layout for overlay drawing. */
+  type PendingBatchEntry = { slide: SlideData; layout: ResolvedLayout | null; layoutName: string | null };
+  const [pendingBatch, setPendingBatch] = useState<PendingBatchEntry[] | null>(null);
+  const [batchPreviewShowOverlay, setBatchPreviewShowOverlay] = useState(true);
   const runBatchGeneration = useCallback(async () => {
     if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
     const count = Math.max(1, Math.min(10, Math.floor(batchCount)));
@@ -556,17 +568,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       if (!out.length) throw new Error('No slides returned');
 
       // Apply the same theme tokens + master asset across the whole batch so
-      // the inserted sequence looks like one cohesive run.
+      // the staged preview looks like one cohesive run.
       const tk = corporateStyleRef.themeTokens?.colors || {};
       const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
       const masterImg = corporateStyleRef.masterAssets?.find((a) => a.role === 'logo')?.dataUrl
         || corporateStyleRef.masterAssets?.[0]?.dataUrl;
 
-      const newSlides: SlideData[] = out.map((g: any) => {
+      const staged: PendingBatchEntry[] = out.map((g: any) => {
         const bulletsText = Array.isArray(g.bullets) && g.bullets.length
           ? g.bullets.map((b: string) => `• ${b}`).join('\n')
           : undefined;
-        return {
+        const slide: SlideData = {
           id: uuidv4(),
           layout: (g.layout as SlideData['layout']) || 'content',
           title: g.title || 'New Slide',
@@ -577,16 +589,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           ...(themeBg ? { bgColor: themeBg } : {}),
           ...(masterImg ? { imageUrl: masterImg } : {}),
         };
+        const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+        const layout = resolveLayoutForSlide(layoutName, slide);
+        return { slide, layout, layoutName };
       });
 
-      setSlides((prev) => {
-        const next = [...prev];
-        next.splice(activeIndex + 1, 0, ...newSlides);
-        return next;
-      });
-      setActiveIndex(activeIndex + newSlides.length);
+      setPendingBatch(staged);
+      setBatchPreviewShowOverlay(true);
       setBatchDialogOpen(false);
-      toast.success(`Inserted ${newSlides.length} slides in ${corporateStyleRef.label} style`, { id: toastId });
+      toast.success(`Preview ready — review ${staged.length} slides before inserting`, { id: toastId });
     } catch (err) {
       console.error('add-styled-slides-batch failed', err);
       toast.error(err instanceof Error ? err.message : 'Batch generation failed', { id: toastId });
@@ -594,7 +605,20 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setIsBatchGenerating(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt]);
+  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt, resolveLayoutForSlide]);
+
+  const confirmInsertPendingBatch = useCallback(() => {
+    if (!pendingBatch || pendingBatch.length === 0) return;
+    const inserted = pendingBatch.map((e) => e.slide);
+    setSlides((prev) => {
+      const next = [...prev];
+      next.splice(activeIndex + 1, 0, ...inserted);
+      return next;
+    });
+    setActiveIndex(activeIndex + inserted.length);
+    setPendingBatch(null);
+    toast.success(`Inserted ${inserted.length} slides`);
+  }, [pendingBatch, activeIndex]);
 
 
   const addSlide = useCallback((afterIndex: number) => {
@@ -3154,6 +3178,116 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   Generate {batchCount} slides
                 </>
               )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Batch preview — review all generated slides + placeholder overlays before inserting */}
+    <Dialog open={!!pendingBatch} onOpenChange={(o) => { if (!o) setPendingBatch(null); }}>
+      <DialogContent className="max-w-[95vw] w-[95vw] p-0 overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Preview {pendingBatch?.length ?? 0} new {corporateStyleRef?.label ?? ''} slides
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Review each slide and its master-layout placeholders before inserting after slide {activeIndex + 1}.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant={batchPreviewShowOverlay ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setBatchPreviewShowOverlay((v) => !v)}
+              title="Toggle master-layout placeholder overlay for all slides"
+            >
+              {batchPreviewShowOverlay ? 'Hide placeholders' : 'Show placeholders'}
+            </Button>
+          </div>
+        </div>
+        <div className="bg-black/40 p-4 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pendingBatch?.map((entry, idx) => (
+              <div key={entry.slide.id} className="bg-background/60 border border-border/60 rounded-md overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 text-xs">
+                  <span className="font-semibold">Slide {idx + 1}</span>
+                  <span className="text-muted-foreground truncate ml-2">
+                    {entry.layout ? `"${entry.layout.name}"` : entry.layoutName || 'auto layout'}
+                  </span>
+                </div>
+                <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
+                  <CenteredScaledSlide>
+                    <SlideRenderer
+                      slide={entry.slide}
+                      brandColors={brandColors}
+                      brandFonts={brandFonts}
+                    />
+                  </CenteredScaledSlide>
+                  {batchPreviewShowOverlay && entry.layout && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      {entry.layout.placeholders.map((ph, i) => {
+                        if (
+                          ph.xPct === undefined || ph.yPct === undefined ||
+                          ph.wPct === undefined || ph.hPct === undefined
+                        ) return null;
+                        const colorFor = (t: string) => {
+                          const k = t.toLowerCase();
+                          if (k === 'title' || k === 'ctrtitle') return 'rgba(56,189,248,0.95)';
+                          if (k === 'subtitle') return 'rgba(167,139,250,0.95)';
+                          if (k === 'body') return 'rgba(74,222,128,0.95)';
+                          if (k === 'pic') return 'rgba(251,146,60,0.95)';
+                          return 'rgba(244,114,182,0.95)';
+                        };
+                        const c = colorFor(ph.type);
+                        return (
+                          <div
+                            key={`${ph.type}-${ph.idx ?? i}`}
+                            className="absolute rounded-sm"
+                            style={{
+                              left: `${ph.xPct}%`,
+                              top: `${ph.yPct}%`,
+                              width: `${ph.wPct}%`,
+                              height: `${ph.hPct}%`,
+                              border: `1.5px dashed ${c}`,
+                              boxShadow: `inset 0 0 0 9999px ${c.replace('0.95', '0.08')}`,
+                            }}
+                          >
+                            <div
+                              className="absolute top-0 left-0 text-[9px] font-mono font-semibold px-1 py-0.5 rounded-br-md text-white whitespace-nowrap"
+                              style={{ background: c }}
+                            >
+                              {ph.type}{ph.fills ? ` · ${ph.fills}` : ''}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {entry.slide.notes && (
+                  <div className="px-3 py-2 text-[11px] text-muted-foreground border-t border-border/60 line-clamp-2">
+                    <span className="font-semibold text-foreground">Notes: </span>{entry.slide.notes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t bg-background">
+          <div className="text-xs text-muted-foreground">
+            {pendingBatch?.length ?? 0} slides will be inserted after slide {activeIndex + 1}.
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setPendingBatch(null)}>Discard</Button>
+            <Button variant="outline" onClick={() => { setPendingBatch(null); setBatchDialogOpen(true); }}>
+              Regenerate…
+            </Button>
+            <Button onClick={confirmInsertPendingBatch} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Insert {pendingBatch?.length ?? 0} slides
             </Button>
           </div>
         </div>
