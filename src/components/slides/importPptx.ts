@@ -417,3 +417,223 @@ export async function parsePptxLayoutCatalog(file: File): Promise<PptxLayoutCata
   return { slideWidthEmu, slideHeightEmu, layouts };
 }
 
+/**
+ * A single shape pulled from a real slide (or layout/master) — captured as a
+ * geometry + fill "blueprint" so AI prompts can describe how the master deck
+ * actually composes pages and so the renderer can recreate decorative bars,
+ * dividers, sidebars etc. on generated slides.
+ */
+export interface PptxShapeBlueprint {
+  kind: 'shape' | 'placeholder' | 'picture';
+  phType?: string;
+  geom?: string;
+  xPct?: number; yPct?: number; wPct?: number; hPct?: number;
+  fill?: string;
+  line?: string;
+  sampleText?: string;
+  picTarget?: string;
+}
+
+export interface PptxSlideBlueprint {
+  slideNum: number;
+  layoutFile?: string;
+  bgFill?: string;
+  shapes: PptxShapeBlueprint[];
+}
+
+export interface PptxMasterAsset {
+  source: 'master' | string;
+  fileName: string;
+  dataUrl: string;
+  xPct?: number; yPct?: number; wPct?: number; hPct?: number;
+  role: 'logo' | 'watermark' | 'decoration';
+}
+
+const parseShapesFromXml = (
+  xml: string,
+  slideWidthEmu: number,
+  slideHeightEmu: number,
+): PptxShapeBlueprint[] => {
+  const shapes: PptxShapeBlueprint[] = [];
+  const elRegex = /<(p:sp|p:pic)\b[^>]*>([\s\S]*?)<\/\1>/g;
+  let m: RegExpExecArray | null;
+  while ((m = elRegex.exec(xml)) !== null) {
+    const tag = m[1];
+    const inner = m[2];
+    const xfrm = inner.match(/<a:xfrm\b[^>]*>([\s\S]*?)<\/a:xfrm>/);
+    let xPct: number | undefined, yPct: number | undefined, wPct: number | undefined, hPct: number | undefined;
+    if (xfrm) {
+      const off = xfrm[1].match(/<a:off\b[^/>]*\sx="(-?\d+)"[^/>]*\sy="(-?\d+)"/);
+      const ext = xfrm[1].match(/<a:ext\b[^/>]*\scx="(\d+)"[^/>]*\scy="(\d+)"/);
+      if (off) {
+        xPct = +((parseInt(off[1], 10) / slideWidthEmu) * 100).toFixed(2);
+        yPct = +((parseInt(off[2], 10) / slideHeightEmu) * 100).toFixed(2);
+      }
+      if (ext) {
+        wPct = +((parseInt(ext[1], 10) / slideWidthEmu) * 100).toFixed(2);
+        hPct = +((parseInt(ext[2], 10) / slideHeightEmu) * 100).toFixed(2);
+      }
+    }
+
+    if (tag === 'p:pic') {
+      const rEmbed = inner.match(/<a:blip\b[^/>]*\sr:embed="([^"]+)"/);
+      shapes.push({ kind: 'picture', geom: 'picture', xPct, yPct, wPct, hPct, picTarget: rEmbed?.[1] });
+      continue;
+    }
+
+    const phMatch = inner.match(/<p:ph\b([^/>]*)\/?>/);
+    const phType = phMatch?.[1].match(/\stype="([^"]+)"/)?.[1];
+    const geom = inner.match(/<a:prstGeom\b[^>]*\sprst="([^"]+)"/)?.[1];
+
+    const solid = inner.match(/<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
+    let fill: string | undefined;
+    if (solid) {
+      const srgb = solid[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      const scheme = solid[1].match(/<a:schemeClr\s+val="([^"]+)"/);
+      if (srgb) fill = `#${srgb[1].toUpperCase()}`;
+      else if (scheme) fill = `theme:${scheme[1]}`;
+    }
+
+    const ln = inner.match(/<a:ln\b[^>]*>([\s\S]*?)<\/a:ln>/);
+    let line: string | undefined;
+    if (ln) {
+      const lnSrgb = ln[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      const lnScheme = ln[1].match(/<a:schemeClr\s+val="([^"]+)"/);
+      if (lnSrgb) line = `#${lnSrgb[1].toUpperCase()}`;
+      else if (lnScheme) line = `theme:${lnScheme[1]}`;
+    }
+
+    const txt = inner.match(/<a:t>([\s\S]*?)<\/a:t>/)?.[1];
+    const sampleText = txt ? txt.replace(/\s+/g, ' ').slice(0, 60).trim() || undefined : undefined;
+
+    shapes.push({
+      kind: phMatch ? 'placeholder' : 'shape',
+      phType, geom, xPct, yPct, wPct, hPct, fill, line, sampleText,
+    });
+  }
+  return shapes;
+};
+
+/** Per-slide shape blueprint for every slide in the deck. */
+export async function parsePptxSlideBlueprints(file: File): Promise<{
+  slideWidthEmu: number;
+  slideHeightEmu: number;
+  blueprints: PptxSlideBlueprint[];
+}> {
+  const zip = await JSZip.loadAsync(file);
+  let slideWidthEmu = 9144000, slideHeightEmu = 6858000;
+  if (zip.files['ppt/presentation.xml']) {
+    const pres = await zip.files['ppt/presentation.xml'].async('text');
+    const sz = pres.match(/<p:sldSz\b[^/>]*\scx="(\d+)"[^/>]*\scy="(\d+)"/);
+    if (sz) { slideWidthEmu = +sz[1] || slideWidthEmu; slideHeightEmu = +sz[2] || slideHeightEmu; }
+  }
+
+  const slideLayout = new Map<number, string>();
+  for (const [path, entry] of Object.entries(zip.files)) {
+    const mt = path.match(/^ppt\/slides\/_rels\/slide(\d+)\.xml\.rels$/);
+    if (!mt) continue;
+    const rels = await entry.async('text');
+    const target = rels.match(/Target="\.\.\/slideLayouts\/(slideLayout\d+\.xml)"/)?.[1];
+    if (target) slideLayout.set(parseInt(mt[1], 10), target);
+  }
+
+  const slideFiles = Object.keys(zip.files)
+    .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+    .sort((a, b) => (parseInt(a.match(/slide(\d+)/)![1], 10) - parseInt(b.match(/slide(\d+)/)![1], 10)));
+
+  const blueprints: PptxSlideBlueprint[] = [];
+  for (const path of slideFiles) {
+    const slideNum = parseInt(path.match(/slide(\d+)/)![1], 10);
+    const xml = await zip.files[path].async('text');
+    const bg = xml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
+    let bgFill: string | undefined;
+    if (bg) {
+      const srgb = bg[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      const scheme = bg[1].match(/<a:schemeClr\s+val="([^"]+)"/);
+      if (srgb) bgFill = `#${srgb[1].toUpperCase()}`;
+      else if (scheme) bgFill = `theme:${scheme[1]}`;
+    }
+    blueprints.push({
+      slideNum,
+      layoutFile: slideLayout.get(slideNum),
+      bgFill,
+      shapes: parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu),
+    });
+  }
+
+  return { slideWidthEmu, slideHeightEmu, blueprints };
+}
+
+/** Recurring decorative imagery from the slide master + slide layouts. */
+export async function parsePptxMasterAssets(file: File): Promise<PptxMasterAsset[]> {
+  const zip = await JSZip.loadAsync(file);
+
+  const mediaMap = new Map<string, string>();
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (!path.startsWith('ppt/media/')) continue;
+    const ext = path.split('.').pop()?.toLowerCase() || '';
+    if (!IMAGE_EXTENSIONS.includes(ext)) continue;
+    if (ext === 'emf' || ext === 'wmf') continue;
+    const blob = await entry.async('blob');
+    const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
+    mediaMap.set(path.split('/').pop()!, await blobToDataUrl(blob, mime));
+  }
+
+  let slideWidthEmu = 9144000, slideHeightEmu = 6858000;
+  if (zip.files['ppt/presentation.xml']) {
+    const pres = await zip.files['ppt/presentation.xml'].async('text');
+    const sz = pres.match(/<p:sldSz\b[^/>]*\scx="(\d+)"[^/>]*\scy="(\d+)"/);
+    if (sz) { slideWidthEmu = +sz[1] || slideWidthEmu; slideHeightEmu = +sz[2] || slideHeightEmu; }
+  }
+
+  const resolveRels = async (relsPath: string): Promise<Map<string, string>> => {
+    const out = new Map<string, string>();
+    if (!zip.files[relsPath]) return out;
+    const xml = await zip.files[relsPath].async('text');
+    const re = /<Relationship\b[^>]*\sId="([^"]+)"[^>]*\sTarget="([^"]+)"/g;
+    let mm: RegExpExecArray | null;
+    while ((mm = re.exec(xml)) !== null) {
+      const file = mm[2].replace(/^.*\/media\//, '');
+      if (mediaMap.has(file)) out.set(mm[1], file);
+    }
+    return out;
+  };
+
+  const seenFiles = new Set<string>();
+  const assets: PptxMasterAsset[] = [];
+
+  const harvest = async (xmlPath: string, source: PptxMasterAsset['source']) => {
+    if (!zip.files[xmlPath]) return;
+    const xml = await zip.files[xmlPath].async('text');
+    const relsPath = xmlPath.replace(/([^/]+)\.xml$/, '_rels/$1.xml.rels');
+    const rels = await resolveRels(relsPath);
+    const shapes = parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu);
+    for (const sh of shapes) {
+      if (sh.kind !== 'picture' || !sh.picTarget) continue;
+      const file = rels.get(sh.picTarget);
+      if (!file || seenFiles.has(file)) continue;
+      seenFiles.add(file);
+      const small = (sh.wPct ?? 100) < 25 && (sh.hPct ?? 100) < 25;
+      const role: PptxMasterAsset['role'] = small ? 'logo' : (sh.wPct ?? 0) > 60 ? 'watermark' : 'decoration';
+      assets.push({
+        source,
+        fileName: file,
+        dataUrl: mediaMap.get(file)!,
+        xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
+        role,
+      });
+    }
+  };
+
+  for (const p of Object.keys(zip.files).filter((n) => /^ppt\/slideMasters\/slideMaster\d+\.xml$/.test(n))) {
+    await harvest(p, 'master');
+  }
+  for (const p of Object.keys(zip.files).filter((n) => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(n))) {
+    const name = p.split('/').pop()!.replace('.xml', '');
+    await harvest(p, `layout:${name}`);
+  }
+
+  return assets;
+}
+
+
