@@ -306,6 +306,25 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, []);
   const [isGeneratingStyledSlide, setIsGeneratingStyledSlide] = useState(false);
   const [pendingStyledSlide, setPendingStyledSlide] = useState<SlideData | null>(null);
+  /** Resolved master-layout def for the pending slide — used to draw placeholder overlays in the preview. */
+  const [pendingStyledLayout, setPendingStyledLayout] = useState<
+    | {
+        name: string;
+        type?: string;
+        placeholders: Array<{
+          type: string;
+          idx?: number;
+          xPct?: number;
+          yPct?: number;
+          wPct?: number;
+          hPct?: number;
+          /** What slide content fills this placeholder ('Title', 'Body', 'Subtitle', etc.). */
+          fills?: string;
+        }>;
+      }
+    | null
+  >(null);
+  const [showPlaceholderOverlay, setShowPlaceholderOverlay] = useState(true);
   const generateStyledSlide = useCallback(async () => {
     if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
     setIsGeneratingStyledSlide(true);
