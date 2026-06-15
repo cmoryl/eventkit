@@ -517,6 +517,85 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     toast.success('Slide inserted into deck');
   }, [previewSlide, pendingStyledSlide, activeIndex]);
 
+  /** Batch mode — generate N cohesive slides at once that share the same
+   *  theme tokens, layout strategy, and master assets, then insert all of
+   *  them after the active slide in one go (no per-slide preview). */
+  const [batchDialogOpen, setBatchDialogOpen] = useState(false);
+  const [batchCount, setBatchCount] = useState(3);
+  const [batchPrompt, setBatchPrompt] = useState('');
+  const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  const runBatchGeneration = useCallback(async () => {
+    if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
+    const count = Math.max(1, Math.min(10, Math.floor(batchCount)));
+    setIsBatchGenerating(true);
+    const toastId = toast.loading(`Generating ${count} slides in ${corporateStyleRef.label} style…`);
+    try {
+      const refs = corporateStyleRef.slides.slice(0, 24).map((s) => ({
+        layout: s.layout,
+        title: s.title,
+        subtitle: s.subtitle,
+        body: typeof s.body === 'string' ? s.body : undefined,
+        bullets: Array.isArray((s as any).bullets) ? (s as any).bullets : undefined,
+        notes: s.notes,
+      }));
+      const { data, error } = await supabase.functions.invoke('add-styled-slides-batch', {
+        body: {
+          styleName: corporateStyleRef.label,
+          deckTitle: assetName,
+          referenceSlides: refs,
+          insertPosition: activeIndex + 2,
+          count,
+          prompt: batchPrompt.trim() || undefined,
+          themeTokens: corporateStyleRef.themeTokens,
+          layoutCatalog: corporateStyleRef.layoutCatalog,
+          slideBlueprints: corporateStyleRef.slideBlueprints,
+        },
+      });
+      if (error) throw new Error(error.message || 'Batch generation failed');
+      const out = Array.isArray(data?.slides) ? data.slides : [];
+      if (!out.length) throw new Error('No slides returned');
+
+      // Apply the same theme tokens + master asset across the whole batch so
+      // the inserted sequence looks like one cohesive run.
+      const tk = corporateStyleRef.themeTokens?.colors || {};
+      const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
+      const masterImg = corporateStyleRef.masterAssets?.find((a) => a.role === 'logo')?.dataUrl
+        || corporateStyleRef.masterAssets?.[0]?.dataUrl;
+
+      const newSlides: SlideData[] = out.map((g: any) => {
+        const bulletsText = Array.isArray(g.bullets) && g.bullets.length
+          ? g.bullets.map((b: string) => `• ${b}`).join('\n')
+          : undefined;
+        return {
+          id: uuidv4(),
+          layout: (g.layout as SlideData['layout']) || 'content',
+          title: g.title || 'New Slide',
+          subtitle: g.subtitle,
+          body: g.body || bulletsText,
+          notes: g.notes,
+          variant: 'default',
+          ...(themeBg ? { bgColor: themeBg } : {}),
+          ...(masterImg ? { imageUrl: masterImg } : {}),
+        };
+      });
+
+      setSlides((prev) => {
+        const next = [...prev];
+        next.splice(activeIndex + 1, 0, ...newSlides);
+        return next;
+      });
+      setActiveIndex(activeIndex + newSlides.length);
+      setBatchDialogOpen(false);
+      toast.success(`Inserted ${newSlides.length} slides in ${corporateStyleRef.label} style`, { id: toastId });
+    } catch (err) {
+      console.error('add-styled-slides-batch failed', err);
+      toast.error(err instanceof Error ? err.message : 'Batch generation failed', { id: toastId });
+    } finally {
+      setIsBatchGenerating(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt]);
+
 
   const addSlide = useCallback((afterIndex: number) => {
     const newSlide: SlideData = {
