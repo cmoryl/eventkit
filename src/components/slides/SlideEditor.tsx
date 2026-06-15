@@ -437,42 +437,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         notes: newSlide.notes,
       });
       const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
-
-      // Resolve the matching master layout from the catalog and label each
-      // placeholder with the slide field it will be filled by — drives the
-      // overlay in the preview dialog.
-      const catalogLayouts = corporateStyleRef.layoutCatalog?.layouts || [];
-      const matched = layoutName
-        ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
-        : undefined;
-      if (matched) {
-        const fillFor = (t: string): string | undefined => {
-          const k = t.toLowerCase();
-          if (k === 'ctrtitle' || k === 'title') return newSlide.title ? 'Title' : 'Title (empty)';
-          if (k === 'subtitle') return newSlide.subtitle ? 'Subtitle' : 'Subtitle (empty)';
-          if (k === 'body') return newSlide.body ? 'Body' : 'Body (empty)';
-          if (k === 'pic') return 'Image (none yet)';
-          if (k === 'ftr') return 'Footer';
-          if (k === 'sldnum') return 'Slide number';
-          if (k === 'dt') return 'Date';
-          return undefined;
-        };
-        setPendingStyledLayout({
-          name: matched.name,
-          type: matched.type,
-          placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
-        });
-        // Default every placeholder assignment to 'auto' so the live preview
-        // matches the AI's original mapping until the user overrides it.
-        const defaults: Record<string, PhAssign> = {};
-        matched.placeholders.forEach((p, i) => {
-          defaults[`${p.type}-${p.idx ?? i}`] = { source: 'auto' };
-        });
-        setPlaceholderAssignments(defaults);
-      } else {
-        setPendingStyledLayout(null);
-        setPlaceholderAssignments({});
-      }
+      applyResolvedLayout(layoutName, newSlide);
 
       toast.success(
         layoutName
@@ -486,7 +451,48 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     } finally {
       setIsGeneratingStyledSlide(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [corporateStyleRef, assetName, activeIndex]);
+
+  /** Resolve a master layout by name and set pendingStyledLayout + default assignments. */
+  const applyResolvedLayout = useCallback((layoutName: string | null, slideForFill: SlideData) => {
+    const catalogLayouts = corporateStyleRef?.layoutCatalog?.layouts || [];
+    const matched = layoutName
+      ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
+      : undefined;
+    if (!matched) {
+      setPendingStyledLayout(null);
+      setPlaceholderAssignments({});
+      return;
+    }
+    const fillFor = (t: string): string | undefined => {
+      const k = t.toLowerCase();
+      if (k === 'ctrtitle' || k === 'title') return slideForFill.title ? 'Title' : 'Title (empty)';
+      if (k === 'subtitle') return slideForFill.subtitle ? 'Subtitle' : 'Subtitle (empty)';
+      if (k === 'body') return slideForFill.body ? 'Body' : 'Body (empty)';
+      if (k === 'pic') return slideForFill.imageUrl ? 'Image (master)' : 'Image (none yet)';
+      if (k === 'ftr') return 'Footer';
+      if (k === 'sldnum') return 'Slide number';
+      if (k === 'dt') return 'Date';
+      return undefined;
+    };
+    setPendingStyledLayout({
+      name: matched.name,
+      type: matched.type,
+      placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
+    });
+    const defaults: Record<string, PhAssign> = {};
+    matched.placeholders.forEach((p, i) => {
+      defaults[`${p.type}-${p.idx ?? i}`] = { source: 'auto' };
+    });
+    setPlaceholderAssignments(defaults);
+  }, [corporateStyleRef]);
+
+  /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
+  const applyMasterAsset = useCallback((dataUrl: string | null) => {
+    setPendingStyledSlide((prev) => (prev ? { ...prev, imageUrl: dataUrl ?? undefined } : prev));
+  }, []);
+
   const addStyledSlide = generateStyledSlide;
   const confirmInsertPendingSlide = useCallback(() => {
     const slideToInsert = previewSlide ?? pendingStyledSlide;
