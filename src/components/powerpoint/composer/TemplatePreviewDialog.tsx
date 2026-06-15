@@ -2175,7 +2175,7 @@ export const SlideMock: React.FC<{
                   </div>
                 </div>
                 <div className="mt-2 h-12">
-                  <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={index + 11} />
+                  <DataGraphic system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 8) % DATA_GRAPHICS.length]} series={content.chart.series.slice(0, 4)} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={index + 11} />
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-1.5">
                   {[
