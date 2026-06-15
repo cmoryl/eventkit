@@ -77,7 +77,7 @@ type PreviewKind =
   | 'chart'
   | 'process';
 
-type PreviewArrangement = 'fan' | 'mosaic' | 'hero' | 'vertical' | 'rail';
+type PreviewArrangement = 'fan' | 'mosaic' | 'hero' | 'vertical' | 'rail' | 'split-stage' | 'contact-sheet' | 'cascade';
 type IconComponent = React.ComponentType<{ className?: string }>;
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -126,34 +126,34 @@ const kindFor = (template: DeckTemplate): PreviewKind => {
   return ALL_KINDS[h % ALL_KINDS.length];
 };
 
-const ALL_ARRANGEMENTS: PreviewArrangement[] = ['fan', 'mosaic', 'hero', 'vertical', 'rail'];
+const ALL_ARRANGEMENTS: PreviewArrangement[] = ['fan', 'mosaic', 'hero', 'vertical', 'rail', 'split-stage', 'contact-sheet', 'cascade'];
 
 const arrangementFor = (kind: PreviewKind, template: DeckTemplate): PreviewArrangement => {
   // Hash drives arrangement so visually-similar kinds still get different stacks
   const h = hashFor(`${template.id}//${kind}`);
   // Bias: some kinds have a clearly best arrangement, but still allow variation
   const bias: Partial<Record<PreviewKind, PreviewArrangement[]>> = {
-    stats: ['mosaic', 'rail', 'hero'],
-    team: ['mosaic', 'rail'],
-    comparison: ['mosaic', 'hero'],
-    poll: ['mosaic', 'vertical'],
-    section: ['hero', 'fan'],
-    'full-bleed': ['hero', 'rail'],
-    closing: ['hero', 'fan'],
-    'webinar-title': ['hero', 'vertical'],
-    stream: ['hero', 'rail'],
-    agenda: ['vertical', 'rail'],
-    speaker: ['vertical', 'hero'],
-    qa: ['vertical', 'fan'],
-    bullet: ['rail', 'vertical'],
-    columns: ['rail', 'mosaic'],
-    'image-split': ['rail', 'hero'],
-    editorial: ['rail', 'fan'],
-    chart: ['mosaic', 'fan'],
-    process: ['rail', 'fan'],
-    quote: ['hero', 'fan'],
-    'stat-hero': ['hero', 'mosaic'],
-    title: ['fan', 'hero'],
+    stats: ['mosaic', 'rail', 'split-stage', 'contact-sheet'],
+    team: ['mosaic', 'rail', 'contact-sheet'],
+    comparison: ['mosaic', 'hero', 'split-stage'],
+    poll: ['mosaic', 'vertical', 'cascade'],
+    section: ['hero', 'fan', 'split-stage'],
+    'full-bleed': ['hero', 'rail', 'cascade'],
+    closing: ['hero', 'fan', 'contact-sheet'],
+    'webinar-title': ['hero', 'vertical', 'split-stage'],
+    stream: ['hero', 'rail', 'cascade'],
+    agenda: ['vertical', 'rail', 'contact-sheet'],
+    speaker: ['vertical', 'hero', 'split-stage'],
+    qa: ['vertical', 'fan', 'cascade'],
+    bullet: ['rail', 'vertical', 'contact-sheet'],
+    columns: ['rail', 'mosaic', 'split-stage'],
+    'image-split': ['rail', 'hero', 'cascade'],
+    editorial: ['rail', 'fan', 'contact-sheet'],
+    chart: ['mosaic', 'fan', 'split-stage', 'cascade'],
+    process: ['rail', 'fan', 'contact-sheet'],
+    quote: ['hero', 'fan', 'split-stage'],
+    'stat-hero': ['hero', 'mosaic', 'cascade'],
+    title: ['fan', 'hero', 'split-stage'],
   };
   const pool = bias[kind] || ALL_ARRANGEMENTS;
   return pool[h % pool.length];
