@@ -2722,17 +2722,41 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 : <>Review before inserting after slide {activeIndex + 1}</>}
             </p>
           </div>
-          {pendingStyledLayout && pendingStyledLayout.placeholders.length > 0 && (
-            <Button
-              variant={showPlaceholderOverlay ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => setShowPlaceholderOverlay((v) => !v)}
-              className="shrink-0"
-              title="Toggle master-layout placeholder overlay"
-            >
-              {showPlaceholderOverlay ? 'Hide placeholders' : 'Show placeholders'}
-            </Button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Layout picker — switch to any other layout in the master catalog. */}
+            {corporateStyleRef?.layoutCatalog?.layouts && corporateStyleRef.layoutCatalog.layouts.length > 0 && (
+              <Select
+                value={pendingStyledLayout?.name ?? ''}
+                onValueChange={(name) => {
+                  const slideForFill = previewSlide ?? pendingStyledSlide;
+                  if (slideForFill) applyResolvedLayout(name, slideForFill);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[200px] text-xs">
+                  <SelectValue placeholder="Choose master layout…" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[60vh]">
+                  {Array.from(
+                    new Map(corporateStyleRef.layoutCatalog.layouts.map((l) => [l.name.trim().toLowerCase(), l])).values(),
+                  ).map((l) => (
+                    <SelectItem key={l.fileName} value={l.name}>
+                      {l.name} <span className="text-muted-foreground">({l.placeholders.length} ph)</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {pendingStyledLayout && pendingStyledLayout.placeholders.length > 0 && (
+              <Button
+                variant={showPlaceholderOverlay ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => setShowPlaceholderOverlay((v) => !v)}
+                title="Toggle master-layout placeholder overlay"
+              >
+                {showPlaceholderOverlay ? 'Hide placeholders' : 'Show placeholders'}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px] bg-black/40">
           <div className="p-4 min-w-0">
