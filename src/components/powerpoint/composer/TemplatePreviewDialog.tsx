@@ -3535,8 +3535,51 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
     return () => window.clearTimeout(id);
   }, [open, focusSlideKind, template?.id]);
 
+  const isCorporate = !!BUILTIN_CORPORATE_DECKS[template?.id ?? ""];
+  const corporateLabel = template ? BUILTIN_CORPORATE_DECKS[template.id]?.label : undefined;
+  const [realSlides, setRealSlides] = useState<SlideData[] | null>(
+    template ? corporateDeckCache.get(template.id) ?? null : null,
+  );
+  const [realLoading, setRealLoading] = useState(false);
+  const [realError, setRealError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!template || !open) return;
+    if (!BUILTIN_CORPORATE_DECKS[template.id]) {
+      setRealSlides(null);
+      setRealError(null);
+      return;
+    }
+    const cached = corporateDeckCache.get(template.id);
+    if (cached) {
+      setRealSlides(cached);
+      return;
+    }
+    let cancelled = false;
+    setRealLoading(true);
+    setRealError(null);
+    loadCorporateDeckSlides(template.id)
+      .then((slides) => {
+        if (cancelled) return;
+        setRealSlides(slides);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Corporate deck preview load failed:", err);
+        setRealError(err instanceof Error ? err.message : "Failed to load corporate deck");
+      })
+      .finally(() => {
+        if (!cancelled) setRealLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [template?.id, open]);
+
   if (!template || !content) return null;
   const t = template;
+  const showRealDeck = isCorporate && (realSlides?.length ?? 0) > 0;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
