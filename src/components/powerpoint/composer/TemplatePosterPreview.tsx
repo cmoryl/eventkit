@@ -277,6 +277,41 @@ const shortName = (value: string) => value.replace(/\s+[–-]\s+.*/, '').replace
 const variantFor = (template: DeckTemplate, kind: PreviewKind, salt = '') =>
   hashFor(`${template.id}::variant::${kind}::${salt}`);
 
+// Per-template graphic STYLE profile — applied across every data-graphic
+// renderer (bars, lines, donuts, stats, poll, stat-hero) so the aesthetic
+// of charts varies template-to-template, not just the chart type.
+type ChartStyleId = 'flat' | 'pill' | 'outline' | 'gradient' | 'hatched' | 'dotted' | 'glow' | 'segmented';
+const CHART_STYLES: ChartStyleId[] = ['flat', 'pill', 'outline', 'gradient', 'hatched', 'dotted', 'glow', 'segmented'];
+const chartStyleFor = (template: DeckTemplate): ChartStyleId =>
+  CHART_STYLES[hashFor(`${template.id}::chart-style`) % CHART_STYLES.length];
+
+const barStyleFor = (
+  style: ChartStyleId,
+  color: string,
+  faintColor: string,
+  orientation: 'v' | 'h' = 'v',
+): React.CSSProperties => {
+  switch (style) {
+    case 'pill':
+      return { background: color, borderRadius: 999 };
+    case 'outline':
+      return { background: 'transparent', border: `1.5px solid ${color}`, borderRadius: 2 };
+    case 'gradient':
+      return { background: `linear-gradient(${orientation === 'v' ? '180deg' : '90deg'}, ${color}, ${hexToRgba(color, 0.35)})`, borderRadius: 3 };
+    case 'hatched':
+      return { background: `repeating-linear-gradient(45deg, ${color} 0 3px, ${hexToRgba(color, 0.25)} 3px 6px)`, borderRadius: 2 };
+    case 'dotted':
+      return { background: `repeating-linear-gradient(${orientation === 'v' ? '0deg' : '90deg'}, ${color} 0 2px, transparent 2px 5px)`, borderRadius: 1 };
+    case 'glow':
+      return { background: color, borderRadius: 3, boxShadow: `0 0 6px ${hexToRgba(color, 0.85)}, 0 0 12px ${hexToRgba(color, 0.45)}` };
+    case 'segmented':
+      return { background: `repeating-linear-gradient(${orientation === 'v' ? '180deg' : '90deg'}, ${color} 0 6px, ${hexToRgba(faintColor, 0.6)} 6px 8px)`, borderRadius: 2 };
+    case 'flat':
+    default:
+      return { background: color, borderRadius: 0 };
+  }
+};
+
 const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean }) => {
   const title = shortName(template.name);
   const textColor = ['editorial', 'bullet', 'comparison'].includes(kind) && isLight(template.palette.bg) ? template.palette.text : template.palette.text;
@@ -285,6 +320,8 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
   const accent = template.palette.accent;
   const secondary = template.palette.secondary;
   const v = variantFor(template, kind);
+  const chartStyle = chartStyleFor(template);
+  const bar = (color: string, orient: 'v' | 'h' = 'v') => barStyleFor(chartStyle, color, textColor, orient);
 
   const Line = ({ w = '70%', color = lineColor }: { w?: string; color?: string }) => (
     <span className="block h-[3px] rounded-full" style={{ width: w, background: color }} />
@@ -298,7 +335,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
       return (
         <div className="flex h-full items-end gap-1.5">
           {[36, 58, 44, 74, 92].map((h, i) => (
-            <span key={i} className="w-full rounded-t-sm" style={{ height: `${h}%`, background: i === 4 ? accent : hexToRgba(textColor, 0.28) }} />
+            <span key={i} className="w-full" style={{ height: `${h}%`, ...bar(i === 4 ? accent : hexToRgba(textColor, 0.32), 'v') }} />
           ))}
         </div>
       );
@@ -308,39 +345,79 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
       return (
         <div className="flex h-full flex-col justify-center gap-1.5">
           {[88, 64, 46, 30].map((w, i) => (
-            <span key={i} className="block h-2.5 rounded-r-sm" style={{ width: `${w}%`, background: i === 0 ? accent : i === 1 ? secondary : hexToRgba(textColor, 0.28) }} />
+            <span key={i} className="block h-2.5" style={{ width: `${w}%`, ...bar(i === 0 ? accent : i === 1 ? secondary : hexToRgba(textColor, 0.32), 'h') }} />
           ))}
         </div>
       );
     }
     if (variant === 2) {
-      // line chart
+      // line chart — style controls stroke treatment
+      const dash = chartStyle === 'dotted' ? '1 2' : chartStyle === 'segmented' ? '4 2' : chartStyle === 'hatched' ? '2 1.5' : undefined;
+      const strokeW = chartStyle === 'outline' ? 1.6 : chartStyle === 'glow' ? 2.8 : 2.4;
+      const filter = chartStyle === 'glow' ? `drop-shadow(0 0 2px ${accent})` : undefined;
       return (
-        <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full">
-          <polyline fill="none" stroke={hexToRgba(textColor, 0.3)} strokeWidth="1.4" points="0,50 20,42 40,46 60,28 80,32 100,12" />
-          <polyline fill="none" stroke={accent} strokeWidth="2.4" points="0,40 20,30 40,36 60,18 80,22 100,6" />
-          {[0, 20, 40, 60, 80, 100].map((x, i) => (
-            <circle key={i} cx={x} cy={[40, 30, 36, 18, 22, 6][i]} r="1.6" fill={accent} />
+        <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full" style={{ filter }}>
+          <polyline fill="none" stroke={hexToRgba(textColor, 0.3)} strokeWidth="1.2" points="0,50 20,42 40,46 60,28 80,32 100,12" />
+          <polyline fill="none" stroke={accent} strokeWidth={strokeW} strokeDasharray={dash} strokeLinecap="round" points="0,40 20,30 40,36 60,18 80,22 100,6" />
+          {chartStyle !== 'outline' && [0, 20, 40, 60, 80, 100].map((x, i) => (
+            <circle key={i} cx={x} cy={[40, 30, 36, 18, 22, 6][i]} r={chartStyle === 'glow' ? 2 : 1.6} fill={chartStyle === 'dotted' ? template.palette.bg : accent} stroke={accent} strokeWidth={chartStyle === 'dotted' ? 1 : 0} />
           ))}
         </svg>
       );
     }
     if (variant === 3) {
       // donut
+      const donutBg =
+        chartStyle === 'gradient'
+          ? `conic-gradient(${accent} 0 42%, ${hexToRgba(accent, 0.55)} 42% 68%, ${hexToRgba(textColor, 0.22)} 68% 100%)`
+          : chartStyle === 'segmented'
+          ? `conic-gradient(${accent} 0 38%, ${template.palette.bg} 38% 42%, ${secondary} 42% 64%, ${template.palette.bg} 64% 68%, ${hexToRgba(textColor, 0.28)} 68% 100%)`
+          : `conic-gradient(${accent} 0 42%, ${secondary} 42% 68%, ${hexToRgba(textColor, 0.28)} 68% 100%)`;
+      const innerInset = chartStyle === 'outline' ? '8%' : chartStyle === 'pill' ? '32%' : '22%';
       return (
         <div className="flex h-full items-center justify-center">
-          <div className="relative h-[78%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 42%, ${secondary} 42% 68%, ${hexToRgba(textColor, 0.28)} 68% 100%)` }}>
-            <div className="absolute inset-[22%] rounded-full" style={{ background: template.palette.bg }} />
+          <div
+            className="relative aspect-square rounded-full"
+            style={{
+              height: '78%',
+              background: donutBg,
+              boxShadow: chartStyle === 'glow' ? `0 0 10px ${hexToRgba(accent, 0.7)}` : undefined,
+              border: chartStyle === 'outline' ? `1.5px solid ${accent}` : undefined,
+            }}
+          >
+            <div className="absolute rounded-full" style={{ inset: innerInset, background: template.palette.bg }} />
           </div>
         </div>
       );
     }
     if (variant === 4) {
       // area chart
+      const fill =
+        chartStyle === 'hatched'
+          ? `url(#hatch-${template.id})`
+          : chartStyle === 'dotted'
+          ? `url(#dots-${template.id})`
+          : chartStyle === 'gradient'
+          ? `url(#grad-${template.id})`
+          : chartStyle === 'outline'
+          ? 'transparent'
+          : hexToRgba(accent, 0.5);
       return (
         <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full">
-          <polygon fill={hexToRgba(accent, 0.5)} points="0,60 0,38 20,28 40,32 60,16 80,22 100,8 100,60" />
-          <polyline fill="none" stroke={accent} strokeWidth="1.8" points="0,38 20,28 40,32 60,16 80,22 100,8" />
+          <defs>
+            <linearGradient id={`grad-${template.id}`} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={accent} stopOpacity="0.7" />
+              <stop offset="100%" stopColor={accent} stopOpacity="0.05" />
+            </linearGradient>
+            <pattern id={`hatch-${template.id}`} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="4" stroke={accent} strokeWidth="1.4" />
+            </pattern>
+            <pattern id={`dots-${template.id}`} width="3" height="3" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="0.7" fill={accent} />
+            </pattern>
+          </defs>
+          <polygon fill={fill} points="0,60 0,38 20,28 40,32 60,16 80,22 100,8 100,60" />
+          <polyline fill="none" stroke={accent} strokeWidth={chartStyle === 'glow' ? 2.4 : 1.8} points="0,38 20,28 40,32 60,16 80,22 100,8" />
         </svg>
       );
     }
@@ -348,10 +425,10 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
     return (
       <div className="flex h-full items-end gap-1.5">
         {[55, 70, 60, 88, 76].map((h, i) => (
-          <div key={i} className="flex w-full flex-col" style={{ height: `${h}%` }}>
-            <span className="w-full rounded-t-sm" style={{ flex: 1, background: accent }} />
-            <span className="w-full" style={{ flex: 1.4, background: secondary }} />
-            <span className="w-full" style={{ flex: 1, background: hexToRgba(textColor, 0.32) }} />
+          <div key={i} className="flex w-full flex-col overflow-hidden" style={{ height: `${h}%`, borderRadius: chartStyle === 'pill' ? 6 : chartStyle === 'flat' ? 0 : 2 }}>
+            <span className="w-full" style={{ flex: 1, ...bar(accent, 'v'), borderRadius: 0 }} />
+            <span className="w-full" style={{ flex: 1.4, ...bar(secondary, 'v'), borderRadius: 0 }} />
+            <span className="w-full" style={{ flex: 1, ...bar(hexToRgba(textColor, 0.36), 'v'), borderRadius: 0 }} />
           </div>
         ))}
       </div>
@@ -367,11 +444,13 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
       { v: '150+', l: 'Cities' },
       { v: '$12B', l: 'GMV' },
     ];
+    const tileRadius = chartStyle === 'pill' ? 12 : chartStyle === 'flat' ? 0 : 6;
+    const tileBorder = chartStyle === 'outline' ? `1px solid ${hexToRgba(textColor, 0.4)}` : undefined;
     if (variant === 0) {
       return (
         <div className="grid h-full grid-cols-2 gap-1.5">
           {data.map((s, i) => (
-            <div key={s.v} className="rounded-md p-1" style={{ background: i % 2 ? faint : hexToRgba(accent, 0.16) }}>
+            <div key={s.v} className="p-1" style={{ background: chartStyle === 'outline' ? 'transparent' : i % 2 ? faint : hexToRgba(accent, 0.16), borderRadius: tileRadius, border: tileBorder }}>
               <div className="text-[10px] font-black leading-none" style={{ color: i === 0 ? accent : textColor }}>{s.v}</div>
               <Line w="54%" color={faint} />
             </div>
@@ -396,13 +475,14 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
         <div className="grid h-full grid-cols-4 items-end gap-1">
           {data.map((s, i) => (
             <div key={s.v} className="flex flex-col items-center gap-1">
-              <span className="w-full rounded-t-sm" style={{ height: `${40 + i * 14}%`, background: i === 1 ? accent : hexToRgba(textColor, 0.32) }} />
+              <span className="w-full" style={{ height: `${40 + i * 14}%`, ...bar(i === 1 ? accent : hexToRgba(textColor, 0.32), 'v') }} />
               <span className="text-[7px] font-black" style={{ color: i === 1 ? accent : textColor }}>{s.v}</span>
             </div>
           ))}
         </div>
       );
     }
+
     return (
       <div className="flex h-full flex-col justify-center gap-1.5">
         {data.slice(0, 3).map((s, i) => (
@@ -489,7 +569,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
           <div className="text-[10px] font-black">Poll</div>
           {rows.map((n, i) => (
             <div key={n}><div className="mb-0.5 text-[6px] font-bold opacity-80">{n}</div>
-              <span className="block h-2 rounded-full" style={{ width: n, background: i === 0 ? accent : faint }} />
+              <span className="block h-2" style={{ width: n, ...bar(i === 0 ? accent : hexToRgba(textColor, 0.32), 'h') }} />
             </div>
           ))}
         </div>
@@ -500,21 +580,35 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
         <div className="flex h-full items-end gap-1.5">
           {rows.concat(['58%']).map((n, i) => (
             <div key={i} className="flex w-full flex-col items-center gap-1">
-              <span className="w-full rounded-t-sm" style={{ height: n, background: i === 0 ? accent : hexToRgba(textColor, 0.32) }} />
+              <span className="w-full" style={{ height: n, ...bar(i === 0 ? accent : hexToRgba(textColor, 0.32), 'v') }} />
               <span className="text-[6px] font-bold opacity-70">{n}</span>
             </div>
           ))}
         </div>
       );
     }
+    const pollDonut =
+      chartStyle === 'segmented'
+        ? `conic-gradient(${accent} 0 52%, ${template.palette.bg} 52% 56%, ${secondary} 56% 78%, ${template.palette.bg} 78% 80%, ${hexToRgba(textColor, 0.28)} 80% 100%)`
+        : chartStyle === 'gradient'
+        ? `conic-gradient(${accent} 0 56%, ${hexToRgba(accent, 0.45)} 56% 80%, ${hexToRgba(textColor, 0.22)} 80% 100%)`
+        : `conic-gradient(${accent} 0 56%, ${secondary} 56% 80%, ${hexToRgba(textColor, 0.28)} 80% 100%)`;
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="relative h-[78%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 56%, ${secondary} 56% 80%, ${hexToRgba(textColor, 0.28)} 80% 100%)` }}>
+        <div
+          className="relative h-[78%] aspect-square rounded-full"
+          style={{
+            background: pollDonut,
+            boxShadow: chartStyle === 'glow' ? `0 0 10px ${hexToRgba(accent, 0.7)}` : undefined,
+            border: chartStyle === 'outline' ? `1.5px solid ${accent}` : undefined,
+          }}
+        >
           <div className="absolute inset-[28%] flex items-center justify-center rounded-full text-[8px] font-black" style={{ background: template.palette.bg, color: accent }}>56%</div>
         </div>
       </div>
     );
   };
+
 
   // ---------- agenda variants ----------
   const renderAgenda = () => {
@@ -724,14 +818,28 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
       );
     }
     if (variant === 1) {
+      const heroBg =
+        chartStyle === 'segmented'
+          ? `conic-gradient(${accent} 0 36%, ${template.palette.bg} 36% 40%, ${accent} 40% 72%, ${hexToRgba(textColor, 0.2)} 72% 100%)`
+          : chartStyle === 'gradient'
+          ? `conic-gradient(${accent} 0 72%, ${hexToRgba(accent, 0.35)} 72% 100%)`
+          : `conic-gradient(${accent} 0 72%, ${hexToRgba(textColor, 0.2)} 72% 100%)`;
       return (
         <div className="flex h-full items-center justify-center">
-          <div className="relative h-[80%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 72%, ${hexToRgba(textColor, 0.2)} 72% 100%)` }}>
+          <div
+            className="relative h-[80%] aspect-square rounded-full"
+            style={{
+              background: heroBg,
+              boxShadow: chartStyle === 'glow' ? `0 0 12px ${hexToRgba(accent, 0.75)}` : undefined,
+              border: chartStyle === 'outline' ? `1.5px solid ${accent}` : undefined,
+            }}
+          >
             <div className="absolute inset-[18%] flex items-center justify-center rounded-full text-[10px] font-black" style={{ background: template.palette.bg, color: accent }}>{value}</div>
           </div>
         </div>
       );
     }
+
     return (
       <div className="flex h-full flex-col items-center justify-center text-center">
         <div className="text-[26px] font-black leading-none" style={{ color: accent }}>{value}</div>
