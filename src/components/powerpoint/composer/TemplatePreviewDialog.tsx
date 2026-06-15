@@ -32,6 +32,7 @@ import {
   type DemoContent,
 } from "./TemplateDemoCard";
 import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
+import { cn } from "@/lib/utils";
 
 interface Props {
   template: DeckTemplate | null;
