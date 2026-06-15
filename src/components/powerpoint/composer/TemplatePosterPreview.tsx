@@ -363,6 +363,29 @@ const FEATURED_GRAPH_SYSTEMS: Record<string, GraphSystemId> = {
   'vibrant-startup': 'startup-sticker',
   'warm-terracotta': 'fieldnotes-scatter',
   'mono-brutalist': 'brutal-blocks',
+  'pres-title-dark': 'observatory-radar',
+  'pres-title-light': 'monograph-slope',
+  'pres-content-two-column': 'blueprint-node',
+  'pres-image-left': 'storyboard-frames',
+  'pres-quote-slide': 'editorial-lollipop',
+  'pres-stats-grid': 'heatmap-matrix',
+  'pres-closing-cta': 'radial-bars',
+  'webinar-title-modern': 'broadcast-vu',
+  'webinar-agenda-slide': 'gantt-roadmap',
+  'webinar-speaker-bio': 'quadrant-bubbles',
+  'webinar-qa-slide': 'sankey-ribbons',
+  'webinar-poll-slide': 'funnel-stack',
+  'stream-lower-third': 'candlestick-tape',
+  'stream-starting-soon': 'terminal-spark',
+  'stream-brb': 'treemap-tiles',
+  'stream-end-screen': 'radial-bars',
+  'pres-section-divider': 'brutal-blocks',
+  'pres-content-bullet': 'blueprint-node',
+  'pres-stat-highlight': 'orbital-rings',
+  'pres-team-grid': 'quadrant-bubbles',
+  'pres-comparison-2col': 'ledger-waterfall',
+  'pres-image-fullbleed': 'storyboard-frames',
+  'pres-thank-you': 'monograph-slope',
 };
 
 const graphSystemFor = (template: DeckTemplate, kind: PreviewKind, look: DeckLookId): GraphSystemId => {
@@ -415,7 +438,42 @@ const ALL_LOOKS: DeckLookId[] = [
   'systems-blueprint',
 ];
 
+const TEMPLATE_LOOK_OVERRIDES: Record<string, DeckLookId> = {
+  'transperfect-2026': 'orbital-intelligence',
+  'modern-dark': 'terminal-grid',
+  'editorial-light': 'editorial-atlas',
+  'corporate-navy': 'boardroom-ledger',
+  'vibrant-startup': 'startup-collage',
+  'warm-terracotta': 'organic-fieldnotes',
+  'mono-brutalist': 'brutalist-poster',
+  'pres-title-dark': 'data-observatory',
+  'pres-title-light': 'literary-monograph',
+  'pres-content-two-column': 'systems-blueprint',
+  'pres-image-left': 'cinematic-storyboard',
+  'pres-quote-slide': 'editorial-atlas',
+  'pres-stats-grid': 'data-observatory',
+  'pres-closing-cta': 'literary-monograph',
+  'webinar-title-modern': 'broadcast-control',
+  'webinar-agenda-slide': 'systems-blueprint',
+  'webinar-speaker-bio': 'cinematic-storyboard',
+  'webinar-qa-slide': 'broadcast-control',
+  'webinar-poll-slide': 'startup-collage',
+  'stream-lower-third': 'broadcast-control',
+  'stream-starting-soon': 'terminal-grid',
+  'stream-brb': 'brutalist-poster',
+  'stream-end-screen': 'cinematic-storyboard',
+  'pres-section-divider': 'brutalist-poster',
+  'pres-content-bullet': 'systems-blueprint',
+  'pres-stat-highlight': 'orbital-intelligence',
+  'pres-team-grid': 'organic-fieldnotes',
+  'pres-comparison-2col': 'boardroom-ledger',
+  'pres-image-fullbleed': 'cinematic-storyboard',
+  'pres-thank-you': 'literary-monograph',
+};
+
 const lookFor = (template: DeckTemplate, kind: PreviewKind): DeckLookId => {
+  const override = TEMPLATE_LOOK_OVERRIDES[template.id];
+  if (override) return override;
   const hay = `${template.id} ${template.name} ${template.description || ''} ${(template.tags || []).join(' ')}`.toLowerCase();
   if (hay.includes('transperfect') || hay.includes('orb') || hay.includes('cosmic')) return 'orbital-intelligence';
   if (hay.includes('modern dark') || hay.includes('tech') || hay.includes('saas') || hay.includes('product')) return 'terminal-grid';
