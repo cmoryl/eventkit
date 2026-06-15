@@ -706,7 +706,6 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
   };
   // ---------- chart variants ----------
   const renderChart = () => {
-    const svgId = template.id.replace(/[^a-z0-9_-]/gi, '-');
     const strokeDash = chartStyle === 'dotted' ? '1 3' : chartStyle === 'segmented' ? '5 3' : chartStyle === 'hatched' ? '2 2' : undefined;
     const glow = chartStyle === 'glow' ? `drop-shadow(0 0 3px ${accent})` : undefined;
     const softPanel: React.CSSProperties = { background: hexToRgba(textColor, 0.06), border: `1px solid ${hexToRgba(textColor, 0.18)}` };
