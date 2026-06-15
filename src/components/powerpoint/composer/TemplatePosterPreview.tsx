@@ -44,7 +44,8 @@ const badgeFor = (template: DeckTemplate) => {
 /** Per-template blueprints — each template gets a distinct mix of layouts
  *  so the mini-deck previews don't all look the same. */
 const blueprintFor = (t: DeckTemplate): Array<Omit<SlideData, 'id'>> => {
-  const id = t.id.toLowerCase();
+  const hay = `${t.id} ${t.name} ${t.description || ''}`.toLowerCase();
+  const id = hay;
 
   if (id.includes('transperfect')) {
     return [
