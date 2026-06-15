@@ -2130,14 +2130,15 @@ export const SlideMock: React.FC<{
               />
             ) : (
               <div className="absolute inset-0">
-                <VisualVariant
-                  variant={pickVariant(t.id, "feature-split-bg", index)}
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 6) % DATA_GRAPHICS.length]}
+                  series={content.chart.series}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                   seed={index + 17}
-                  size="lg"
                 />
               </div>
             )}
