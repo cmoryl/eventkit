@@ -2928,6 +2928,47 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 </Button>
               </div>
             )}
+
+            {/* Master imagery strip — drop a logo/decoration from the master deck onto this slide. */}
+            {corporateStyleRef?.masterAssets && corporateStyleRef.masterAssets.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-border/60">
+                <h3 className="text-sm font-semibold">Master imagery</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
+                  Recurring logos and decorations from the master deck. Click to attach.
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {pendingStyledSlide?.imageUrl && (
+                    <button
+                      type="button"
+                      className="aspect-video rounded border border-dashed border-border bg-muted/40 text-[10px] text-muted-foreground hover:bg-muted col-span-3 py-2"
+                      onClick={() => applyMasterAsset(null)}
+                    >
+                      Clear attached imagery
+                    </button>
+                  )}
+                  {corporateStyleRef.masterAssets.map((a) => {
+                    const active = pendingStyledSlide?.imageUrl === a.dataUrl;
+                    return (
+                      <button
+                        type="button"
+                        key={`${a.source}-${a.fileName}`}
+                        onClick={() => applyMasterAsset(a.dataUrl)}
+                        title={`${a.role} · from ${a.source}`}
+                        className={cn(
+                          'aspect-video rounded border bg-card/60 overflow-hidden relative group',
+                          active ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary/60',
+                        )}
+                      >
+                        <img src={a.dataUrl} alt={a.role} className="w-full h-full object-contain p-1 bg-white/5" />
+                        <span className="absolute bottom-0 left-0 right-0 text-[9px] uppercase tracking-wide bg-black/60 text-white py-0.5 text-center opacity-0 group-hover:opacity-100">
+                          {a.role}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </aside>
         </div>
         <div className="flex items-center justify-between gap-2 px-5 py-3 border-t bg-background">
