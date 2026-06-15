@@ -285,6 +285,83 @@ const CHART_STYLES: ChartStyleId[] = ['flat', 'pill', 'outline', 'gradient', 'ha
 const chartStyleFor = (template: DeckTemplate): ChartStyleId =>
   CHART_STYLES[hashFor(`${template.id}::chart-style`) % CHART_STYLES.length];
 
+type DeckLookId =
+  | 'orbital-intelligence'
+  | 'terminal-grid'
+  | 'editorial-atlas'
+  | 'boardroom-ledger'
+  | 'startup-collage'
+  | 'organic-fieldnotes'
+  | 'brutalist-poster'
+  | 'broadcast-control'
+  | 'data-observatory'
+  | 'cinematic-storyboard'
+  | 'literary-monograph'
+  | 'systems-blueprint';
+
+const LOOK_LABELS: Record<DeckLookId, string> = {
+  'orbital-intelligence': 'Orbital intelligence',
+  'terminal-grid': 'Terminal grid',
+  'editorial-atlas': 'Editorial atlas',
+  'boardroom-ledger': 'Boardroom ledger',
+  'startup-collage': 'Startup collage',
+  'organic-fieldnotes': 'Organic fieldnotes',
+  'brutalist-poster': 'Brutalist poster',
+  'broadcast-control': 'Broadcast control',
+  'data-observatory': 'Data observatory',
+  'cinematic-storyboard': 'Cinematic storyboard',
+  'literary-monograph': 'Literary monograph',
+  'systems-blueprint': 'Systems blueprint',
+};
+
+const ALL_LOOKS: DeckLookId[] = [
+  'orbital-intelligence',
+  'terminal-grid',
+  'editorial-atlas',
+  'boardroom-ledger',
+  'startup-collage',
+  'organic-fieldnotes',
+  'brutalist-poster',
+  'broadcast-control',
+  'data-observatory',
+  'cinematic-storyboard',
+  'literary-monograph',
+  'systems-blueprint',
+];
+
+const lookFor = (template: DeckTemplate, kind: PreviewKind): DeckLookId => {
+  const hay = `${template.id} ${template.name} ${template.description || ''} ${(template.tags || []).join(' ')}`.toLowerCase();
+  if (hay.includes('transperfect') || hay.includes('orb') || hay.includes('cosmic')) return 'orbital-intelligence';
+  if (hay.includes('modern dark') || hay.includes('tech') || hay.includes('saas') || hay.includes('product')) return 'terminal-grid';
+  if (hay.includes('editorial') || hay.includes('magazine') || hay.includes('journal')) return 'editorial-atlas';
+  if (hay.includes('corporate') || hay.includes('investor') || hay.includes('finance') || hay.includes('executive')) return 'boardroom-ledger';
+  if (hay.includes('startup') || hay.includes('launch') || hay.includes('vibrant') || hay.includes('campaign')) return 'startup-collage';
+  if (hay.includes('terracotta') || hay.includes('wellness') || hay.includes('lifestyle') || hay.includes('warm')) return 'organic-fieldnotes';
+  if (hay.includes('brutalist') || hay.includes('mono')) return 'brutalist-poster';
+  if (hay.includes('webinar') || hay.includes('stream') || hay.includes('lower third') || hay.includes('speaker') || hay.includes('qa')) return 'broadcast-control';
+  if (hay.includes('stats') || hay.includes('metrics') || hay.includes('kpi') || kind === 'chart' || kind === 'poll') return 'data-observatory';
+  if (hay.includes('image') || hay.includes('full bleed') || hay.includes('photo')) return 'cinematic-storyboard';
+  if (hay.includes('quote') || hay.includes('closing') || hay.includes('thank')) return 'literary-monograph';
+  if (hay.includes('agenda') || hay.includes('process') || hay.includes('section') || hay.includes('two-column')) return 'systems-blueprint';
+  return ALL_LOOKS[hashFor(`${template.id}::look-system`) % ALL_LOOKS.length];
+};
+
+const slideFrameStyleFor = (look: DeckLookId, template: DeckTemplate, textColor: string): React.CSSProperties => {
+  const border = hexToRgba(textColor, look === 'brutalist-poster' ? 0.72 : 0.22);
+  const common: React.CSSProperties = { borderColor: border };
+  if (look === 'brutalist-poster') return { ...common, borderWidth: 2, borderRadius: 0, boxShadow: `5px 5px 0 ${template.palette.accent}` };
+  if (look === 'editorial-atlas') return { ...common, borderRadius: 1, boxShadow: `0 10px 24px ${hexToRgba('#000000', 0.14)}` };
+  if (look === 'startup-collage') return { ...common, borderRadius: 18, boxShadow: `0 12px 0 ${hexToRgba(template.palette.accent, 0.28)}` };
+  if (look === 'organic-fieldnotes') return { ...common, borderRadius: 24, boxShadow: `0 16px 32px ${hexToRgba(template.palette.secondary, 0.18)}` };
+  if (look === 'terminal-grid') return { ...common, borderRadius: 6, boxShadow: `0 0 0 1px ${hexToRgba(template.palette.accent, 0.25)}, 0 0 24px ${hexToRgba(template.palette.accent, 0.22)}` };
+  if (look === 'broadcast-control') return { ...common, borderRadius: 10, boxShadow: `0 0 0 1px ${hexToRgba(template.palette.accent, 0.28)}` };
+  if (look === 'data-observatory') return { ...common, borderRadius: 14, boxShadow: `0 0 28px ${hexToRgba(template.palette.accent, 0.22)}` };
+  if (look === 'cinematic-storyboard') return { ...common, borderRadius: 4, boxShadow: `0 14px 32px ${hexToRgba('#000000', 0.34)}` };
+  if (look === 'literary-monograph') return { ...common, borderRadius: 2, boxShadow: `0 12px 26px ${hexToRgba('#000000', 0.12)}` };
+  if (look === 'systems-blueprint') return { ...common, borderRadius: 3, boxShadow: `0 0 0 1px ${hexToRgba(template.palette.accent, 0.22)}` };
+  return { ...common, borderRadius: 12, boxShadow: `0 18px 42px ${hexToRgba(template.palette.accent, 0.22)}` };
+};
+
 const barStyleFor = (
   style: ChartStyleId,
   color: string,
