@@ -8,6 +8,18 @@ import { parsePptxFile } from "@/components/slides/importPptx";
 import { type SlideData } from "@/components/slides/slideTypes";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
 import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
+import transperfectDeckAsset from "@/assets/transperfect-general-deck.pptx.asset.json";
+
+// Built-in corporate decks: templates that ship with a real .pptx as their source of truth.
+// When selected, the actual deck is fetched, parsed, and used both as starter slides
+// and as the extracted-source so AI variations stay faithful to the approved look & feel.
+const BUILTIN_CORPORATE_DECKS: Record<string, { url: string; fileName: string; label: string }> = {
+  "transperfect-2026": {
+    url: transperfectDeckAsset.url,
+    fileName: "TransPerfect_General_Deck.pptx",
+    label: "TransPerfect Corporate Deck",
+  },
+};
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
