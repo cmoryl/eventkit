@@ -159,32 +159,43 @@ const arrangementFor = (kind: PreviewKind, template: DeckTemplate): PreviewArran
   return pool[h % pool.length];
 };
 
-const miniDeckFor = (kind: PreviewKind): PreviewKind[] => {
-  const map: Record<PreviewKind, PreviewKind[]> = {
-    title: ['title', 'chart', 'process'],
-    editorial: ['editorial', 'quote', 'image-split'],
-    columns: ['columns', 'bullet', 'comparison'],
-    'image-split': ['image-split', 'full-bleed', 'quote'],
-    quote: ['quote', 'editorial', 'section'],
-    stats: ['stats', 'chart', 'stat-hero'],
-    'stat-hero': ['stat-hero', 'stats', 'chart'],
-    closing: ['closing', 'title', 'qa'],
-    section: ['section', 'title', 'agenda'],
-    bullet: ['bullet', 'columns', 'process'],
-    team: ['team', 'speaker', 'agenda'],
-    comparison: ['comparison', 'columns', 'chart'],
-    'full-bleed': ['full-bleed', 'image-split', 'title'],
-    'webinar-title': ['webinar-title', 'agenda', 'speaker'],
-    agenda: ['agenda', 'webinar-title', 'qa'],
-    speaker: ['speaker', 'team', 'quote'],
-    qa: ['qa', 'poll', 'closing'],
-    poll: ['poll', 'chart', 'qa'],
-    stream: ['stream', 'webinar-title', 'closing'],
-    chart: ['chart', 'stats', 'comparison'],
-    process: ['process', 'stat-hero', 'columns'],
-  };
-  return map[kind];
+// For each lead kind, provide a pool of complementary follow-up slides.
+// A per-template hash picks 2 distinct followers, so two templates with the
+// same lead kind still get unique 3-slide compositions.
+const MINI_DECK_POOL: Record<PreviewKind, PreviewKind[]> = {
+  title:           ['chart', 'process', 'stats', 'quote', 'image-split', 'agenda', 'editorial', 'stat-hero'],
+  editorial:       ['quote', 'image-split', 'columns', 'bullet', 'full-bleed', 'chart'],
+  columns:         ['bullet', 'comparison', 'chart', 'stats', 'process', 'team'],
+  'image-split':   ['full-bleed', 'quote', 'editorial', 'stats', 'team', 'closing'],
+  quote:           ['editorial', 'section', 'image-split', 'closing', 'speaker', 'full-bleed'],
+  stats:           ['chart', 'stat-hero', 'comparison', 'process', 'poll', 'bullet'],
+  'stat-hero':     ['stats', 'chart', 'process', 'poll', 'comparison', 'quote'],
+  closing:         ['title', 'qa', 'quote', 'stats', 'image-split', 'stat-hero'],
+  section:         ['title', 'agenda', 'quote', 'image-split', 'chart', 'process'],
+  bullet:          ['columns', 'process', 'comparison', 'agenda', 'chart', 'stats'],
+  team:            ['speaker', 'agenda', 'quote', 'columns', 'stats', 'image-split'],
+  comparison:      ['columns', 'chart', 'stats', 'bullet', 'poll', 'process'],
+  'full-bleed':    ['image-split', 'title', 'quote', 'closing', 'editorial', 'stat-hero'],
+  'webinar-title': ['agenda', 'speaker', 'qa', 'poll', 'closing', 'stats'],
+  agenda:          ['webinar-title', 'qa', 'speaker', 'bullet', 'process', 'team'],
+  speaker:         ['team', 'quote', 'agenda', 'qa', 'webinar-title', 'bullet'],
+  qa:              ['poll', 'closing', 'speaker', 'webinar-title', 'agenda', 'quote'],
+  poll:            ['chart', 'qa', 'stats', 'comparison', 'bullet', 'agenda'],
+  stream:          ['webinar-title', 'closing', 'qa', 'agenda', 'poll', 'speaker'],
+  chart:           ['stats', 'comparison', 'stat-hero', 'process', 'bullet', 'poll'],
+  process:         ['stat-hero', 'columns', 'chart', 'bullet', 'agenda', 'stats'],
 };
+
+const miniDeckFor = (kind: PreviewKind, template: DeckTemplate): PreviewKind[] => {
+  const pool = MINI_DECK_POOL[kind].filter((k) => k !== kind);
+  const h1 = hashFor(`${template.id}::deck-a::${kind}`);
+  const h2 = hashFor(`${template.id}::deck-b::${kind}`);
+  const second = pool[h1 % pool.length];
+  const remaining = pool.filter((k) => k !== second);
+  const third = remaining[h2 % remaining.length];
+  return [kind, second, third];
+};
+
 
 const SURFACE_VARIANTS = [
   // 0 — diagonal accent stripe + soft secondary glow
