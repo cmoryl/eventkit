@@ -134,6 +134,10 @@ const PowerPointAgent: React.FC = () => {
   // Holds a starter deck loaded directly from a template (bypasses AI outline).
   // When set, takes priority over the AI-derived editorInitialSlides.
   const [templateStarterSlides, setTemplateStarterSlides] = useState<SlideData[] | null>(null);
+  // Real brand tokens parsed from the corporate deck's ppt/theme/theme1.xml.
+  // Forwarded into the SlideEditor + add-styled-slide so the AI uses the
+  // authoritative palette/fonts instead of regex-guessed ones.
+  const [templateThemeTokens, setTemplateThemeTokens] = useState<PptxThemeTokens | null>(null);
 
   // Stable key for SlideEditor — changes when a new AI deck or template starter is loaded,
   // forcing a remount so initialSlides are picked up rather than the stale state.
