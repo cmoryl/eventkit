@@ -306,6 +306,25 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, []);
   const [isGeneratingStyledSlide, setIsGeneratingStyledSlide] = useState(false);
   const [pendingStyledSlide, setPendingStyledSlide] = useState<SlideData | null>(null);
+  /** Resolved master-layout def for the pending slide — used to draw placeholder overlays in the preview. */
+  const [pendingStyledLayout, setPendingStyledLayout] = useState<
+    | {
+        name: string;
+        type?: string;
+        placeholders: Array<{
+          type: string;
+          idx?: number;
+          xPct?: number;
+          yPct?: number;
+          wPct?: number;
+          hPct?: number;
+          /** What slide content fills this placeholder ('Title', 'Body', 'Subtitle', etc.). */
+          fills?: string;
+        }>;
+      }
+    | null
+  >(null);
+  const [showPlaceholderOverlay, setShowPlaceholderOverlay] = useState(true);
   const generateStyledSlide = useCallback(async () => {
     if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
     setIsGeneratingStyledSlide(true);
@@ -346,6 +365,35 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       };
       setPendingStyledSlide(newSlide);
       const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+
+      // Resolve the matching master layout from the catalog and label each
+      // placeholder with the slide field it will be filled by — drives the
+      // overlay in the preview dialog.
+      const catalogLayouts = corporateStyleRef.layoutCatalog?.layouts || [];
+      const matched = layoutName
+        ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
+        : undefined;
+      if (matched) {
+        const fillFor = (t: string): string | undefined => {
+          const k = t.toLowerCase();
+          if (k === 'ctrtitle' || k === 'title') return newSlide.title ? 'Title' : 'Title (empty)';
+          if (k === 'subtitle') return newSlide.subtitle ? 'Subtitle' : 'Subtitle (empty)';
+          if (k === 'body') return newSlide.body ? 'Body' : 'Body (empty)';
+          if (k === 'pic') return 'Image (none yet)';
+          if (k === 'ftr') return 'Footer';
+          if (k === 'sldnum') return 'Slide number';
+          if (k === 'dt') return 'Date';
+          return undefined;
+        };
+        setPendingStyledLayout({
+          name: matched.name,
+          type: matched.type,
+          placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
+        });
+      } else {
+        setPendingStyledLayout(null);
+      }
+
       toast.success(
         layoutName
           ? `Preview ready — using "${layoutName}" layout from the master deck`
@@ -370,6 +418,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     });
     setActiveIndex(activeIndex + 1);
     setPendingStyledSlide(null);
+    setPendingStyledLayout(null);
     toast.success('Slide inserted into deck');
   }, [pendingStyledSlide, activeIndex]);
 
@@ -2564,19 +2613,32 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     {/* Confirmation preview for AI-generated styled slide */}
     <Dialog
       open={!!pendingStyledSlide}
-      onOpenChange={(open) => { if (!open) setPendingStyledSlide(null); }}
+      onOpenChange={(open) => { if (!open) { setPendingStyledSlide(null); setPendingStyledLayout(null); } }}
     >
       <DialogContent className="max-w-5xl w-[90vw] p-0 overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3 border-b">
-          <div>
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b">
+          <div className="min-w-0">
             <h2 className="text-base font-semibold flex items-center gap-2">
               <Wand2 className="h-4 w-4 text-primary" />
               Preview new {corporateStyleRef?.label ?? ''} slide
             </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Review before inserting after slide {activeIndex + 1}
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              {pendingStyledLayout
+                ? <>Using master layout <span className="font-medium text-foreground">"{pendingStyledLayout.name}"</span> · inserting after slide {activeIndex + 1}</>
+                : <>Review before inserting after slide {activeIndex + 1}</>}
             </p>
           </div>
+          {pendingStyledLayout && pendingStyledLayout.placeholders.length > 0 && (
+            <Button
+              variant={showPlaceholderOverlay ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setShowPlaceholderOverlay((v) => !v)}
+              className="shrink-0"
+              title="Toggle master-layout placeholder overlay"
+            >
+              {showPlaceholderOverlay ? 'Hide placeholders' : 'Show placeholders'}
+            </Button>
+          )}
         </div>
         <div className="bg-black/40 p-4">
           <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
@@ -2588,6 +2650,49 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   brandFonts={brandFonts}
                 />
               </CenteredScaledSlide>
+            )}
+            {/* Placeholder overlay — % positions come straight from the
+                master deck's slideLayout XML (theme1.xml + slideLayouts/). */}
+            {showPlaceholderOverlay && pendingStyledLayout && (
+              <div className="absolute inset-0 pointer-events-none">
+                {pendingStyledLayout.placeholders.map((ph, i) => {
+                  if (
+                    ph.xPct === undefined || ph.yPct === undefined ||
+                    ph.wPct === undefined || ph.hPct === undefined
+                  ) return null;
+                  const colorFor = (t: string) => {
+                    const k = t.toLowerCase();
+                    if (k === 'title' || k === 'ctrtitle') return 'rgba(56,189,248,0.95)'; // sky
+                    if (k === 'subtitle') return 'rgba(167,139,250,0.95)'; // violet
+                    if (k === 'body') return 'rgba(74,222,128,0.95)'; // green
+                    if (k === 'pic') return 'rgba(251,146,60,0.95)'; // orange
+                    return 'rgba(244,114,182,0.95)'; // pink (footer, dt, sldNum, other)
+                  };
+                  const c = colorFor(ph.type);
+                  return (
+                    <div
+                      key={`${ph.type}-${ph.idx ?? i}`}
+                      className="absolute rounded-sm"
+                      style={{
+                        left: `${ph.xPct}%`,
+                        top: `${ph.yPct}%`,
+                        width: `${ph.wPct}%`,
+                        height: `${ph.hPct}%`,
+                        border: `2px dashed ${c}`,
+                        boxShadow: `inset 0 0 0 9999px ${c.replace('0.95', '0.08')}`,
+                      }}
+                    >
+                      <div
+                        className="absolute top-0 left-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-br-md text-white whitespace-nowrap"
+                        style={{ background: c }}
+                      >
+                        {ph.type}{ph.idx !== undefined ? `[${ph.idx}]` : ''}
+                        {ph.fills ? ` · ${ph.fills}` : ''}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
           {pendingStyledSlide?.notes && (
@@ -2601,7 +2706,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setPendingStyledSlide(null)}
+            onClick={() => { setPendingStyledSlide(null); setPendingStyledLayout(null); }}
             disabled={isGeneratingStyledSlide}
           >
             Discard
@@ -2610,7 +2715,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setPendingStyledSlide(null); generateStyledSlide(); }}
+              onClick={() => { setPendingStyledSlide(null); setPendingStyledLayout(null); generateStyledSlide(); }}
               disabled={isGeneratingStyledSlide}
               className="gap-1.5"
             >
