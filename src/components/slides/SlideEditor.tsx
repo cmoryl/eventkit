@@ -1882,26 +1882,39 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   Add Slide
                 </Button>
                 {corporateStyleRef && corporateStyleRef.slides.length > 0 && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="w-full gap-1.5 bg-gradient-to-r from-primary to-primary/80"
-                    onClick={addStyledSlide}
-                    disabled={isGeneratingStyledSlide}
-                    title={`One-shot generate a new slide using ${corporateStyleRef.label} as the style reference`}
-                  >
-                    {isGeneratingStyledSlide ? (
-                      <>
-                        <Wand2 className="h-3.5 w-3.5 animate-pulse" />
-                        Generating…
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="h-3.5 w-3.5" />
-                        Add slide in {corporateStyleRef.label} style
-                      </>
-                    )}
-                  </Button>
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full gap-1.5 bg-gradient-to-r from-primary to-primary/80"
+                      onClick={addStyledSlide}
+                      disabled={isGeneratingStyledSlide}
+                      title={`One-shot generate a new slide using ${corporateStyleRef.label} as the style reference`}
+                    >
+                      {isGeneratingStyledSlide ? (
+                        <>
+                          <Wand2 className="h-3.5 w-3.5 animate-pulse" />
+                          Generating…
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="h-3.5 w-3.5" />
+                          Add slide in {corporateStyleRef.label} style
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full gap-1.5"
+                      onClick={() => setBatchDialogOpen(true)}
+                      disabled={isBatchGenerating}
+                      title={`Generate multiple slides at once in ${corporateStyleRef.label} style`}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Batch generate slides…
+                    </Button>
+                  </>
                 )}
               </div>
 
