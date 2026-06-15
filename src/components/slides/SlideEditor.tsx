@@ -532,6 +532,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const [batchCount, setBatchCount] = useState(3);
   const [batchPrompt, setBatchPrompt] = useState('');
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
+  /** Staged batch awaiting user confirmation. Each entry has a resolved master layout for overlay drawing. */
+  type PendingBatchEntry = { slide: SlideData; layout: ResolvedLayout | null; layoutName: string | null };
+  const [pendingBatch, setPendingBatch] = useState<PendingBatchEntry[] | null>(null);
+  const [batchPreviewShowOverlay, setBatchPreviewShowOverlay] = useState(true);
   const runBatchGeneration = useCallback(async () => {
     if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
     const count = Math.max(1, Math.min(10, Math.floor(batchCount)));
@@ -564,17 +568,17 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       if (!out.length) throw new Error('No slides returned');
 
       // Apply the same theme tokens + master asset across the whole batch so
-      // the inserted sequence looks like one cohesive run.
+      // the staged preview looks like one cohesive run.
       const tk = corporateStyleRef.themeTokens?.colors || {};
       const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
       const masterImg = corporateStyleRef.masterAssets?.find((a) => a.role === 'logo')?.dataUrl
         || corporateStyleRef.masterAssets?.[0]?.dataUrl;
 
-      const newSlides: SlideData[] = out.map((g: any) => {
+      const staged: PendingBatchEntry[] = out.map((g: any) => {
         const bulletsText = Array.isArray(g.bullets) && g.bullets.length
           ? g.bullets.map((b: string) => `• ${b}`).join('\n')
           : undefined;
-        return {
+        const slide: SlideData = {
           id: uuidv4(),
           layout: (g.layout as SlideData['layout']) || 'content',
           title: g.title || 'New Slide',
@@ -585,16 +589,15 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           ...(themeBg ? { bgColor: themeBg } : {}),
           ...(masterImg ? { imageUrl: masterImg } : {}),
         };
+        const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+        const layout = resolveLayoutForSlide(layoutName, slide);
+        return { slide, layout, layoutName };
       });
 
-      setSlides((prev) => {
-        const next = [...prev];
-        next.splice(activeIndex + 1, 0, ...newSlides);
-        return next;
-      });
-      setActiveIndex(activeIndex + newSlides.length);
+      setPendingBatch(staged);
+      setBatchPreviewShowOverlay(true);
       setBatchDialogOpen(false);
-      toast.success(`Inserted ${newSlides.length} slides in ${corporateStyleRef.label} style`, { id: toastId });
+      toast.success(`Preview ready — review ${staged.length} slides before inserting`, { id: toastId });
     } catch (err) {
       console.error('add-styled-slides-batch failed', err);
       toast.error(err instanceof Error ? err.message : 'Batch generation failed', { id: toastId });
@@ -602,7 +605,20 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setIsBatchGenerating(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt]);
+  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt, resolveLayoutForSlide]);
+
+  const confirmInsertPendingBatch = useCallback(() => {
+    if (!pendingBatch || pendingBatch.length === 0) return;
+    const inserted = pendingBatch.map((e) => e.slide);
+    setSlides((prev) => {
+      const next = [...prev];
+      next.splice(activeIndex + 1, 0, ...inserted);
+      return next;
+    });
+    setActiveIndex(activeIndex + inserted.length);
+    setPendingBatch(null);
+    toast.success(`Inserted ${inserted.length} slides`);
+  }, [pendingBatch, activeIndex]);
 
 
   const addSlide = useCallback((afterIndex: number) => {
