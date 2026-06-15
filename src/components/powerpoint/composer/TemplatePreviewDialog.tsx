@@ -1617,7 +1617,7 @@ export const SlideMock: React.FC<{
                     onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, before: { ...c.compare.before, title: v } } }))}
                   />
                 </div>
-                <RingGauge percent={32} accent={t.palette.secondary} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
+                <div className="h-14 w-20"><DataGraphic system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 7) % DATA_GRAPHICS.length]} series={[{ label: 'A', value: 32 }, { label: 'B', value: 54 }]} accent={t.palette.secondary} secondary={t.palette.accent} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={4} /></div>
               </div>
               <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.before.points.map((p, i) => (
@@ -1641,15 +1641,17 @@ export const SlideMock: React.FC<{
                 <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: muted }}>
                   Baseline performance
                 </div>
-                <HBars
-                  values={[
-                    { label: "Speed", v: 28 },
-                    { label: "Cost", v: 64 },
-                    { label: "Effort", v: 78 },
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 11) % DATA_GRAPHICS.length]}
+                  series={[
+                    { label: "Speed", value: 28 },
+                    { label: "Cost", value: 64 },
+                    { label: "Effort", value: 78 },
                   ]}
                   accent={t.palette.secondary}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                 />
               </div>
@@ -1678,7 +1680,7 @@ export const SlideMock: React.FC<{
                     onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, after: { ...c.compare.after, title: v } } }))}
                   />
                 </div>
-                <RingGauge percent={91} accent={t.palette.accent} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
+                <div className="h-14 w-20"><DataGraphic system={dataGraphic} series={[{ label: 'A', value: 91 }, { label: 'B', value: 38 }]} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={8} /></div>
               </div>
               <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.after.points.map((p, i) => (
@@ -1700,15 +1702,17 @@ export const SlideMock: React.FC<{
                 <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: t.palette.accent }}>
                   Lifted performance
                 </div>
-                <HBars
-                  values={[
-                    { label: "Speed", v: 92 },
-                    { label: "Cost", v: 38 },
-                    { label: "Effort", v: 22 },
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 3) % DATA_GRAPHICS.length]}
+                  series={[
+                    { label: "Speed", value: 92 },
+                    { label: "Cost", value: 38 },
+                    { label: "Effort", value: 22 },
                   ]}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                 />
               </div>
