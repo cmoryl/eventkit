@@ -461,17 +461,14 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [corporateStyleRef, assetName, activeIndex]);
 
-  /** Resolve a master layout by name and set pendingStyledLayout + default assignments. */
-  const applyResolvedLayout = useCallback((layoutName: string | null, slideForFill: SlideData) => {
+  /** Pure helper: resolve a master layout by name into an overlay-ready def. */
+  type ResolvedLayout = NonNullable<typeof pendingStyledLayout>;
+  const resolveLayoutForSlide = useCallback((layoutName: string | null, slideForFill: SlideData): ResolvedLayout | null => {
     const catalogLayouts = corporateStyleRef?.layoutCatalog?.layouts || [];
     const matched = layoutName
       ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
       : undefined;
-    if (!matched) {
-      setPendingStyledLayout(null);
-      setPlaceholderAssignments({});
-      return;
-    }
+    if (!matched) return null;
     const fillFor = (t: string): string | undefined => {
       const k = t.toLowerCase();
       if (k === 'ctrtitle' || k === 'title') return slideForFill.title ? 'Title' : 'Title (empty)';
@@ -483,17 +480,28 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       if (k === 'dt') return 'Date';
       return undefined;
     };
-    setPendingStyledLayout({
+    return {
       name: matched.name,
       type: matched.type,
       placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
-    });
+    };
+  }, [corporateStyleRef]);
+
+  /** Resolve a master layout by name and set pendingStyledLayout + default assignments. */
+  const applyResolvedLayout = useCallback((layoutName: string | null, slideForFill: SlideData) => {
+    const resolved = resolveLayoutForSlide(layoutName, slideForFill);
+    if (!resolved) {
+      setPendingStyledLayout(null);
+      setPlaceholderAssignments({});
+      return;
+    }
+    setPendingStyledLayout(resolved);
     const defaults: Record<string, PhAssign> = {};
-    matched.placeholders.forEach((p, i) => {
+    resolved.placeholders.forEach((p, i) => {
       defaults[`${p.type}-${p.idx ?? i}`] = { source: 'auto' };
     });
     setPlaceholderAssignments(defaults);
-  }, [corporateStyleRef]);
+  }, [resolveLayoutForSlide]);
 
   /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
   const applyMasterAsset = useCallback((dataUrl: string | null) => {
