@@ -128,13 +128,25 @@ const blueprintFor = (t: DeckTemplate): Array<Omit<SlideData, 'id'>> => {
   return buckets[hash % buckets.length];
 };
 
+/** Apply the template's OWN palette to slides — so library templates don't all
+ *  collapse into "modern-dark" or "editorial-light" via the demo-pack fallback. */
+const themeWithTemplate = (
+  blueprint: Array<Omit<SlideData, 'id'>>,
+  t: DeckTemplate,
+): Array<Omit<SlideData, 'id'>> => {
+  return blueprint.map((s) => ({
+    ...s,
+    bgColor: t.palette.bg,
+  }));
+};
+
 /** Real, themed 3-slide fanned mini-deck shown in the top-right of each card. */
 const DeckPreviewVisual = ({ t }: { t: DeckTemplate }) => {
   const slides = useMemo(() => {
     const themeId = resolveDemoThemeId(t.id, { bg: t.palette.bg, text: t.palette.text });
     const pack = getThemePack(themeId);
     const blueprint = blueprintFor(t);
-    const themed = applyDemoTheme(blueprint, themeId);
+    const themed = themeWithTemplate(blueprint, t);
     return themed.map((s, i) => ({
       ...s,
       id: `${t.id}__poster__${i}`,
