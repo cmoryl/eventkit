@@ -418,6 +418,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     });
     setActiveIndex(activeIndex + 1);
     setPendingStyledSlide(null);
+    setPendingStyledLayout(null);
     toast.success('Slide inserted into deck');
   }, [pendingStyledSlide, activeIndex]);
 
