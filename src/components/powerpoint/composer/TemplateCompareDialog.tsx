@@ -67,6 +67,7 @@ const MAX_COLS = 4;
 export const TemplateCompareDialog: React.FC<Props> = ({ open, onOpenChange, templates, initialIds = [] }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>(initialIds.slice(0, MAX_COLS));
   const [search, setSearch] = useState("");
+  const [focus, setFocus] = useState<{ template: DeckTemplate; kind: PreviewKind; shared: boolean } | null>(null);
 
   // Reset when reopened with new initial set
   React.useEffect(() => {
