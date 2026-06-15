@@ -18,6 +18,8 @@ export interface DeckTemplate {
   description: string;
   themePrompt: string;
   palette: { bg: string; text: string; accent: string; secondary: string };
+  backgroundCss?: string;
+  tags?: string[];
 }
 
 export const DECK_TEMPLATES: DeckTemplate[] = [
@@ -92,7 +94,9 @@ const LIBRARY_TEMPLATES: DeckTemplate[] = ALL_PRESENTATION_TEMPLATES.map((t) => 
     name: t.name,
     description: t.description || "",
     themePrompt: `${t.name.toLowerCase()} layout — ${t.description || ""}. Use ${palette.bg} background, ${palette.text} text, ${palette.accent} accents.`,
-    palette: { ...palette, bg: typeof bg === "string" ? bg : palette.bg },
+    palette,
+    backgroundCss: typeof bg === "string" ? bg : palette.bg,
+    tags: t.tags,
   } as DeckTemplate;
 });
 
