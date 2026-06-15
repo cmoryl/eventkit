@@ -4,7 +4,7 @@ import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
-import { parsePptxFile } from "@/components/slides/importPptx";
+import { parsePptxFile, parsePptxThemeTokens, type PptxThemeTokens } from "@/components/slides/importPptx";
 import { type SlideData } from "@/components/slides/slideTypes";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
 import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
@@ -134,6 +134,10 @@ const PowerPointAgent: React.FC = () => {
   // Holds a starter deck loaded directly from a template (bypasses AI outline).
   // When set, takes priority over the AI-derived editorInitialSlides.
   const [templateStarterSlides, setTemplateStarterSlides] = useState<SlideData[] | null>(null);
+  // Real brand tokens parsed from the corporate deck's ppt/theme/theme1.xml.
+  // Forwarded into the SlideEditor + add-styled-slide so the AI uses the
+  // authoritative palette/fonts instead of regex-guessed ones.
+  const [templateThemeTokens, setTemplateThemeTokens] = useState<PptxThemeTokens | null>(null);
 
   // Stable key for SlideEditor — changes when a new AI deck or template starter is loaded,
   // forcing a remount so initialSlides are picked up rather than the stale state.
@@ -187,6 +191,15 @@ const PowerPointAgent: React.FC = () => {
       const imported = await parsePptxFile(file);
       if (imported.length) {
         setTemplateStarterSlides(imported);
+      }
+      // Pull the authoritative color + font scheme from theme1.xml so
+      // downstream AI prompts inherit the real brand palette.
+      try {
+        const tokens = await parsePptxThemeTokens(file);
+        setTemplateThemeTokens(tokens);
+      } catch (themeErr) {
+        console.warn("Theme parse failed (non-fatal):", themeErr);
+        setTemplateThemeTokens(null);
       }
       // Also load as extracted source so the AI Agent can generate variations from it.
       setPdfFile(null);
@@ -1415,6 +1428,7 @@ const PowerPointAgent: React.FC = () => {
             ? {
                 label: BUILTIN_CORPORATE_DECKS[selectedTemplateId].label,
                 slides: templateStarterSlides,
+                themeTokens: templateThemeTokens ?? undefined,
               }
             : null
         }

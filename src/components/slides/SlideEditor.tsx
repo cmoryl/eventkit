@@ -111,6 +111,12 @@ interface SlideEditorProps {
   corporateStyleRef?: {
     label: string;
     slides: SlideData[];
+    /** Authoritative theme palette + fonts pulled from the deck's theme1.xml. */
+    themeTokens?: {
+      name?: string;
+      colors: Record<string, string>;
+      fonts: { major?: string; minor?: string };
+    };
   } | null;
 }
 
@@ -299,6 +305,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           deckTitle: assetName,
           referenceSlides: refs,
           insertPosition: activeIndex + 2,
+          themeTokens: corporateStyleRef.themeTokens,
         },
       });
       if (error) throw new Error(error.message || 'Generation failed');
