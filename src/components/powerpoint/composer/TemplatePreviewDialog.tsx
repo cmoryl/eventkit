@@ -799,7 +799,8 @@ export const SlideMock: React.FC<{
   const isLight = isLightColor(t.palette.bg);
   const muted = isLight ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.7)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.14)";
-  const cardBg = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)";
+  const { look, graphic: dataGraphic } = deckSystemFor(t);
+  const cardBg = cardSurfaceFor(look, t, isLight);
   const thumb = TEMPLATE_THUMBNAILS[t.id];
   // Imagery rotation per slide so different layouts feature different visuals.
   const imagery = content.imagery && content.imagery.length > 0 ? content.imagery : (thumb ? [thumb] : []);
@@ -818,28 +819,17 @@ export const SlideMock: React.FC<{
 
   return (
     <div
-      className="relative w-full aspect-[16/9] rounded-xl border overflow-hidden shadow-md"
-      style={{ background: t.palette.bg, color: t.palette.text, borderColor: subtleBorder }}
+      className={cn(
+        "relative w-full aspect-[16/9] border overflow-hidden shadow-md",
+        look === 'brutalist-poster' ? 'rounded-none border-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'rounded-sm' : look === 'organic-fieldnotes' ? 'rounded-[2rem]' : look === 'terminal-grid' || look === 'systems-blueprint' ? 'rounded-md' : 'rounded-xl',
+      )}
+      style={{ background: slideSurfaceFor(t, look), color: t.palette.text, borderColor: look === 'brutalist-poster' ? t.palette.text : subtleBorder }}
     >
-      {/* Decorative orbs */}
-      <div
-        className="absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={{ background: t.palette.accent }}
-      />
-      <div
-        className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: t.palette.secondary }}
-      />
-
-      {/* Decorative dotted grid (very low opacity) */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-[0.06]"
-        style={{
-          backgroundImage: `radial-gradient(${t.palette.text} 1px, transparent 1px)`,
-          backgroundSize: "18px 18px",
-        }}
-      />
+      {look === 'startup-collage' && <><div className="absolute left-8 top-10 h-24 w-32 -rotate-6 rounded-2xl" style={{ background: t.palette.accent }} /><div className="absolute right-14 top-12 h-20 w-20 rotate-12 rounded-full" style={{ background: t.palette.secondary }} /></>}
+      {look === 'brutalist-poster' && <div className="absolute right-[-2rem] top-12 h-44 w-64 rotate-6 border-[14px]" style={{ borderColor: t.palette.text, background: t.palette.accent }} />}
+      {(look === 'orbital-intelligence' || look === 'data-observatory') && <div className="absolute right-[-5rem] bottom-[-6rem] h-80 w-80 rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(t.palette.accent, 0.28)}, transparent 30%), repeating-radial-gradient(circle, transparent 0 34px, ${hexToRgba(t.palette.secondary, 0.26)} 35px 37px)` }} />}
+      {look === 'cinematic-storyboard' && <div className="absolute inset-x-0 top-6 h-10" style={{ background: `repeating-linear-gradient(90deg, ${hexToRgba(t.palette.text, 0.24)} 0 22px, transparent 22px 42px)` }} />}
+      {(look === 'editorial-atlas' || look === 'literary-monograph') && <div className="absolute bottom-12 right-14 font-serif text-[11rem] leading-none opacity-10" style={{ color: t.palette.accent }}>{look === 'literary-monograph' ? '”' : '§'}</div>}
 
       {/* Decorative corner brackets */}
       <svg
