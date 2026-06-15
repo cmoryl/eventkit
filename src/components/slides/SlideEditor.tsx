@@ -326,6 +326,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           referenceSlides: refs,
           insertPosition: activeIndex + 2,
           themeTokens: corporateStyleRef.themeTokens,
+          layoutCatalog: corporateStyleRef.layoutCatalog,
         },
       });
       if (error) throw new Error(error.message || 'Generation failed');
