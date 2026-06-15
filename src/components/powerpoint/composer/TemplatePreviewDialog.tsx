@@ -38,7 +38,9 @@ import { parsePptxFile } from "@/components/slides/importPptx";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { ScaledSlide } from "@/components/slides/ScaledSlide";
 import type { SlideData } from "@/components/slides/slideTypes";
+import { useSlideThumbnails } from "./useSlideThumbnails";
 import transperfectDeckAsset from "@/assets/transperfect-general-deck.pptx.asset.json";
+
 
 // Templates that ship with a real .pptx — when present, the preview dialog renders
 // the actual parsed slides instead of synthetic mocks.
@@ -3579,6 +3581,11 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
   if (!template || !content) return null;
   const t = template;
   const showRealDeck = isCorporate && (realSlides?.length ?? 0) > 0;
+  const { thumbs: realThumbs, ready: thumbsReady, progress: thumbProgress } = useSlideThumbnails(
+    showRealDeck && template ? template.id : null,
+    showRealDeck ? realSlides : null,
+    { width: 480, quality: 0.72 },
+  );
 
 
   return (
@@ -3699,26 +3706,42 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
                     Approved deck · {realSlides!.length} slides
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    Rendered from the actual {corporateLabel}
+                    {thumbsReady
+                      ? `Thumbnails · ${corporateLabel}`
+                      : `Rendering thumbnails… ${Math.round(thumbProgress * 100)}%`}
                   </div>
                 </div>
-                {realSlides!.map((slide, i) => (
-                  <div
-                    key={slide.id ?? `real-${i}`}
-                    className="relative rounded-xl overflow-hidden border bg-black/40 shadow-lg"
-                  >
-                    <div className="absolute top-2 left-3 z-20 text-[11px] font-mono text-white/70 px-2 py-0.5 rounded bg-black/40 backdrop-blur">
-                      {String(i + 1).padStart(2, "0")} / {String(realSlides!.length).padStart(2, "0")}
+                {realSlides!.map((slide, i) => {
+                  const thumb = realThumbs[i];
+                  return (
+                    <div
+                      key={slide.id ?? `real-${i}`}
+                      className="relative rounded-xl overflow-hidden border bg-black/40 shadow-lg"
+                    >
+                      <div className="absolute top-2 left-3 z-20 text-[11px] font-mono text-white/70 px-2 py-0.5 rounded bg-black/40 backdrop-blur">
+                        {String(i + 1).padStart(2, "0")} / {String(realSlides!.length).padStart(2, "0")}
+                      </div>
+                      <div className="aspect-[16/9] w-full flex items-center justify-center bg-black">
+                        {thumb ? (
+                          <img
+                            src={thumb}
+                            alt={`Slide ${i + 1}`}
+                            loading="lazy"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center gap-2 text-xs text-white/60">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Rendering…
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="aspect-[16/9] w-full flex items-center justify-center bg-black">
-                      <ScaledSlide>
-                        <SlideRenderer slide={slide} />
-                      </ScaledSlide>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </>
             ) : (
+
               SLIDES.map((kind, i) => {
                 const isFocused = focusSlideKind === kind;
                 return (
