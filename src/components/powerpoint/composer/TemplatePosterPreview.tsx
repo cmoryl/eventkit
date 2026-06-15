@@ -224,11 +224,28 @@ const SURFACE_VARIANTS = [
     `radial-gradient(${hexToRgba(t.palette.accent, 0.42)} 2px, transparent 2.4px) 4px 6px / 38px 38px, radial-gradient(${hexToRgba(t.palette.secondary, 0.32)} 1.6px, transparent 2px) 20px 22px / 46px 46px`,
 ];
 
-const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind) => {
+const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind, look: DeckLookId) => {
   const bg = template.backgroundCss && template.backgroundCss !== 'transparent' ? template.backgroundCss : template.palette.bg;
   const base = bg.includes('gradient')
     ? bg
     : `linear-gradient(145deg, ${template.palette.bg} 0%, ${hexToRgba(template.palette.accent, light ? 0.14 : 0.2)} 58%, ${template.palette.secondary} 100%)`;
+
+  const lookPattern: Partial<Record<DeckLookId, string>> = {
+    'orbital-intelligence': `radial-gradient(circle at 72% 24%, ${hexToRgba(template.palette.accent, 0.5)}, transparent 20%), radial-gradient(circle at 62% 58%, ${hexToRgba(template.palette.secondary, 0.24)} 0 18%, transparent 19%), repeating-radial-gradient(circle at 65% 52%, transparent 0 34px, ${hexToRgba(template.palette.accent, 0.18)} 35px 36px), radial-gradient(${hexToRgba(template.palette.text, 0.2)} 1px, transparent 1.4px) 0 0 / 18px 18px`,
+    'terminal-grid': `linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.2)} 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.14)} 1px, transparent 1px) 0 0 / 28px 28px, repeating-linear-gradient(90deg, transparent 0 54px, ${hexToRgba(template.palette.accent, 0.16)} 54px 56px)`,
+    'editorial-atlas': `linear-gradient(90deg, transparent 0 15%, ${hexToRgba(template.palette.text, 0.16)} 15% calc(15% + 1px), transparent calc(15% + 1px) 100%), repeating-linear-gradient(0deg, transparent 0 24px, ${hexToRgba(template.palette.text, 0.07)} 24px 25px)`,
+    'boardroom-ledger': `linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.18)} 0 1px, transparent 1px 100%) 0 0 / 56px 56px, linear-gradient(0deg, ${hexToRgba(template.palette.text, 0.08)} 0 1px, transparent 1px 100%) 0 0 / 56px 28px, linear-gradient(135deg, transparent 0 68%, ${hexToRgba(template.palette.accent, 0.18)} 68% 100%)`,
+    'startup-collage': `radial-gradient(circle at 18% 24%, ${hexToRgba(template.palette.accent, 0.38)} 0 7%, transparent 7.5%), radial-gradient(circle at 82% 20%, ${hexToRgba(template.palette.secondary, 0.32)} 0 9%, transparent 9.5%), linear-gradient(135deg, transparent 0 42%, ${hexToRgba(template.palette.accent, 0.22)} 42% 54%, transparent 54% 100%), repeating-linear-gradient(-12deg, transparent 0 34px, ${hexToRgba(template.palette.text, 0.08)} 34px 36px)`,
+    'organic-fieldnotes': `radial-gradient(ellipse at 18% 88%, ${hexToRgba(template.palette.secondary, 0.34)}, transparent 42%), radial-gradient(ellipse at 82% 12%, ${hexToRgba(template.palette.accent, 0.28)}, transparent 38%), repeating-linear-gradient(102deg, transparent 0 34px, ${hexToRgba(template.palette.text, 0.07)} 35px 36px)`,
+    'brutalist-poster': `linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.82)} 0 12px, transparent 12px 100%), linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.5)} 0 18px, transparent 18px 100%), repeating-linear-gradient(45deg, transparent 0 20px, ${hexToRgba(template.palette.text, 0.11)} 20px 22px)`,
+    'broadcast-control': `linear-gradient(90deg, transparent 0 10%, ${hexToRgba(template.palette.accent, 0.18)} 10% 10.5%, transparent 10.5% 100%), repeating-linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.06)} 0 1px, transparent 1px 18px), radial-gradient(circle at 88% 14%, ${hexToRgba(template.palette.accent, 0.34)}, transparent 22%)`,
+    'data-observatory': `radial-gradient(circle at 64% 48%, ${hexToRgba(template.palette.accent, 0.28)} 0 11%, transparent 12%), repeating-radial-gradient(circle at 64% 48%, transparent 0 30px, ${hexToRgba(template.palette.accent, 0.18)} 31px 32px), radial-gradient(${hexToRgba(template.palette.text, 0.18)} 1px, transparent 1.5px) 0 0 / 16px 16px`,
+    'cinematic-storyboard': `linear-gradient(90deg, ${hexToRgba('#000000', 0.42)} 0 8%, transparent 8% 92%, ${hexToRgba('#000000', 0.42)} 92% 100%), repeating-linear-gradient(90deg, transparent 0 26px, ${hexToRgba(template.palette.text, 0.12)} 26px 28px), linear-gradient(180deg, ${hexToRgba('#000000', 0.12)}, transparent 32%, ${hexToRgba('#000000', 0.28)})`,
+    'literary-monograph': `linear-gradient(90deg, transparent 0 22%, ${hexToRgba(template.palette.accent, 0.5)} 22% calc(22% + 2px), transparent calc(22% + 2px) 100%), repeating-linear-gradient(0deg, transparent 0 20px, ${hexToRgba(template.palette.text, 0.08)} 20px 21px)`,
+    'systems-blueprint': `linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.14)} 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.14)} 1px, transparent 1px) 0 0 / 22px 22px, repeating-linear-gradient(135deg, transparent 0 36px, ${hexToRgba(template.palette.text, 0.07)} 36px 37px)`,
+  };
+
+  if (lookPattern[look]) return { base, pattern: lookPattern[look]! };
 
   // Kind-tied bias: each kind has 2-3 preferred surface variants, then hash picks
   const bias: Partial<Record<PreviewKind, number[]>> = {
