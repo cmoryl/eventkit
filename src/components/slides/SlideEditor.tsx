@@ -111,6 +111,12 @@ interface SlideEditorProps {
   corporateStyleRef?: {
     label: string;
     slides: SlideData[];
+    /** Authoritative theme palette + fonts pulled from the deck's theme1.xml. */
+    themeTokens?: {
+      name?: string;
+      colors: Record<string, string>;
+      fonts: { major?: string; minor?: string };
+    };
   } | null;
 }
 
