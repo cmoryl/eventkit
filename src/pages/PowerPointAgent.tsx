@@ -1410,6 +1410,14 @@ const PowerPointAgent: React.FC = () => {
         assetName={history.find((h) => h.deck)?.deck?.title || "New Presentation"}
         brand={(globalBrands.find((b) => b.id === selectedBrandId) || activeBrand) as any || null}
         initialSlides={editorInitialSlides}
+        corporateStyleRef={
+          selectedTemplateId && BUILTIN_CORPORATE_DECKS[selectedTemplateId] && templateStarterSlides && templateStarterSlides.length > 0
+            ? {
+                label: BUILTIN_CORPORATE_DECKS[selectedTemplateId].label,
+                slides: templateStarterSlides,
+              }
+            : null
+        }
         sidebar={
           <div className="flex flex-col h-full">
             <div className="px-4 py-3 border-b bg-card/60 shrink-0 space-y-2">

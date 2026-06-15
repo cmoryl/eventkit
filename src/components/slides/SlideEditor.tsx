@@ -47,7 +47,8 @@ import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialo
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
 import { useSlidesHistory } from '@/hooks/useSlidesHistory';
-import { Undo2, Redo2 } from 'lucide-react';
+import { Undo2, Redo2, Wand2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
 import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
 import { FindReplaceDialog } from './FindReplaceDialog';
@@ -102,9 +103,19 @@ interface SlideEditorProps {
    * Used by /agent/powerpoint to keep the chat agent visible while editing the deck.
    */
   sidebar?: React.ReactNode;
+  /**
+   * Optional reference for one-shot "Add slide in <Style> style" generation.
+   * When provided, a dedicated button appears next to "Add Slide" that calls
+   * the add-styled-slide edge function with these reference slides as the style anchor.
+   */
+  corporateStyleRef?: {
+    label: string;
+    slides: SlideData[];
+  } | null;
 }
 
-export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline, sidebar }: SlideEditorProps) {
+export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline, sidebar, corporateStyleRef }: SlideEditorProps) {
+
   const [slides, setSlides] = useState<SlideData[]>(() =>
     initialSlides && initialSlides.length > 0 ? initialSlides : [...DEFAULT_SLIDES]
   );
@@ -267,6 +278,58 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const updateSlide = useCallback((index: number, updates: Partial<SlideData>) => {
     setSlides(prev => prev.map((s, i) => i === index ? { ...s, ...updates } : s));
   }, []);
+  const [isGeneratingStyledSlide, setIsGeneratingStyledSlide] = useState(false);
+  const addStyledSlide = useCallback(async () => {
+    if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
+    setIsGeneratingStyledSlide(true);
+    const toastId = toast.loading(`Generating slide in ${corporateStyleRef.label} style…`);
+    try {
+      const refs = corporateStyleRef.slides.slice(0, 24).map((s) => ({
+        layout: s.layout,
+        title: s.title,
+        subtitle: s.subtitle,
+        body: typeof s.body === 'string' ? s.body : undefined,
+        bullets: Array.isArray((s as any).bullets) ? (s as any).bullets : undefined,
+        notes: s.notes,
+      }));
+      const { data, error } = await supabase.functions.invoke('add-styled-slide', {
+        body: {
+          styleName: corporateStyleRef.label,
+          deckTitle: assetName,
+          referenceSlides: refs,
+          insertPosition: activeIndex + 2,
+        },
+      });
+      if (error) throw new Error(error.message || 'Generation failed');
+      if (!data?.slide) throw new Error('No slide returned');
+      const g = data.slide as any;
+      const bulletsText = Array.isArray(g.bullets) && g.bullets.length
+        ? g.bullets.map((b: string) => `• ${b}`).join('\n')
+        : undefined;
+      const newSlide: SlideData = {
+        id: uuidv4(),
+        layout: (g.layout as SlideData['layout']) || 'content',
+        title: g.title || 'New Slide',
+        subtitle: g.subtitle,
+        body: g.body || bulletsText,
+        notes: g.notes,
+        variant: 'default',
+      };
+      setSlides((prev) => {
+        const next = [...prev];
+        next.splice(activeIndex + 1, 0, newSlide);
+        return next;
+      });
+      setActiveIndex(activeIndex + 1);
+      toast.success(`New ${corporateStyleRef.label} slide added ✨`, { id: toastId });
+    } catch (err) {
+      console.error('add-styled-slide failed', err);
+      toast.error(err instanceof Error ? err.message : 'Could not generate slide', { id: toastId });
+    } finally {
+      setIsGeneratingStyledSlide(false);
+    }
+  }, [corporateStyleRef, assetName, activeIndex]);
+
 
   const addSlide = useCallback((afterIndex: number) => {
     const newSlide: SlideData = {
@@ -1547,12 +1610,35 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   trailing
                 />
               </div>
-              <div className="p-3 border-t">
+              <div className="p-3 border-t space-y-2">
                 <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => addSlide(slides.length - 1)}>
                   <Plus className="h-3.5 w-3.5" />
                   Add Slide
                 </Button>
+                {corporateStyleRef && corporateStyleRef.slides.length > 0 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full gap-1.5 bg-gradient-to-r from-primary to-primary/80"
+                    onClick={addStyledSlide}
+                    disabled={isGeneratingStyledSlide}
+                    title={`One-shot generate a new slide using ${corporateStyleRef.label} as the style reference`}
+                  >
+                    {isGeneratingStyledSlide ? (
+                      <>
+                        <Wand2 className="h-3.5 w-3.5 animate-pulse" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-3.5 w-3.5" />
+                        Add slide in {corporateStyleRef.label} style
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
+
             </div>
             )}
 
