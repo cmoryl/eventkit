@@ -102,9 +102,19 @@ interface SlideEditorProps {
    * Used by /agent/powerpoint to keep the chat agent visible while editing the deck.
    */
   sidebar?: React.ReactNode;
+  /**
+   * Optional reference for one-shot "Add slide in <Style> style" generation.
+   * When provided, a dedicated button appears next to "Add Slide" that calls
+   * the add-styled-slide edge function with these reference slides as the style anchor.
+   */
+  corporateStyleRef?: {
+    label: string;
+    slides: SlideData[];
+  } | null;
 }
 
-export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline, sidebar }: SlideEditorProps) {
+export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, initialSlides, inline, sidebar, corporateStyleRef }: SlideEditorProps) {
+
   const [slides, setSlides] = useState<SlideData[]>(() =>
     initialSlides && initialSlides.length > 0 ? initialSlides : [...DEFAULT_SLIDES]
   );
