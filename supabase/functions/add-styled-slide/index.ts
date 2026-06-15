@@ -32,6 +32,27 @@ interface ReqBody {
     colors?: Record<string, string>;
     fonts?: { major?: string; minor?: string };
   };
+  // Real layout catalog parsed from ppt/slideLayouts/*.xml — gives the model
+  // a closed set of layouts that actually exist in the master deck.
+  layoutCatalog?: {
+    slideWidthEmu: number;
+    slideHeightEmu: number;
+    layouts: Array<{
+      fileName: string;
+      name: string;
+      type?: string;
+      index: number;
+      placeholders: Array<{
+        type: string;
+        idx?: number;
+        sz?: string;
+        xPct?: number;
+        yPct?: number;
+        wPct?: number;
+        hPct?: number;
+      }>;
+    }>;
+  };
 }
 
 Deno.serve(async (req) => {
