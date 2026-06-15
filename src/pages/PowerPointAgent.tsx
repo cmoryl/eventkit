@@ -1428,6 +1428,7 @@ const PowerPointAgent: React.FC = () => {
             ? {
                 label: BUILTIN_CORPORATE_DECKS[selectedTemplateId].label,
                 slides: templateStarterSlides,
+                themeTokens: templateThemeTokens ?? undefined,
               }
             : null
         }
