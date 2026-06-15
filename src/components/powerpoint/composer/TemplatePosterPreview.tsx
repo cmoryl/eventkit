@@ -569,7 +569,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
           <div className="text-[10px] font-black">Poll</div>
           {rows.map((n, i) => (
             <div key={n}><div className="mb-0.5 text-[6px] font-bold opacity-80">{n}</div>
-              <span className="block h-2 rounded-full" style={{ width: n, background: i === 0 ? accent : faint }} />
+              <span className="block h-2" style={{ width: n, ...bar(i === 0 ? accent : hexToRgba(textColor, 0.32), 'h') }} />
             </div>
           ))}
         </div>
@@ -580,21 +580,35 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
         <div className="flex h-full items-end gap-1.5">
           {rows.concat(['58%']).map((n, i) => (
             <div key={i} className="flex w-full flex-col items-center gap-1">
-              <span className="w-full rounded-t-sm" style={{ height: n, background: i === 0 ? accent : hexToRgba(textColor, 0.32) }} />
+              <span className="w-full" style={{ height: n, ...bar(i === 0 ? accent : hexToRgba(textColor, 0.32), 'v') }} />
               <span className="text-[6px] font-bold opacity-70">{n}</span>
             </div>
           ))}
         </div>
       );
     }
+    const pollDonut =
+      chartStyle === 'segmented'
+        ? `conic-gradient(${accent} 0 52%, ${template.palette.bg} 52% 56%, ${secondary} 56% 78%, ${template.palette.bg} 78% 80%, ${hexToRgba(textColor, 0.28)} 80% 100%)`
+        : chartStyle === 'gradient'
+        ? `conic-gradient(${accent} 0 56%, ${hexToRgba(accent, 0.45)} 56% 80%, ${hexToRgba(textColor, 0.22)} 80% 100%)`
+        : `conic-gradient(${accent} 0 56%, ${secondary} 56% 80%, ${hexToRgba(textColor, 0.28)} 80% 100%)`;
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="relative h-[78%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 56%, ${secondary} 56% 80%, ${hexToRgba(textColor, 0.28)} 80% 100%)` }}>
+        <div
+          className="relative h-[78%] aspect-square rounded-full"
+          style={{
+            background: pollDonut,
+            boxShadow: chartStyle === 'glow' ? `0 0 10px ${hexToRgba(accent, 0.7)}` : undefined,
+            border: chartStyle === 'outline' ? `1.5px solid ${accent}` : undefined,
+          }}
+        >
           <div className="absolute inset-[28%] flex items-center justify-center rounded-full text-[8px] font-black" style={{ background: template.palette.bg, color: accent }}>56%</div>
         </div>
       </div>
     );
   };
+
 
   // ---------- agenda variants ----------
   const renderAgenda = () => {
