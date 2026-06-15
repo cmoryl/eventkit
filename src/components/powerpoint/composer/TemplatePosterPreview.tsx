@@ -763,25 +763,17 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
           </div>
         )}
 
-        {kind === 'columns' && (
-          <div className="flex h-full flex-col gap-2"><Line w="34%" color={accent} /><div className="grid flex-1 grid-cols-2 gap-2"><div className="space-y-1 rounded-md p-1" style={{ background: faint }}><Line /><Line w="65%" /></div><div className="space-y-1 rounded-md p-1" style={{ background: hexToRgba(accent, 0.16) }}><Line /><Line w="54%" /></div></div></div>
-        )}
+        {kind === 'columns' && renderColumns()}
 
         {kind === 'image-split' && (
           <div className="grid h-full grid-cols-[0.48fr_0.52fr]"><div className="rounded-md" style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.6)}, ${hexToRgba(secondary, 0.32)}), repeating-linear-gradient(45deg, ${faint} 0 4px, transparent 4px 10px)` }} /><div className="space-y-2 p-2"><div className="text-[9px] font-black leading-none">{title}</div><Line /><Line w="62%" color={faint} /><Line w="44%" color={faint} /></div></div>
         )}
 
-        {kind === 'quote' && (
-          <div className="flex h-full flex-col items-center justify-center text-center"><div className="font-serif text-[30px] leading-none opacity-40">“</div><div className="max-w-[84%] text-[9px] font-black italic leading-tight">{title}</div><Line w="24%" color={accent} /></div>
-        )}
+        {kind === 'quote' && renderQuote()}
 
-        {kind === 'stats' && (
-          <div className="grid h-full grid-cols-2 gap-1.5">{['2.4M', '98%', '150+', '$12B'].map((stat, i) => <div key={stat} className="rounded-md p-1" style={{ background: i % 2 ? faint : hexToRgba(accent, 0.16) }}><div className="text-[10px] font-black leading-none" style={{ color: i === 0 ? accent : textColor }}>{stat}</div><Line w="54%" color={faint} /></div>)}</div>
-        )}
+        {kind === 'stats' && renderStats()}
 
-        {kind === 'stat-hero' && (
-          <div className="flex h-full flex-col justify-center"><div className="text-[32px] font-black leading-none" style={{ color: accent }}>87%</div><Line w="58%" /><Line w="38%" color={faint} /></div>
-        )}
+        {kind === 'stat-hero' && renderStatHero()}
 
         {kind === 'closing' && (
           <div className="flex h-full flex-col items-center justify-center text-center"><div className="text-[14px] font-black leading-none">THANK YOU</div><div className="mt-2 rounded-full px-3 py-1 text-[7px] font-black" style={{ background: accent, color: template.palette.bg }}>CTA</div></div>
@@ -791,17 +783,11 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
           <div className="flex h-full flex-col justify-end"><div className="absolute right-0 top-0 h-full w-1/2 skew-x-[-18deg]" style={{ background: hexToRgba(accent, 0.22) }} /><Line w="32%" color={accent} /><div className="mt-1 text-[13px] font-black leading-none">SECTION</div></div>
         )}
 
-        {kind === 'bullet' && (
-          <div className="space-y-2"><div className="text-[10px] font-black leading-none">{title}</div>{[0, 1, 2].map((i) => <div key={i} className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ background: i === 1 ? secondary : accent }} /><Line w={`${62 - i * 12}%`} /></div>)}</div>
-        )}
+        {kind === 'bullet' && renderBullet()}
 
-        {kind === 'team' && (
-          <div className="grid h-full grid-cols-2 gap-1.5">{[0, 1, 2, 3].map((i) => <div key={i} className="rounded-md p-1" style={{ background: i % 2 ? faint : hexToRgba(accent, 0.14) }}><span className="block h-5 w-5 rounded-full" style={{ background: i % 2 ? secondary : accent }} /><Line w="62%" color={faint} /></div>)}</div>
-        )}
+        {kind === 'team' && renderTeam()}
 
-        {kind === 'comparison' && (
-          <div className="grid h-full grid-cols-2 gap-2"><div className="rounded-md p-1.5" style={{ background: hexToRgba(secondary, 0.18) }}><Line color={secondary} /><Line w="55%" color={faint} /></div><div className="rounded-md p-1.5" style={{ background: hexToRgba(accent, 0.18) }}><Line color={accent} /><Line w="55%" color={faint} /></div></div>
-        )}
+        {kind === 'comparison' && renderComparison()}
 
         {kind === 'full-bleed' && (
           <div className="flex h-full items-end"><div className="w-full rounded-md p-2" style={{ background: 'rgba(0,0,0,0.58)' }}><div className="text-[10px] font-black leading-none">Full Bleed</div><Line w="42%" color={accent} /></div></div>
@@ -811,9 +797,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
           <div className="flex h-full flex-col items-center justify-center text-center"><div className="mb-2 rounded-full px-2 py-0.5 text-[6px] font-black" style={{ color: accent, border: `1px solid ${hexToRgba(textColor, 0.28)}` }}>LIVE WEBINAR</div><div className="text-[11px] font-black leading-none">{title}</div><Line w="34%" color={accent} /></div>
         )}
 
-        {kind === 'agenda' && (
-          <div className="space-y-1.5">{['01', '02', '03', '04'].map((n, i) => <div key={n} className="flex items-center gap-2 rounded-md px-1.5 py-1" style={{ background: i % 2 ? faint : hexToRgba(accent, 0.14) }}><span className="text-[8px] font-black" style={{ color: accent }}>{n}</span><Line w={`${72 - i * 8}%`} /></div>)}</div>
-        )}
+        {kind === 'agenda' && renderAgenda()}
 
         {kind === 'speaker' && (
           <div className="grid h-full grid-cols-[0.38fr_0.62fr] gap-2"><div className="rounded-md" style={{ background: `linear-gradient(135deg, ${accent}, ${secondary})` }} /><div className="space-y-1.5"><div className="text-[9px] font-black">Speaker</div><Line /><Line w="62%" color={accent} /><Line w="78%" color={faint} /><Line w="54%" color={faint} /></div></div>
@@ -823,21 +807,15 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
           <div className="flex h-full flex-col items-center justify-center text-center"><div className="text-[24px] font-black leading-none" style={{ color: accent }}>Q&A</div><div className="mt-2 flex gap-1">{[0, 1, 2].map((i) => <span key={i} className="h-3 w-6 rounded-full" style={{ background: i === 1 ? hexToRgba(secondary, 0.5) : faint }} />)}</div></div>
         )}
 
-        {kind === 'poll' && (
-          <div className="space-y-2"><div className="text-[10px] font-black">Poll</div>{['76%', '48%', '31%'].map((n, i) => <div key={n}><div className="mb-0.5 text-[6px] font-bold opacity-80">{n}</div><span className="block h-2 rounded-full" style={{ width: n, background: i === 0 ? accent : faint }} /></div>)}</div>
-        )}
+        {kind === 'poll' && renderPoll()}
 
         {kind === 'stream' && (
           <div className="flex h-full items-end"><div className="w-[82%] rounded-md p-2" style={{ background: hexToRgba(template.palette.bg, 0.72), borderLeft: `4px solid ${accent}` }}><div className="text-[9px] font-black">On-screen lower third</div><Line w="52%" color={faint} /></div></div>
         )}
 
-        {kind === 'chart' && (
-          <div className="flex h-full items-end gap-1.5">{[36, 58, 44, 74, 92].map((h, i) => <span key={i} className="w-full rounded-t-sm" style={{ height: `${h}%`, background: i === 4 ? accent : hexToRgba(textColor, 0.25) }} />)}</div>
-        )}
+        {kind === 'chart' && renderChart()}
 
-        {kind === 'process' && (
-          <div className="flex h-full items-center justify-between gap-1">{['1', '2', '3'].map((n, i) => <React.Fragment key={n}><span className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-black" style={{ background: i === 1 ? secondary : accent, color: template.palette.bg }}>{n}</span>{i < 2 && <Line w="18%" color={faint} />}</React.Fragment>)}</div>
-        )}
+        {kind === 'process' && renderProcess()}
       </div>
     </div>
   );
