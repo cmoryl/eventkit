@@ -54,7 +54,7 @@ const badgeFor = (template: DeckTemplate) => {
   return `${first} deck`;
 };
 
-type PreviewKind =
+export type PreviewKind =
   | 'title'
   | 'editorial'
   | 'columns'
@@ -310,7 +310,7 @@ const CHART_STYLES: ChartStyleId[] = ['flat', 'pill', 'outline', 'gradient', 'ha
 const chartStyleFor = (template: DeckTemplate): ChartStyleId =>
   CHART_STYLES[hashFor(`${template.id}::chart-style`) % CHART_STYLES.length];
 
-type GraphSystemId =
+export type GraphSystemId =
   | 'orbital-rings'
   | 'terminal-spark'
   | 'editorial-lollipop'
@@ -388,13 +388,13 @@ const FEATURED_GRAPH_SYSTEMS: Record<string, GraphSystemId> = {
   'pres-thank-you': 'monograph-slope',
 };
 
-const graphSystemFor = (template: DeckTemplate, kind: PreviewKind, look: DeckLookId): GraphSystemId => {
+export const graphSystemFor = (template: DeckTemplate, kind: PreviewKind, look: DeckLookId): GraphSystemId => {
   const featured = FEATURED_GRAPH_SYSTEMS[template.id];
   if (featured) return featured;
   return GRAPH_SYSTEMS[hashFor(`${template.id}::${template.name}::${kind}::${look}::graph-system`) % GRAPH_SYSTEMS.length];
 };
 
-type DeckLookId =
+export type DeckLookId =
   | 'orbital-intelligence'
   | 'terminal-grid'
   | 'editorial-atlas'
@@ -408,7 +408,7 @@ type DeckLookId =
   | 'literary-monograph'
   | 'systems-blueprint';
 
-const LOOK_LABELS: Record<DeckLookId, string> = {
+export const LOOK_LABELS: Record<DeckLookId, string> = {
   'orbital-intelligence': 'Orbital intelligence',
   'terminal-grid': 'Terminal grid',
   'editorial-atlas': 'Editorial atlas',
@@ -471,7 +471,7 @@ const TEMPLATE_LOOK_OVERRIDES: Record<string, DeckLookId> = {
   'pres-thank-you': 'literary-monograph',
 };
 
-const lookFor = (template: DeckTemplate, kind: PreviewKind): DeckLookId => {
+export const lookFor = (template: DeckTemplate, kind: PreviewKind): DeckLookId => {
   const override = TEMPLATE_LOOK_OVERRIDES[template.id];
   if (override) return override;
   const hay = `${template.id} ${template.name} ${template.description || ''} ${(template.tags || []).join(' ')}`.toLowerCase();
@@ -608,7 +608,7 @@ const barStyleFor = (
   }
 };
 
-const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean; look?: DeckLookId }) => {
+export const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean; look?: DeckLookId }) => {
   const title = shortName(template.name);
   const textColor = ['editorial', 'bullet', 'comparison'].includes(kind) && isLight(template.palette.bg) ? template.palette.text : template.palette.text;
   const lineColor = hexToRgba(textColor, 0.68);
