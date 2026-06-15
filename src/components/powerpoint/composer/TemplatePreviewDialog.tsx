@@ -42,6 +42,10 @@ interface Props {
   /** Optional: open the template's starter deck directly in the Slide Editor, skipping AI generation. */
   onOpenInEditor?: (t: DeckTemplate) => void;
   disabled?: boolean;
+  /** Scroll to a specific slide kind when the dialog opens. */
+  focusSlideKind?: SlideKind;
+  /** Highlight the focused slide as "shared" (used by the compare view). */
+  highlightShared?: boolean;
 }
 
 const buildInitialContent = (t: DeckTemplate): DemoContent => {
