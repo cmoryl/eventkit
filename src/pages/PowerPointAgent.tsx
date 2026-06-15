@@ -8,6 +8,18 @@ import { parsePptxFile } from "@/components/slides/importPptx";
 import { type SlideData } from "@/components/slides/slideTypes";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
 import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
+import transperfectDeckAsset from "@/assets/transperfect-general-deck.pptx.asset.json";
+
+// Built-in corporate decks: templates that ship with a real .pptx as their source of truth.
+// When selected, the actual deck is fetched, parsed, and used both as starter slides
+// and as the extracted-source so AI variations stay faithful to the approved look & feel.
+const BUILTIN_CORPORATE_DECKS: Record<string, { url: string; fileName: string; label: string }> = {
+  "transperfect-2026": {
+    url: transperfectDeckAsset.url,
+    fileName: "TransPerfect_General_Deck.pptx",
+    label: "TransPerfect Corporate Deck",
+  },
+};
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -159,6 +171,48 @@ const PowerPointAgent: React.FC = () => {
     return outlineToThemedSlides(lastDeck.outline, { templateId: selectedTemplateId || undefined });
   }, [history, parallaxMode, selectedTemplateId, templateStarterSlides]);
 
+  // Fetch the bundled corporate .pptx (if any) for a template and use it as both the
+  // starter slides AND the extracted source so AI follow-ups stay on-brand.
+  const loadCorporateDeckForTemplate = useCallback(async (tpl: DeckTemplate, opts: { jumpToEditor: boolean }) => {
+    const corp = BUILTIN_CORPORATE_DECKS[tpl.id];
+    if (!corp) return false;
+    try {
+      toast({ title: `Loading ${corp.label}…`, description: "Pulling the approved corporate deck." });
+      const res = await fetch(corp.url);
+      if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
+      const blob = await res.blob();
+      const file = new File([blob], corp.fileName, {
+        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      });
+      const imported = await parsePptxFile(file);
+      if (imported.length) {
+        setTemplateStarterSlides(imported);
+      }
+      // Also load as extracted source so the AI Agent can generate variations from it.
+      setPdfFile(null);
+      setThumbnails(new Map());
+      setSelectedPages([]);
+      setPptxFile(file);
+      await runPptxExtraction(file);
+      if (opts.jumpToEditor) setActiveTab("editor");
+      toast({
+        title: `${corp.label} loaded`,
+        description: `${imported.length} approved slides ready — edit anything, or ask the agent to add variations in this style.`,
+      });
+      return true;
+    } catch (err) {
+      console.error("Corporate deck load failed:", err);
+      toast({
+        title: "Couldn't load corporate deck",
+        description: err instanceof Error ? err.message : "Falling back to demo content.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    // runPptxExtraction is defined below — safe via closure at call time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setActiveTab, toast]);
+
   const applyTemplate = useCallback((tpl: DeckTemplate) => {
     setSelectedTemplateId(tpl.id);
     setThemeOverride(tpl.themePrompt);
@@ -171,8 +225,13 @@ const PowerPointAgent: React.FC = () => {
       setTone((prev) => prev.trim() ? prev : defaults.tone || prev);
       setSlideCount(10);
     }
-    toast({ title: `${tpl.name} template applied`, description: "Look & feel locked in. Edit the topic and hit Generate." });
-  }, [toast]);
+    if (BUILTIN_CORPORATE_DECKS[tpl.id]) {
+      // Auto-attach the approved corporate deck as a source so AI generations stay on-brand.
+      void loadCorporateDeckForTemplate(tpl, { jumpToEditor: false });
+    } else {
+      toast({ title: `${tpl.name} template applied`, description: "Look & feel locked in. Edit the topic and hit Generate." });
+    }
+  }, [toast, loadCorporateDeckForTemplate]);
 
   // Build starter slides that mirror the template's preview deck exactly —
   // converts the same DemoContent shown in TemplatePreviewDialog into SlideData[].
@@ -185,6 +244,11 @@ const PowerPointAgent: React.FC = () => {
     setSelectedTemplateId(tpl.id);
     setThemeOverride(tpl.themePrompt);
     setShowTemplateGallery(false);
+    if (BUILTIN_CORPORATE_DECKS[tpl.id]) {
+      // Use the real approved PPTX as the starter deck.
+      void loadCorporateDeckForTemplate(tpl, { jumpToEditor: true });
+      return;
+    }
     const starter = buildStarterSlidesForTemplate(tpl);
     setTemplateStarterSlides(starter);
     // Jump straight into the editor tab — bypass outline review entirely.
@@ -193,7 +257,7 @@ const PowerPointAgent: React.FC = () => {
       title: `${tpl.name} loaded into editor`,
       description: `${starter.length} slides loaded from the preview — edit anything, then Save as Template to keep your version.`,
     });
-  }, [buildStarterSlidesForTemplate, setActiveTab, toast]);
+  }, [buildStarterSlidesForTemplate, loadCorporateDeckForTemplate, setActiveTab, toast]);
 
   // Direct .pptx → editor import (bypasses AI). Loads parsed slides as the
   // starter deck and jumps to the Editor tab so the user can edit immediately.
