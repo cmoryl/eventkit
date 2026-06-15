@@ -276,6 +276,7 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
               <LayoutGrid className="h-4 w-4" /> Browse all {allTemplates.length}
             </button>
           </div>
+        </div>
       </div>
 
       <div className={`grid grid-cols-1 gap-5 ${isShowcase ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
