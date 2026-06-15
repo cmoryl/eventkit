@@ -159,7 +159,7 @@ const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind) =
   const bg = template.backgroundCss && template.backgroundCss !== 'transparent' ? template.backgroundCss : template.palette.bg;
   const base = bg.includes('gradient')
     ? bg
-    : `linear-gradient(145deg, ${template.palette.bg} 0%, ${hexToRgba(template.palette.accent, light ? 0.14 : 0.2)} 58%, ${light ? '#f8fafc' : '#05070f'} 100%)`;
+    : `linear-gradient(145deg, ${template.palette.bg} 0%, ${hexToRgba(template.palette.accent, light ? 0.14 : 0.2)} 58%, ${template.palette.secondary} 100%)`;
 
   if (kind === 'editorial' || kind === 'bullet' || kind === 'comparison') {
     return {
