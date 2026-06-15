@@ -94,19 +94,49 @@ Deno.serve(async (req) => {
 ${tokens.name ? `- Theme name: ${tokens.name}\n` : ""}${colorEntries.length ? `- Colors: ${colorEntries.map(([k, v]) => `${k}=${v}`).join(", ")}\n` : ""}${tokens.fonts?.major ? `- Heading font: ${tokens.fonts.major}\n` : ""}${tokens.fonts?.minor ? `- Body font: ${tokens.fonts.minor}\n` : ""}Treat these as the locked palette + typography for any colors/fonts you describe.\n`
       : "";
 
+    // Compact, deduped layout catalog — sends real layout names + placeholder
+    // skeletons (type/sz/geometry %) so the AI can pick a layout that
+    // actually exists in the master deck. Dedupes by layout name to keep the
+    // prompt short on big templates.
+    const catalog = body.layoutCatalog;
+    const seen = new Set<string>();
+    const compactLayouts = (catalog?.layouts || [])
+      .filter((l) => {
+        const key = l.name.trim().toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 24)
+      .map((l) => ({
+        name: l.name,
+        type: l.type,
+        placeholders: l.placeholders.map((p) => ({
+          t: p.type,
+          ...(p.sz ? { sz: p.sz } : {}),
+          ...(p.xPct !== undefined ? { x: p.xPct, y: p.yPct, w: p.wPct, h: p.hPct } : {}),
+        })),
+      }));
+    const layoutNames = compactLayouts.map((l) => l.name);
+    const layoutBlock = compactLayouts.length
+      ? `\nReal slide layouts available in the master deck (pick one by NAME for layoutName; the geometry tells you where placeholders sit as % of slide):
+${JSON.stringify(compactLayouts, null, 2)}\n`
+      : "";
+
     const userPrompt = `You are generating ONE new slide that must match the voice, tone, structure, and visual layout patterns of ${styleName}.
 
 Deck title: ${body.deckTitle || "(untitled)"}
 ${body.audience ? `Audience: ${body.audience}\n` : ""}
 ${body.styleNotes ? `Style notes: ${body.styleNotes}\n` : ""}
-${body.insertPosition ? `This slide will be inserted at position ${body.insertPosition}.\n` : ""}${tokensBlock}
+${body.insertPosition ? `This slide will be inserted at position ${body.insertPosition}.\n` : ""}${tokensBlock}${layoutBlock}
 User request for the new slide: ${body.prompt?.trim() || "Create a useful next slide that fits naturally into the deck. Pick a layout the deck hasn't overused."}
 
 Reference slides (existing deck — match this style precisely):
 ${JSON.stringify(refs, null, 2)}
 
 Rules:
-- Pick a layout that already exists in the reference deck. Do NOT invent new layouts.
+- ${compactLayouts.length ? "Set layoutName to a name from the catalog above — these are the only valid options. Match its placeholder set (e.g. a layout with no body placeholder should not return bullets)." : "Pick a layout that already exists in the reference deck. Do NOT invent new layouts."}
+- Also set the semantic layout enum that best matches.
 - Match phrasing length, bullet style, and tone exactly.
 - Bullets: max 6, max 12 words each.
 - Always include 1-3 sentence speaker notes.
@@ -130,6 +160,7 @@ Rules:
               type: "object",
               properties: {
                 layout: { type: "string", enum: ["title", "section", "bullets", "two_column", "stat", "quote", "closing", "content"] },
+                ...(layoutNames.length ? { layoutName: { type: "string", enum: layoutNames, description: "Exact name of the master-deck slide layout to use." } } : {}),
                 title: { type: "string" },
                 subtitle: { type: "string" },
                 bullets: { type: "array", items: { type: "string" } },
