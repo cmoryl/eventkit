@@ -38,7 +38,9 @@ import { parsePptxFile } from "@/components/slides/importPptx";
 import { SlideRenderer } from "@/components/slides/SlideRenderer";
 import { ScaledSlide } from "@/components/slides/ScaledSlide";
 import type { SlideData } from "@/components/slides/slideTypes";
+import { useSlideThumbnails } from "./useSlideThumbnails";
 import transperfectDeckAsset from "@/assets/transperfect-general-deck.pptx.asset.json";
+
 
 // Templates that ship with a real .pptx — when present, the preview dialog renders
 // the actual parsed slides instead of synthetic mocks.
