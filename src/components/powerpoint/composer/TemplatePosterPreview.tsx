@@ -387,6 +387,81 @@ const slideFrameStyleFor = (look: DeckLookId, template: DeckTemplate, textColor:
   return { ...common, borderRadius: 12, boxShadow: `0 18px 42px ${hexToRgba(template.palette.accent, 0.22)}` };
 };
 
+const copyBlockClassFor = (look: DeckLookId, dense?: boolean) => {
+  const pad = dense ? 'pt-8' : 'pt-24';
+  const map: Partial<Record<DeckLookId, string>> = {
+    'orbital-intelligence': `${dense ? 'pt-8' : 'pt-28'} max-w-[60%]`,
+    'terminal-grid': `${dense ? 'pt-6' : 'pt-20'} max-w-[58%] uppercase`,
+    'editorial-atlas': `${dense ? 'pt-12' : 'pt-32'} max-w-[48%] ml-[8%]`,
+    'boardroom-ledger': `${dense ? 'pt-6' : 'pt-20'} max-w-[64%]`,
+    'startup-collage': `${dense ? 'pt-14' : 'pt-36'} max-w-[68%] -rotate-1`,
+    'organic-fieldnotes': `${dense ? 'pt-10' : 'pt-28'} max-w-[62%]`,
+    'brutalist-poster': `${dense ? 'pt-4' : 'pt-12'} max-w-[86%]`,
+    'broadcast-control': `${dense ? 'pt-16' : 'pt-36'} max-w-[58%]`,
+    'data-observatory': `${dense ? 'pt-10' : 'pt-28'} max-w-[58%]`,
+    'cinematic-storyboard': `${dense ? 'pt-16' : 'pt-40'} max-w-[70%]`,
+    'literary-monograph': `${dense ? 'pt-12' : 'pt-32'} max-w-[52%] ml-[10%]`,
+    'systems-blueprint': `${dense ? 'pt-8' : 'pt-24'} max-w-[60%]`,
+  };
+  return map[look] || `${pad} max-w-[72%]`;
+};
+
+const LookMotif = ({ look, template, textColor }: { look: DeckLookId; template: DeckTemplate; textColor: string }) => {
+  const accent = template.palette.accent;
+  const secondary = template.palette.secondary;
+  const faint = hexToRgba(textColor, 0.2);
+  if (look === 'orbital-intelligence' || look === 'data-observatory') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute right-[-54px] bottom-[-76px] h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.34)}, transparent 30%), repeating-radial-gradient(circle, transparent 0 30px, ${hexToRgba(look === 'orbital-intelligence' ? secondary : accent, 0.32)} 31px 32px)` }} />
+        {[0, 1, 2, 3].map((i) => <span key={i} className="absolute h-2.5 w-2.5 rounded-full" style={{ right: `${34 + i * 43}px`, bottom: `${42 + (i % 2) * 78}px`, background: i % 2 ? secondary : accent, boxShadow: `0 0 14px ${hexToRgba(accent, 0.6)}` }} />)}
+      </div>
+    );
+  }
+  if (look === 'terminal-grid' || look === 'systems-blueprint') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute right-7 top-12 h-28 w-44 border" style={{ borderColor: hexToRgba(accent, 0.36), clipPath: look === 'systems-blueprint' ? 'polygon(0 0, 100% 0, 82% 100%, 0 100%)' : undefined }} />
+        <svg className="absolute right-8 top-20 h-24 w-44" viewBox="0 0 180 96" fill="none"><path d="M4 72 L38 40 L70 58 L112 18 L172 42" stroke={accent} strokeWidth="3" strokeLinecap="square"/><path d="M4 88 H172" stroke={faint} strokeWidth="1"/><path d="M24 8 V88M72 8V88M120 8V88M168 8V88" stroke={faint} strokeWidth="1"/></svg>
+      </div>
+    );
+  }
+  if (look === 'editorial-atlas' || look === 'literary-monograph') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute left-[14%] top-0 h-full w-px" style={{ background: hexToRgba(textColor, 0.28) }} />
+        <div className="absolute right-8 top-12 h-48 w-32" style={{ background: `linear-gradient(180deg, ${hexToRgba(accent, 0.32)}, ${hexToRgba(secondary, 0.16)})`, border: `1px solid ${hexToRgba(textColor, 0.2)}` }} />
+        <div className="absolute right-20 bottom-14 font-serif text-[132px] leading-none opacity-20" style={{ color: accent }}>{look === 'literary-monograph' ? '”' : '§'}</div>
+      </div>
+    );
+  }
+  if (look === 'boardroom-ledger') {
+    return <div aria-hidden className="absolute inset-y-8 right-8 w-44 border-l border-r" style={{ borderColor: hexToRgba(accent, 0.35), background: `repeating-linear-gradient(0deg, transparent 0 30px, ${hexToRgba(textColor, 0.1)} 30px 31px)` }} />;
+  }
+  if (look === 'startup-collage') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute right-10 top-12 h-28 w-36 rotate-6 rounded-2xl" style={{ background: accent }} />
+        <div className="absolute right-28 top-28 h-24 w-24 -rotate-12 rounded-full" style={{ background: secondary }} />
+        <div className="absolute right-6 bottom-16 h-20 w-44 rotate-[-8deg] rounded-lg border-2" style={{ borderColor: textColor }} />
+      </div>
+    );
+  }
+  if (look === 'organic-fieldnotes') {
+    return <div aria-hidden className="absolute right-[-40px] top-12 h-56 w-56 rounded-[42%_58%_48%_52%]" style={{ background: `radial-gradient(ellipse at 35% 35%, ${hexToRgba(accent, 0.4)}, ${hexToRgba(secondary, 0.22)} 58%, transparent 60%)` }} />;
+  }
+  if (look === 'brutalist-poster') {
+    return <div aria-hidden className="absolute right-[-18px] top-10 h-44 w-56 rotate-6 border-[10px]" style={{ borderColor: textColor, background: accent }} />;
+  }
+  if (look === 'broadcast-control') {
+    return <div aria-hidden className="absolute right-6 top-10 h-40 w-52 rounded-xl border" style={{ borderColor: hexToRgba(accent, 0.42), background: `linear-gradient(180deg, ${hexToRgba(accent, 0.18)}, transparent)` }} />;
+  }
+  if (look === 'cinematic-storyboard') {
+    return <div aria-hidden className="absolute inset-x-0 top-10 h-12" style={{ background: `repeating-linear-gradient(90deg, ${hexToRgba(textColor, 0.28)} 0 18px, transparent 18px 34px)` }} />;
+  }
+  return null;
+};
+
 const barStyleFor = (
   style: ChartStyleId,
   color: string,
