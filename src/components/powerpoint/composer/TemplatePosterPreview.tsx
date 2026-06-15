@@ -777,7 +777,7 @@ export const MiniSlide = ({ kind, template, compact = false, look: forcedLook }:
     const pathFrom = (vals: number[], w = 100, h = 60) => vals.map((n, i) => `${i ? 'L' : 'M'}${(i / Math.max(vals.length - 1, 1)) * w} ${h - (n / 100) * h}`).join(' ');
 
     switch (graphSystem) {
-      case 'orbital-rings':
+      case 'orbital-rings': {
         const orbitNodes = Array.from({ length: 5 }, (_, i) => ({ left: 14 + metric(i, 0, 72), top: 18 + metric(i + 4, 0, 58) }));
         return (
           <div className="relative h-full w-full">
@@ -786,6 +786,7 @@ export const MiniSlide = ({ kind, template, compact = false, look: forcedLook }:
             {orbitNodes.map((p, i) => <span key={`${p.left}-${p.top}`} className="absolute h-2.5 w-2.5 rounded-full" style={{ left: `${p.left}%`, top: `${p.top}%`, background: i % 2 ? secondary : accent, boxShadow: `0 0 10px ${hexToRgba(i % 2 ? secondary : accent, 0.8)}` }} />)}
           </div>
         );
+      }
       case 'terminal-spark':
         return (
           <div className="grid h-full grid-cols-[0.28fr_1fr] gap-1.5 font-mono">
