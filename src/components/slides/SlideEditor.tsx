@@ -2672,9 +2672,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     {/* Confirmation preview for AI-generated styled slide */}
     <Dialog
       open={!!pendingStyledSlide}
-      onOpenChange={(open) => { if (!open) { setPendingStyledSlide(null); setPendingStyledLayout(null); } }}
+      onOpenChange={(open) => { if (!open) { setPendingStyledSlide(null); setPendingStyledLayout(null); setPendingGenerated(null); setPlaceholderAssignments({}); } }}
     >
-      <DialogContent className="max-w-5xl w-[90vw] p-0 overflow-hidden">
+      <DialogContent className="max-w-6xl w-[95vw] p-0 overflow-hidden">
         <div className="flex items-center justify-between gap-3 px-5 py-3 border-b">
           <div className="min-w-0">
             <h2 className="text-base font-semibold flex items-center gap-2">
@@ -2699,73 +2699,183 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             </Button>
           )}
         </div>
-        <div className="bg-black/40 p-4">
-          <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
-            {pendingStyledSlide && (
-              <CenteredScaledSlide>
-                <SlideRenderer
-                  slide={pendingStyledSlide}
-                  brandColors={brandColors}
-                  brandFonts={brandFonts}
-                />
-              </CenteredScaledSlide>
-            )}
-            {/* Placeholder overlay — % positions come straight from the
-                master deck's slideLayout XML (theme1.xml + slideLayouts/). */}
-            {showPlaceholderOverlay && pendingStyledLayout && (
-              <div className="absolute inset-0 pointer-events-none">
-                {pendingStyledLayout.placeholders.map((ph, i) => {
-                  if (
-                    ph.xPct === undefined || ph.yPct === undefined ||
-                    ph.wPct === undefined || ph.hPct === undefined
-                  ) return null;
-                  const colorFor = (t: string) => {
-                    const k = t.toLowerCase();
-                    if (k === 'title' || k === 'ctrtitle') return 'rgba(56,189,248,0.95)'; // sky
-                    if (k === 'subtitle') return 'rgba(167,139,250,0.95)'; // violet
-                    if (k === 'body') return 'rgba(74,222,128,0.95)'; // green
-                    if (k === 'pic') return 'rgba(251,146,60,0.95)'; // orange
-                    return 'rgba(244,114,182,0.95)'; // pink (footer, dt, sldNum, other)
-                  };
-                  const c = colorFor(ph.type);
-                  return (
-                    <div
-                      key={`${ph.type}-${ph.idx ?? i}`}
-                      className="absolute rounded-sm"
-                      style={{
-                        left: `${ph.xPct}%`,
-                        top: `${ph.yPct}%`,
-                        width: `${ph.wPct}%`,
-                        height: `${ph.hPct}%`,
-                        border: `2px dashed ${c}`,
-                        boxShadow: `inset 0 0 0 9999px ${c.replace('0.95', '0.08')}`,
-                      }}
-                    >
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px] bg-black/40">
+          <div className="p-4 min-w-0">
+            <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
+              {(previewSlide ?? pendingStyledSlide) && (
+                <CenteredScaledSlide>
+                  <SlideRenderer
+                    slide={previewSlide ?? pendingStyledSlide!}
+                    brandColors={brandColors}
+                    brandFonts={brandFonts}
+                  />
+                </CenteredScaledSlide>
+              )}
+              {/* Placeholder overlay — % positions come straight from the
+                  master deck's slideLayout XML (theme1.xml + slideLayouts/). */}
+              {showPlaceholderOverlay && pendingStyledLayout && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {pendingStyledLayout.placeholders.map((ph, i) => {
+                    if (
+                      ph.xPct === undefined || ph.yPct === undefined ||
+                      ph.wPct === undefined || ph.hPct === undefined
+                    ) return null;
+                    const colorFor = (t: string) => {
+                      const k = t.toLowerCase();
+                      if (k === 'title' || k === 'ctrtitle') return 'rgba(56,189,248,0.95)';
+                      if (k === 'subtitle') return 'rgba(167,139,250,0.95)';
+                      if (k === 'body') return 'rgba(74,222,128,0.95)';
+                      if (k === 'pic') return 'rgba(251,146,60,0.95)';
+                      return 'rgba(244,114,182,0.95)';
+                    };
+                    const c = colorFor(ph.type);
+                    return (
                       <div
-                        className="absolute top-0 left-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-br-md text-white whitespace-nowrap"
-                        style={{ background: c }}
+                        key={`${ph.type}-${ph.idx ?? i}`}
+                        className="absolute rounded-sm"
+                        style={{
+                          left: `${ph.xPct}%`,
+                          top: `${ph.yPct}%`,
+                          width: `${ph.wPct}%`,
+                          height: `${ph.hPct}%`,
+                          border: `2px dashed ${c}`,
+                          boxShadow: `inset 0 0 0 9999px ${c.replace('0.95', '0.08')}`,
+                        }}
                       >
-                        {ph.type}{ph.idx !== undefined ? `[${ph.idx}]` : ''}
-                        {ph.fills ? ` · ${ph.fills}` : ''}
+                        <div
+                          className="absolute top-0 left-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-br-md text-white whitespace-nowrap"
+                          style={{ background: c }}
+                        >
+                          {ph.type}{ph.idx !== undefined ? `[${ph.idx}]` : ''}
+                          {ph.fills ? ` · ${ph.fills}` : ''}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            {(previewSlide ?? pendingStyledSlide)?.notes && (
+              <div className="mt-3 text-xs text-muted-foreground bg-background/60 rounded-md p-3 border">
+                <span className="font-semibold text-foreground">Speaker notes: </span>
+                {(previewSlide ?? pendingStyledSlide)!.notes}
               </div>
             )}
           </div>
-          {pendingStyledSlide?.notes && (
-            <div className="mt-3 text-xs text-muted-foreground bg-background/60 rounded-md p-3 border">
-              <span className="font-semibold text-foreground">Speaker notes: </span>
-              {pendingStyledSlide.notes}
+
+          {/* Per-placeholder override panel */}
+          <aside className="border-l border-border/60 bg-background/95 backdrop-blur p-4 overflow-y-auto max-h-[70vh]">
+            <div className="mb-3">
+              <h3 className="text-sm font-semibold">Placeholder content</h3>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Override which generated text fills each master placeholder. Changes preview live.
+              </p>
             </div>
-          )}
+            {!pendingStyledLayout || pendingStyledLayout.placeholders.length === 0 ? (
+              <div className="text-xs text-muted-foreground italic">No master placeholders resolved for this slide.</div>
+            ) : (
+              <div className="space-y-3">
+                {pendingStyledLayout.placeholders.map((ph, i) => {
+                  const key = phKey(ph, i);
+                  const tgt = targetFieldForType(ph.type);
+                  const assign = placeholderAssignments[key] ?? { source: 'auto' };
+                  const editable = !!tgt;
+                  const colorBar = (() => {
+                    const k = ph.type.toLowerCase();
+                    if (k === 'title' || k === 'ctrtitle') return 'bg-sky-400';
+                    if (k === 'subtitle') return 'bg-violet-400';
+                    if (k === 'body') return 'bg-green-400';
+                    if (k === 'pic') return 'bg-orange-400';
+                    return 'bg-pink-400';
+                  })();
+                  const preview = editable ? resolveAssignedText(assign, ph.type) : undefined;
+                  return (
+                    <div key={key} className="rounded-md border border-border bg-card/60 p-2.5">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className={`inline-block h-2 w-2 rounded-full ${colorBar}`} />
+                        <span className="text-[11px] font-mono font-semibold">
+                          {ph.type}{ph.idx !== undefined ? `[${ph.idx}]` : ''}
+                        </span>
+                        {!editable && (
+                          <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">readonly</span>
+                        )}
+                      </div>
+                      {editable ? (
+                        <>
+                          <Select
+                            value={assign.source}
+                            onValueChange={(v) =>
+                              setPlaceholderAssignments((prev) => ({
+                                ...prev,
+                                [key]: { ...prev[key], source: v as PhAssign['source'] },
+                              }))
+                            }
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Source" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="auto">Auto (generated {tgt})</SelectItem>
+                              <SelectItem value="title">Generated title{pendingGenerated?.title ? '' : ' (empty)'}</SelectItem>
+                              <SelectItem value="subtitle">Generated subtitle{pendingGenerated?.subtitle ? '' : ' (empty)'}</SelectItem>
+                              <SelectItem value="body">Generated body{pendingGenerated?.body ? '' : ' (empty)'}</SelectItem>
+                              <SelectItem value="notes">Generated notes{pendingGenerated?.notes ? '' : ' (empty)'}</SelectItem>
+                              <SelectItem value="custom">Custom text…</SelectItem>
+                              <SelectItem value="empty">Leave empty</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {assign.source === 'custom' ? (
+                            <Textarea
+                              className="mt-2 text-xs min-h-[60px]"
+                              placeholder="Type the text to use for this placeholder"
+                              value={assign.custom ?? ''}
+                              onChange={(e) =>
+                                setPlaceholderAssignments((prev) => ({
+                                  ...prev,
+                                  [key]: { source: 'custom', custom: e.target.value },
+                                }))
+                              }
+                            />
+                          ) : (
+                            preview !== undefined && (
+                              <div className="mt-2 text-[11px] text-muted-foreground bg-muted/40 rounded px-2 py-1.5 border max-h-24 overflow-y-auto whitespace-pre-wrap">
+                                {preview && preview.trim() ? preview : <span className="italic">empty</span>}
+                              </div>
+                            )
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-[11px] text-muted-foreground">
+                          {ph.fills ?? 'Filled from master layout (not editable here).'}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full mt-2 text-xs"
+                  onClick={() => {
+                    if (!pendingStyledLayout) return;
+                    const defaults: Record<string, PhAssign> = {};
+                    pendingStyledLayout.placeholders.forEach((p, i) => {
+                      defaults[phKey(p, i)] = { source: 'auto' };
+                    });
+                    setPlaceholderAssignments(defaults);
+                  }}
+                >
+                  Reset to auto mapping
+                </Button>
+              </div>
+            )}
+          </aside>
         </div>
         <div className="flex items-center justify-between gap-2 px-5 py-3 border-t bg-background">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => { setPendingStyledSlide(null); setPendingStyledLayout(null); }}
+            onClick={() => { setPendingStyledSlide(null); setPendingStyledLayout(null); setPendingGenerated(null); setPlaceholderAssignments({}); }}
             disabled={isGeneratingStyledSlide}
           >
             Discard
@@ -2774,7 +2884,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             <Button
               variant="outline"
               size="sm"
-              onClick={() => { setPendingStyledSlide(null); setPendingStyledLayout(null); generateStyledSlide(); }}
+              onClick={() => { setPendingStyledSlide(null); setPendingStyledLayout(null); setPendingGenerated(null); setPlaceholderAssignments({}); generateStyledSlide(); }}
               disabled={isGeneratingStyledSlide}
               className="gap-1.5"
             >
