@@ -62,12 +62,23 @@ Deno.serve(async (req) => {
     }));
 
     const styleName = body.styleName || "the existing deck";
+
+    // Compact brand-tokens block — gives the model the real palette + fonts
+    // pulled from theme1.xml so phrasing/structure references stay tied to
+    // the authoritative brand system.
+    const tokens = body.themeTokens;
+    const colorEntries = tokens?.colors ? Object.entries(tokens.colors) : [];
+    const tokensBlock = tokens && (colorEntries.length || tokens.fonts?.major || tokens.fonts?.minor)
+      ? `\nAuthoritative brand tokens (parsed from the source deck's theme):
+${tokens.name ? `- Theme name: ${tokens.name}\n` : ""}${colorEntries.length ? `- Colors: ${colorEntries.map(([k, v]) => `${k}=${v}`).join(", ")}\n` : ""}${tokens.fonts?.major ? `- Heading font: ${tokens.fonts.major}\n` : ""}${tokens.fonts?.minor ? `- Body font: ${tokens.fonts.minor}\n` : ""}Treat these as the locked palette + typography for any colors/fonts you describe.\n`
+      : "";
+
     const userPrompt = `You are generating ONE new slide that must match the voice, tone, structure, and visual layout patterns of ${styleName}.
 
 Deck title: ${body.deckTitle || "(untitled)"}
 ${body.audience ? `Audience: ${body.audience}\n` : ""}
 ${body.styleNotes ? `Style notes: ${body.styleNotes}\n` : ""}
-${body.insertPosition ? `This slide will be inserted at position ${body.insertPosition}.\n` : ""}
+${body.insertPosition ? `This slide will be inserted at position ${body.insertPosition}.\n` : ""}${tokensBlock}
 User request for the new slide: ${body.prompt?.trim() || "Create a useful next slide that fits naturally into the deck. Pick a layout the deck hasn't overused."}
 
 Reference slides (existing deck — match this style precisely):
