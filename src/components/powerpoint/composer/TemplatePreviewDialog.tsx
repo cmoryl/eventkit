@@ -1931,7 +1931,7 @@ export const SlideMock: React.FC<{
             {content.kpi.supporting.map((s, i) => {
               const numeric = parseFloat(String(s.value).replace(/[^0-9.]/g, "")) || (i + 1) * 21;
               const pct = Math.min(96, Math.max(20, (numeric % 100) + 14));
-              const variant = pickVariant(t.id, `kpi-${i}`, index + i);
+              const kpiGraphic = DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 4 + 1) % DATA_GRAPHICS.length];
               return (
                 <div
                   key={i}
@@ -1955,15 +1955,15 @@ export const SlideMock: React.FC<{
                     />
                   </div>
                   <div className="flex-1 min-h-0">
-                    <VisualVariant
-                      variant={variant}
+                    <DataGraphic
+                      system={kpiGraphic}
+                      series={[{ label: s.label, value: numeric }, { label: 'Goal', value: pct }, { label: 'Base', value: pct * 0.54 }]}
                       accent={t.palette.accent}
                       secondary={t.palette.secondary}
                       text={t.palette.text}
+                      bg={t.palette.bg}
                       muted={muted}
                       seed={i + 9}
-                      percent={pct}
-                      size="sm"
                     />
                   </div>
                   <div
