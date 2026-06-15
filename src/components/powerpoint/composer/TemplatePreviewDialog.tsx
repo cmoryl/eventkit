@@ -1114,14 +1114,15 @@ export const SlideMock: React.FC<{
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-[72%] h-[62%]">
-                <VisualVariant
-                  variant={pickVariant(t.id, "section-hero", index)}
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 2) % DATA_GRAPHICS.length]}
+                  series={content.chart.series}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                   seed={index + 7}
-                  size="lg"
                 />
               </div>
             </div>
