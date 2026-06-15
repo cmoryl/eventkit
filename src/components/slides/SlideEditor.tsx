@@ -2526,6 +2526,75 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         content: { slides, slideTransition },
       }}
     />
+
+    {/* Confirmation preview for AI-generated styled slide */}
+    <Dialog
+      open={!!pendingStyledSlide}
+      onOpenChange={(open) => { if (!open) setPendingStyledSlide(null); }}
+    >
+      <DialogContent className="max-w-5xl w-[90vw] p-0 overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3 border-b">
+          <div>
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-primary" />
+              Preview new {corporateStyleRef?.label ?? ''} slide
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Review before inserting after slide {activeIndex + 1}
+            </p>
+          </div>
+        </div>
+        <div className="bg-black/40 p-4">
+          <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
+            {pendingStyledSlide && (
+              <CenteredScaledSlide>
+                <SlideRenderer
+                  slide={pendingStyledSlide}
+                  brandColors={brandColors}
+                  brandFonts={brandFonts}
+                />
+              </CenteredScaledSlide>
+            )}
+          </div>
+          {pendingStyledSlide?.notes && (
+            <div className="mt-3 text-xs text-muted-foreground bg-background/60 rounded-md p-3 border">
+              <span className="font-semibold text-foreground">Speaker notes: </span>
+              {pendingStyledSlide.notes}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t bg-background">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setPendingStyledSlide(null)}
+            disabled={isGeneratingStyledSlide}
+          >
+            Discard
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setPendingStyledSlide(null); generateStyledSlide(); }}
+              disabled={isGeneratingStyledSlide}
+              className="gap-1.5"
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              {isGeneratingStyledSlide ? 'Regenerating…' : 'Regenerate'}
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={confirmInsertPendingSlide}
+              disabled={isGeneratingStyledSlide}
+            >
+              Insert into deck
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
