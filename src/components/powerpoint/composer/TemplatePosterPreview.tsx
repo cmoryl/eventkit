@@ -1545,16 +1545,24 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
   const surface = surfaceFor(template, light, kind, look);
   const swatches = [template.palette.accent, template.palette.secondary, template.palette.text, template.palette.bg];
 
+  // Info zone takes on the template's own look-and-feel colors
+  const infoBg = `linear-gradient(180deg, ${template.palette.bg} 0%, ${hexToRgba(template.palette.secondary, light ? 0.5 : 0.4)} 100%)`;
+  const infoText = template.palette.text;
+  const infoMuted = hexToRgba(template.palette.text, 0.65);
+  const infoBorder = hexToRgba(template.palette.text, 0.18);
+  const infoDivider = hexToRgba(template.palette.text, 0.14);
+
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg',
+        'group relative flex w-full flex-col overflow-hidden rounded-2xl border text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg',
         selected ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary/40',
         disabled && 'cursor-not-allowed opacity-50',
       )}
+      style={{ background: template.palette.bg }}
     >
       {/* Preview zone — contained thumbnail, no overlapping text */}
       <div
@@ -1566,12 +1574,6 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
         <LookMotif look={look} template={template} textColor={template.palette.text} />
         <DeckPreviewVisual t={template} kind={kind} look={look} />
 
-        {/* Subtle bottom gradient to anchor the preview */}
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-12"
-          style={{ background: `linear-gradient(to top, ${hexToRgba(template.palette.bg, 0.55)}, transparent)` }}
-        />
-
         {/* Tiny label badges in preview corner */}
         <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
           <span
@@ -1581,47 +1583,70 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
             {badgeFor(template)}
           </span>
           {shared && (
-            <span className="rounded-md bg-primary/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground">
+            <span
+              className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+              style={{ background: template.palette.accent, color: template.palette.bg }}
+            >
               Shared
             </span>
           )}
           {saved && !shared && (
-            <span className="rounded-md bg-background/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-foreground">
+            <span
+              className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+              style={{ background: hexToRgba(template.palette.text, 0.92), color: template.palette.bg }}
+            >
               Saved
             </span>
           )}
         </div>
 
         {selected && (
-          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+          <span
+            className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full shadow-md"
+            style={{ background: template.palette.accent, color: template.palette.bg }}
+          >
             <Check className="h-3.5 w-3.5" />
           </span>
         )}
       </div>
 
-      {/* Info zone — clean, neutral, readable */}
-      <div className={cn('flex flex-1 flex-col gap-2 p-4', dense && 'p-3')}>
+      {/* Info zone — uses the template's own colors so each card carries its own look & feel */}
+      <div
+        className={cn('flex flex-1 flex-col gap-2 p-4', dense && 'p-3')}
+        style={{ background: infoBg, color: infoText, borderTop: `1px solid ${infoDivider}` }}
+      >
         <div className="flex items-start justify-between gap-3">
-          <h3 className={cn('font-semibold leading-tight tracking-tight text-foreground line-clamp-2', dense ? 'text-sm' : 'text-base')}>
+          <h3
+            className={cn('font-semibold leading-tight tracking-tight line-clamp-2', dense ? 'text-sm' : 'text-base')}
+            style={{ color: infoText }}
+          >
             {template.name}
           </h3>
           <div className="flex shrink-0 items-center gap-1">
             {swatches.slice(0, 4).map((color, i) => (
               <span
                 key={`${color}-${i}`}
-                className="h-3 w-3 rounded-full border border-border/50"
-                style={{ background: color }}
+                className="h-3 w-3 rounded-full"
+                style={{ background: color, border: `1px solid ${infoBorder}` }}
                 aria-hidden
               />
             ))}
           </div>
         </div>
-        <p className={cn('line-clamp-2 text-xs text-muted-foreground', dense && 'line-clamp-1')}>
+        <p
+          className={cn('line-clamp-2 text-xs', dense && 'line-clamp-1')}
+          style={{ color: infoMuted }}
+        >
           {template.description || 'Prebuilt PowerPoint deck system'}
         </p>
-        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
-          <MonitorPlay className="h-3 w-3" />
-          <span>Full deck · {LOOK_LABELS[look]}</span>
+        <div
+          className="mt-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider"
+          style={{ color: infoMuted }}
+        >
+          <MonitorPlay className="h-3 w-3" style={{ color: template.palette.accent }} />
+          <span style={{ color: template.palette.accent }}>Full deck</span>
+          <span aria-hidden>·</span>
+          <span>{LOOK_LABELS[look]}</span>
         </div>
       </div>
     </button>
