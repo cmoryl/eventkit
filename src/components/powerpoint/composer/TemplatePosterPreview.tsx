@@ -570,7 +570,6 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
   const renderLookSlide = () => {
     const isData = ['stats', 'stat-hero', 'chart', 'poll', 'comparison'].includes(kind);
     const isPeople = ['team', 'speaker', 'webinar-title', 'qa', 'stream'].includes(kind);
-    const numeric = ['96%', '12m', '+38%', '20%'];
 
     if (look === 'orbital-intelligence' || look === 'data-observatory') {
       return (
