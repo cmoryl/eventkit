@@ -277,6 +277,41 @@ const shortName = (value: string) => value.replace(/\s+[–-]\s+.*/, '').replace
 const variantFor = (template: DeckTemplate, kind: PreviewKind, salt = '') =>
   hashFor(`${template.id}::variant::${kind}::${salt}`);
 
+// Per-template graphic STYLE profile — applied across every data-graphic
+// renderer (bars, lines, donuts, stats, poll, stat-hero) so the aesthetic
+// of charts varies template-to-template, not just the chart type.
+type ChartStyleId = 'flat' | 'pill' | 'outline' | 'gradient' | 'hatched' | 'dotted' | 'glow' | 'segmented';
+const CHART_STYLES: ChartStyleId[] = ['flat', 'pill', 'outline', 'gradient', 'hatched', 'dotted', 'glow', 'segmented'];
+const chartStyleFor = (template: DeckTemplate): ChartStyleId =>
+  CHART_STYLES[hashFor(`${template.id}::chart-style`) % CHART_STYLES.length];
+
+const barStyleFor = (
+  style: ChartStyleId,
+  color: string,
+  faintColor: string,
+  orientation: 'v' | 'h' = 'v',
+): React.CSSProperties => {
+  switch (style) {
+    case 'pill':
+      return { background: color, borderRadius: 999 };
+    case 'outline':
+      return { background: 'transparent', border: `1.5px solid ${color}`, borderRadius: 2 };
+    case 'gradient':
+      return { background: `linear-gradient(${orientation === 'v' ? '180deg' : '90deg'}, ${color}, ${hexToRgba(color, 0.35)})`, borderRadius: 3 };
+    case 'hatched':
+      return { background: `repeating-linear-gradient(45deg, ${color} 0 3px, ${hexToRgba(color, 0.25)} 3px 6px)`, borderRadius: 2 };
+    case 'dotted':
+      return { background: `repeating-linear-gradient(${orientation === 'v' ? '0deg' : '90deg'}, ${color} 0 2px, transparent 2px 5px)`, borderRadius: 1 };
+    case 'glow':
+      return { background: color, borderRadius: 3, boxShadow: `0 0 6px ${hexToRgba(color, 0.85)}, 0 0 12px ${hexToRgba(color, 0.45)}` };
+    case 'segmented':
+      return { background: `repeating-linear-gradient(${orientation === 'v' ? '180deg' : '90deg'}, ${color} 0 6px, ${hexToRgba(faintColor, 0.6)} 6px 8px)`, borderRadius: 2 };
+    case 'flat':
+    default:
+      return { background: color, borderRadius: 0 };
+  }
+};
+
 const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean }) => {
   const title = shortName(template.name);
   const textColor = ['editorial', 'bullet', 'comparison'].includes(kind) && isLight(template.palette.bg) ? template.palette.text : template.palette.text;
@@ -285,6 +320,8 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
   const accent = template.palette.accent;
   const secondary = template.palette.secondary;
   const v = variantFor(template, kind);
+  const chartStyle = chartStyleFor(template);
+  const bar = (color: string, orient: 'v' | 'h' = 'v') => barStyleFor(chartStyle, color, textColor, orient);
 
   const Line = ({ w = '70%', color = lineColor }: { w?: string; color?: string }) => (
     <span className="block h-[3px] rounded-full" style={{ width: w, background: color }} />
