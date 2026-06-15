@@ -136,6 +136,100 @@ const Editable: React.FC<{
   );
 };
 
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(clean)) return `rgba(255,255,255,${alpha})`;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
+const hashString = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  return hash;
+};
+
+type DeckLookId =
+  | 'orbital-intelligence'
+  | 'terminal-grid'
+  | 'editorial-atlas'
+  | 'boardroom-ledger'
+  | 'startup-collage'
+  | 'organic-fieldnotes'
+  | 'brutalist-poster'
+  | 'broadcast-control'
+  | 'data-observatory'
+  | 'cinematic-storyboard'
+  | 'literary-monograph'
+  | 'systems-blueprint';
+
+type DataGraphicId =
+  | 'orbital-rings'
+  | 'terminal-spark'
+  | 'editorial-lollipop'
+  | 'ledger-waterfall'
+  | 'startup-sticker'
+  | 'fieldnotes-scatter'
+  | 'brutal-blocks'
+  | 'broadcast-vu'
+  | 'observatory-radar'
+  | 'storyboard-frames'
+  | 'monograph-slope'
+  | 'blueprint-node'
+  | 'heatmap-matrix'
+  | 'funnel-stack'
+  | 'treemap-tiles'
+  | 'gantt-roadmap'
+  | 'quadrant-bubbles'
+  | 'radial-bars'
+  | 'candlestick-tape'
+  | 'sankey-ribbons';
+
+const DATA_GRAPHICS: DataGraphicId[] = ['orbital-rings', 'terminal-spark', 'editorial-lollipop', 'ledger-waterfall', 'startup-sticker', 'fieldnotes-scatter', 'brutal-blocks', 'broadcast-vu', 'observatory-radar', 'storyboard-frames', 'monograph-slope', 'blueprint-node', 'heatmap-matrix', 'funnel-stack', 'treemap-tiles', 'gantt-roadmap', 'quadrant-bubbles', 'radial-bars', 'candlestick-tape', 'sankey-ribbons'];
+
+const TEMPLATE_SYSTEM_OVERRIDES: Record<string, { look: DeckLookId; graphic: DataGraphicId }> = {
+  'transperfect-2026': { look: 'orbital-intelligence', graphic: 'orbital-rings' },
+  'modern-dark': { look: 'terminal-grid', graphic: 'terminal-spark' },
+  'editorial-light': { look: 'editorial-atlas', graphic: 'editorial-lollipop' },
+  'corporate-navy': { look: 'boardroom-ledger', graphic: 'ledger-waterfall' },
+  'vibrant-startup': { look: 'startup-collage', graphic: 'startup-sticker' },
+  'warm-terracotta': { look: 'organic-fieldnotes', graphic: 'fieldnotes-scatter' },
+  'mono-brutalist': { look: 'brutalist-poster', graphic: 'brutal-blocks' },
+  'pres-title-dark': { look: 'data-observatory', graphic: 'observatory-radar' },
+  'pres-title-light': { look: 'literary-monograph', graphic: 'monograph-slope' },
+  'pres-content-two-column': { look: 'systems-blueprint', graphic: 'blueprint-node' },
+  'pres-image-left': { look: 'cinematic-storyboard', graphic: 'storyboard-frames' },
+  'pres-quote-slide': { look: 'editorial-atlas', graphic: 'editorial-lollipop' },
+  'pres-stats-grid': { look: 'data-observatory', graphic: 'heatmap-matrix' },
+  'pres-closing-cta': { look: 'literary-monograph', graphic: 'radial-bars' },
+  'webinar-title-modern': { look: 'broadcast-control', graphic: 'broadcast-vu' },
+  'webinar-agenda-slide': { look: 'systems-blueprint', graphic: 'gantt-roadmap' },
+  'webinar-speaker-bio': { look: 'cinematic-storyboard', graphic: 'quadrant-bubbles' },
+  'webinar-qa-slide': { look: 'broadcast-control', graphic: 'sankey-ribbons' },
+  'webinar-poll-slide': { look: 'startup-collage', graphic: 'funnel-stack' },
+  'stream-lower-third': { look: 'broadcast-control', graphic: 'candlestick-tape' },
+  'stream-starting-soon': { look: 'terminal-grid', graphic: 'terminal-spark' },
+  'stream-brb': { look: 'brutalist-poster', graphic: 'treemap-tiles' },
+  'stream-end-screen': { look: 'cinematic-storyboard', graphic: 'radial-bars' },
+  'pres-section-divider': { look: 'brutalist-poster', graphic: 'brutal-blocks' },
+  'pres-content-bullet': { look: 'systems-blueprint', graphic: 'blueprint-node' },
+  'pres-stat-highlight': { look: 'orbital-intelligence', graphic: 'orbital-rings' },
+  'pres-team-grid': { look: 'organic-fieldnotes', graphic: 'quadrant-bubbles' },
+  'pres-comparison-2col': { look: 'boardroom-ledger', graphic: 'ledger-waterfall' },
+  'pres-image-fullbleed': { look: 'cinematic-storyboard', graphic: 'storyboard-frames' },
+  'pres-thank-you': { look: 'literary-monograph', graphic: 'monograph-slope' },
+};
+
+const deckSystemFor = (template: DeckTemplate) => {
+  const override = TEMPLATE_SYSTEM_OVERRIDES[template.id];
+  if (override) return override;
+  const graphic = DATA_GRAPHICS[hashString(`${template.id}::graphic`) % DATA_GRAPHICS.length];
+  const look = (['orbital-intelligence', 'terminal-grid', 'editorial-atlas', 'boardroom-ledger', 'startup-collage', 'organic-fieldnotes', 'brutalist-poster', 'broadcast-control', 'data-observatory', 'cinematic-storyboard', 'literary-monograph', 'systems-blueprint'] as DeckLookId[])[hashString(`${template.id}::look`) % 12];
+  return { look, graphic };
+};
+
 /* ------------------------------ Charts ------------------------------ */
 const BarLineChart: React.FC<{
   series: { label: string; value: number }[];
