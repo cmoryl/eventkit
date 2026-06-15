@@ -818,14 +818,28 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
       );
     }
     if (variant === 1) {
+      const heroBg =
+        chartStyle === 'segmented'
+          ? `conic-gradient(${accent} 0 36%, ${template.palette.bg} 36% 40%, ${accent} 40% 72%, ${hexToRgba(textColor, 0.2)} 72% 100%)`
+          : chartStyle === 'gradient'
+          ? `conic-gradient(${accent} 0 72%, ${hexToRgba(accent, 0.35)} 72% 100%)`
+          : `conic-gradient(${accent} 0 72%, ${hexToRgba(textColor, 0.2)} 72% 100%)`;
       return (
         <div className="flex h-full items-center justify-center">
-          <div className="relative h-[80%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 72%, ${hexToRgba(textColor, 0.2)} 72% 100%)` }}>
+          <div
+            className="relative h-[80%] aspect-square rounded-full"
+            style={{
+              background: heroBg,
+              boxShadow: chartStyle === 'glow' ? `0 0 12px ${hexToRgba(accent, 0.75)}` : undefined,
+              border: chartStyle === 'outline' ? `1.5px solid ${accent}` : undefined,
+            }}
+          >
             <div className="absolute inset-[18%] flex items-center justify-center rounded-full text-[10px] font-black" style={{ background: template.palette.bg, color: accent }}>{value}</div>
           </div>
         </div>
       );
     }
+
     return (
       <div className="flex h-full flex-col items-center justify-center text-center">
         <div className="text-[26px] font-black leading-none" style={{ color: accent }}>{value}</div>
