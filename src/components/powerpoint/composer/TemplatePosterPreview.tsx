@@ -388,10 +388,8 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
 const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) => {
   const arrangement = arrangementFor(kind, t);
   const hash = hashFor(t.id);
-  // Rotate the mini-deck so two same-kind templates show different lead slides
-  const baseDeck = miniDeckFor(kind);
-  const offset = hash % baseDeck.length;
-  const deck = [...baseDeck.slice(offset), ...baseDeck.slice(0, offset)];
+  // miniDeckFor now derives followers per-template, so no rotation needed
+  const deck = miniDeckFor(kind, t);
 
   if (arrangement === 'mosaic') {
     return (
