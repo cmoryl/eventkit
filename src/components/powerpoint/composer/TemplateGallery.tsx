@@ -260,14 +260,22 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
             <h2 className="text-3xl font-black tracking-tight">Choose a deck system, not just a theme.</h2>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground">High-design, prebuilt PowerPoint systems with title, section, stats, quote, timeline, chart, and story slides ready for Brand Brain-driven generation.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setBrowseOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground shadow-lg hover:bg-primary/90"
-          >
-            <LayoutGrid className="h-4 w-4" /> Browse all {allTemplates.length}
-          </button>
-        </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCompareOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm font-black text-foreground shadow-sm hover:bg-secondary"
+            >
+              <Columns3 className="h-4 w-4" /> Compare side-by-side
+            </button>
+            <button
+              type="button"
+              onClick={() => setBrowseOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground shadow-lg hover:bg-primary/90"
+            >
+              <LayoutGrid className="h-4 w-4" /> Browse all {allTemplates.length}
+            </button>
+          </div>
       </div>
 
       <div className={`grid grid-cols-1 gap-5 ${isShowcase ? "sm:grid-cols-2 xl:grid-cols-4" : "sm:grid-cols-2 lg:grid-cols-3"}`}>
