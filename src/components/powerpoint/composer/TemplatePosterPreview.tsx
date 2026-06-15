@@ -17,14 +17,28 @@ const isLight = (hex: string) => {
 };
 
 const badgeFor = (template: DeckTemplate) => {
-  if (template.id.includes('transperfect')) return 'Global brand deck';
-  if (template.id.includes('corporate')) return 'Executive report';
-  if (template.id.includes('editorial')) return 'Editorial keynote';
-  if (template.id.includes('startup')) return 'Launch narrative';
-  if (template.id.includes('terracotta')) return 'Warm story deck';
-  if (template.id.includes('brutalist')) return 'Bold pitch deck';
-  if (template.id.includes('dark')) return 'Dark product deck';
-  return 'Prebuilt deck';
+  const id = template.id.toLowerCase();
+  const name = template.name.toLowerCase();
+  const desc = (template.description || '').toLowerCase();
+  const hay = `${id} ${name} ${desc}`;
+  if (hay.includes('transperfect')) return 'Global brand deck';
+  if (hay.includes('corporate') || hay.includes('investor') || hay.includes('executive') || hay.includes('finance')) return 'Executive report';
+  if (hay.includes('editorial') || hay.includes('magazine') || hay.includes('journal')) return 'Editorial keynote';
+  if (hay.includes('startup') || hay.includes('pitch') || hay.includes('launch') || hay.includes('vibrant')) return 'Launch narrative';
+  if (hay.includes('terracotta') || hay.includes('warm') || hay.includes('wellness') || hay.includes('lifestyle')) return 'Warm story deck';
+  if (hay.includes('brutalist') || hay.includes('mono')) return 'Bold pitch deck';
+  if (hay.includes('dark') || hay.includes('noir') || hay.includes('midnight')) return 'Dark product deck';
+  if (hay.includes('sport') || hay.includes('event') || hay.includes('festival')) return 'Event keynote';
+  if (hay.includes('luxury') || hay.includes('premium') || hay.includes('gold')) return 'Luxury brand deck';
+  if (hay.includes('saas') || hay.includes('product') || hay.includes('tech')) return 'Product deck';
+  if (hay.includes('education') || hay.includes('learning') || hay.includes('academic')) return 'Lecture deck';
+  if (hay.includes('nonprofit') || hay.includes('impact') || hay.includes('charity')) return 'Impact deck';
+  if (hay.includes('creator') || hay.includes('portfolio') || hay.includes('studio')) return 'Creator deck';
+  if (hay.includes('report') || hay.includes('annual')) return 'Annual report';
+  if (hay.includes('marketing') || hay.includes('campaign')) return 'Campaign deck';
+  // Fallback: short uppercased first word of the template name
+  const first = template.name.split(/\s+/)[0] || 'Prebuilt';
+  return `${first} deck`;
 };
 
 /** Per-template blueprints — each template gets a distinct mix of layouts
