@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Columns3, X, Search, AlertTriangle, Check } from "lucide-react";
+import { Columns3, X, Search, AlertTriangle, Check, Maximize2 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,22 @@ import {
   type DeckLookId,
   type GraphSystemId,
 } from "./TemplatePosterPreview";
+import { TemplatePreviewDialog, type SlideKind } from "./TemplatePreviewDialog";
 import type { DeckTemplate } from "./TemplateGallery";
+
+// Maps the gallery's PreviewKind taxonomy to the full preview dialog's SlideKind taxonomy.
+const PREVIEW_KIND_TO_SLIDE_KIND: Record<PreviewKind, SlideKind> = {
+  title: "title",
+  section: "section",
+  stats: "kpi-hero",
+  chart: "chart",
+  quote: "quote",
+  agenda: "agenda",
+  team: "team",
+  process: "process",
+  "image-split": "feature-split",
+  closing: "stat",
+};
 
 interface Props {
   open: boolean;
