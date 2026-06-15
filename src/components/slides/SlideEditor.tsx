@@ -365,6 +365,35 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       };
       setPendingStyledSlide(newSlide);
       const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+
+      // Resolve the matching master layout from the catalog and label each
+      // placeholder with the slide field it will be filled by — drives the
+      // overlay in the preview dialog.
+      const catalogLayouts = corporateStyleRef.layoutCatalog?.layouts || [];
+      const matched = layoutName
+        ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
+        : undefined;
+      if (matched) {
+        const fillFor = (t: string): string | undefined => {
+          const k = t.toLowerCase();
+          if (k === 'ctrtitle' || k === 'title') return newSlide.title ? 'Title' : 'Title (empty)';
+          if (k === 'subtitle') return newSlide.subtitle ? 'Subtitle' : 'Subtitle (empty)';
+          if (k === 'body') return newSlide.body ? 'Body' : 'Body (empty)';
+          if (k === 'pic') return 'Image (none yet)';
+          if (k === 'ftr') return 'Footer';
+          if (k === 'sldnum') return 'Slide number';
+          if (k === 'dt') return 'Date';
+          return undefined;
+        };
+        setPendingStyledLayout({
+          name: matched.name,
+          type: matched.type,
+          placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
+        });
+      } else {
+        setPendingStyledLayout(null);
+      }
+
       toast.success(
         layoutName
           ? `Preview ready — using "${layoutName}" layout from the master deck`
