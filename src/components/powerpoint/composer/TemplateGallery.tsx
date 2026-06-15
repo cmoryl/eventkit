@@ -305,6 +305,14 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
                     className="h-11 w-full rounded-2xl pl-10 text-sm sm:w-[360px]"
                   />
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 gap-2 rounded-xl"
+                  onClick={() => setCompareOpen(true)}
+                >
+                  <Columns3 className="h-4 w-4" /> Compare
+                </Button>
                 <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setBrowseOpen(false)}>
                   <X className="h-4 w-4" />
                 </Button>
