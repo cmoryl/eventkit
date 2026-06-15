@@ -139,6 +139,7 @@ const filterTemplates = (templates: DeckTemplate[], filter: TemplateFilter, sear
 
 export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenInEditor, disabled, variant = "compact" }) => {
   const [browseOpen, setBrowseOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<TemplateFilter>("all");
   const [previewTemplate, setPreviewTemplate] = useState<DeckTemplate | null>(null);
