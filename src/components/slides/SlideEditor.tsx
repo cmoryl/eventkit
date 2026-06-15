@@ -1610,12 +1610,35 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                   trailing
                 />
               </div>
-              <div className="p-3 border-t">
+              <div className="p-3 border-t space-y-2">
                 <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => addSlide(slides.length - 1)}>
                   <Plus className="h-3.5 w-3.5" />
                   Add Slide
                 </Button>
+                {corporateStyleRef && corporateStyleRef.slides.length > 0 && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="w-full gap-1.5 bg-gradient-to-r from-primary to-primary/80"
+                    onClick={addStyledSlide}
+                    disabled={isGeneratingStyledSlide}
+                    title={`One-shot generate a new slide using ${corporateStyleRef.label} as the style reference`}
+                  >
+                    {isGeneratingStyledSlide ? (
+                      <>
+                        <Wand2 className="h-3.5 w-3.5 animate-pulse" />
+                        Generating…
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-3.5 w-3.5" />
+                        Add slide in {corporateStyleRef.label} style
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
+
             </div>
             )}
 
