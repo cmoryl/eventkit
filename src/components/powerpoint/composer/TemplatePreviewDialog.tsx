@@ -2795,18 +2795,35 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
         {/* Slide deck */}
         <ScrollArea className="flex-1">
           <div className="p-5 space-y-5">
-            {SLIDES.map((kind, i) => (
-              <SlideMock
-                key={kind}
-                template={t}
-                content={content}
-                setContent={setContent}
-                editing={editing}
-                kind={kind}
-                index={i}
-                total={SLIDES.length}
-              />
-            ))}
+            {SLIDES.map((kind, i) => {
+              const isFocused = focusSlideKind === kind;
+              return (
+                <div
+                  key={kind}
+                  ref={(el) => { slideRefs.current[kind] = el; }}
+                  className={cn(
+                    "relative rounded-xl transition-shadow scroll-mt-4",
+                    isFocused && highlightShared && "ring-4 ring-yellow-500/80 ring-offset-2 ring-offset-background",
+                    isFocused && !highlightShared && "ring-2 ring-primary/70 ring-offset-2 ring-offset-background",
+                  )}
+                >
+                  {isFocused && highlightShared && (
+                    <span className="absolute -top-3 left-4 z-30 rounded-full bg-yellow-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow">
+                      Shared region · {kind.replace(/-/g, " ")}
+                    </span>
+                  )}
+                  <SlideMock
+                    template={t}
+                    content={content}
+                    setContent={setContent}
+                    editing={editing}
+                    kind={kind}
+                    index={i}
+                    total={SLIDES.length}
+                  />
+                </div>
+              );
+            })}
 
             {/* Palette strip */}
             <div className="rounded-xl border bg-card p-4">
