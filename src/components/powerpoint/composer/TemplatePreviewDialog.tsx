@@ -232,11 +232,40 @@ const deckSystemFor = (template: DeckTemplate, channel = 'deck') => {
   const baseGraphic = override
     ? DATA_GRAPHICS.indexOf(override.graphic)
     : hashString(`${template.id}::graphic`) % DATA_GRAPHICS.length;
-  const channelShift = hashString(`${template.id}::${channel}::graphic-system`) % DATA_GRAPHICS.length;
+  const channelShift = hashString(`${template.id}::${template.name}::${channel}::graphic-system`) % DATA_GRAPHICS.length;
   const graphic = DATA_GRAPHICS[(baseGraphic + channelShift) % DATA_GRAPHICS.length];
   if (override) return { look: override.look, graphic };
   const look = (['orbital-intelligence', 'terminal-grid', 'editorial-atlas', 'boardroom-ledger', 'startup-collage', 'organic-fieldnotes', 'brutalist-poster', 'broadcast-control', 'data-observatory', 'cinematic-storyboard', 'literary-monograph', 'systems-blueprint'] as DeckLookId[])[hashString(`${template.id}::look`) % 12];
   return { look, graphic };
+};
+
+const graphicFor = (template: DeckTemplate, channel: string, offset = 0): DataGraphicId => {
+  const { graphic } = deckSystemFor(template, channel);
+  const base = Math.max(0, DATA_GRAPHICS.indexOf(graphic));
+  const jump = 1 + (hashString(`${template.id}::${template.name}::${channel}::visual-jump`) % (DATA_GRAPHICS.length - 1));
+  return DATA_GRAPHICS[(base + jump + offset) % DATA_GRAPHICS.length];
+};
+
+const graphicSeedFor = (template: DeckTemplate, channel: string, index = 0) =>
+  1 + (hashString(`${template.id}::${template.name}::${channel}::${index}::visual-seed`) % 9000);
+
+const uniqueSeriesFor = (
+  series: { label: string; value: number }[],
+  template: DeckTemplate,
+  channel: string,
+) => {
+  if (!series.length) return series;
+  const start = hashString(`${template.id}::${template.name}::${channel}::series-rotate`) % series.length;
+  return series.map((_, i) => {
+    const src = series[(start + i) % series.length];
+    const h = hashString(`${template.id}::${channel}::${src.label}::${i}`);
+    const multiplier = 0.82 + (h % 41) / 100;
+    const lift = (h >>> 5) % 13;
+    return {
+      label: src.label,
+      value: Math.max(1, Math.round((src.value * multiplier + lift) * 10) / 10),
+    };
+  });
 };
 
 /* ------------------------------ Charts ------------------------------ */
@@ -1561,7 +1590,11 @@ export const SlideMock: React.FC<{
   const isLight = isLightColor(t.palette.bg);
   const muted = isLight ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.7)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.14)";
-  const { look, graphic: dataGraphic } = deckSystemFor(t, kind);
+  const { look } = deckSystemFor(t, kind);
+  const graphicAt = (channel: string, offset = 0) => graphicFor(t, `${kind}:${channel}`, offset);
+  const seedAt = (channel: string, itemIndex = 0) => graphicSeedFor(t, `${kind}:${channel}`, itemIndex);
+  const seriesAt = (channel: string, series = content.chart.series) => uniqueSeriesFor(series, t, `${kind}:${channel}`);
+  const primaryGraphic = graphicAt("primary");
   const cardBg = cardSurfaceFor(look, t, isLight);
   const thumb = TEMPLATE_THUMBNAILS[t.id];
   // Imagery rotation per slide so different layouts feature different visuals.
@@ -1877,14 +1910,14 @@ export const SlideMock: React.FC<{
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-[72%] h-[62%]">
                 <DataGraphic
-                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 2) % DATA_GRAPHICS.length]}
-                  series={content.chart.series}
+                  system={graphicAt("section-visual")}
+                  series={seriesAt("section-visual")}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
                   bg={t.palette.bg}
                   muted={muted}
-                  seed={index + 7}
+                  seed={seedAt("section-visual", index)}
                 />
               </div>
             </div>
@@ -2058,7 +2091,7 @@ export const SlideMock: React.FC<{
               const Ic = m.icon;
               const numeric = parseFloat(String(m.value).replace(/[^0-9.]/g, "")) || (i + 1) * 17;
               const pct = Math.min(98, Math.max(12, (numeric % 100) + 8));
-              const metricGraphic = DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 3) % DATA_GRAPHICS.length];
+              const metricGraphic = graphicAt(`metric-${i}`);
               return (
                 <div
                   key={i}
@@ -2102,13 +2135,13 @@ export const SlideMock: React.FC<{
                   <div className="flex-1 min-h-[60px] flex items-center justify-center">
                     <DataGraphic
                       system={metricGraphic}
-                      series={[{ label: m.label, value: numeric }, { label: 'A', value: pct * 0.7 }, { label: 'B', value: pct }]}
+                      series={uniqueSeriesFor([{ label: m.label, value: numeric }, { label: 'A', value: pct * 0.7 }, { label: 'B', value: pct }], t, `${kind}:metric-${i}`)}
                       accent={t.palette.accent}
                       secondary={t.palette.secondary}
                       text={t.palette.text}
                       bg={t.palette.bg}
                       muted={muted}
-                      seed={i + 2}
+                      seed={seedAt("metric", i)}
                     />
                   </div>
 
@@ -2166,7 +2199,7 @@ export const SlideMock: React.FC<{
             <div className="flex items-center gap-2">
               <LineChartIcon className="h-3.5 w-3.5" style={{ color: t.palette.accent }} />
               <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                {dataGraphic.replace(/-/g, ' ')}
+                {primaryGraphic.replace(/-/g, ' ')}
               </span>
             </div>
             <Editable
@@ -2180,14 +2213,14 @@ export const SlideMock: React.FC<{
             />
             <div className="flex-1 mt-2 min-h-0">
               <DataGraphic
-                system={dataGraphic}
-                series={content.chart.series}
+                system={primaryGraphic}
+                series={seriesAt("primary")}
                 accent={t.palette.accent}
                 secondary={t.palette.secondary}
                 text={t.palette.text}
                 bg={t.palette.bg}
                 muted={muted}
-                seed={index + 3}
+                seed={seedAt("primary", index)}
               />
             </div>
           </div>
@@ -2197,14 +2230,14 @@ export const SlideMock: React.FC<{
                 Distribution
               </div>
               <DataGraphic
-                system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 5) % DATA_GRAPHICS.length]}
-                series={content.chart.series.slice(0, 4)}
+                system={graphicAt("distribution")}
+                series={seriesAt("distribution", content.chart.series.slice(0, 4))}
                 accent={t.palette.accent}
                 secondary={t.palette.secondary}
                 text={t.palette.text}
                 bg={t.palette.bg}
                 muted={muted}
-                seed={index + 9}
+                seed={seedAt("distribution", index)}
               />
             </div>
             <div className="p-4 flex-1 flex items-center gap-3" style={{ background: cardBg, border: `1px solid ${subtleBorder}`, borderRadius: look === 'terminal-grid' || look === 'systems-blueprint' ? 2 : look === 'organic-fieldnotes' ? 22 : 10 }}>
@@ -2380,7 +2413,7 @@ export const SlideMock: React.FC<{
                     onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, before: { ...c.compare.before, title: v } } }))}
                   />
                 </div>
-                <div className="h-14 w-20"><DataGraphic system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 7) % DATA_GRAPHICS.length]} series={[{ label: 'A', value: 32 }, { label: 'B', value: 54 }]} accent={t.palette.secondary} secondary={t.palette.accent} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={4} /></div>
+                <div className="h-14 w-20"><DataGraphic system={graphicAt("compare-before-chip")} series={uniqueSeriesFor([{ label: 'A', value: 32 }, { label: 'B', value: 54 }], t, `${kind}:compare-before-chip`)} accent={t.palette.secondary} secondary={t.palette.accent} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={seedAt("compare-before-chip")} /></div>
               </div>
               <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.before.points.map((p, i) => (
@@ -2405,17 +2438,18 @@ export const SlideMock: React.FC<{
                   Baseline performance
                 </div>
                 <DataGraphic
-                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 11) % DATA_GRAPHICS.length]}
-                  series={[
+                  system={graphicAt("compare-before-baseline")}
+                  series={uniqueSeriesFor([
                     { label: "Speed", value: 28 },
                     { label: "Cost", value: 64 },
                     { label: "Effort", value: 78 },
-                  ]}
+                  ], t, `${kind}:compare-before-baseline`)}
                   accent={t.palette.secondary}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
                   bg={t.palette.bg}
                   muted={muted}
+                  seed={seedAt("compare-before-baseline")}
                 />
               </div>
             </div>
@@ -2443,7 +2477,7 @@ export const SlideMock: React.FC<{
                     onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, after: { ...c.compare.after, title: v } } }))}
                   />
                 </div>
-                <div className="h-14 w-20"><DataGraphic system={dataGraphic} series={[{ label: 'A', value: 91 }, { label: 'B', value: 38 }]} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={8} /></div>
+                <div className="h-14 w-20"><DataGraphic system={graphicAt("compare-after-chip")} series={uniqueSeriesFor([{ label: 'A', value: 91 }, { label: 'B', value: 38 }], t, `${kind}:compare-after-chip`)} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={seedAt("compare-after-chip")} /></div>
               </div>
               <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.after.points.map((p, i) => (
@@ -2466,17 +2500,18 @@ export const SlideMock: React.FC<{
                   Lifted performance
                 </div>
                 <DataGraphic
-                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 3) % DATA_GRAPHICS.length]}
-                  series={[
+                  system={graphicAt("compare-after-lift")}
+                  series={uniqueSeriesFor([
                     { label: "Speed", value: 92 },
                     { label: "Cost", value: 38 },
                     { label: "Effort", value: 22 },
-                  ]}
+                  ], t, `${kind}:compare-after-lift`)}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
                   bg={t.palette.bg}
                   muted={muted}
+                  seed={seedAt("compare-after-lift")}
                 />
               </div>
             </div>
@@ -2693,7 +2728,7 @@ export const SlideMock: React.FC<{
             {content.kpi.supporting.map((s, i) => {
               const numeric = parseFloat(String(s.value).replace(/[^0-9.]/g, "")) || (i + 1) * 21;
               const pct = Math.min(96, Math.max(20, (numeric % 100) + 14));
-              const kpiGraphic = DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 4 + 1) % DATA_GRAPHICS.length];
+              const kpiGraphic = graphicAt(`kpi-support-${i}`);
               return (
                 <div
                   key={i}
@@ -2719,13 +2754,13 @@ export const SlideMock: React.FC<{
                   <div className="flex-1 min-h-0">
                     <DataGraphic
                       system={kpiGraphic}
-                      series={[{ label: s.label, value: numeric }, { label: 'Goal', value: pct }, { label: 'Base', value: pct * 0.54 }]}
+                      series={uniqueSeriesFor([{ label: s.label, value: numeric }, { label: 'Goal', value: pct }, { label: 'Base', value: pct * 0.54 }], t, `${kind}:kpi-support-${i}`)}
                       accent={t.palette.accent}
                       secondary={t.palette.secondary}
                       text={t.palette.text}
                       bg={t.palette.bg}
                       muted={muted}
-                      seed={i + 9}
+                      seed={seedAt("kpi-support", i)}
                     />
                   </div>
                   <div
@@ -2806,14 +2841,14 @@ export const SlideMock: React.FC<{
                   {!tileImg && (
                     <div className="absolute inset-0 pointer-events-none opacity-80">
                       <DataGraphic
-                        system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 2 + 4) % DATA_GRAPHICS.length]}
-                        series={content.chart.series.slice(0, 5)}
+                        system={graphicAt(`bento-tile-${i}`)}
+                        series={seriesAt(`bento-tile-${i}`, content.chart.series.slice(0, 5))}
                         accent={t.palette.accent}
                         secondary={t.palette.secondary}
                         text={t.palette.text}
                         bg={t.palette.bg}
                         muted={muted}
-                        seed={i + 4}
+                        seed={seedAt("bento-tile", i)}
                       />
                       <div
                         className="absolute inset-0"
@@ -2893,14 +2928,14 @@ export const SlideMock: React.FC<{
             ) : (
               <div className="absolute inset-0">
                 <DataGraphic
-                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 6) % DATA_GRAPHICS.length]}
-                  series={content.chart.series}
+                  system={graphicAt("feature-hero")}
+                  series={seriesAt("feature-hero")}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
                   bg={t.palette.bg}
                   muted={muted}
-                  seed={index + 17}
+                  seed={seedAt("feature-hero", index)}
                 />
               </div>
             )}
@@ -2937,7 +2972,7 @@ export const SlideMock: React.FC<{
                   </div>
                 </div>
                 <div className="mt-2 h-12">
-                  <DataGraphic system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 8) % DATA_GRAPHICS.length]} series={content.chart.series.slice(0, 4)} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={index + 11} />
+                  <DataGraphic system={graphicAt("feature-card")} series={seriesAt("feature-card", content.chart.series.slice(0, 4))} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={seedAt("feature-card", index)} />
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-1.5">
                   {[

@@ -393,7 +393,7 @@ export const graphSystemFor = (template: DeckTemplate, kind: PreviewKind, look: 
   const baseIndex = featured
     ? GRAPH_SYSTEMS.indexOf(featured)
     : hashFor(`${template.id}::${template.name}::${look}::graph-system`) % GRAPH_SYSTEMS.length;
-  const kindShift = hashFor(`${template.id}::${kind}::${look}::graph-shift`) % 11;
+  const kindShift = hashFor(`${template.id}::${template.name}::${template.description || ''}::${kind}::${look}::graph-shift`) % GRAPH_SYSTEMS.length;
   return GRAPH_SYSTEMS[(baseIndex + kindShift) % GRAPH_SYSTEMS.length];
 };
 
@@ -906,12 +906,13 @@ export const MiniSlide = ({ kind, template, compact = false, look: forcedLook }:
   // ---------- stats variants ----------
   const renderStats = () => {
     const variant = v % 4;
-    const data = [
-      { v: '2.4M', l: 'Reach' },
-      { v: '98%', l: 'CSAT' },
-      { v: '150+', l: 'Cities' },
-      { v: '$12B', l: 'GMV' },
-    ];
+    const statSeed = variantFor(template, kind, 'stats-data');
+    const labels = ['Reach', 'CSAT', 'Cities', 'GMV', 'Pipeline', 'Share', 'SLA', 'NRR'];
+    const data = Array.from({ length: 4 }, (_, i) => {
+      const raw = 18 + ((statSeed >>> (i * 3)) + i * 29) % 84;
+      const formats = [`${(raw / 10).toFixed(1)}M`, `${raw}%`, `${80 + raw}+`, `$${Math.max(2, Math.round(raw / 7))}B`];
+      return { v: formats[(statSeed + i) % formats.length], l: labels[(statSeed + i * 2) % labels.length] };
+    });
     const tileRadius = chartStyle === 'pill' ? 12 : chartStyle === 'flat' ? 0 : 6;
     const tileBorder = chartStyle === 'outline' ? `1px solid ${hexToRgba(textColor, 0.4)}` : undefined;
     if (variant === 0) {
