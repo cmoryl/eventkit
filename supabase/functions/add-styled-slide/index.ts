@@ -26,6 +26,12 @@ interface ReqBody {
   audience?: string;
   // Where this slide will go in the deck (1-based)
   insertPosition?: number;
+  // Authoritative brand tokens parsed from the source deck's theme1.xml.
+  themeTokens?: {
+    name?: string;
+    colors?: Record<string, string>;
+    fonts?: { major?: string; minor?: string };
+  };
 }
 
 Deno.serve(async (req) => {
