@@ -345,7 +345,13 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         variant: 'default',
       };
       setPendingStyledSlide(newSlide);
-      toast.success(`Preview ready — review before inserting`, { id: toastId });
+      const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+      toast.success(
+        layoutName
+          ? `Preview ready — using "${layoutName}" layout from the master deck`
+          : `Preview ready — review before inserting`,
+        { id: toastId },
+      );
     } catch (err) {
       console.error('add-styled-slide failed', err);
       toast.error(err instanceof Error ? err.message : 'Could not generate slide', { id: toastId });
