@@ -3096,6 +3096,69 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Batch generation dialog — generates N cohesive slides in one run */}
+    <Dialog open={batchDialogOpen} onOpenChange={(o) => { if (!isBatchGenerating) setBatchDialogOpen(o); }}>
+      <DialogContent className="max-w-lg">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Batch generate slides
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Generate multiple slides at once in <span className="font-medium">{corporateStyleRef?.label}</span> style.
+              The same theme, layout strategy, and master assets are applied to every slide.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center justify-between">
+              <span>Number of slides</span>
+              <span className="text-muted-foreground tabular-nums">{batchCount}</span>
+            </label>
+            <Slider
+              min={1}
+              max={10}
+              step={1}
+              value={[batchCount]}
+              onValueChange={(v) => setBatchCount(v[0] ?? 3)}
+              disabled={isBatchGenerating}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">What should these slides cover? (optional)</label>
+            <Textarea
+              placeholder={`e.g. "Three slides covering Q3 results, key learnings, and next steps"`}
+              value={batchPrompt}
+              onChange={(e) => setBatchPrompt(e.target.value)}
+              rows={4}
+              disabled={isBatchGenerating}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to let the AI propose a coherent continuation of the deck.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setBatchDialogOpen(false)} disabled={isBatchGenerating}>
+              Cancel
+            </Button>
+            <Button onClick={runBatchGeneration} disabled={isBatchGenerating} className="gap-1.5">
+              {isBatchGenerating ? (
+                <>
+                  <Wand2 className="h-3.5 w-3.5 animate-pulse" />
+                  Generating {batchCount}…
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-3.5 w-3.5" />
+                  Generate {batchCount} slides
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
