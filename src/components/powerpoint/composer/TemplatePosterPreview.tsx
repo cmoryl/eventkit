@@ -623,9 +623,6 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
 
     return null;
   };
-
-  const lookSlide = renderLookSlide();
-
   // ---------- chart variants ----------
   const renderChart = () => {
     const variant = v % 6;
@@ -1147,6 +1144,19 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
       </div>
     );
   };
+
+  const lookSlide = renderLookSlide();
+  if (lookSlide) {
+    return (
+      <div
+        className="relative h-full w-full overflow-hidden rounded-md border shadow-2xl"
+        style={{ background: miniBgFor(kind, template, look), color: textColor, ...slideFrameStyleFor(look, template, textColor) }}
+      >
+        <div aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent, ${hexToRgba(template.palette.bg, 0.22)})` }} />
+        <div className={cn('relative h-full w-full', compact ? 'p-2' : 'p-3')}>{lookSlide}</div>
+      </div>
+    );
+  }
 
   return (
     <div
