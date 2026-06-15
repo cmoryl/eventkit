@@ -276,7 +276,15 @@ const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind, l
   return { base, pattern: SURFACE_VARIANTS[idx](template, light) };
 };
 
-const miniBgFor = (kind: PreviewKind, template: DeckTemplate) => {
+const miniBgFor = (kind: PreviewKind, template: DeckTemplate, look: DeckLookId) => {
+  if (look === 'brutalist-poster') return `linear-gradient(135deg, ${template.palette.bg} 0 58%, ${template.palette.accent} 58% 74%, ${template.palette.bg} 74%), repeating-linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.16)} 0 2px, transparent 2px 18px)`;
+  if (look === 'editorial-atlas' || look === 'literary-monograph') return `linear-gradient(90deg, ${template.palette.bg} 0 68%, ${hexToRgba(template.palette.secondary, 0.18)} 68% 100%), repeating-linear-gradient(0deg, transparent 0 18px, ${hexToRgba(template.palette.text, 0.07)} 18px 19px)`;
+  if (look === 'terminal-grid' || look === 'systems-blueprint') return `linear-gradient(135deg, ${template.palette.bg}, ${hexToRgba(template.palette.secondary, 0.55)}), linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.2)} 1px, transparent 1px) 0 0 / 18px 18px, linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.16)} 1px, transparent 1px) 0 0 / 18px 18px`;
+  if (look === 'startup-collage') return `radial-gradient(circle at 18% 18%, ${hexToRgba(template.palette.accent, 0.44)}, transparent 26%), radial-gradient(circle at 86% 74%, ${hexToRgba(template.palette.secondary, 0.36)}, transparent 30%), ${template.palette.bg}`;
+  if (look === 'organic-fieldnotes') return `radial-gradient(ellipse at 12% 88%, ${hexToRgba(template.palette.secondary, 0.34)}, transparent 42%), linear-gradient(135deg, ${template.palette.bg}, ${hexToRgba(template.palette.accent, 0.16)})`;
+  if (look === 'broadcast-control') return `linear-gradient(90deg, ${hexToRgba(template.palette.bg, 0.96)} 0 62%, ${hexToRgba(template.palette.accent, 0.18)} 62% 100%), repeating-linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.08)} 0 1px, transparent 1px 14px)`;
+  if (look === 'data-observatory' || look === 'orbital-intelligence') return `radial-gradient(circle at 50% 54%, ${hexToRgba(template.palette.accent, 0.34)}, transparent 30%), repeating-radial-gradient(circle at 50% 54%, transparent 0 24px, ${hexToRgba(template.palette.accent, 0.18)} 25px 26px), ${template.palette.bg}`;
+  if (look === 'cinematic-storyboard') return `linear-gradient(90deg, ${hexToRgba('#000000', 0.42)} 0 10%, transparent 10% 90%, ${hexToRgba('#000000', 0.42)} 90% 100%), linear-gradient(135deg, ${template.palette.bg}, ${hexToRgba(template.palette.secondary, 0.55)})`;
   const lightKinds = ['editorial', 'bullet', 'comparison'];
   if (lightKinds.includes(kind) && isLight(template.palette.bg)) return template.palette.bg;
   if (kind === 'full-bleed') return `linear-gradient(135deg, ${hexToRgba(template.palette.accent, 0.42)}, rgba(0,0,0,0.86)), repeating-linear-gradient(135deg, ${hexToRgba(template.palette.text, 0.18)} 0 6px, transparent 6px 16px)`;
