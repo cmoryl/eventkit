@@ -117,6 +117,26 @@ interface SlideEditorProps {
       colors: Record<string, string>;
       fonts: { major?: string; minor?: string };
     };
+    /** Real slide-layout catalog parsed from the deck's ppt/slideLayouts/*.xml. */
+    layoutCatalog?: {
+      slideWidthEmu: number;
+      slideHeightEmu: number;
+      layouts: Array<{
+        fileName: string;
+        name: string;
+        type?: string;
+        index: number;
+        placeholders: Array<{
+          type: string;
+          idx?: number;
+          sz?: string;
+          xPct?: number;
+          yPct?: number;
+          wPct?: number;
+          hPct?: number;
+        }>;
+      }>;
+    };
   } | null;
 }
 
@@ -306,6 +326,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           referenceSlides: refs,
           insertPosition: activeIndex + 2,
           themeTokens: corporateStyleRef.themeTokens,
+          layoutCatalog: corporateStyleRef.layoutCatalog,
         },
       });
       if (error) throw new Error(error.message || 'Generation failed');
@@ -324,7 +345,13 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         variant: 'default',
       };
       setPendingStyledSlide(newSlide);
-      toast.success(`Preview ready — review before inserting`, { id: toastId });
+      const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+      toast.success(
+        layoutName
+          ? `Preview ready — using "${layoutName}" layout from the master deck`
+          : `Preview ready — review before inserting`,
+        { id: toastId },
+      );
     } catch (err) {
       console.error('add-styled-slide failed', err);
       toast.error(err instanceof Error ? err.message : 'Could not generate slide', { id: toastId });

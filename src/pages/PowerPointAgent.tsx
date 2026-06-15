@@ -4,7 +4,7 @@ import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
-import { parsePptxFile, parsePptxThemeTokens, type PptxThemeTokens } from "@/components/slides/importPptx";
+import { parsePptxFile, parsePptxThemeTokens, parsePptxLayoutCatalog, type PptxThemeTokens, type PptxLayoutCatalog } from "@/components/slides/importPptx";
 import { type SlideData } from "@/components/slides/slideTypes";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
 import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
@@ -138,6 +138,10 @@ const PowerPointAgent: React.FC = () => {
   // Forwarded into the SlideEditor + add-styled-slide so the AI uses the
   // authoritative palette/fonts instead of regex-guessed ones.
   const [templateThemeTokens, setTemplateThemeTokens] = useState<PptxThemeTokens | null>(null);
+  // Real placeholder-level layout catalog parsed from the corporate deck's
+  // ppt/slideLayouts/*.xml. Lets the AI pick from layouts that actually exist
+  // in the master (with their real placeholder geometry).
+  const [templateLayoutCatalog, setTemplateLayoutCatalog] = useState<PptxLayoutCatalog | null>(null);
 
   // Stable key for SlideEditor — changes when a new AI deck or template starter is loaded,
   // forcing a remount so initialSlides are picked up rather than the stale state.
@@ -200,6 +204,15 @@ const PowerPointAgent: React.FC = () => {
       } catch (themeErr) {
         console.warn("Theme parse failed (non-fatal):", themeErr);
         setTemplateThemeTokens(null);
+      }
+      // Pull the slide-layout catalog (real placeholders + geometry) so the
+      // AI can pick from layouts that exist in the master.
+      try {
+        const catalog = await parsePptxLayoutCatalog(file);
+        setTemplateLayoutCatalog(catalog);
+      } catch (layoutErr) {
+        console.warn("Layout catalog parse failed (non-fatal):", layoutErr);
+        setTemplateLayoutCatalog(null);
       }
       // Also load as extracted source so the AI Agent can generate variations from it.
       setPdfFile(null);
@@ -1429,6 +1442,7 @@ const PowerPointAgent: React.FC = () => {
                 label: BUILTIN_CORPORATE_DECKS[selectedTemplateId].label,
                 slides: templateStarterSlides,
                 themeTokens: templateThemeTokens ?? undefined,
+                layoutCatalog: templateLayoutCatalog ?? undefined,
               }
             : null
         }
