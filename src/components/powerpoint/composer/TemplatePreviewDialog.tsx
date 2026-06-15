@@ -2672,11 +2672,12 @@ export const SlideMock: React.FC<{
   );
 };
 
-export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, onOpenInEditor, disabled }) => {
+export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, onOpenInEditor, disabled, focusSlideKind, highlightShared }) => {
   const [editing, setEditing] = useState(false);
   const initial = useMemo(() => (template ? buildInitialContent(template) : null), [template?.id]);
   const [content, setContent] = useState<DemoContent | null>(initial);
   const [saveOpen, setSaveOpen] = useState(false);
+  const slideRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (template) {
@@ -2684,6 +2685,16 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
       setEditing(false);
     }
   }, [template?.id, open]);
+
+  useEffect(() => {
+    if (!open || !focusSlideKind) return;
+    // Wait for the dialog content to mount before scrolling.
+    const id = window.setTimeout(() => {
+      const el = slideRefs.current[focusSlideKind];
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [open, focusSlideKind, template?.id]);
 
   if (!template || !content) return null;
   const t = template;
