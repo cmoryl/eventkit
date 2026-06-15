@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, Search, X, Bookmark, Globe2, Loader2, Trash2, Sparkles, Wand2, Layers3, Star } from "lucide-react";
+import { LayoutGrid, Search, X, Bookmark, Globe2, Loader2, Trash2, Sparkles, Wand2, Layers3, Star, Columns3 } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ALL_PRESENTATION_TEMPLATES } from "@/config/editableTemplates/presentationTemplates";
 import { TemplatePreviewDialog } from "./TemplatePreviewDialog";
 import { TemplatePosterPreview } from "./TemplatePosterPreview";
+import { TemplateCompareDialog } from "./TemplateCompareDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -138,6 +139,7 @@ const filterTemplates = (templates: DeckTemplate[], filter: TemplateFilter, sear
 
 export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenInEditor, disabled, variant = "compact" }) => {
   const [browseOpen, setBrowseOpen] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<TemplateFilter>("all");
   const [previewTemplate, setPreviewTemplate] = useState<DeckTemplate | null>(null);
@@ -258,13 +260,22 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
             <h2 className="text-3xl font-black tracking-tight">Choose a deck system, not just a theme.</h2>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground">High-design, prebuilt PowerPoint systems with title, section, stats, quote, timeline, chart, and story slides ready for Brand Brain-driven generation.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setBrowseOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground shadow-lg hover:bg-primary/90"
-          >
-            <LayoutGrid className="h-4 w-4" /> Browse all {allTemplates.length}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setCompareOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm font-black text-foreground shadow-sm hover:bg-secondary"
+            >
+              <Columns3 className="h-4 w-4" /> Compare side-by-side
+            </button>
+            <button
+              type="button"
+              onClick={() => setBrowseOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3 text-sm font-black text-primary-foreground shadow-lg hover:bg-primary/90"
+            >
+              <LayoutGrid className="h-4 w-4" /> Browse all {allTemplates.length}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -294,6 +305,14 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
                     className="h-11 w-full rounded-2xl pl-10 text-sm sm:w-[360px]"
                   />
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 gap-2 rounded-xl"
+                  onClick={() => setCompareOpen(true)}
+                >
+                  <Columns3 className="h-4 w-4" /> Compare
+                </Button>
                 <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setBrowseOpen(false)}>
                   <X className="h-4 w-4" />
                 </Button>
@@ -382,6 +401,13 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
             : undefined
         }
         disabled={disabled}
+      />
+
+      <TemplateCompareDialog
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        templates={allTemplates}
+        initialIds={DECK_TEMPLATES.slice(0, 3).map((t) => t.id)}
       />
     </div>
   );
