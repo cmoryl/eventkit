@@ -279,7 +279,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setSlides(prev => prev.map((s, i) => i === index ? { ...s, ...updates } : s));
   }, []);
   const [isGeneratingStyledSlide, setIsGeneratingStyledSlide] = useState(false);
-  const addStyledSlide = useCallback(async () => {
+  const [pendingStyledSlide, setPendingStyledSlide] = useState<SlideData | null>(null);
+  const generateStyledSlide = useCallback(async () => {
     if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
     setIsGeneratingStyledSlide(true);
     const toastId = toast.loading(`Generating slide in ${corporateStyleRef.label} style…`);
@@ -315,13 +316,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         notes: g.notes,
         variant: 'default',
       };
-      setSlides((prev) => {
-        const next = [...prev];
-        next.splice(activeIndex + 1, 0, newSlide);
-        return next;
-      });
-      setActiveIndex(activeIndex + 1);
-      toast.success(`New ${corporateStyleRef.label} slide added ✨`, { id: toastId });
+      setPendingStyledSlide(newSlide);
+      toast.success(`Preview ready — review before inserting`, { id: toastId });
     } catch (err) {
       console.error('add-styled-slide failed', err);
       toast.error(err instanceof Error ? err.message : 'Could not generate slide', { id: toastId });
@@ -329,6 +325,19 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setIsGeneratingStyledSlide(false);
     }
   }, [corporateStyleRef, assetName, activeIndex]);
+  const addStyledSlide = generateStyledSlide;
+  const confirmInsertPendingSlide = useCallback(() => {
+    if (!pendingStyledSlide) return;
+    const slideToInsert = pendingStyledSlide;
+    setSlides((prev) => {
+      const next = [...prev];
+      next.splice(activeIndex + 1, 0, slideToInsert);
+      return next;
+    });
+    setActiveIndex(activeIndex + 1);
+    setPendingStyledSlide(null);
+    toast.success('Slide inserted into deck');
+  }, [pendingStyledSlide, activeIndex]);
 
 
   const addSlide = useCallback((afterIndex: number) => {
