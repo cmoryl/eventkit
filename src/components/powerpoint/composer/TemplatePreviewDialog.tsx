@@ -1290,17 +1290,17 @@ export const SlideMock: React.FC<{
             className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
             style={{ color: t.palette.text }}
           />
-          <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
+          <div className={cn("mt-5 flex-1", look === 'brutalist-poster' ? 'grid grid-cols-[1.3fr_0.7fr_1fr_0.8fr] gap-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'grid grid-cols-4 gap-0 border-y' : look === 'startup-collage' ? 'grid grid-cols-4 gap-4 rotate-[-1deg]' : look === 'organic-fieldnotes' ? 'grid grid-cols-4 gap-3' : 'grid grid-cols-4 gap-3')} style={(look === 'editorial-atlas' || look === 'literary-monograph') ? { borderColor: hexToRgba(t.palette.text, 0.22) } : undefined}>
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
               const numeric = parseFloat(String(m.value).replace(/[^0-9.]/g, "")) || (i + 1) * 17;
               const pct = Math.min(98, Math.max(12, (numeric % 100) + 8));
-              const variant = pickVariant(t.id, `metric-${i}`, index + i);
+              const metricGraphic = DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 3) % DATA_GRAPHICS.length];
               return (
                 <div
                   key={i}
-                  className="rounded-lg p-4 flex flex-col gap-3 relative overflow-hidden"
-                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                  className={cn("p-4 flex flex-col gap-3 relative overflow-hidden", look === 'brutalist-poster' ? 'rounded-none border-4 uppercase' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'rounded-none border-x font-serif' : look === 'startup-collage' ? 'rounded-2xl border-4 odd:rotate-2 even:-rotate-2' : look === 'organic-fieldnotes' ? 'rounded-[1.75rem]' : 'rounded-lg')}
+                  style={{ background: look === 'brutalist-poster' && i === 0 ? t.palette.accent : cardBg, border: look === 'brutalist-poster' || look === 'startup-collage' ? `${look === 'brutalist-poster' ? 4 : 3}px solid ${t.palette.text}` : `1px solid ${subtleBorder}` }}
                 >
                   {/* corner accent stripe */}
                   <div
@@ -1335,17 +1335,17 @@ export const SlideMock: React.FC<{
                     )}
                   </div>
 
-                  {/* Visualization fills the empty middle — rotates per template + per card */}
+                    {/* Visualization fills the empty middle — unique graph system per template + card */}
                   <div className="flex-1 min-h-[60px] flex items-center justify-center">
-                    <VisualVariant
-                      variant={variant}
+                    <DataGraphic
+                      system={metricGraphic}
+                      series={[{ label: m.label, value: numeric }, { label: 'A', value: pct * 0.7 }, { label: 'B', value: pct }]}
                       accent={t.palette.accent}
                       secondary={t.palette.secondary}
                       text={t.palette.text}
+                      bg={t.palette.bg}
                       muted={muted}
                       seed={i + 2}
-                      percent={pct}
-                      size="md"
                     />
                   </div>
 
