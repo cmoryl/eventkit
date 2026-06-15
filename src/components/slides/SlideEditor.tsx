@@ -466,8 +466,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   }, [corporateStyleRef, assetName, activeIndex]);
   const addStyledSlide = generateStyledSlide;
   const confirmInsertPendingSlide = useCallback(() => {
-    if (!pendingStyledSlide) return;
-    const slideToInsert = pendingStyledSlide;
+    const slideToInsert = previewSlide ?? pendingStyledSlide;
+    if (!slideToInsert) return;
     setSlides((prev) => {
       const next = [...prev];
       next.splice(activeIndex + 1, 0, slideToInsert);
@@ -476,8 +476,10 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setActiveIndex(activeIndex + 1);
     setPendingStyledSlide(null);
     setPendingStyledLayout(null);
+    setPendingGenerated(null);
+    setPlaceholderAssignments({});
     toast.success('Slide inserted into deck');
-  }, [pendingStyledSlide, activeIndex]);
+  }, [previewSlide, pendingStyledSlide, activeIndex]);
 
 
   const addSlide = useCallback((afterIndex: number) => {
