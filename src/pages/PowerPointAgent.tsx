@@ -205,6 +205,15 @@ const PowerPointAgent: React.FC = () => {
         console.warn("Theme parse failed (non-fatal):", themeErr);
         setTemplateThemeTokens(null);
       }
+      // Pull the slide-layout catalog (real placeholders + geometry) so the
+      // AI can pick from layouts that exist in the master.
+      try {
+        const catalog = await parsePptxLayoutCatalog(file);
+        setTemplateLayoutCatalog(catalog);
+      } catch (layoutErr) {
+        console.warn("Layout catalog parse failed (non-fatal):", layoutErr);
+        setTemplateLayoutCatalog(null);
+      }
       // Also load as extracted source so the AI Agent can generate variations from it.
       setPdfFile(null);
       setThumbnails(new Map());
