@@ -310,6 +310,67 @@ const CHART_STYLES: ChartStyleId[] = ['flat', 'pill', 'outline', 'gradient', 'ha
 const chartStyleFor = (template: DeckTemplate): ChartStyleId =>
   CHART_STYLES[hashFor(`${template.id}::chart-style`) % CHART_STYLES.length];
 
+type GraphSystemId =
+  | 'orbital-rings'
+  | 'terminal-spark'
+  | 'editorial-lollipop'
+  | 'ledger-waterfall'
+  | 'startup-sticker'
+  | 'fieldnotes-scatter'
+  | 'brutal-blocks'
+  | 'broadcast-vu'
+  | 'observatory-radar'
+  | 'storyboard-frames'
+  | 'monograph-slope'
+  | 'blueprint-node'
+  | 'heatmap-matrix'
+  | 'funnel-stack'
+  | 'treemap-tiles'
+  | 'gantt-roadmap'
+  | 'quadrant-bubbles'
+  | 'radial-bars'
+  | 'candlestick-tape'
+  | 'sankey-ribbons';
+
+const GRAPH_SYSTEMS: GraphSystemId[] = [
+  'orbital-rings',
+  'terminal-spark',
+  'editorial-lollipop',
+  'ledger-waterfall',
+  'startup-sticker',
+  'fieldnotes-scatter',
+  'brutal-blocks',
+  'broadcast-vu',
+  'observatory-radar',
+  'storyboard-frames',
+  'monograph-slope',
+  'blueprint-node',
+  'heatmap-matrix',
+  'funnel-stack',
+  'treemap-tiles',
+  'gantt-roadmap',
+  'quadrant-bubbles',
+  'radial-bars',
+  'candlestick-tape',
+  'sankey-ribbons',
+];
+
+const FEATURED_GRAPH_SYSTEMS: Record<string, GraphSystemId> = {
+  'transperfect-2026': 'orbital-rings',
+  'modern-dark': 'terminal-spark',
+  'editorial-light': 'editorial-lollipop',
+  'corporate-navy': 'ledger-waterfall',
+  'vibrant-startup': 'startup-sticker',
+  'warm-terracotta': 'fieldnotes-scatter',
+  'mono-brutalist': 'brutal-blocks',
+};
+
+const graphSystemFor = (template: DeckTemplate, kind: PreviewKind, look: DeckLookId): GraphSystemId => {
+  const featured = FEATURED_GRAPH_SYSTEMS[template.id];
+  if (featured) return featured;
+  return GRAPH_SYSTEMS[hashFor(`${template.id}::${template.name}::${kind}::${look}::graph-system`) % GRAPH_SYSTEMS.length];
+};
+
 type DeckLookId =
   | 'orbital-intelligence'
   | 'terminal-grid'
