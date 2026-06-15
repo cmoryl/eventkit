@@ -224,11 +224,28 @@ const SURFACE_VARIANTS = [
     `radial-gradient(${hexToRgba(t.palette.accent, 0.42)} 2px, transparent 2.4px) 4px 6px / 38px 38px, radial-gradient(${hexToRgba(t.palette.secondary, 0.32)} 1.6px, transparent 2px) 20px 22px / 46px 46px`,
 ];
 
-const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind) => {
+const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind, look: DeckLookId) => {
   const bg = template.backgroundCss && template.backgroundCss !== 'transparent' ? template.backgroundCss : template.palette.bg;
   const base = bg.includes('gradient')
     ? bg
     : `linear-gradient(145deg, ${template.palette.bg} 0%, ${hexToRgba(template.palette.accent, light ? 0.14 : 0.2)} 58%, ${template.palette.secondary} 100%)`;
+
+  const lookPattern: Partial<Record<DeckLookId, string>> = {
+    'orbital-intelligence': `radial-gradient(circle at 72% 24%, ${hexToRgba(template.palette.accent, 0.5)}, transparent 20%), radial-gradient(circle at 62% 58%, ${hexToRgba(template.palette.secondary, 0.24)} 0 18%, transparent 19%), repeating-radial-gradient(circle at 65% 52%, transparent 0 34px, ${hexToRgba(template.palette.accent, 0.18)} 35px 36px), radial-gradient(${hexToRgba(template.palette.text, 0.2)} 1px, transparent 1.4px) 0 0 / 18px 18px`,
+    'terminal-grid': `linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.2)} 1px, transparent 1px) 0 0 / 28px 28px, linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.14)} 1px, transparent 1px) 0 0 / 28px 28px, repeating-linear-gradient(90deg, transparent 0 54px, ${hexToRgba(template.palette.accent, 0.16)} 54px 56px)`,
+    'editorial-atlas': `linear-gradient(90deg, transparent 0 15%, ${hexToRgba(template.palette.text, 0.16)} 15% calc(15% + 1px), transparent calc(15% + 1px) 100%), repeating-linear-gradient(0deg, transparent 0 24px, ${hexToRgba(template.palette.text, 0.07)} 24px 25px)`,
+    'boardroom-ledger': `linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.18)} 0 1px, transparent 1px 100%) 0 0 / 56px 56px, linear-gradient(0deg, ${hexToRgba(template.palette.text, 0.08)} 0 1px, transparent 1px 100%) 0 0 / 56px 28px, linear-gradient(135deg, transparent 0 68%, ${hexToRgba(template.palette.accent, 0.18)} 68% 100%)`,
+    'startup-collage': `radial-gradient(circle at 18% 24%, ${hexToRgba(template.palette.accent, 0.38)} 0 7%, transparent 7.5%), radial-gradient(circle at 82% 20%, ${hexToRgba(template.palette.secondary, 0.32)} 0 9%, transparent 9.5%), linear-gradient(135deg, transparent 0 42%, ${hexToRgba(template.palette.accent, 0.22)} 42% 54%, transparent 54% 100%), repeating-linear-gradient(-12deg, transparent 0 34px, ${hexToRgba(template.palette.text, 0.08)} 34px 36px)`,
+    'organic-fieldnotes': `radial-gradient(ellipse at 18% 88%, ${hexToRgba(template.palette.secondary, 0.34)}, transparent 42%), radial-gradient(ellipse at 82% 12%, ${hexToRgba(template.palette.accent, 0.28)}, transparent 38%), repeating-linear-gradient(102deg, transparent 0 34px, ${hexToRgba(template.palette.text, 0.07)} 35px 36px)`,
+    'brutalist-poster': `linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.82)} 0 12px, transparent 12px 100%), linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.5)} 0 18px, transparent 18px 100%), repeating-linear-gradient(45deg, transparent 0 20px, ${hexToRgba(template.palette.text, 0.11)} 20px 22px)`,
+    'broadcast-control': `linear-gradient(90deg, transparent 0 10%, ${hexToRgba(template.palette.accent, 0.18)} 10% 10.5%, transparent 10.5% 100%), repeating-linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.06)} 0 1px, transparent 1px 18px), radial-gradient(circle at 88% 14%, ${hexToRgba(template.palette.accent, 0.34)}, transparent 22%)`,
+    'data-observatory': `radial-gradient(circle at 64% 48%, ${hexToRgba(template.palette.accent, 0.28)} 0 11%, transparent 12%), repeating-radial-gradient(circle at 64% 48%, transparent 0 30px, ${hexToRgba(template.palette.accent, 0.18)} 31px 32px), radial-gradient(${hexToRgba(template.palette.text, 0.18)} 1px, transparent 1.5px) 0 0 / 16px 16px`,
+    'cinematic-storyboard': `linear-gradient(90deg, ${hexToRgba('#000000', 0.42)} 0 8%, transparent 8% 92%, ${hexToRgba('#000000', 0.42)} 92% 100%), repeating-linear-gradient(90deg, transparent 0 26px, ${hexToRgba(template.palette.text, 0.12)} 26px 28px), linear-gradient(180deg, ${hexToRgba('#000000', 0.12)}, transparent 32%, ${hexToRgba('#000000', 0.28)})`,
+    'literary-monograph': `linear-gradient(90deg, transparent 0 22%, ${hexToRgba(template.palette.accent, 0.5)} 22% calc(22% + 2px), transparent calc(22% + 2px) 100%), repeating-linear-gradient(0deg, transparent 0 20px, ${hexToRgba(template.palette.text, 0.08)} 20px 21px)`,
+    'systems-blueprint': `linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.14)} 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.14)} 1px, transparent 1px) 0 0 / 22px 22px, repeating-linear-gradient(135deg, transparent 0 36px, ${hexToRgba(template.palette.text, 0.07)} 36px 37px)`,
+  };
+
+  if (lookPattern[look]) return { base, pattern: lookPattern[look]! };
 
   // Kind-tied bias: each kind has 2-3 preferred surface variants, then hash picks
   const bias: Partial<Record<PreviewKind, number[]>> = {
@@ -259,7 +276,15 @@ const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind) =
   return { base, pattern: SURFACE_VARIANTS[idx](template, light) };
 };
 
-const miniBgFor = (kind: PreviewKind, template: DeckTemplate) => {
+const miniBgFor = (kind: PreviewKind, template: DeckTemplate, look: DeckLookId) => {
+  if (look === 'brutalist-poster') return `linear-gradient(135deg, ${template.palette.bg} 0 58%, ${template.palette.accent} 58% 74%, ${template.palette.bg} 74%), repeating-linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.16)} 0 2px, transparent 2px 18px)`;
+  if (look === 'editorial-atlas' || look === 'literary-monograph') return `linear-gradient(90deg, ${template.palette.bg} 0 68%, ${hexToRgba(template.palette.secondary, 0.18)} 68% 100%), repeating-linear-gradient(0deg, transparent 0 18px, ${hexToRgba(template.palette.text, 0.07)} 18px 19px)`;
+  if (look === 'terminal-grid' || look === 'systems-blueprint') return `linear-gradient(135deg, ${template.palette.bg}, ${hexToRgba(template.palette.secondary, 0.55)}), linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.2)} 1px, transparent 1px) 0 0 / 18px 18px, linear-gradient(0deg, ${hexToRgba(template.palette.accent, 0.16)} 1px, transparent 1px) 0 0 / 18px 18px`;
+  if (look === 'startup-collage') return `radial-gradient(circle at 18% 18%, ${hexToRgba(template.palette.accent, 0.44)}, transparent 26%), radial-gradient(circle at 86% 74%, ${hexToRgba(template.palette.secondary, 0.36)}, transparent 30%), ${template.palette.bg}`;
+  if (look === 'organic-fieldnotes') return `radial-gradient(ellipse at 12% 88%, ${hexToRgba(template.palette.secondary, 0.34)}, transparent 42%), linear-gradient(135deg, ${template.palette.bg}, ${hexToRgba(template.palette.accent, 0.16)})`;
+  if (look === 'broadcast-control') return `linear-gradient(90deg, ${hexToRgba(template.palette.bg, 0.96)} 0 62%, ${hexToRgba(template.palette.accent, 0.18)} 62% 100%), repeating-linear-gradient(90deg, ${hexToRgba(template.palette.text, 0.08)} 0 1px, transparent 1px 14px)`;
+  if (look === 'data-observatory' || look === 'orbital-intelligence') return `radial-gradient(circle at 50% 54%, ${hexToRgba(template.palette.accent, 0.34)}, transparent 30%), repeating-radial-gradient(circle at 50% 54%, transparent 0 24px, ${hexToRgba(template.palette.accent, 0.18)} 25px 26px), ${template.palette.bg}`;
+  if (look === 'cinematic-storyboard') return `linear-gradient(90deg, ${hexToRgba('#000000', 0.42)} 0 10%, transparent 10% 90%, ${hexToRgba('#000000', 0.42)} 90% 100%), linear-gradient(135deg, ${template.palette.bg}, ${hexToRgba(template.palette.secondary, 0.55)})`;
   const lightKinds = ['editorial', 'bullet', 'comparison'];
   if (lightKinds.includes(kind) && isLight(template.palette.bg)) return template.palette.bg;
   if (kind === 'full-bleed') return `linear-gradient(135deg, ${hexToRgba(template.palette.accent, 0.42)}, rgba(0,0,0,0.86)), repeating-linear-gradient(135deg, ${hexToRgba(template.palette.text, 0.18)} 0 6px, transparent 6px 16px)`;
@@ -284,6 +309,158 @@ type ChartStyleId = 'flat' | 'pill' | 'outline' | 'gradient' | 'hatched' | 'dott
 const CHART_STYLES: ChartStyleId[] = ['flat', 'pill', 'outline', 'gradient', 'hatched', 'dotted', 'glow', 'segmented'];
 const chartStyleFor = (template: DeckTemplate): ChartStyleId =>
   CHART_STYLES[hashFor(`${template.id}::chart-style`) % CHART_STYLES.length];
+
+type DeckLookId =
+  | 'orbital-intelligence'
+  | 'terminal-grid'
+  | 'editorial-atlas'
+  | 'boardroom-ledger'
+  | 'startup-collage'
+  | 'organic-fieldnotes'
+  | 'brutalist-poster'
+  | 'broadcast-control'
+  | 'data-observatory'
+  | 'cinematic-storyboard'
+  | 'literary-monograph'
+  | 'systems-blueprint';
+
+const LOOK_LABELS: Record<DeckLookId, string> = {
+  'orbital-intelligence': 'Orbital intelligence',
+  'terminal-grid': 'Terminal grid',
+  'editorial-atlas': 'Editorial atlas',
+  'boardroom-ledger': 'Boardroom ledger',
+  'startup-collage': 'Startup collage',
+  'organic-fieldnotes': 'Organic fieldnotes',
+  'brutalist-poster': 'Brutalist poster',
+  'broadcast-control': 'Broadcast control',
+  'data-observatory': 'Data observatory',
+  'cinematic-storyboard': 'Cinematic storyboard',
+  'literary-monograph': 'Literary monograph',
+  'systems-blueprint': 'Systems blueprint',
+};
+
+const ALL_LOOKS: DeckLookId[] = [
+  'orbital-intelligence',
+  'terminal-grid',
+  'editorial-atlas',
+  'boardroom-ledger',
+  'startup-collage',
+  'organic-fieldnotes',
+  'brutalist-poster',
+  'broadcast-control',
+  'data-observatory',
+  'cinematic-storyboard',
+  'literary-monograph',
+  'systems-blueprint',
+];
+
+const lookFor = (template: DeckTemplate, kind: PreviewKind): DeckLookId => {
+  const hay = `${template.id} ${template.name} ${template.description || ''} ${(template.tags || []).join(' ')}`.toLowerCase();
+  if (hay.includes('transperfect') || hay.includes('orb') || hay.includes('cosmic')) return 'orbital-intelligence';
+  if (hay.includes('modern dark') || hay.includes('tech') || hay.includes('saas') || hay.includes('product')) return 'terminal-grid';
+  if (hay.includes('editorial') || hay.includes('magazine') || hay.includes('journal')) return 'editorial-atlas';
+  if (hay.includes('corporate') || hay.includes('investor') || hay.includes('finance') || hay.includes('executive')) return 'boardroom-ledger';
+  if (hay.includes('startup') || hay.includes('launch') || hay.includes('vibrant') || hay.includes('campaign')) return 'startup-collage';
+  if (hay.includes('terracotta') || hay.includes('wellness') || hay.includes('lifestyle') || hay.includes('warm')) return 'organic-fieldnotes';
+  if (hay.includes('brutalist') || hay.includes('mono')) return 'brutalist-poster';
+  if (hay.includes('webinar') || hay.includes('stream') || hay.includes('lower third') || hay.includes('speaker') || hay.includes('qa')) return 'broadcast-control';
+  if (hay.includes('stats') || hay.includes('metrics') || hay.includes('kpi') || kind === 'chart' || kind === 'poll') return 'data-observatory';
+  if (hay.includes('image') || hay.includes('full bleed') || hay.includes('photo')) return 'cinematic-storyboard';
+  if (hay.includes('quote') || hay.includes('closing') || hay.includes('thank')) return 'literary-monograph';
+  if (hay.includes('agenda') || hay.includes('process') || hay.includes('section') || hay.includes('two-column')) return 'systems-blueprint';
+  return ALL_LOOKS[hashFor(`${template.id}::look-system`) % ALL_LOOKS.length];
+};
+
+const slideFrameStyleFor = (look: DeckLookId, template: DeckTemplate, textColor: string): React.CSSProperties => {
+  const border = hexToRgba(textColor, look === 'brutalist-poster' ? 0.72 : 0.22);
+  const common: React.CSSProperties = { borderColor: border };
+  if (look === 'brutalist-poster') return { ...common, borderWidth: 2, borderRadius: 0, boxShadow: `5px 5px 0 ${template.palette.accent}` };
+  if (look === 'editorial-atlas') return { ...common, borderRadius: 1, boxShadow: `0 10px 24px ${hexToRgba('#000000', 0.14)}` };
+  if (look === 'startup-collage') return { ...common, borderRadius: 18, boxShadow: `0 12px 0 ${hexToRgba(template.palette.accent, 0.28)}` };
+  if (look === 'organic-fieldnotes') return { ...common, borderRadius: 24, boxShadow: `0 16px 32px ${hexToRgba(template.palette.secondary, 0.18)}` };
+  if (look === 'terminal-grid') return { ...common, borderRadius: 6, boxShadow: `0 0 0 1px ${hexToRgba(template.palette.accent, 0.25)}, 0 0 24px ${hexToRgba(template.palette.accent, 0.22)}` };
+  if (look === 'broadcast-control') return { ...common, borderRadius: 10, boxShadow: `0 0 0 1px ${hexToRgba(template.palette.accent, 0.28)}` };
+  if (look === 'data-observatory') return { ...common, borderRadius: 14, boxShadow: `0 0 28px ${hexToRgba(template.palette.accent, 0.22)}` };
+  if (look === 'cinematic-storyboard') return { ...common, borderRadius: 4, boxShadow: `0 14px 32px ${hexToRgba('#000000', 0.34)}` };
+  if (look === 'literary-monograph') return { ...common, borderRadius: 2, boxShadow: `0 12px 26px ${hexToRgba('#000000', 0.12)}` };
+  if (look === 'systems-blueprint') return { ...common, borderRadius: 3, boxShadow: `0 0 0 1px ${hexToRgba(template.palette.accent, 0.22)}` };
+  return { ...common, borderRadius: 12, boxShadow: `0 18px 42px ${hexToRgba(template.palette.accent, 0.22)}` };
+};
+
+const copyBlockClassFor = (look: DeckLookId, dense?: boolean) => {
+  const pad = dense ? 'pt-8' : 'pt-24';
+  const map: Partial<Record<DeckLookId, string>> = {
+    'orbital-intelligence': `${dense ? 'pt-8' : 'pt-28'} max-w-[60%]`,
+    'terminal-grid': `${dense ? 'pt-6' : 'pt-20'} max-w-[58%] uppercase`,
+    'editorial-atlas': `${dense ? 'pt-12' : 'pt-32'} max-w-[48%] ml-[8%]`,
+    'boardroom-ledger': `${dense ? 'pt-6' : 'pt-20'} max-w-[64%]`,
+    'startup-collage': `${dense ? 'pt-14' : 'pt-36'} max-w-[68%] -rotate-1`,
+    'organic-fieldnotes': `${dense ? 'pt-10' : 'pt-28'} max-w-[62%]`,
+    'brutalist-poster': `${dense ? 'pt-4' : 'pt-12'} max-w-[86%]`,
+    'broadcast-control': `${dense ? 'pt-16' : 'pt-36'} max-w-[58%]`,
+    'data-observatory': `${dense ? 'pt-10' : 'pt-28'} max-w-[58%]`,
+    'cinematic-storyboard': `${dense ? 'pt-16' : 'pt-40'} max-w-[70%]`,
+    'literary-monograph': `${dense ? 'pt-12' : 'pt-32'} max-w-[52%] ml-[10%]`,
+    'systems-blueprint': `${dense ? 'pt-8' : 'pt-24'} max-w-[60%]`,
+  };
+  return map[look] || `${pad} max-w-[72%]`;
+};
+
+const LookMotif = ({ look, template, textColor }: { look: DeckLookId; template: DeckTemplate; textColor: string }) => {
+  const accent = template.palette.accent;
+  const secondary = template.palette.secondary;
+  const faint = hexToRgba(textColor, 0.2);
+  if (look === 'orbital-intelligence' || look === 'data-observatory') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute right-[-54px] bottom-[-76px] h-64 w-64 rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.34)}, transparent 30%), repeating-radial-gradient(circle, transparent 0 30px, ${hexToRgba(look === 'orbital-intelligence' ? secondary : accent, 0.32)} 31px 32px)` }} />
+        {[0, 1, 2, 3].map((i) => <span key={i} className="absolute h-2.5 w-2.5 rounded-full" style={{ right: `${34 + i * 43}px`, bottom: `${42 + (i % 2) * 78}px`, background: i % 2 ? secondary : accent, boxShadow: `0 0 14px ${hexToRgba(accent, 0.6)}` }} />)}
+      </div>
+    );
+  }
+  if (look === 'terminal-grid' || look === 'systems-blueprint') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute right-7 top-12 h-28 w-44 border" style={{ borderColor: hexToRgba(accent, 0.36), clipPath: look === 'systems-blueprint' ? 'polygon(0 0, 100% 0, 82% 100%, 0 100%)' : undefined }} />
+        <svg className="absolute right-8 top-20 h-24 w-44" viewBox="0 0 180 96" fill="none"><path d="M4 72 L38 40 L70 58 L112 18 L172 42" stroke={accent} strokeWidth="3" strokeLinecap="square"/><path d="M4 88 H172" stroke={faint} strokeWidth="1"/><path d="M24 8 V88M72 8V88M120 8V88M168 8V88" stroke={faint} strokeWidth="1"/></svg>
+      </div>
+    );
+  }
+  if (look === 'editorial-atlas' || look === 'literary-monograph') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute left-[14%] top-0 h-full w-px" style={{ background: hexToRgba(textColor, 0.28) }} />
+        <div className="absolute right-8 top-12 h-48 w-32" style={{ background: `linear-gradient(180deg, ${hexToRgba(accent, 0.32)}, ${hexToRgba(secondary, 0.16)})`, border: `1px solid ${hexToRgba(textColor, 0.2)}` }} />
+        <div className="absolute right-20 bottom-14 font-serif text-[132px] leading-none opacity-20" style={{ color: accent }}>{look === 'literary-monograph' ? '”' : '§'}</div>
+      </div>
+    );
+  }
+  if (look === 'boardroom-ledger') {
+    return <div aria-hidden className="absolute inset-y-8 right-8 w-44 border-l border-r" style={{ borderColor: hexToRgba(accent, 0.35), background: `repeating-linear-gradient(0deg, transparent 0 30px, ${hexToRgba(textColor, 0.1)} 30px 31px)` }} />;
+  }
+  if (look === 'startup-collage') {
+    return (
+      <div aria-hidden className="absolute inset-0 overflow-hidden">
+        <div className="absolute right-10 top-12 h-28 w-36 rotate-6 rounded-2xl" style={{ background: accent }} />
+        <div className="absolute right-28 top-28 h-24 w-24 -rotate-12 rounded-full" style={{ background: secondary }} />
+        <div className="absolute right-6 bottom-16 h-20 w-44 rotate-[-8deg] rounded-lg border-2" style={{ borderColor: textColor }} />
+      </div>
+    );
+  }
+  if (look === 'organic-fieldnotes') {
+    return <div aria-hidden className="absolute right-[-40px] top-12 h-56 w-56 rounded-[42%_58%_48%_52%]" style={{ background: `radial-gradient(ellipse at 35% 35%, ${hexToRgba(accent, 0.4)}, ${hexToRgba(secondary, 0.22)} 58%, transparent 60%)` }} />;
+  }
+  if (look === 'brutalist-poster') {
+    return <div aria-hidden className="absolute right-[-18px] top-10 h-44 w-56 rotate-6 border-[10px]" style={{ borderColor: textColor, background: accent }} />;
+  }
+  if (look === 'broadcast-control') {
+    return <div aria-hidden className="absolute right-6 top-10 h-40 w-52 rounded-xl border" style={{ borderColor: hexToRgba(accent, 0.42), background: `linear-gradient(180deg, ${hexToRgba(accent, 0.18)}, transparent)` }} />;
+  }
+  if (look === 'cinematic-storyboard') {
+    return <div aria-hidden className="absolute inset-x-0 top-10 h-12" style={{ background: `repeating-linear-gradient(90deg, ${hexToRgba(textColor, 0.28)} 0 18px, transparent 18px 34px)` }} />;
+  }
+  return null;
+};
 
 const barStyleFor = (
   style: ChartStyleId,
@@ -312,7 +489,7 @@ const barStyleFor = (
   }
 };
 
-const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean }) => {
+const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean; look?: DeckLookId }) => {
   const title = shortName(template.name);
   const textColor = ['editorial', 'bullet', 'comparison'].includes(kind) && isLight(template.palette.bg) ? template.palette.text : template.palette.text;
   const lineColor = hexToRgba(textColor, 0.68);
@@ -320,6 +497,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
   const accent = template.palette.accent;
   const secondary = template.palette.secondary;
   const v = variantFor(template, kind);
+  const look = forcedLook || lookFor(template, kind);
   const chartStyle = chartStyleFor(template);
   const bar = (color: string, orient: 'v' | 'h' = 'v') => barStyleFor(chartStyle, color, textColor, orient);
 
@@ -327,6 +505,124 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
     <span className="block h-[3px] rounded-full" style={{ width: w, background: color }} />
   );
 
+  const renderLookSlide = () => {
+    const isData = ['stats', 'stat-hero', 'chart', 'poll', 'comparison'].includes(kind);
+    const isPeople = ['team', 'speaker', 'webinar-title', 'qa', 'stream'].includes(kind);
+    const numeric = ['96%', '12m', '+38%', '20%'];
+
+    if (look === 'orbital-intelligence' || look === 'data-observatory') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute right-1 top-1 text-[6px] font-black uppercase tracking-[0.18em] opacity-70">{isData ? 'KPI HERO' : 'SYSTEM'}</div>
+          {isData ? (
+            <div className="grid h-full grid-cols-2 gap-1.5">
+              {numeric.map((n, i) => (
+                <div key={n} className="relative overflow-hidden rounded-md border p-1.5" style={{ borderColor: faint, background: hexToRgba(textColor, 0.06) }}>
+                  <span className="text-[6px] font-black uppercase tracking-wide opacity-60">{['Rate', 'Outline', 'Conv.', 'Share'][i]}</span>
+                  {i === 1 ? <svg className="mt-1 h-6 w-full" viewBox="0 0 64 28" fill="none"><path d="M2 18 C16 5 24 22 38 10 S55 8 62 18" stroke={accent} strokeWidth="1.4"/><path d="M2 23 C18 12 24 28 38 16 S52 14 62 22" stroke={hexToRgba(accent, 0.35)} strokeWidth="1"/></svg> : <div className="absolute right-2 top-8 h-8 w-8 rounded-full" style={{ background: `conic-gradient(${accent} 0 ${i === 2 ? 75 : 62}%, ${hexToRgba(textColor, 0.16)} 0 100%)` }}><div className="absolute inset-2 rounded-full" style={{ background: template.palette.bg }} /></div>}
+                  <span className="absolute bottom-1.5 left-1.5 text-[11px] font-black leading-none">{n}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <div className="relative h-[84%] aspect-square rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.45)}, transparent 28%), repeating-radial-gradient(circle, transparent 0 15px, ${hexToRgba(secondary, 0.34)} 16px 17px)` }}>
+                {[14, 38, 67, 82].map((p, i) => <span key={p} className="absolute h-2 w-2 rounded-full" style={{ left: `${p}%`, top: `${[28, 70, 22, 54][i]}%`, background: i % 2 ? secondary : accent }} />)}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (look === 'terminal-grid') {
+      return (
+        <div className="relative h-full w-full font-mono uppercase">
+          <div className="mb-2 flex items-center gap-1 text-[6px] font-black" style={{ color: accent }}><span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />RUN / {kind}</div>
+          <div className="grid h-[76%] grid-cols-[0.7fr_1fr] gap-2">
+            <div className="space-y-1 border p-1" style={{ borderColor: faint }}>{['01', '02', '03'].map((n, i) => <div key={n} className="grid grid-cols-[auto_1fr] gap-1 text-[6px]"><span style={{ color: i === 1 ? secondary : accent }}>{n}</span><Line w={`${72 - i * 12}%`} color={faint} /></div>)}</div>
+            <div className="relative border p-1" style={{ borderColor: hexToRgba(accent, 0.42) }}>{renderChart()}</div>
+          </div>
+        </div>
+      );
+    }
+
+    if (look === 'editorial-atlas' || look === 'literary-monograph') {
+      return (
+        <div className="grid h-full grid-cols-[0.32fr_1fr] gap-3">
+          <div className="border-r pr-2" style={{ borderColor: hexToRgba(textColor, 0.28) }}><div className="font-serif text-[34px] leading-none" style={{ color: accent }}>{look === 'literary-monograph' ? '“' : '03'}</div><div className="mt-2 text-[5px] font-black uppercase tracking-[0.18em] opacity-60">{kind}</div></div>
+          <div className="space-y-1.5 self-center"><div className="font-serif text-[13px] font-bold leading-[0.95]">{title}</div><Line w="78%" /><Line w="52%" color={faint} /><div className="mt-2 grid grid-cols-2 gap-1.5"><span className="h-8" style={{ background: hexToRgba(accent, 0.2) }} /><span className="h-8" style={{ background: hexToRgba(secondary, 0.16) }} /></div></div>
+        </div>
+      );
+    }
+
+    if (look === 'boardroom-ledger') {
+      return (
+        <div className="h-full w-full">
+          <div className="mb-2 flex items-end justify-between border-b pb-1" style={{ borderColor: hexToRgba(accent, 0.45) }}><span className="text-[10px] font-black">{isData ? 'Q4' : 'Brief'}</span><span className="text-[6px] font-bold opacity-60">{kind}</span></div>
+          <div className="grid h-[70%] grid-cols-3 gap-1.5">{[72, 54, 88].map((h, i) => <div key={i} className="flex flex-col justify-end border-l pl-1" style={{ borderColor: faint }}><span className="block" style={{ height: `${h}%`, ...bar(i === 2 ? accent : hexToRgba(textColor, 0.35), 'v') }} /><span className="mt-1 text-[6px] font-black">0{i + 1}</span></div>)}</div>
+        </div>
+      );
+    }
+
+    if (look === 'startup-collage') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute left-0 top-2 h-12 w-16 -rotate-6 rounded-xl" style={{ background: hexToRgba(accent, 0.78) }} />
+          <div className="absolute right-1 top-0 h-10 w-10 rounded-full" style={{ background: hexToRgba(secondary, 0.78) }} />
+          <div className="absolute bottom-1 left-2 right-2 rotate-2 rounded-lg border-2 p-2" style={{ borderColor: textColor, background: hexToRgba(template.palette.bg, 0.72) }}><div className="text-[11px] font-black leading-none">{title}</div><Line w="46%" color={accent} /></div>
+        </div>
+      );
+    }
+
+    if (look === 'organic-fieldnotes') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute right-0 top-1 h-16 w-20 rounded-[48%_52%_60%_40%]" style={{ background: hexToRgba(secondary, 0.38) }} />
+          <div className="relative space-y-2 pt-2"><div className="text-[9px] font-black uppercase tracking-wide">{kind}</div>{[0, 1, 2].map((i) => <div key={i} className="flex items-center gap-2"><span className="h-3 w-3 rounded-[45%_55%_60%_40%]" style={{ background: i === 1 ? secondary : accent }} /><Line w={`${70 - i * 12}%`} color={i === 0 ? lineColor : faint} /></div>)}</div>
+        </div>
+      );
+    }
+
+    if (look === 'brutalist-poster') {
+      return (
+        <div className="relative h-full w-full p-0">
+          <div className="absolute left-0 top-0 px-1 text-[7px] font-black uppercase" style={{ background: textColor, color: template.palette.bg }}>{kind}</div>
+          <div className="absolute right-0 top-4 h-10 w-12" style={{ background: accent }} />
+          <div className="absolute bottom-0 left-0 right-0 text-[24px] font-black uppercase leading-[0.8] tracking-normal">{isData ? '96' : shortName(title).slice(0, 8)}</div>
+        </div>
+      );
+    }
+
+    if (look === 'broadcast-control') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute left-0 top-0 rounded-full px-1.5 py-0.5 text-[6px] font-black uppercase" style={{ background: accent, color: template.palette.bg }}>{isPeople ? 'LIVE' : 'CTRL'}</div>
+          <div className="absolute bottom-1 left-0 right-0 rounded-lg border p-1.5" style={{ borderColor: hexToRgba(textColor, 0.24), background: hexToRgba(template.palette.bg, 0.78) }}><div className="text-[9px] font-black">{isPeople ? 'Speaker lower third' : title}</div><div className="mt-1 flex gap-1">{[44, 72, 55, 86].map((h, i) => <span key={i} className="w-full" style={{ height: `${h / 8}px`, ...bar(i === 3 ? accent : faint, 'v') }} />)}</div></div>
+        </div>
+      );
+    }
+
+    if (look === 'cinematic-storyboard') {
+      return (
+        <div className="grid h-full grid-cols-[1fr_0.55fr] gap-1.5">
+          <div style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.46)}, ${hexToRgba(secondary, 0.28)})` }} />
+          <div className="space-y-1"><span className="block h-5" style={{ background: faint }} /><div className="text-[8px] font-black leading-tight">{title}</div><Line w="60%" color={accent} /></div>
+        </div>
+      );
+    }
+
+    if (look === 'systems-blueprint') {
+      return (
+        <div className="relative h-full w-full">
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 120 70" fill="none"><path d="M16 18 H48 V48 H86" stroke={accent} strokeWidth="1.5"/><path d="M48 18 L88 14 L104 44" stroke={secondary} strokeWidth="1.2"/><circle cx="16" cy="18" r="5" fill={accent}/><circle cx="48" cy="48" r="5" fill={secondary}/><circle cx="104" cy="44" r="6" fill={accent}/></svg>
+          <div className="absolute left-1 bottom-1 text-[7px] font-black uppercase tracking-wide">{kind}</div>
+        </div>
+      );
+    }
+
+    return null;
+  };
   // ---------- chart variants ----------
   const renderChart = () => {
     const variant = v % 6;
@@ -849,10 +1145,23 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
     );
   };
 
+  const lookSlide = renderLookSlide();
+  if (lookSlide) {
+    return (
+      <div
+        className="relative h-full w-full overflow-hidden rounded-md border shadow-2xl"
+        style={{ background: miniBgFor(kind, template, look), color: textColor, ...slideFrameStyleFor(look, template, textColor) }}
+      >
+        <div aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent, ${hexToRgba(template.palette.bg, 0.22)})` }} />
+        <div className={cn('relative h-full w-full', compact ? 'p-2' : 'p-3')}>{lookSlide}</div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative h-full w-full overflow-hidden rounded-md border shadow-2xl"
-      style={{ background: miniBgFor(kind, template), color: textColor, borderColor: hexToRgba(textColor, 0.18) }}
+      style={{ background: miniBgFor(kind, template, look), color: textColor, ...slideFrameStyleFor(look, template, textColor) }}
     >
       <div aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent, ${hexToRgba(template.palette.bg, 0.28)})` }} />
       <div className={cn('relative h-full w-full', compact ? 'p-2' : 'p-3')}>
@@ -929,7 +1238,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
   );
 };
 
-const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) => {
+const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKind; look: DeckLookId }) => {
   const arrangement = arrangementFor(kind, t);
   const hash = hashFor(t.id);
   // miniDeckFor now derives followers per-template, so no rotation needed
@@ -938,7 +1247,7 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
   if (arrangement === 'mosaic') {
     return (
       <div className="pointer-events-none absolute right-4 top-4 grid h-[42%] w-[50%] grid-cols-2 gap-1.5">
-        {[...deck, 'title' as PreviewKind].slice(0, 4).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} compact />)}
+        {[...deck, 'title' as PreviewKind].slice(0, 4).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
       </div>
     );
   }
@@ -947,10 +1256,10 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
     return (
       <div className="pointer-events-none absolute right-4 top-4 h-[38%] w-[56%]">
         <div className="absolute right-0 top-0 aspect-video w-full overflow-hidden rounded-lg transition-transform duration-300 group-hover:-translate-y-1">
-          <MiniSlide kind={deck[0]} template={t} />
+          <MiniSlide kind={deck[0]} template={t} look={look} />
         </div>
         <div className="absolute -bottom-5 left-2 aspect-video w-[44%] overflow-hidden rounded-md opacity-85 shadow-xl">
-          <MiniSlide kind={deck[1]} template={t} compact />
+          <MiniSlide kind={deck[1]} template={t} look={look} compact />
         </div>
       </div>
     );
@@ -961,7 +1270,7 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
       <div className="pointer-events-none absolute right-4 top-4 flex h-[50%] w-[45%] flex-col gap-1.5">
         {deck.map((slideKind, i) => (
           <div key={`${slideKind}-${i}`} className="min-h-0 flex-1" style={{ transform: `translateX(${i * -8}px)` }}>
-            <MiniSlide kind={slideKind} template={t} compact />
+            <MiniSlide kind={slideKind} template={t} look={look} compact />
           </div>
         ))}
       </div>
@@ -972,10 +1281,10 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
     return (
       <div className="pointer-events-none absolute right-4 top-4 h-[52%] w-[50%]">
         <div className="absolute right-0 top-0 aspect-video w-[82%] overflow-hidden rounded-lg shadow-2xl">
-          <MiniSlide kind={deck[0]} template={t} />
+          <MiniSlide kind={deck[0]} template={t} look={look} />
         </div>
         <div className="absolute bottom-0 left-0 grid w-[74%] grid-cols-2 gap-1.5">
-          {deck.slice(1).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} compact />)}
+          {deck.slice(1).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
         </div>
       </div>
     );
@@ -986,13 +1295,13 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
   return (
     <div className="pointer-events-none absolute right-4 top-4 h-[58%] w-[52%]">
       <div className="absolute right-[-2%] top-[-4%] aspect-video w-[70%] overflow-hidden rounded-md opacity-55 shadow-xl" style={{ transform: `rotate(${backRot}deg)` }}>
-        <MiniSlide kind={deck[2]} template={t} compact />
+        <MiniSlide kind={deck[2]} template={t} look={look} compact />
       </div>
       <div className="absolute right-[8%] top-[7%] aspect-video w-[78%] overflow-hidden rounded-md opacity-90 shadow-2xl" style={{ transform: `rotate(${midRot}deg)` }}>
-        <MiniSlide kind={deck[1]} template={t} compact />
+        <MiniSlide kind={deck[1]} template={t} look={look} compact />
       </div>
       <div className="absolute right-[2%] top-[20%] aspect-video w-[88%] overflow-hidden rounded-md shadow-2xl transition-transform duration-300 group-hover:-translate-y-1">
-        <MiniSlide kind={deck[0]} template={t} />
+        <MiniSlide kind={deck[0]} template={t} look={look} />
       </div>
     </div>
   );
@@ -1029,8 +1338,18 @@ export interface TemplatePosterPreviewProps {
 export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ template, selected, disabled, saved, shared, dense, onClick }) => {
   const light = isLight(template.palette.bg);
   const kind = kindFor(template);
-  const surface = surfaceFor(template, light, kind);
+  const look = lookFor(template, kind);
+  const surface = surfaceFor(template, light, kind, look);
   const icons = featureIconsFor(kind);
+  const shapeClass = cn(
+    look === 'brutalist-poster' && 'rounded-none border-2 shadow-[8px_8px_0_hsl(var(--foreground)/0.18)] hover:translate-y-0',
+    (look === 'editorial-atlas' || look === 'literary-monograph') && 'rounded-sm',
+    look === 'organic-fieldnotes' && 'rounded-[40px]',
+    look === 'startup-collage' && 'rounded-[28px] rotate-[0.35deg]',
+    look === 'terminal-grid' && 'rounded-lg',
+    look === 'systems-blueprint' && 'rounded-md',
+    look === 'cinematic-storyboard' && 'rounded-xl',
+  );
   return (
     <button
       type="button"
@@ -1038,6 +1357,7 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
       onClick={onClick}
       className={cn(
         'group relative overflow-hidden rounded-[32px] border text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl',
+        shapeClass,
         dense ? 'min-h-[220px]' : 'min-h-[310px]',
         selected ? 'border-primary ring-2 ring-primary/40' : 'border-border/70 hover:border-primary/50',
         disabled && 'cursor-not-allowed opacity-50',
@@ -1046,7 +1366,8 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
     >
       <div className="absolute inset-0" style={{ background: surface.base }} />
       <div className="absolute inset-0 opacity-85" style={{ background: surface.pattern }} />
-      <DeckPreviewVisual t={template} kind={kind} />
+      <LookMotif look={look} template={template} textColor={template.palette.text} />
+      <DeckPreviewVisual t={template} kind={kind} look={look} />
 
       <div className="relative flex h-full min-h-[inherit] flex-col justify-between p-5">
         <div className="flex items-start justify-between gap-3">
@@ -1058,22 +1379,22 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
           {selected && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"><Check className="h-4 w-4" /></span>}
         </div>
 
-        <div className={cn('max-w-[72%]', dense ? 'pt-10' : 'pt-24')}>
+        <div className={cn(copyBlockClassFor(look, dense))}>
           <div className="mb-3 flex items-center gap-2">
-            <span className="h-1 w-14 rounded-full" style={{ background: template.palette.accent }} />
-            <Sparkles className="h-4 w-4 opacity-70" />
+            <span className={cn('h-1', look === 'brutalist-poster' ? 'w-24 rounded-none' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'w-10 rounded-none' : 'w-14 rounded-full')} style={{ background: template.palette.accent }} />
+            <span className="text-[9px] font-black uppercase tracking-[0.18em] opacity-75">{LOOK_LABELS[look]}</span>
           </div>
-          <h3 className={cn('font-black leading-[0.92] tracking-tight drop-shadow-sm', dense ? 'text-xl' : 'text-3xl')}>{template.name}</h3>
+          <h3 className={cn('font-black leading-[0.92] tracking-tight drop-shadow-sm', dense ? 'text-xl' : look === 'brutalist-poster' ? 'text-4xl uppercase' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'font-serif text-3xl' : 'text-3xl')}>{template.name}</h3>
           <p className="mt-3 line-clamp-2 text-sm font-semibold opacity-80">{template.description || 'Prebuilt PowerPoint system'}</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 pt-5">
+        <div className={cn('pt-5', look === 'brutalist-poster' ? 'flex gap-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'grid grid-cols-4 gap-px border-t' : look === 'broadcast-control' ? 'flex justify-end gap-2' : 'grid grid-cols-4 gap-2')} style={(look === 'editorial-atlas' || look === 'literary-monograph') ? { borderColor: `${template.palette.text}22` } : undefined}>
           {icons.map(({ Icon, colorKey }, index) => {
             const color = template.palette[colorKey];
             return (
-              <div key={`${colorKey}-${index}`} className="rounded-2xl border p-2 backdrop-blur-md" style={{ borderColor: `${template.palette.text}22`, background: hexToRgba(template.palette.bg, light ? 0.48 : 0.36) }}>
+              <div key={`${colorKey}-${index}`} className={cn('border p-2 backdrop-blur-md', look === 'brutalist-poster' ? 'rounded-none border-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'rounded-none border-0' : look === 'broadcast-control' ? 'rounded-full' : 'rounded-2xl')} style={{ borderColor: `${template.palette.text}22`, background: hexToRgba(template.palette.bg, light ? 0.48 : 0.36) }}>
                 <Icon className="h-4 w-4" />
-                <div className="mt-2 h-1 rounded-full" style={{ background: color }} />
+                <div className={cn('mt-2 h-1', look === 'brutalist-poster' || look === 'editorial-atlas' ? 'rounded-none' : 'rounded-full')} style={{ background: color }} />
               </div>
             );
           })}
