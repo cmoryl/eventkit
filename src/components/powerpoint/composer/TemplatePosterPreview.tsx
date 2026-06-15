@@ -1107,7 +1107,7 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
   );
 };
 
-const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) => {
+const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKind; look: DeckLookId }) => {
   const arrangement = arrangementFor(kind, t);
   const hash = hashFor(t.id);
   // miniDeckFor now derives followers per-template, so no rotation needed
@@ -1116,7 +1116,7 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
   if (arrangement === 'mosaic') {
     return (
       <div className="pointer-events-none absolute right-4 top-4 grid h-[42%] w-[50%] grid-cols-2 gap-1.5">
-        {[...deck, 'title' as PreviewKind].slice(0, 4).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} compact />)}
+        {[...deck, 'title' as PreviewKind].slice(0, 4).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
       </div>
     );
   }
@@ -1125,10 +1125,10 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
     return (
       <div className="pointer-events-none absolute right-4 top-4 h-[38%] w-[56%]">
         <div className="absolute right-0 top-0 aspect-video w-full overflow-hidden rounded-lg transition-transform duration-300 group-hover:-translate-y-1">
-          <MiniSlide kind={deck[0]} template={t} />
+          <MiniSlide kind={deck[0]} template={t} look={look} />
         </div>
         <div className="absolute -bottom-5 left-2 aspect-video w-[44%] overflow-hidden rounded-md opacity-85 shadow-xl">
-          <MiniSlide kind={deck[1]} template={t} compact />
+          <MiniSlide kind={deck[1]} template={t} look={look} compact />
         </div>
       </div>
     );
@@ -1139,7 +1139,7 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
       <div className="pointer-events-none absolute right-4 top-4 flex h-[50%] w-[45%] flex-col gap-1.5">
         {deck.map((slideKind, i) => (
           <div key={`${slideKind}-${i}`} className="min-h-0 flex-1" style={{ transform: `translateX(${i * -8}px)` }}>
-            <MiniSlide kind={slideKind} template={t} compact />
+            <MiniSlide kind={slideKind} template={t} look={look} compact />
           </div>
         ))}
       </div>
@@ -1150,10 +1150,10 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
     return (
       <div className="pointer-events-none absolute right-4 top-4 h-[52%] w-[50%]">
         <div className="absolute right-0 top-0 aspect-video w-[82%] overflow-hidden rounded-lg shadow-2xl">
-          <MiniSlide kind={deck[0]} template={t} />
+          <MiniSlide kind={deck[0]} template={t} look={look} />
         </div>
         <div className="absolute bottom-0 left-0 grid w-[74%] grid-cols-2 gap-1.5">
-          {deck.slice(1).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} compact />)}
+          {deck.slice(1).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
         </div>
       </div>
     );
@@ -1164,13 +1164,13 @@ const DeckPreviewVisual = ({ t, kind }: { t: DeckTemplate; kind: PreviewKind }) 
   return (
     <div className="pointer-events-none absolute right-4 top-4 h-[58%] w-[52%]">
       <div className="absolute right-[-2%] top-[-4%] aspect-video w-[70%] overflow-hidden rounded-md opacity-55 shadow-xl" style={{ transform: `rotate(${backRot}deg)` }}>
-        <MiniSlide kind={deck[2]} template={t} compact />
+        <MiniSlide kind={deck[2]} template={t} look={look} compact />
       </div>
       <div className="absolute right-[8%] top-[7%] aspect-video w-[78%] overflow-hidden rounded-md opacity-90 shadow-2xl" style={{ transform: `rotate(${midRot}deg)` }}>
-        <MiniSlide kind={deck[1]} template={t} compact />
+        <MiniSlide kind={deck[1]} template={t} look={look} compact />
       </div>
       <div className="absolute right-[2%] top-[20%] aspect-video w-[88%] overflow-hidden rounded-md shadow-2xl transition-transform duration-300 group-hover:-translate-y-1">
-        <MiniSlide kind={deck[0]} template={t} />
+        <MiniSlide kind={deck[0]} template={t} look={look} />
       </div>
     </div>
   );
