@@ -330,6 +330,15 @@ export const TemplateCompareDialog: React.FC<Props> = ({ open, onOpenChange, tem
           </ScrollArea>
         </div>
       </DialogContent>
+
+      <TemplatePreviewDialog
+        template={focus?.template ?? null}
+        open={!!focus}
+        onOpenChange={(o) => { if (!o) setFocus(null); }}
+        onUse={() => setFocus(null)}
+        focusSlideKind={focus ? PREVIEW_KIND_TO_SLIDE_KIND[focus.kind] : undefined}
+        highlightShared={focus?.shared}
+      />
     </Dialog>
   );
 };
