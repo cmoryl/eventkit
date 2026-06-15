@@ -138,6 +138,10 @@ const PowerPointAgent: React.FC = () => {
   // Forwarded into the SlideEditor + add-styled-slide so the AI uses the
   // authoritative palette/fonts instead of regex-guessed ones.
   const [templateThemeTokens, setTemplateThemeTokens] = useState<PptxThemeTokens | null>(null);
+  // Real placeholder-level layout catalog parsed from the corporate deck's
+  // ppt/slideLayouts/*.xml. Lets the AI pick from layouts that actually exist
+  // in the master (with their real placeholder geometry).
+  const [templateLayoutCatalog, setTemplateLayoutCatalog] = useState<PptxLayoutCatalog | null>(null);
 
   // Stable key for SlideEditor — changes when a new AI deck or template starter is loaded,
   // forcing a remount so initialSlides are picked up rather than the stale state.
