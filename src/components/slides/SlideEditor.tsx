@@ -407,6 +407,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         variant: 'default',
       };
       setPendingStyledSlide(newSlide);
+      setPendingGenerated({
+        title: newSlide.title,
+        subtitle: newSlide.subtitle,
+        body: newSlide.body,
+        notes: newSlide.notes,
+      });
       const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
 
       // Resolve the matching master layout from the catalog and label each
@@ -433,8 +439,16 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           type: matched.type,
           placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
         });
+        // Default every placeholder assignment to 'auto' so the live preview
+        // matches the AI's original mapping until the user overrides it.
+        const defaults: Record<string, PhAssign> = {};
+        matched.placeholders.forEach((p, i) => {
+          defaults[`${p.type}-${p.idx ?? i}`] = { source: 'auto' };
+        });
+        setPlaceholderAssignments(defaults);
       } else {
         setPendingStyledLayout(null);
+        setPlaceholderAssignments({});
       }
 
       toast.success(
