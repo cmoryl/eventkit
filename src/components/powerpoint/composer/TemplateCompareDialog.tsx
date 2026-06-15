@@ -271,16 +271,29 @@ export const TemplateCompareDialog: React.FC<Props> = ({ open, onOpenChange, tem
                           const gs = graphSystemFor(t, kind, look);
                           const sigKey = `${look}::${gs}`;
                           const isDup = (sigMap?.get(sigKey) || 0) > 1;
+                          const mapped = PREVIEW_KIND_TO_SLIDE_KIND[kind];
                           return (
-                            <div
+                            <button
+                              type="button"
                               key={`${kind}-${t.id}`}
+                              onClick={() => setFocus({ template: t, kind, shared: isDup })}
+                              title={
+                                isDup
+                                  ? `Open ${t.name} preview — highlights this shared ${LOOK_LABELS[look] || look} / ${gs} region`
+                                  : `Open ${t.name} preview at ${label}`
+                              }
                               className={cn(
-                                "relative rounded-xl border overflow-hidden bg-card/60",
+                                "group relative rounded-xl border overflow-hidden bg-card/60 text-left transition hover:shadow-lg hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-primary",
                                 isDup && "ring-2 ring-yellow-500/70",
                               )}
                             >
                               <div className="aspect-video w-full overflow-hidden">
                                 <MiniSlide kind={kind} template={t} look={look} />
+                              </div>
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition bg-black/40 pointer-events-none">
+                                <span className="flex items-center gap-1 rounded-full bg-background px-2 py-1 text-[10px] font-bold text-foreground shadow">
+                                  <Maximize2 className="h-3 w-3" /> Open preview
+                                </span>
                               </div>
                               <div className="flex items-center justify-between gap-2 px-2 py-1.5 border-t bg-background/70">
                                 <div className="flex flex-col min-w-0">
@@ -300,7 +313,12 @@ export const TemplateCompareDialog: React.FC<Props> = ({ open, onOpenChange, tem
                                   </span>
                                 )}
                               </div>
-                            </div>
+                              {!mapped && (
+                                <span className="absolute top-1 left-1 rounded bg-background/80 px-1 py-0.5 text-[8px] text-muted-foreground">
+                                  preview maps to closest slide
+                                </span>
+                              )}
+                            </button>
                           );
                         })}
                       </React.Fragment>
