@@ -414,7 +414,7 @@ const barStyleFor = (
   }
 };
 
-const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean }) => {
+const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean; look?: DeckLookId }) => {
   const title = shortName(template.name);
   const textColor = ['editorial', 'bullet', 'comparison'].includes(kind) && isLight(template.palette.bg) ? template.palette.text : template.palette.text;
   const lineColor = hexToRgba(textColor, 0.68);
@@ -422,6 +422,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
   const accent = template.palette.accent;
   const secondary = template.palette.secondary;
   const v = variantFor(template, kind);
+  const look = forcedLook || lookFor(template, kind);
   const chartStyle = chartStyleFor(template);
   const bar = (color: string, orient: 'v' | 'h' = 'v') => barStyleFor(chartStyle, color, textColor, orient);
 
@@ -954,7 +955,7 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
   return (
     <div
       className="relative h-full w-full overflow-hidden rounded-md border shadow-2xl"
-      style={{ background: miniBgFor(kind, template), color: textColor, borderColor: hexToRgba(textColor, 0.18) }}
+      style={{ background: miniBgFor(kind, template, look), color: textColor, ...slideFrameStyleFor(look, template, textColor) }}
     >
       <div aria-hidden className="absolute inset-0" style={{ background: `linear-gradient(180deg, transparent, ${hexToRgba(template.palette.bg, 0.28)})` }} />
       <div className={cn('relative h-full w-full', compact ? 'p-2' : 'p-3')}>
