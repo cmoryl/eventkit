@@ -1584,7 +1584,7 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
         <div className="absolute inset-0" style={{ background: surface.base }} />
         <div className="absolute inset-0 opacity-80" style={{ background: surface.pattern }} />
         <LookMotif look={look} template={template} textColor={template.palette.text} />
-        <DeckPreviewVisual t={template} kind={kind} look={look} />
+        <DeckPreviewVisual t={template} kind={kind} look={look} dense={dense} />
 
         {/* Tiny label badges in preview corner */}
         <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
