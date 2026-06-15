@@ -505,6 +505,127 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
     <span className="block h-[3px] rounded-full" style={{ width: w, background: color }} />
   );
 
+  const renderLookSlide = () => {
+    const isData = ['stats', 'stat-hero', 'chart', 'poll', 'comparison'].includes(kind);
+    const isPeople = ['team', 'speaker', 'webinar-title', 'qa', 'stream'].includes(kind);
+    const numeric = ['96%', '12m', '+38%', '20%'];
+
+    if (look === 'orbital-intelligence' || look === 'data-observatory') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute right-1 top-1 text-[6px] font-black uppercase tracking-[0.18em] opacity-70">{isData ? 'KPI HERO' : 'SYSTEM'}</div>
+          {isData ? (
+            <div className="grid h-full grid-cols-2 gap-1.5">
+              {numeric.map((n, i) => (
+                <div key={n} className="relative overflow-hidden rounded-md border p-1.5" style={{ borderColor: faint, background: hexToRgba(textColor, 0.06) }}>
+                  <span className="text-[6px] font-black uppercase tracking-wide opacity-60">{['Rate', 'Outline', 'Conv.', 'Share'][i]}</span>
+                  {i === 1 ? <svg className="mt-1 h-6 w-full" viewBox="0 0 64 28" fill="none"><path d="M2 18 C16 5 24 22 38 10 S55 8 62 18" stroke={accent} strokeWidth="1.4"/><path d="M2 23 C18 12 24 28 38 16 S52 14 62 22" stroke={hexToRgba(accent, 0.35)} strokeWidth="1"/></svg> : <div className="absolute right-2 top-8 h-8 w-8 rounded-full" style={{ background: `conic-gradient(${accent} 0 ${i === 2 ? 75 : 62}%, ${hexToRgba(textColor, 0.16)} 0 100%)` }}><div className="absolute inset-2 rounded-full" style={{ background: template.palette.bg }} /></div>}
+                  <span className="absolute bottom-1.5 left-1.5 text-[11px] font-black leading-none">{n}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <div className="relative h-[84%] aspect-square rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.45)}, transparent 28%), repeating-radial-gradient(circle, transparent 0 15px, ${hexToRgba(secondary, 0.34)} 16px 17px)` }}>
+                {[14, 38, 67, 82].map((p, i) => <span key={p} className="absolute h-2 w-2 rounded-full" style={{ left: `${p}%`, top: `${[28, 70, 22, 54][i]}%`, background: i % 2 ? secondary : accent }} />)}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    if (look === 'terminal-grid') {
+      return (
+        <div className="relative h-full w-full font-mono uppercase">
+          <div className="mb-2 flex items-center gap-1 text-[6px] font-black" style={{ color: accent }}><span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />RUN / {kind}</div>
+          <div className="grid h-[76%] grid-cols-[0.7fr_1fr] gap-2">
+            <div className="space-y-1 border p-1" style={{ borderColor: faint }}>{['01', '02', '03'].map((n, i) => <div key={n} className="grid grid-cols-[auto_1fr] gap-1 text-[6px]"><span style={{ color: i === 1 ? secondary : accent }}>{n}</span><Line w={`${72 - i * 12}%`} color={faint} /></div>)}</div>
+            <div className="relative border p-1" style={{ borderColor: hexToRgba(accent, 0.42) }}>{renderChart()}</div>
+          </div>
+        </div>
+      );
+    }
+
+    if (look === 'editorial-atlas' || look === 'literary-monograph') {
+      return (
+        <div className="grid h-full grid-cols-[0.32fr_1fr] gap-3">
+          <div className="border-r pr-2" style={{ borderColor: hexToRgba(textColor, 0.28) }}><div className="font-serif text-[34px] leading-none" style={{ color: accent }}>{look === 'literary-monograph' ? '“' : '03'}</div><div className="mt-2 text-[5px] font-black uppercase tracking-[0.18em] opacity-60">{kind}</div></div>
+          <div className="space-y-1.5 self-center"><div className="font-serif text-[13px] font-bold leading-[0.95]">{title}</div><Line w="78%" /><Line w="52%" color={faint} /><div className="mt-2 grid grid-cols-2 gap-1.5"><span className="h-8" style={{ background: hexToRgba(accent, 0.2) }} /><span className="h-8" style={{ background: hexToRgba(secondary, 0.16) }} /></div></div>
+        </div>
+      );
+    }
+
+    if (look === 'boardroom-ledger') {
+      return (
+        <div className="h-full w-full">
+          <div className="mb-2 flex items-end justify-between border-b pb-1" style={{ borderColor: hexToRgba(accent, 0.45) }}><span className="text-[10px] font-black">{isData ? 'Q4' : 'Brief'}</span><span className="text-[6px] font-bold opacity-60">{kind}</span></div>
+          <div className="grid h-[70%] grid-cols-3 gap-1.5">{[72, 54, 88].map((h, i) => <div key={i} className="flex flex-col justify-end border-l pl-1" style={{ borderColor: faint }}><span className="block" style={{ height: `${h}%`, ...bar(i === 2 ? accent : hexToRgba(textColor, 0.35), 'v') }} /><span className="mt-1 text-[6px] font-black">0{i + 1}</span></div>)}</div>
+        </div>
+      );
+    }
+
+    if (look === 'startup-collage') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute left-0 top-2 h-12 w-16 -rotate-6 rounded-xl" style={{ background: hexToRgba(accent, 0.78) }} />
+          <div className="absolute right-1 top-0 h-10 w-10 rounded-full" style={{ background: hexToRgba(secondary, 0.78) }} />
+          <div className="absolute bottom-1 left-2 right-2 rotate-2 rounded-lg border-2 p-2" style={{ borderColor: textColor, background: hexToRgba(template.palette.bg, 0.72) }}><div className="text-[11px] font-black leading-none">{title}</div><Line w="46%" color={accent} /></div>
+        </div>
+      );
+    }
+
+    if (look === 'organic-fieldnotes') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute right-0 top-1 h-16 w-20 rounded-[48%_52%_60%_40%]" style={{ background: hexToRgba(secondary, 0.38) }} />
+          <div className="relative space-y-2 pt-2"><div className="text-[9px] font-black uppercase tracking-wide">{kind}</div>{[0, 1, 2].map((i) => <div key={i} className="flex items-center gap-2"><span className="h-3 w-3 rounded-[45%_55%_60%_40%]" style={{ background: i === 1 ? secondary : accent }} /><Line w={`${70 - i * 12}%`} color={i === 0 ? lineColor : faint} /></div>)}</div>
+        </div>
+      );
+    }
+
+    if (look === 'brutalist-poster') {
+      return (
+        <div className="relative h-full w-full p-0">
+          <div className="absolute left-0 top-0 px-1 text-[7px] font-black uppercase" style={{ background: textColor, color: template.palette.bg }}>{kind}</div>
+          <div className="absolute right-0 top-4 h-10 w-12" style={{ background: accent }} />
+          <div className="absolute bottom-0 left-0 right-0 text-[24px] font-black uppercase leading-[0.8] tracking-normal">{isData ? '96' : shortName(title).slice(0, 8)}</div>
+        </div>
+      );
+    }
+
+    if (look === 'broadcast-control') {
+      return (
+        <div className="relative h-full w-full">
+          <div className="absolute left-0 top-0 rounded-full px-1.5 py-0.5 text-[6px] font-black uppercase" style={{ background: accent, color: template.palette.bg }}>{isPeople ? 'LIVE' : 'CTRL'}</div>
+          <div className="absolute bottom-1 left-0 right-0 rounded-lg border p-1.5" style={{ borderColor: hexToRgba(textColor, 0.24), background: hexToRgba(template.palette.bg, 0.78) }}><div className="text-[9px] font-black">{isPeople ? 'Speaker lower third' : title}</div><div className="mt-1 flex gap-1">{[44, 72, 55, 86].map((h, i) => <span key={i} className="w-full" style={{ height: `${h / 8}px`, ...bar(i === 3 ? accent : faint, 'v') }} />)}</div></div>
+        </div>
+      );
+    }
+
+    if (look === 'cinematic-storyboard') {
+      return (
+        <div className="grid h-full grid-cols-[1fr_0.55fr] gap-1.5">
+          <div style={{ background: `linear-gradient(135deg, ${hexToRgba(accent, 0.46)}, ${hexToRgba(secondary, 0.28)})` }} />
+          <div className="space-y-1"><span className="block h-5" style={{ background: faint }} /><div className="text-[8px] font-black leading-tight">{title}</div><Line w="60%" color={accent} /></div>
+        </div>
+      );
+    }
+
+    if (look === 'systems-blueprint') {
+      return (
+        <div className="relative h-full w-full">
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 120 70" fill="none"><path d="M16 18 H48 V48 H86" stroke={accent} strokeWidth="1.5"/><path d="M48 18 L88 14 L104 44" stroke={secondary} strokeWidth="1.2"/><circle cx="16" cy="18" r="5" fill={accent}/><circle cx="48" cy="48" r="5" fill={secondary}/><circle cx="104" cy="44" r="6" fill={accent}/></svg>
+          <div className="absolute left-1 bottom-1 text-[7px] font-black uppercase tracking-wide">{kind}</div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const lookSlide = renderLookSlide();
+
   // ---------- chart variants ----------
   const renderChart = () => {
     const variant = v % 6;
