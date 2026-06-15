@@ -192,6 +192,15 @@ const PowerPointAgent: React.FC = () => {
       if (imported.length) {
         setTemplateStarterSlides(imported);
       }
+      // Pull the authoritative color + font scheme from theme1.xml so
+      // downstream AI prompts inherit the real brand palette.
+      try {
+        const tokens = await parsePptxThemeTokens(file);
+        setTemplateThemeTokens(tokens);
+      } catch (themeErr) {
+        console.warn("Theme parse failed (non-fatal):", themeErr);
+        setTemplateThemeTokens(null);
+      }
       // Also load as extracted source so the AI Agent can generate variations from it.
       setPdfFile(null);
       setThumbnails(new Map());
