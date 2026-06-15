@@ -1341,6 +1341,15 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
   const look = lookFor(template, kind);
   const surface = surfaceFor(template, light, kind, look);
   const icons = featureIconsFor(kind);
+  const shapeClass = cn(
+    look === 'brutalist-poster' && 'rounded-none border-2 shadow-[8px_8px_0_hsl(var(--foreground)/0.18)] hover:translate-y-0',
+    (look === 'editorial-atlas' || look === 'literary-monograph') && 'rounded-sm',
+    look === 'organic-fieldnotes' && 'rounded-[40px]',
+    look === 'startup-collage' && 'rounded-[28px] rotate-[0.35deg]',
+    look === 'terminal-grid' && 'rounded-lg',
+    look === 'systems-blueprint' && 'rounded-md',
+    look === 'cinematic-storyboard' && 'rounded-xl',
+  );
   return (
     <button
       type="button"
@@ -1348,6 +1357,7 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
       onClick={onClick}
       className={cn(
         'group relative overflow-hidden rounded-[32px] border text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl',
+        shapeClass,
         dense ? 'min-h-[220px]' : 'min-h-[310px]',
         selected ? 'border-primary ring-2 ring-primary/40' : 'border-border/70 hover:border-primary/50',
         disabled && 'cursor-not-allowed opacity-50',
@@ -1369,22 +1379,22 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
           {selected && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"><Check className="h-4 w-4" /></span>}
         </div>
 
-        <div className={cn('max-w-[72%]', dense ? 'pt-10' : 'pt-24')}>
+        <div className={cn(copyBlockClassFor(look, dense))}>
           <div className="mb-3 flex items-center gap-2">
-            <span className="h-1 w-14 rounded-full" style={{ background: template.palette.accent }} />
-            <Sparkles className="h-4 w-4 opacity-70" />
+            <span className={cn('h-1', look === 'brutalist-poster' ? 'w-24 rounded-none' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'w-10 rounded-none' : 'w-14 rounded-full')} style={{ background: template.palette.accent }} />
+            <span className="text-[9px] font-black uppercase tracking-[0.18em] opacity-75">{LOOK_LABELS[look]}</span>
           </div>
-          <h3 className={cn('font-black leading-[0.92] tracking-tight drop-shadow-sm', dense ? 'text-xl' : 'text-3xl')}>{template.name}</h3>
+          <h3 className={cn('font-black leading-[0.92] tracking-tight drop-shadow-sm', dense ? 'text-xl' : look === 'brutalist-poster' ? 'text-4xl uppercase' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'font-serif text-3xl' : 'text-3xl')}>{template.name}</h3>
           <p className="mt-3 line-clamp-2 text-sm font-semibold opacity-80">{template.description || 'Prebuilt PowerPoint system'}</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 pt-5">
+        <div className={cn('pt-5', look === 'brutalist-poster' ? 'flex gap-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'grid grid-cols-4 gap-px border-t' : look === 'broadcast-control' ? 'flex justify-end gap-2' : 'grid grid-cols-4 gap-2')} style={(look === 'editorial-atlas' || look === 'literary-monograph') ? { borderColor: `${template.palette.text}22` } : undefined}>
           {icons.map(({ Icon, colorKey }, index) => {
             const color = template.palette[colorKey];
             return (
-              <div key={`${colorKey}-${index}`} className="rounded-2xl border p-2 backdrop-blur-md" style={{ borderColor: `${template.palette.text}22`, background: hexToRgba(template.palette.bg, light ? 0.48 : 0.36) }}>
+              <div key={`${colorKey}-${index}`} className={cn('border p-2 backdrop-blur-md', look === 'brutalist-poster' ? 'rounded-none border-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'rounded-none border-0' : look === 'broadcast-control' ? 'rounded-full' : 'rounded-2xl')} style={{ borderColor: `${template.palette.text}22`, background: hexToRgba(template.palette.bg, light ? 0.48 : 0.36) }}>
                 <Icon className="h-4 w-4" />
-                <div className="mt-2 h-1 rounded-full" style={{ background: color }} />
+                <div className={cn('mt-2 h-1', look === 'brutalist-poster' || look === 'editorial-atlas' ? 'rounded-none' : 'rounded-full')} style={{ background: color }} />
               </div>
             );
           })}
