@@ -654,6 +654,96 @@ export const VisualVariant: React.FC<VVProps> = ({
   );
 };
 
+const DataGraphic: React.FC<{
+  system: DataGraphicId;
+  series?: { label: string; value: number }[];
+  accent: string;
+  secondary: string;
+  text: string;
+  bg: string;
+  muted: string;
+  seed?: number;
+}> = ({ system, series = [], accent, secondary, text, bg, muted, seed = 1 }) => {
+  const values = series.length ? series.map((s) => s.value) : [24, 46, 31, 68, 54, 82];
+  const max = Math.max(...values, 1);
+  const pct = (n: number) => Math.max(8, Math.min(100, (n / max) * 100));
+  const soft = hexToRgba(text, 0.16);
+  const faint = hexToRgba(text, 0.08);
+
+  switch (system) {
+    case 'orbital-rings':
+      return <div className="relative h-full min-h-[120px] w-full"><div className="absolute inset-[5%] rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.5)} 0 9%, transparent 10%), repeating-radial-gradient(circle, transparent 0 28px, ${hexToRgba(secondary, 0.38)} 29px 31px)` }} />{[18, 38, 63, 81, 50].map((x, i) => <span key={x} className="absolute rounded-full" style={{ left: `${x}%`, top: `${[61, 24, 68, 35, 48][i]}%`, width: 10 + i * 2, height: 10 + i * 2, background: i % 2 ? secondary : accent, boxShadow: `0 0 18px ${hexToRgba(i % 2 ? secondary : accent, 0.72)}` }} />)}</div>;
+    case 'terminal-spark':
+      return <svg viewBox="0 0 500 220" className="h-full w-full" preserveAspectRatio="none"><path d="M0 180H500M0 120H500M0 60H500M80 0V220M180 0V220M280 0V220M380 0V220" stroke={hexToRgba(accent, 0.16)} /><path d="M12 172 L70 184 L118 102 L180 132 L238 48 L310 86 L370 28 L438 70 L492 26" fill="none" stroke={accent} strokeWidth="8" strokeLinecap="square" /><path d="M12 198 H492" stroke={secondary} strokeWidth="3" strokeDasharray="10 12" />{[70, 180, 238, 370, 492].map((x, i) => <rect key={x} x={x - 7} y={[176, 124, 40, 20, 18][i]} width="14" height="24" fill={i === 2 ? secondary : accent} />)}</svg>;
+    case 'editorial-lollipop':
+      return <div className="grid h-full grid-cols-5 items-end gap-5 border-b px-4 pb-3" style={{ borderColor: soft }}>{values.slice(0, 5).map((n, i) => <div key={i} className="flex h-full flex-col items-center justify-end gap-2"><span className="h-5 w-5 rounded-full border-2" style={{ background: i === 2 ? accent : bg, borderColor: i === 2 ? accent : text }} /><span className="w-px" style={{ height: `${pct(n)}%`, background: i === 2 ? accent : hexToRgba(text, 0.45) }} /><span className="font-serif text-xs">{series[i]?.label || i + 1}</span></div>)}</div>;
+    case 'ledger-waterfall':
+      return <div className="relative flex h-full items-end gap-3 border-b border-l p-4" style={{ borderColor: soft }}>{values.slice(0, 6).map((n, i) => <div key={i} className="relative flex-1" style={{ height: `${Math.max(18, pct(n) * 0.55)}%`, marginBottom: `${[4, 26, 14, 42, 20, 54][i] || 0}%` }}><span className="absolute inset-x-0 bottom-0 block" style={{ height: '100%', background: i % 2 ? secondary : accent }} /><span className="absolute -right-4 top-0 h-px w-7" style={{ background: hexToRgba(text, 0.36) }} /></div>)}</div>;
+    case 'startup-sticker':
+      return <div className="relative h-full w-full overflow-hidden">{values.slice(0, 5).map((n, i) => <div key={i} className="absolute rounded-2xl border-4 px-4 py-2 text-2xl font-black" style={{ left: `${6 + i * 17}%`, top: `${[54, 18, 40, 8, 62][i]}%`, transform: `rotate(${[-8, 7, -4, 10, 3][i]}deg)`, borderColor: text, background: i % 2 ? secondary : accent, color: bg }}>{Math.round(n)}</div>)}<svg className="absolute inset-x-6 bottom-5 h-16" viewBox="0 0 220 58" fill="none"><path d="M4 42 C48 4 82 56 116 22 S176 10 216 36" stroke={text} strokeWidth="6" strokeLinecap="round" /></svg></div>;
+    case 'fieldnotes-scatter':
+      return <div className="relative h-full w-full rounded-[43%_57%_51%_49%]" style={{ background: hexToRgba(secondary, 0.12), border: `1px solid ${soft}` }}>{[12, 24, 38, 52, 64, 77, 88].map((x, i) => <span key={x} className="absolute rounded-[48%_52%_58%_42%] border" style={{ left: `${x}%`, top: `${[62, 34, 72, 24, 48, 16, 58][i]}%`, width: 14 + (i % 3) * 9, height: 12 + (i % 2) * 11, background: hexToRgba(i % 2 ? secondary : accent, 0.45), borderColor: i === 3 ? text : 'transparent' }} />)}<svg className="absolute inset-6 h-[calc(100%-48px)] w-[calc(100%-48px)]" viewBox="0 0 120 72" fill="none"><path d="M0 62 C34 54 48 34 70 32 C90 30 98 18 120 8" stroke={accent} strokeWidth="3" strokeDasharray="8 8" /></svg></div>;
+    case 'brutal-blocks':
+      return <div className="grid h-full grid-cols-5 grid-rows-4 gap-2">{Array.from({ length: 13 }).map((_, i) => <span key={i} className={cn(i === 0 && 'col-span-2 row-span-2', i === 5 && 'col-span-2', i === 8 && 'row-span-2')} style={{ background: i % 3 === 0 ? text : i % 2 ? accent : hexToRgba(text, 0.28), border: `4px solid ${i % 3 === 0 ? accent : text}` }} />)}</div>;
+    case 'broadcast-vu':
+      return <div className="flex h-full items-end gap-2 rounded-xl p-3" style={{ background: faint }}>{[32, 72, 45, 88, 60, 96, 42, 70, 54, 82].map((h, i) => <span key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i > 5 ? accent : secondary}, ${hexToRgba(i > 5 ? accent : secondary, 0.16)})` }} />)}</div>;
+    case 'observatory-radar':
+      return <svg viewBox="0 0 360 240" className="h-full w-full"><polygon points="180,18 332,120 180,222 28,120" fill="none" stroke={soft} strokeWidth="3" /><polygon points="180,62 270,120 180,178 90,120" fill="none" stroke={soft} strokeWidth="3" /><path d="M180 120 L180 18 M180 120 L332 120 M180 120 L180 222 M180 120 L28 120" stroke={soft} /><polygon points="180,38 270,116 212,184 86,152 126,84" fill={hexToRgba(accent, 0.34)} stroke={accent} strokeWidth="7" /></svg>;
+    case 'storyboard-frames':
+      return <div className="grid h-full grid-cols-3 gap-3">{[54, 78, 42].map((h, i) => <div key={i} className="relative border-2 p-2" style={{ borderColor: soft }}><span className="absolute left-2 top-2 text-xs font-black opacity-70">0{i + 1}</span><span className="absolute inset-x-2 bottom-2" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i === 1 ? accent : secondary}, transparent)` }} /></div>)}</div>;
+    case 'monograph-slope':
+      return <svg viewBox="0 0 360 230" className="h-full w-full"><path d="M60 34 V196 M300 34 V196" stroke={soft} strokeWidth="3" />{[38, 76, 118, 158].map((y, i) => <g key={y}><path d={`M60 ${y} L300 ${[168, 58, 126, 44][i]}`} stroke={i === 1 ? accent : hexToRgba(text, 0.42)} strokeWidth={i === 1 ? 7 : 4} /><circle cx="60" cy={y} r="7" fill={bg} stroke={text} strokeWidth="3" /><circle cx="300" cy={[168, 58, 126, 44][i]} r="7" fill={i === 1 ? accent : bg} stroke={i === 1 ? accent : text} strokeWidth="3" /></g>)}</svg>;
+    case 'blueprint-node':
+      return <svg viewBox="0 0 360 230" className="h-full w-full"><path d="M48 58 H150 V170 H278 M150 58 L278 92 M150 170 L74 198" fill="none" stroke={accent} strokeWidth="6" strokeDasharray="12 10" />{[[48,58],[150,58],[150,170],[278,170],[278,92],[74,198]].map(([x, y], i) => <rect key={`${x}-${y}`} x={x - 18} y={y - 18} width="36" height="36" fill={i % 2 ? bg : accent} stroke={i % 2 ? secondary : accent} strokeWidth="6" />)}</svg>;
+    case 'heatmap-matrix':
+      return <div className="grid h-full grid-cols-6 grid-rows-5 gap-2">{Array.from({ length: 30 }).map((_, i) => <span key={i} className="rounded-sm" style={{ background: [hexToRgba(text, 0.1), hexToRgba(secondary, 0.36), hexToRgba(accent, 0.68), accent][(i * 7 + seed) % 4] }} />)}</div>;
+    case 'funnel-stack':
+      return <div className="flex h-full flex-col items-center justify-center gap-3">{[92, 76, 59, 42, 26].map((w, i) => <span key={w} className="h-8 rounded-sm" style={{ width: `${w}%`, background: i === 0 ? accent : i === 2 ? secondary : hexToRgba(text, 0.3), clipPath: 'polygon(8% 0, 92% 0, 100% 100%, 0 100%)' }} />)}</div>;
+    case 'treemap-tiles':
+      return <div className="grid h-full grid-cols-5 grid-rows-4 gap-2">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={cn(i === 0 && 'col-span-3 row-span-2', i === 1 && 'col-span-2 row-span-2', i === 2 && 'col-span-2', i === 5 && 'col-span-2')} style={{ background: i % 2 ? hexToRgba(secondary, 0.6) : hexToRgba(accent, 0.74) }} />)}</div>;
+    case 'gantt-roadmap':
+      return <div className="flex h-full flex-col justify-center gap-4 border-l-2 pl-5" style={{ borderColor: soft }}>{[62, 38, 78, 50, 68].map((w, i) => <div key={i} className="grid grid-cols-[44px_1fr] items-center gap-2"><span className="text-xs font-black opacity-60">Q{i + 1}</span><span className="block h-5" style={{ width: `${w}%`, marginLeft: `${[0, 16, 8, 28, 5][i]}%`, background: i === 2 ? accent : secondary }} /></div>)}</div>;
+    case 'quadrant-bubbles':
+      return <div className="relative h-full w-full" style={{ background: `linear-gradient(90deg, transparent calc(50% - 1px), ${soft} 50%, transparent calc(50% + 1px)), linear-gradient(0deg, transparent calc(50% - 1px), ${soft} 50%, transparent calc(50% + 1px))` }}>{[[22,60,48],[36,30,30],[58,44,66],[76,20,38],[72,68,24]].map(([x, y, s], i) => <span key={i} className="absolute rounded-full border-2" style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, transform: 'translate(-50%, -50%)', background: hexToRgba(i === 2 ? accent : secondary, 0.42), borderColor: i === 2 ? accent : hexToRgba(text, 0.34) }} />)}</div>;
+    case 'radial-bars':
+      return <div className="relative h-full w-full">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className="absolute left-1/2 top-1/2 h-3 origin-left rounded-full" style={{ width: `${22 + i * 9}%`, background: i === 5 ? accent : hexToRgba(text, 0.38), transform: `rotate(${i * 34 - 86}deg)` }} />)}<span className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: secondary }} /></div>;
+    case 'candlestick-tape':
+      return <div className="flex h-full items-center gap-3 border-b-2 border-t-2 py-6" style={{ borderColor: soft }}>{[18, 34, 22, 48, 28, 40, 30, 52].map((h, i) => <span key={i} className="relative flex-1"><span className="absolute left-1/2 top-1/2 w-px -translate-x-1/2 -translate-y-1/2" style={{ height: `${h + 44}px`, background: hexToRgba(text, 0.48) }} /><span className="absolute left-0 right-0 top-1/2 -translate-y-1/2" style={{ height: `${h}px`, background: i % 2 ? secondary : accent }} /></span>)}</div>;
+    case 'sankey-ribbons':
+    default:
+      return <svg viewBox="0 0 360 230" className="h-full w-full"><path d="M20 42 C124 42 136 90 224 90 S304 62 340 62" fill="none" stroke={hexToRgba(accent, 0.62)} strokeWidth="34" strokeLinecap="round" /><path d="M20 124 C112 124 152 154 224 154 S304 190 340 190" fill="none" stroke={hexToRgba(secondary, 0.56)} strokeWidth="42" strokeLinecap="round" /><path d="M20 194 C98 194 152 90 224 90" fill="none" stroke={hexToRgba(text, 0.28)} strokeWidth="24" strokeLinecap="round" />{[20, 224, 340].map((x, i) => <rect key={x} x={x - 10} y="24" width="20" height="184" fill={i === 1 ? bg : text} stroke={i === 1 ? accent : text} strokeWidth="3" />)}</svg>;
+  }
+};
+
+const slideSurfaceFor = (template: DeckTemplate, look: DeckLookId) => {
+  const { bg, text, accent, secondary } = template.palette;
+  const patterns: Record<DeckLookId, string> = {
+    'orbital-intelligence': `radial-gradient(circle at 78% 34%, ${hexToRgba(accent, 0.42)}, transparent 22%), repeating-radial-gradient(circle at 72% 44%, transparent 0 48px, ${hexToRgba(secondary, 0.18)} 49px 51px), ${bg}`,
+    'terminal-grid': `linear-gradient(90deg, ${hexToRgba(accent, 0.13)} 1px, transparent 1px) 0 0 / 34px 34px, linear-gradient(0deg, ${hexToRgba(accent, 0.1)} 1px, transparent 1px) 0 0 / 34px 34px, ${bg}`,
+    'editorial-atlas': `linear-gradient(90deg, transparent 0 16%, ${hexToRgba(text, 0.18)} 16% calc(16% + 1px), transparent calc(16% + 1px)), ${bg}`,
+    'boardroom-ledger': `linear-gradient(90deg, ${hexToRgba(accent, 0.16)} 0 1px, transparent 1px) 0 0 / 76px 76px, linear-gradient(0deg, ${hexToRgba(text, 0.08)} 0 1px, transparent 1px) 0 0 / 76px 38px, ${bg}`,
+    'startup-collage': `radial-gradient(circle at 15% 20%, ${hexToRgba(accent, 0.34)} 0 8%, transparent 8.5%), radial-gradient(circle at 86% 18%, ${hexToRgba(secondary, 0.34)} 0 10%, transparent 10.5%), ${bg}`,
+    'organic-fieldnotes': `radial-gradient(ellipse at 14% 88%, ${hexToRgba(secondary, 0.34)}, transparent 42%), radial-gradient(ellipse at 84% 14%, ${hexToRgba(accent, 0.22)}, transparent 36%), ${bg}`,
+    'brutalist-poster': `linear-gradient(90deg, ${hexToRgba(text, 0.86)} 0 16px, transparent 16px), repeating-linear-gradient(45deg, transparent 0 28px, ${hexToRgba(text, 0.12)} 28px 31px), ${bg}`,
+    'broadcast-control': `linear-gradient(90deg, transparent 0 10%, ${hexToRgba(accent, 0.18)} 10% 10.5%, transparent 10.5%), repeating-linear-gradient(90deg, ${hexToRgba(text, 0.06)} 0 1px, transparent 1px 22px), ${bg}`,
+    'data-observatory': `radial-gradient(circle at 68% 48%, ${hexToRgba(accent, 0.25)} 0 12%, transparent 13%), repeating-radial-gradient(circle at 68% 48%, transparent 0 42px, ${hexToRgba(accent, 0.16)} 43px 45px), ${bg}`,
+    'cinematic-storyboard': `linear-gradient(90deg, ${hexToRgba('#000000', 0.38)} 0 7%, transparent 7% 93%, ${hexToRgba('#000000', 0.38)} 93%), ${bg}`,
+    'literary-monograph': `linear-gradient(90deg, transparent 0 22%, ${hexToRgba(accent, 0.48)} 22% calc(22% + 2px), transparent calc(22% + 2px)), ${bg}`,
+    'systems-blueprint': `linear-gradient(90deg, ${hexToRgba(accent, 0.13)} 1px, transparent 1px) 0 0 / 26px 26px, linear-gradient(0deg, ${hexToRgba(accent, 0.13)} 1px, transparent 1px) 0 0 / 26px 26px, ${bg}`,
+  };
+  return patterns[look];
+};
+
+const cardSurfaceFor = (look: DeckLookId, template: DeckTemplate, isLight: boolean) => {
+  const { bg, text, accent, secondary } = template.palette;
+  if (look === 'brutalist-poster') return hexToRgba(text, isLight ? 0.08 : 0.16);
+  if (look === 'editorial-atlas' || look === 'literary-monograph') return 'transparent';
+  if (look === 'startup-collage') return hexToRgba(accent, 0.12);
+  if (look === 'organic-fieldnotes') return hexToRgba(secondary, 0.14);
+  if (look === 'terminal-grid' || look === 'systems-blueprint') return hexToRgba(bg, 0.58);
+  return isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)';
+};
+
 /* ------------------------------ Slide kinds ------------------------------ */
 export type SlideKind =
   | "title"
