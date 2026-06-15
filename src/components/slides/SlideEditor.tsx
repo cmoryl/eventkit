@@ -420,6 +420,12 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       const bulletsText = Array.isArray(g.bullets) && g.bullets.length
         ? g.bullets.map((b: string) => `• ${b}`).join('\n')
         : undefined;
+      // Theme tokens straight from theme1.xml — bake the master's bg/text
+      // colors directly into the generated slide so it visually inherits the
+      // template look instead of falling back to the editor's default theme.
+      const tk = corporateStyleRef.themeTokens?.colors || {};
+      const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
+      const themeText = tk.dk1 || tk.tx1 || tk.lt2;
       const newSlide: SlideData = {
         id: uuidv4(),
         layout: (g.layout as SlideData['layout']) || 'content',
@@ -428,6 +434,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         body: g.body || bulletsText,
         notes: g.notes,
         variant: 'default',
+        ...(themeBg ? { bgColor: themeBg } as Partial<SlideData> : {}),
+        ...(themeText ? { textColor: themeText } as Partial<SlideData> : {}),
       };
       setPendingStyledSlide(newSlide);
       setPendingGenerated({
