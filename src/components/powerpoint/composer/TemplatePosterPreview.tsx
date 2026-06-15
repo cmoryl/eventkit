@@ -1543,69 +1543,85 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
   const kind = kindFor(template);
   const look = lookFor(template, kind);
   const surface = surfaceFor(template, light, kind, look);
-  const icons = featureIconsFor(kind);
-  const shapeClass = cn(
-    look === 'brutalist-poster' && 'rounded-none border-2 shadow-[8px_8px_0_hsl(var(--foreground)/0.18)] hover:translate-y-0',
-    (look === 'editorial-atlas' || look === 'literary-monograph') && 'rounded-sm',
-    look === 'organic-fieldnotes' && 'rounded-[40px]',
-    look === 'startup-collage' && 'rounded-[28px] rotate-[0.35deg]',
-    look === 'terminal-grid' && 'rounded-lg',
-    look === 'systems-blueprint' && 'rounded-md',
-    look === 'cinematic-storyboard' && 'rounded-xl',
-  );
+  const swatches = [template.palette.accent, template.palette.secondary, template.palette.text, template.palette.bg];
+
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'group relative overflow-hidden rounded-[32px] border text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl',
-        shapeClass,
-        dense ? 'min-h-[220px]' : 'min-h-[310px]',
-        selected ? 'border-primary ring-2 ring-primary/40' : 'border-border/70 hover:border-primary/50',
+        'group relative flex w-full flex-col overflow-hidden rounded-2xl border bg-card text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg',
+        selected ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary/40',
         disabled && 'cursor-not-allowed opacity-50',
       )}
-      style={{ color: template.palette.text }}
     >
-      <div className="absolute inset-0" style={{ background: surface.base }} />
-      <div className="absolute inset-0 opacity-85" style={{ background: surface.pattern }} />
-      <LookMotif look={look} template={template} textColor={template.palette.text} />
-      <DeckPreviewVisual t={template} kind={kind} look={look} />
+      {/* Preview zone — contained thumbnail, no overlapping text */}
+      <div
+        className="relative aspect-[4/3] w-full overflow-hidden"
+        style={{ color: template.palette.text }}
+      >
+        <div className="absolute inset-0" style={{ background: surface.base }} />
+        <div className="absolute inset-0 opacity-80" style={{ background: surface.pattern }} />
+        <LookMotif look={look} template={template} textColor={template.palette.text} />
+        <DeckPreviewVisual t={template} kind={kind} look={look} />
 
-      <div className="relative flex h-full min-h-[inherit] flex-col justify-between p-5">
+        {/* Subtle bottom gradient to anchor the preview */}
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-12"
+          style={{ background: `linear-gradient(to top, ${hexToRgba(template.palette.bg, 0.55)}, transparent)` }}
+        />
+
+        {/* Tiny label badges in preview corner */}
+        <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
+          <span
+            className="rounded-md px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider backdrop-blur-md"
+            style={{ background: hexToRgba(template.palette.bg, 0.7), color: template.palette.text, border: `1px solid ${hexToRgba(template.palette.text, 0.18)}` }}
+          >
+            {badgeFor(template)}
+          </span>
+          {shared && (
+            <span className="rounded-md bg-primary/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground">
+              Shared
+            </span>
+          )}
+          {saved && !shared && (
+            <span className="rounded-md bg-background/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-foreground">
+              Saved
+            </span>
+          )}
+        </div>
+
+        {selected && (
+          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+            <Check className="h-3.5 w-3.5" />
+          </span>
+        )}
+      </div>
+
+      {/* Info zone — clean, neutral, readable */}
+      <div className={cn('flex flex-1 flex-col gap-2 p-4', dense && 'p-3')}>
         <div className="flex items-start justify-between gap-3">
-          <div className="flex max-w-[75%] flex-wrap gap-2">
-            <span className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide backdrop-blur-md" style={{ borderColor: `${template.palette.text}33`, background: `${template.palette.bg}70` }}>{badgeFor(template)}</span>
-            {saved && <span className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide backdrop-blur-md" style={{ borderColor: `${template.palette.text}33`, background: `${template.palette.accent}33` }}>Saved</span>}
-            {shared && <span className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide backdrop-blur-md" style={{ borderColor: `${template.palette.text}33`, background: `${template.palette.secondary}33` }}>Shared</span>}
+          <h3 className={cn('font-semibold leading-tight tracking-tight text-foreground line-clamp-2', dense ? 'text-sm' : 'text-base')}>
+            {template.name}
+          </h3>
+          <div className="flex shrink-0 items-center gap-1">
+            {swatches.slice(0, 4).map((color, i) => (
+              <span
+                key={`${color}-${i}`}
+                className="h-3 w-3 rounded-full border border-border/50"
+                style={{ background: color }}
+                aria-hidden
+              />
+            ))}
           </div>
-          {selected && <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"><Check className="h-4 w-4" /></span>}
         </div>
-
-        <div className={cn(copyBlockClassFor(look, dense))}>
-          <div className="mb-3 flex items-center gap-2">
-            <span className={cn('h-1', look === 'brutalist-poster' ? 'w-24 rounded-none' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'w-10 rounded-none' : 'w-14 rounded-full')} style={{ background: template.palette.accent }} />
-            <span className="text-[9px] font-black uppercase tracking-[0.18em] opacity-75">{LOOK_LABELS[look]}</span>
-          </div>
-          <h3 className={cn('font-black leading-[0.92] tracking-tight drop-shadow-sm', dense ? 'text-xl' : look === 'brutalist-poster' ? 'text-4xl uppercase' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'font-serif text-3xl' : 'text-3xl')}>{template.name}</h3>
-          <p className="mt-3 line-clamp-2 text-sm font-semibold opacity-80">{template.description || 'Prebuilt PowerPoint system'}</p>
-        </div>
-
-        <div className={cn('pt-5', look === 'brutalist-poster' ? 'flex gap-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'grid grid-cols-4 gap-px border-t' : look === 'broadcast-control' ? 'flex justify-end gap-2' : 'grid grid-cols-4 gap-2')} style={(look === 'editorial-atlas' || look === 'literary-monograph') ? { borderColor: `${template.palette.text}22` } : undefined}>
-          {icons.map(({ Icon, colorKey }, index) => {
-            const color = template.palette[colorKey];
-            return (
-              <div key={`${colorKey}-${index}`} className={cn('border p-2 backdrop-blur-md', look === 'brutalist-poster' ? 'rounded-none border-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'rounded-none border-0' : look === 'broadcast-control' ? 'rounded-full' : 'rounded-2xl')} style={{ borderColor: `${template.palette.text}22`, background: hexToRgba(template.palette.bg, light ? 0.48 : 0.36) }}>
-                <Icon className="h-4 w-4" />
-                <div className={cn('mt-2 h-1', look === 'brutalist-poster' || look === 'editorial-atlas' ? 'rounded-none' : 'rounded-full')} style={{ background: color }} />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-4 flex items-center justify-between text-xs font-bold opacity-85">
-          <span className="flex items-center gap-2"><MonitorPlay className="h-4 w-4" /> Full deck system</span>
-          <span className="flex gap-1.5">{[template.palette.accent, template.palette.secondary, template.palette.text].map((color) => <span key={color} className="h-4 w-4 rounded-full border" style={{ background: color, borderColor: `${template.palette.text}44` }} />)}</span>
+        <p className={cn('line-clamp-2 text-xs text-muted-foreground', dense && 'line-clamp-1')}>
+          {template.description || 'Prebuilt PowerPoint deck system'}
+        </p>
+        <div className="mt-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/80">
+          <MonitorPlay className="h-3 w-3" />
+          <span>Full deck · {LOOK_LABELS[look]}</span>
         </div>
       </div>
     </button>
