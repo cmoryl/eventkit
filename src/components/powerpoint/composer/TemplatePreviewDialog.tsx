@@ -3680,35 +3680,76 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
         {/* Slide deck */}
         <ScrollArea className="flex-1">
           <div className="p-5 space-y-5">
-            {SLIDES.map((kind, i) => {
-              const isFocused = focusSlideKind === kind;
-              return (
-                <div
-                  key={kind}
-                  ref={(el) => { slideRefs.current[kind] = el; }}
-                  className={cn(
-                    "relative rounded-xl transition-shadow scroll-mt-4",
-                    isFocused && highlightShared && "ring-4 ring-yellow-500/80 ring-offset-2 ring-offset-background",
-                    isFocused && !highlightShared && "ring-2 ring-primary/70 ring-offset-2 ring-offset-background",
-                  )}
-                >
-                  {isFocused && highlightShared && (
-                    <span className="absolute -top-3 left-4 z-30 rounded-full bg-yellow-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow">
-                      Shared region · {kind.replace(/-/g, " ")}
-                    </span>
-                  )}
-                  <SlideMock
-                    template={t}
-                    content={content}
-                    setContent={setContent}
-                    editing={editing}
-                    kind={kind}
-                    index={i}
-                    total={SLIDES.length}
-                  />
+            {isCorporate && realLoading && (
+              <div className="flex items-center justify-center gap-3 rounded-xl border bg-card/50 p-10 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading {corporateLabel ?? "corporate deck"}…
+              </div>
+            )}
+            {isCorporate && !realLoading && realError && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-5 text-sm text-destructive">
+                Couldn't load {corporateLabel ?? "the corporate deck"}: {realError}. Showing fallback preview below.
+              </div>
+            )}
+
+            {showRealDeck ? (
+              <>
+                <div className="flex items-center justify-between rounded-xl border bg-card/60 px-4 py-3">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Approved deck · {realSlides!.length} slides
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Rendered from the actual {corporateLabel}
+                  </div>
                 </div>
-              );
-            })}
+                {realSlides!.map((slide, i) => (
+                  <div
+                    key={slide.id ?? `real-${i}`}
+                    className="relative rounded-xl overflow-hidden border bg-black/40 shadow-lg"
+                  >
+                    <div className="absolute top-2 left-3 z-20 text-[11px] font-mono text-white/70 px-2 py-0.5 rounded bg-black/40 backdrop-blur">
+                      {String(i + 1).padStart(2, "0")} / {String(realSlides!.length).padStart(2, "0")}
+                    </div>
+                    <div className="aspect-[16/9] w-full flex items-center justify-center bg-black">
+                      <ScaledSlide>
+                        <SlideRenderer slide={slide} />
+                      </ScaledSlide>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              SLIDES.map((kind, i) => {
+                const isFocused = focusSlideKind === kind;
+                return (
+                  <div
+                    key={kind}
+                    ref={(el) => { slideRefs.current[kind] = el; }}
+                    className={cn(
+                      "relative rounded-xl transition-shadow scroll-mt-4",
+                      isFocused && highlightShared && "ring-4 ring-yellow-500/80 ring-offset-2 ring-offset-background",
+                      isFocused && !highlightShared && "ring-2 ring-primary/70 ring-offset-2 ring-offset-background",
+                    )}
+                  >
+                    {isFocused && highlightShared && (
+                      <span className="absolute -top-3 left-4 z-30 rounded-full bg-yellow-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow">
+                        Shared region · {kind.replace(/-/g, " ")}
+                      </span>
+                    )}
+                    <SlideMock
+                      template={t}
+                      content={content}
+                      setContent={setContent}
+                      editing={editing}
+                      kind={kind}
+                      index={i}
+                      total={SLIDES.length}
+                    />
+                  </div>
+                );
+              })
+            )}
+
 
             {/* Palette strip */}
             <div className="rounded-xl border bg-card p-4">
