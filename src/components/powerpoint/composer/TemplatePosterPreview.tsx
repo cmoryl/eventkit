@@ -1429,6 +1429,37 @@ const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKi
     );
   }
 
+  if (arrangement === 'split-stage') {
+    return (
+      <div className="pointer-events-none absolute right-4 top-5 grid h-[46%] w-[56%] grid-cols-[1fr_0.72fr] gap-2">
+        <div className="min-w-0 overflow-hidden" style={{ transform: hash % 2 ? 'rotate(-1.5deg)' : 'rotate(1.5deg)' }}><MiniSlide kind={deck[0]} template={t} look={look} /></div>
+        <div className="flex min-w-0 flex-col gap-2 pt-4">
+          {deck.slice(1).map((slideKind, i) => <div key={`${slideKind}-${i}`} className="min-h-0 flex-1 overflow-hidden" style={{ transform: `translateX(${i ? -10 : 4}px) rotate(${i ? 2 : -3}deg)` }}><MiniSlide kind={slideKind} template={t} look={look} compact /></div>)}
+        </div>
+      </div>
+    );
+  }
+
+  if (arrangement === 'contact-sheet') {
+    return (
+      <div className="pointer-events-none absolute right-4 top-4 grid h-[50%] w-[54%] grid-cols-3 grid-rows-2 gap-1.5 p-1" style={{ background: hexToRgba(t.palette.text, 0.08), border: `1px solid ${hexToRgba(t.palette.text, 0.18)}` }}>
+        {[...deck, 'stats' as PreviewKind, 'quote' as PreviewKind, 'process' as PreviewKind].slice(0, 6).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
+      </div>
+    );
+  }
+
+  if (arrangement === 'cascade') {
+    return (
+      <div className="pointer-events-none absolute right-5 top-4 h-[56%] w-[52%]">
+        {deck.map((slideKind, i) => (
+          <div key={`${slideKind}-${i}`} className="absolute aspect-video overflow-hidden shadow-2xl" style={{ width: `${86 - i * 10}%`, right: `${i * 11}%`, top: `${i * 18}%`, transform: `rotate(${[-4, 3, -1][i]}deg)`, opacity: 1 - i * 0.12 }}>
+            <MiniSlide kind={slideKind} template={t} look={look} compact={i > 0} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const backRot = hash % 2 ? 8 : -8;
   const midRot = hash % 3 ? -5 : 5;
   return (
