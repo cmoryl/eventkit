@@ -678,110 +678,111 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
   };
   // ---------- chart variants ----------
   const renderChart = () => {
-    const variant = v % 6;
-    if (variant === 0) {
-      // vertical bars
-      return (
-        <div className="flex h-full items-end gap-1.5">
-          {[36, 58, 44, 74, 92].map((h, i) => (
-            <span key={i} className="w-full" style={{ height: `${h}%`, ...bar(i === 4 ? accent : hexToRgba(textColor, 0.32), 'v') }} />
-          ))}
-        </div>
-      );
-    }
-    if (variant === 1) {
-      // horizontal bars
-      return (
-        <div className="flex h-full flex-col justify-center gap-1.5">
-          {[88, 64, 46, 30].map((w, i) => (
-            <span key={i} className="block h-2.5" style={{ width: `${w}%`, ...bar(i === 0 ? accent : i === 1 ? secondary : hexToRgba(textColor, 0.32), 'h') }} />
-          ))}
-        </div>
-      );
-    }
-    if (variant === 2) {
-      // line chart — style controls stroke treatment
-      const dash = chartStyle === 'dotted' ? '1 2' : chartStyle === 'segmented' ? '4 2' : chartStyle === 'hatched' ? '2 1.5' : undefined;
-      const strokeW = chartStyle === 'outline' ? 1.6 : chartStyle === 'glow' ? 2.8 : 2.4;
-      const filter = chartStyle === 'glow' ? `drop-shadow(0 0 2px ${accent})` : undefined;
-      return (
-        <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full" style={{ filter }}>
-          <polyline fill="none" stroke={hexToRgba(textColor, 0.3)} strokeWidth="1.2" points="0,50 20,42 40,46 60,28 80,32 100,12" />
-          <polyline fill="none" stroke={accent} strokeWidth={strokeW} strokeDasharray={dash} strokeLinecap="round" points="0,40 20,30 40,36 60,18 80,22 100,6" />
-          {chartStyle !== 'outline' && [0, 20, 40, 60, 80, 100].map((x, i) => (
-            <circle key={i} cx={x} cy={[40, 30, 36, 18, 22, 6][i]} r={chartStyle === 'glow' ? 2 : 1.6} fill={chartStyle === 'dotted' ? template.palette.bg : accent} stroke={accent} strokeWidth={chartStyle === 'dotted' ? 1 : 0} />
-          ))}
-        </svg>
-      );
-    }
-    if (variant === 3) {
-      // donut
-      const donutBg =
-        chartStyle === 'gradient'
-          ? `conic-gradient(${accent} 0 42%, ${hexToRgba(accent, 0.55)} 42% 68%, ${hexToRgba(textColor, 0.22)} 68% 100%)`
-          : chartStyle === 'segmented'
-          ? `conic-gradient(${accent} 0 38%, ${template.palette.bg} 38% 42%, ${secondary} 42% 64%, ${template.palette.bg} 64% 68%, ${hexToRgba(textColor, 0.28)} 68% 100%)`
-          : `conic-gradient(${accent} 0 42%, ${secondary} 42% 68%, ${hexToRgba(textColor, 0.28)} 68% 100%)`;
-      const innerInset = chartStyle === 'outline' ? '8%' : chartStyle === 'pill' ? '32%' : '22%';
-      return (
-        <div className="flex h-full items-center justify-center">
-          <div
-            className="relative aspect-square rounded-full"
-            style={{
-              height: '78%',
-              background: donutBg,
-              boxShadow: chartStyle === 'glow' ? `0 0 10px ${hexToRgba(accent, 0.7)}` : undefined,
-              border: chartStyle === 'outline' ? `1.5px solid ${accent}` : undefined,
-            }}
-          >
-            <div className="absolute rounded-full" style={{ inset: innerInset, background: template.palette.bg }} />
+    const svgId = template.id.replace(/[^a-z0-9_-]/gi, '-');
+    const strokeDash = chartStyle === 'dotted' ? '1 3' : chartStyle === 'segmented' ? '5 3' : chartStyle === 'hatched' ? '2 2' : undefined;
+    const glow = chartStyle === 'glow' ? `drop-shadow(0 0 3px ${accent})` : undefined;
+    const softPanel: React.CSSProperties = { background: hexToRgba(textColor, 0.06), border: `1px solid ${hexToRgba(textColor, 0.18)}` };
+
+    switch (graphSystem) {
+      case 'orbital-rings':
+        return (
+          <div className="relative h-full w-full">
+            <div className="absolute left-1 top-1 text-[6px] font-black uppercase tracking-[0.14em] opacity-70">Orbit</div>
+            <div className="absolute inset-2 rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.42)} 0 11%, transparent 12%), repeating-radial-gradient(circle, transparent 0 13px, ${hexToRgba(secondary, 0.42)} 14px 15px)` }} />
+            {[18, 42, 70, 84].map((p, i) => <span key={p} className="absolute h-2.5 w-2.5 rounded-full" style={{ left: `${p}%`, top: `${[58, 26, 68, 34][i]}%`, background: i % 2 ? secondary : accent, boxShadow: `0 0 10px ${hexToRgba(i % 2 ? secondary : accent, 0.8)}` }} />)}
           </div>
-        </div>
-      );
-    }
-    if (variant === 4) {
-      // area chart
-      const fill =
-        chartStyle === 'hatched'
-          ? `url(#hatch-${template.id})`
-          : chartStyle === 'dotted'
-          ? `url(#dots-${template.id})`
-          : chartStyle === 'gradient'
-          ? `url(#grad-${template.id})`
-          : chartStyle === 'outline'
-          ? 'transparent'
-          : hexToRgba(accent, 0.5);
-      return (
-        <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full">
-          <defs>
-            <linearGradient id={`grad-${template.id}`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={accent} stopOpacity="0.7" />
-              <stop offset="100%" stopColor={accent} stopOpacity="0.05" />
-            </linearGradient>
-            <pattern id={`hatch-${template.id}`} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <line x1="0" y1="0" x2="0" y2="4" stroke={accent} strokeWidth="1.4" />
-            </pattern>
-            <pattern id={`dots-${template.id}`} width="3" height="3" patternUnits="userSpaceOnUse">
-              <circle cx="1" cy="1" r="0.7" fill={accent} />
-            </pattern>
-          </defs>
-          <polygon fill={fill} points="0,60 0,38 20,28 40,32 60,16 80,22 100,8 100,60" />
-          <polyline fill="none" stroke={accent} strokeWidth={chartStyle === 'glow' ? 2.4 : 1.8} points="0,38 20,28 40,32 60,16 80,22 100,8" />
-        </svg>
-      );
-    }
-    // stacked bars
-    return (
-      <div className="flex h-full items-end gap-1.5">
-        {[55, 70, 60, 88, 76].map((h, i) => (
-          <div key={i} className="flex w-full flex-col overflow-hidden" style={{ height: `${h}%`, borderRadius: chartStyle === 'pill' ? 6 : chartStyle === 'flat' ? 0 : 2 }}>
-            <span className="w-full" style={{ flex: 1, ...bar(accent, 'v'), borderRadius: 0 }} />
-            <span className="w-full" style={{ flex: 1.4, ...bar(secondary, 'v'), borderRadius: 0 }} />
-            <span className="w-full" style={{ flex: 1, ...bar(hexToRgba(textColor, 0.36), 'v'), borderRadius: 0 }} />
+        );
+      case 'terminal-spark':
+        return (
+          <div className="grid h-full grid-cols-[0.28fr_1fr] gap-1.5 font-mono">
+            <div className="flex flex-col justify-between border-r pr-1 text-[6px]" style={{ borderColor: hexToRgba(accent, 0.36), color: accent }}>{['>', '02', 'Δ', 'OK'].map((n) => <span key={n}>{n}</span>)}</div>
+            <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full" style={{ filter: glow }}>
+              <path d="M0 48 H100 M0 30 H100 M0 12 H100 M20 0 V60 M45 0 V60 M70 0 V60" stroke={hexToRgba(accent, 0.16)} strokeWidth="1" />
+              <path d="M2 44 L14 48 L24 28 L36 36 L48 12 L60 24 L74 8 L88 18 L98 6" fill="none" stroke={accent} strokeWidth="2.4" strokeDasharray={strokeDash} strokeLinecap="square" />
+              {[14, 36, 48, 74, 98].map((x, i) => <rect key={x} x={x - 1.5} y={[46, 34, 10, 6, 4][i]} width="3" height="6" fill={i === 2 ? secondary : accent} />)}
+            </svg>
           </div>
-        ))}
-      </div>
-    );
+        );
+      case 'editorial-lollipop':
+        return (
+          <div className="grid h-full grid-cols-5 items-end gap-2 border-b" style={{ borderColor: hexToRgba(textColor, 0.32) }}>
+            {[62, 38, 80, 52, 70].map((h, i) => <div key={i} className="flex h-full flex-col items-center justify-end gap-1"><span className="h-3 w-3 rounded-full border" style={{ background: i === 2 ? accent : template.palette.bg, borderColor: i === 2 ? accent : textColor }} /><span className="w-px" style={{ height: `${h}%`, background: i === 2 ? accent : hexToRgba(textColor, 0.45) }} /><span className="font-serif text-[6px]">{i + 1}</span></div>)}
+          </div>
+        );
+      case 'ledger-waterfall':
+        return (
+          <div className="relative flex h-full items-end gap-1.5 border-b border-l p-1" style={{ borderColor: hexToRgba(textColor, 0.26) }}>
+            {[18, 42, 28, 60, 34].map((bottom, i) => <div key={i} className="relative flex-1" style={{ height: `${26 + i * 8}%`, marginBottom: `${bottom}%` }}><span className="absolute inset-x-0 bottom-0 block" style={{ height: '100%', ...bar(i % 2 ? secondary : accent, 'v') }} /><span className="absolute -right-2 top-0 h-px w-4" style={{ background: hexToRgba(textColor, 0.38) }} /></div>)}
+          </div>
+        );
+      case 'startup-sticker':
+        return (
+          <div className="relative h-full w-full overflow-hidden">
+            {[0, 1, 2, 3].map((i) => <div key={i} className="absolute rounded-xl border-2 px-2 py-1 text-[8px] font-black" style={{ left: `${8 + i * 18}%`, top: `${[52, 24, 42, 12][i]}%`, transform: `rotate(${[-8, 7, -3, 10][i]}deg)`, borderColor: textColor, background: i % 2 ? secondary : accent, color: template.palette.bg }}>{['76', '2×', '44', '91'][i]}</div>)}
+            <svg className="absolute inset-x-2 bottom-2 h-9" viewBox="0 0 100 30" fill="none"><path d="M2 22 C22 4 36 28 52 12 S78 5 98 18" stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeDasharray={strokeDash}/></svg>
+          </div>
+        );
+      case 'fieldnotes-scatter':
+        return (
+          <div className="relative h-full w-full rounded-[45%_55%_52%_48%]" style={{ ...softPanel, background: hexToRgba(secondary, 0.12) }}>
+            {[18, 28, 42, 55, 66, 78, 86].map((x, i) => <span key={x} className="absolute rounded-[48%_52%_58%_42%] border" style={{ left: `${x}%`, top: `${[60, 36, 72, 25, 48, 18, 58][i]}%`, width: `${7 + (i % 3) * 4}px`, height: `${7 + (i % 2) * 5}px`, background: hexToRgba(i % 2 ? secondary : accent, 0.45), borderColor: i === 3 ? textColor : 'transparent' }} />)}
+            <svg className="absolute inset-2 h-[calc(100%-16px)] w-[calc(100%-16px)]" viewBox="0 0 100 60" fill="none"><path d="M0 52 C28 46 40 30 58 28 C74 26 82 18 100 10" stroke={accent} strokeWidth="1.4" strokeDasharray="4 4" /></svg>
+          </div>
+        );
+      case 'brutal-blocks':
+        return <div className="grid h-full grid-cols-4 grid-rows-3 gap-1">{[1, 2, 3, 4, 5, 6, 7, 8].map((n, i) => <span key={n} className={cn(i === 0 && 'col-span-2 row-span-2', i === 5 && 'col-span-2')} style={{ background: i % 3 === 0 ? textColor : i % 2 ? accent : hexToRgba(textColor, 0.32), border: `2px solid ${i % 3 === 0 ? accent : textColor}` }} />)}</div>;
+      case 'broadcast-vu':
+        return <div className="flex h-full items-end gap-1 rounded-lg p-1" style={softPanel}>{[32, 72, 45, 88, 60, 96, 42, 70, 54].map((h, i) => <span key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i > 5 ? accent : secondary}, ${hexToRgba(i > 5 ? accent : secondary, 0.18)})`, boxShadow: i > 5 && chartStyle === 'glow' ? `0 0 8px ${accent}` : undefined }} />)}</div>;
+      case 'observatory-radar':
+        return (
+          <svg viewBox="0 0 100 70" className="h-full w-full" style={{ filter: glow }}>
+            <polygon points="50,5 92,35 50,65 8,35" fill="none" stroke={hexToRgba(textColor, 0.18)} strokeWidth="1" />
+            <polygon points="50,18 78,35 50,52 22,35" fill="none" stroke={hexToRgba(textColor, 0.18)} strokeWidth="1" />
+            <path d="M50 35 L50 5 M50 35 L92 35 M50 35 L50 65 M50 35 L8 35" stroke={hexToRgba(textColor, 0.16)} />
+            <polygon points="50,12 78,34 58,54 24,44 34,26" fill={hexToRgba(accent, 0.35)} stroke={accent} strokeWidth="2" strokeDasharray={strokeDash} />
+          </svg>
+        );
+      case 'storyboard-frames':
+        return <div className="grid h-full grid-cols-3 gap-1.5">{[54, 78, 42].map((h, i) => <div key={i} className="relative border p-1" style={{ borderColor: hexToRgba(textColor, 0.34) }}><span className="absolute left-1 top-1 text-[5px] font-black opacity-70">0{i + 1}</span><span className="absolute inset-x-1 bottom-1" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i === 1 ? accent : secondary}, transparent)` }} /></div>)}</div>;
+      case 'monograph-slope':
+        return (
+          <svg viewBox="0 0 100 70" className="h-full w-full">
+            <path d="M18 10 V62 M82 10 V62" stroke={hexToRgba(textColor, 0.28)} />
+            {[14, 28, 45, 58].map((y, i) => <g key={y}><path d={`M18 ${y} L82 ${[48, 18, 34, 12][i]}`} stroke={i === 1 ? accent : hexToRgba(textColor, 0.42)} strokeWidth={i === 1 ? 2.2 : 1.1} strokeDasharray={i === 2 ? '3 2' : undefined}/><circle cx="18" cy={y} r="2" fill={template.palette.bg} stroke={textColor}/><circle cx="82" cy={[48, 18, 34, 12][i]} r="2" fill={i === 1 ? accent : template.palette.bg} stroke={i === 1 ? accent : textColor}/></g>)}
+          </svg>
+        );
+      case 'blueprint-node':
+        return (
+          <svg viewBox="0 0 100 70" className="h-full w-full">
+            <path d="M14 18 H42 V52 H78 M42 18 L78 28 M42 52 L20 58" fill="none" stroke={accent} strokeWidth="1.6" strokeDasharray={strokeDash}/>
+            {[[14,18],[42,18],[42,52],[78,52],[78,28],[20,58]].map(([x, y], i) => <rect key={`${x}-${y}`} x={x - 5} y={y - 5} width="10" height="10" fill={i % 2 ? template.palette.bg : accent} stroke={i % 2 ? secondary : accent} strokeWidth="2" />)}
+          </svg>
+        );
+      case 'heatmap-matrix':
+        return <div className="grid h-full grid-cols-5 grid-rows-4 gap-1">{Array.from({ length: 20 }).map((_, i) => <span key={i} className="rounded-sm" style={{ background: [hexToRgba(textColor, 0.12), hexToRgba(secondary, 0.36), hexToRgba(accent, 0.68), accent][(i * 7 + v) % 4], border: chartStyle === 'outline' ? `1px solid ${hexToRgba(textColor, 0.22)}` : undefined }} />)}</div>;
+      case 'funnel-stack':
+        return <div className="flex h-full flex-col items-center justify-center gap-1.5">{[88, 72, 55, 38, 22].map((w, i) => <span key={w} className="h-3 rounded-sm" style={{ width: `${w}%`, background: i === 0 ? accent : i === 2 ? secondary : hexToRgba(textColor, 0.3), clipPath: 'polygon(8% 0, 92% 0, 100% 100%, 0 100%)' }} />)}</div>;
+      case 'treemap-tiles':
+        return <div className="grid h-full grid-cols-5 grid-rows-4 gap-1">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={cn(i === 0 && 'col-span-3 row-span-2', i === 1 && 'col-span-2 row-span-2', i === 2 && 'col-span-2', i === 5 && 'col-span-2')} style={{ background: i % 2 ? hexToRgba(secondary, 0.6) : hexToRgba(accent, 0.72), borderRadius: chartStyle === 'pill' ? 10 : chartStyle === 'flat' ? 0 : 3 }} />)}</div>;
+      case 'gantt-roadmap':
+        return <div className="flex h-full flex-col justify-center gap-1.5 border-l pl-2" style={{ borderColor: hexToRgba(textColor, 0.28) }}>{[62, 38, 78, 50].map((w, i) => <div key={i} className="grid grid-cols-[14px_1fr] items-center gap-1"><span className="text-[6px] font-black opacity-60">Q{i + 1}</span><span className="block h-2.5" style={{ width: `${w}%`, marginLeft: `${[0, 16, 8, 28][i]}%`, ...bar(i === 2 ? accent : secondary, 'h') }} /></div>)}</div>;
+      case 'quadrant-bubbles':
+        return <div className="relative h-full w-full" style={{ background: `linear-gradient(90deg, transparent calc(50% - 0.5px), ${faint} 50%, transparent calc(50% + 0.5px)), linear-gradient(0deg, transparent calc(50% - 0.5px), ${faint} 50%, transparent calc(50% + 0.5px))` }}>{[[22,60,18],[36,30,11],[58,44,24],[76,20,14],[72,68,9]].map(([x, y, s], i) => <span key={i} className="absolute rounded-full border" style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, transform: 'translate(-50%, -50%)', background: hexToRgba(i === 2 ? accent : secondary, 0.42), borderColor: i === 2 ? accent : hexToRgba(textColor, 0.34) }} />)}</div>;
+      case 'radial-bars':
+        return <div className="relative h-full w-full">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="absolute left-1/2 top-1/2 h-1.5 origin-left rounded-full" style={{ width: `${25 + i * 8}%`, background: i === 4 ? accent : hexToRgba(textColor, 0.38), transform: `rotate(${i * 38 - 72}deg)`, boxShadow: chartStyle === 'glow' && i === 4 ? `0 0 10px ${accent}` : undefined }} />)}<span className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: secondary }} /></div>;
+      case 'candlestick-tape':
+        return <div className="flex h-full items-center gap-1 border-b border-t py-2" style={{ borderColor: hexToRgba(textColor, 0.2) }}>{[18, 34, 22, 48, 28, 40, 30].map((h, i) => <span key={i} className="relative flex-1"><span className="absolute left-1/2 top-1/2 w-px -translate-x-1/2 -translate-y-1/2" style={{ height: `${h + 18}px`, background: hexToRgba(textColor, 0.48) }} /><span className="absolute left-0 right-0 top-1/2 -translate-y-1/2" style={{ height: `${h}px`, background: i % 2 ? secondary : accent }} /></span>)}</div>;
+      case 'sankey-ribbons':
+      default:
+        return (
+          <svg viewBox="0 0 100 70" className="h-full w-full">
+            <path d="M4 14 C34 14 38 28 62 28 S82 18 96 18" fill="none" stroke={hexToRgba(accent, 0.62)} strokeWidth="9" strokeLinecap="round" />
+            <path d="M4 38 C30 38 42 46 62 46 S82 56 96 56" fill="none" stroke={hexToRgba(secondary, 0.56)} strokeWidth="11" strokeLinecap="round" />
+            <path d="M4 58 C26 58 42 28 62 28" fill="none" stroke={hexToRgba(textColor, 0.28)} strokeWidth="6" strokeLinecap="round" />
+            {[4, 62, 96].map((x, i) => <rect key={x} x={x - 3} y="8" width="6" height="54" fill={i === 1 ? template.palette.bg : textColor} stroke={i === 1 ? accent : textColor} />)}
+          </svg>
+        );
+    }
   };
 
   // ---------- stats variants ----------
