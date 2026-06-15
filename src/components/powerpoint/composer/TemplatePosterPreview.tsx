@@ -560,6 +560,7 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
   const v = variantFor(template, kind);
   const look = forcedLook || lookFor(template, kind);
   const chartStyle = chartStyleFor(template);
+  const graphSystem = graphSystemFor(template, kind, look);
   const bar = (color: string, orient: 'v' | 'h' = 'v') => barStyleFor(chartStyle, color, textColor, orient);
 
   const Line = ({ w = '70%', color = lineColor }: { w?: string; color?: string }) => (
@@ -576,15 +577,7 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
         <div className="relative h-full w-full">
           <div className="absolute right-1 top-1 text-[6px] font-black uppercase tracking-[0.18em] opacity-70">{isData ? 'KPI HERO' : 'SYSTEM'}</div>
           {isData ? (
-            <div className="grid h-full grid-cols-2 gap-1.5">
-              {numeric.map((n, i) => (
-                <div key={n} className="relative overflow-hidden rounded-md border p-1.5" style={{ borderColor: faint, background: hexToRgba(textColor, 0.06) }}>
-                  <span className="text-[6px] font-black uppercase tracking-wide opacity-60">{['Rate', 'Outline', 'Conv.', 'Share'][i]}</span>
-                  {i === 1 ? <svg className="mt-1 h-6 w-full" viewBox="0 0 64 28" fill="none"><path d="M2 18 C16 5 24 22 38 10 S55 8 62 18" stroke={accent} strokeWidth="1.4"/><path d="M2 23 C18 12 24 28 38 16 S52 14 62 22" stroke={hexToRgba(accent, 0.35)} strokeWidth="1"/></svg> : <div className="absolute right-2 top-8 h-8 w-8 rounded-full" style={{ background: `conic-gradient(${accent} 0 ${i === 2 ? 75 : 62}%, ${hexToRgba(textColor, 0.16)} 0 100%)` }}><div className="absolute inset-2 rounded-full" style={{ background: template.palette.bg }} /></div>}
-                  <span className="absolute bottom-1.5 left-1.5 text-[11px] font-black leading-none">{n}</span>
-                </div>
-              ))}
-            </div>
+            <div className="h-full w-full rounded-md border p-1.5" style={{ borderColor: faint, background: hexToRgba(textColor, 0.05) }}>{renderChart()}</div>
           ) : (
             <div className="flex h-full items-center justify-center">
               <div className="relative h-[84%] aspect-square rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.45)}, transparent 28%), repeating-radial-gradient(circle, transparent 0 15px, ${hexToRgba(secondary, 0.34)} 16px 17px)` }}>
@@ -621,7 +614,7 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
       return (
         <div className="h-full w-full">
           <div className="mb-2 flex items-end justify-between border-b pb-1" style={{ borderColor: hexToRgba(accent, 0.45) }}><span className="text-[10px] font-black">{isData ? 'Q4' : 'Brief'}</span><span className="text-[6px] font-bold opacity-60">{kind}</span></div>
-          <div className="grid h-[70%] grid-cols-3 gap-1.5">{[72, 54, 88].map((h, i) => <div key={i} className="flex flex-col justify-end border-l pl-1" style={{ borderColor: faint }}><span className="block" style={{ height: `${h}%`, ...bar(i === 2 ? accent : hexToRgba(textColor, 0.35), 'v') }} /><span className="mt-1 text-[6px] font-black">0{i + 1}</span></div>)}</div>
+          <div className="h-[70%]">{isData ? renderChart() : [72, 54, 88].map((h, i) => <div key={i} className="inline-flex h-full w-1/3 flex-col justify-end border-l pl-1" style={{ borderColor: faint }}><span className="block" style={{ height: `${h}%`, ...bar(i === 2 ? accent : hexToRgba(textColor, 0.35), 'v') }} /><span className="mt-1 text-[6px] font-black">0{i + 1}</span></div>)}</div>
         </div>
       );
     }
@@ -659,7 +652,7 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
       return (
         <div className="relative h-full w-full">
           <div className="absolute left-0 top-0 rounded-full px-1.5 py-0.5 text-[6px] font-black uppercase" style={{ background: accent, color: template.palette.bg }}>{isPeople ? 'LIVE' : 'CTRL'}</div>
-          <div className="absolute bottom-1 left-0 right-0 rounded-lg border p-1.5" style={{ borderColor: hexToRgba(textColor, 0.24), background: hexToRgba(template.palette.bg, 0.78) }}><div className="text-[9px] font-black">{isPeople ? 'Speaker lower third' : title}</div><div className="mt-1 flex gap-1">{[44, 72, 55, 86].map((h, i) => <span key={i} className="w-full" style={{ height: `${h / 8}px`, ...bar(i === 3 ? accent : faint, 'v') }} />)}</div></div>
+          <div className="absolute bottom-1 left-0 right-0 rounded-lg border p-1.5" style={{ borderColor: hexToRgba(textColor, 0.24), background: hexToRgba(template.palette.bg, 0.78) }}><div className="text-[9px] font-black">{isPeople ? 'Speaker lower third' : title}</div><div className="mt-1 h-9">{isData ? renderChart() : <div className="flex h-full items-end gap-1">{[44, 72, 55, 86].map((h, i) => <span key={i} className="w-full" style={{ height: `${h}%`, ...bar(i === 3 ? accent : faint, 'v') }} />)}</div>}</div></div>
         </div>
       );
     }
