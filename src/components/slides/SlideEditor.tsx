@@ -3183,6 +3183,116 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         </div>
       </DialogContent>
     </Dialog>
+
+    {/* Batch preview — review all generated slides + placeholder overlays before inserting */}
+    <Dialog open={!!pendingBatch} onOpenChange={(o) => { if (!o) setPendingBatch(null); }}>
+      <DialogContent className="max-w-[95vw] w-[95vw] p-0 overflow-hidden">
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-b">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Preview {pendingBatch?.length ?? 0} new {corporateStyleRef?.label ?? ''} slides
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Review each slide and its master-layout placeholders before inserting after slide {activeIndex + 1}.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant={batchPreviewShowOverlay ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setBatchPreviewShowOverlay((v) => !v)}
+              title="Toggle master-layout placeholder overlay for all slides"
+            >
+              {batchPreviewShowOverlay ? 'Hide placeholders' : 'Show placeholders'}
+            </Button>
+          </div>
+        </div>
+        <div className="bg-black/40 p-4 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pendingBatch?.map((entry, idx) => (
+              <div key={entry.slide.id} className="bg-background/60 border border-border/60 rounded-md overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 text-xs">
+                  <span className="font-semibold">Slide {idx + 1}</span>
+                  <span className="text-muted-foreground truncate ml-2">
+                    {entry.layout ? `"${entry.layout.name}"` : entry.layoutName || 'auto layout'}
+                  </span>
+                </div>
+                <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
+                  <CenteredScaledSlide>
+                    <SlideRenderer
+                      slide={entry.slide}
+                      brandColors={brandColors}
+                      brandFonts={brandFonts}
+                    />
+                  </CenteredScaledSlide>
+                  {batchPreviewShowOverlay && entry.layout && (
+                    <div className="absolute inset-0 pointer-events-none">
+                      {entry.layout.placeholders.map((ph, i) => {
+                        if (
+                          ph.xPct === undefined || ph.yPct === undefined ||
+                          ph.wPct === undefined || ph.hPct === undefined
+                        ) return null;
+                        const colorFor = (t: string) => {
+                          const k = t.toLowerCase();
+                          if (k === 'title' || k === 'ctrtitle') return 'rgba(56,189,248,0.95)';
+                          if (k === 'subtitle') return 'rgba(167,139,250,0.95)';
+                          if (k === 'body') return 'rgba(74,222,128,0.95)';
+                          if (k === 'pic') return 'rgba(251,146,60,0.95)';
+                          return 'rgba(244,114,182,0.95)';
+                        };
+                        const c = colorFor(ph.type);
+                        return (
+                          <div
+                            key={`${ph.type}-${ph.idx ?? i}`}
+                            className="absolute rounded-sm"
+                            style={{
+                              left: `${ph.xPct}%`,
+                              top: `${ph.yPct}%`,
+                              width: `${ph.wPct}%`,
+                              height: `${ph.hPct}%`,
+                              border: `1.5px dashed ${c}`,
+                              boxShadow: `inset 0 0 0 9999px ${c.replace('0.95', '0.08')}`,
+                            }}
+                          >
+                            <div
+                              className="absolute top-0 left-0 text-[9px] font-mono font-semibold px-1 py-0.5 rounded-br-md text-white whitespace-nowrap"
+                              style={{ background: c }}
+                            >
+                              {ph.type}{ph.fills ? ` · ${ph.fills}` : ''}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                {entry.slide.notes && (
+                  <div className="px-3 py-2 text-[11px] text-muted-foreground border-t border-border/60 line-clamp-2">
+                    <span className="font-semibold text-foreground">Notes: </span>{entry.slide.notes}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t bg-background">
+          <div className="text-xs text-muted-foreground">
+            {pendingBatch?.length ?? 0} slides will be inserted after slide {activeIndex + 1}.
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setPendingBatch(null)}>Discard</Button>
+            <Button variant="outline" onClick={() => { setPendingBatch(null); setBatchDialogOpen(true); }}>
+              Regenerate…
+            </Button>
+            <Button onClick={confirmInsertPendingBatch} className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              Insert {pendingBatch?.length ?? 0} slides
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
