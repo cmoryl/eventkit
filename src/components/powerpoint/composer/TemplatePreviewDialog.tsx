@@ -42,6 +42,10 @@ interface Props {
   /** Optional: open the template's starter deck directly in the Slide Editor, skipping AI generation. */
   onOpenInEditor?: (t: DeckTemplate) => void;
   disabled?: boolean;
+  /** Scroll to a specific slide kind when the dialog opens. */
+  focusSlideKind?: SlideKind;
+  /** Highlight the focused slide as "shared" (used by the compare view). */
+  highlightShared?: boolean;
 }
 
 const buildInitialContent = (t: DeckTemplate): DemoContent => {
@@ -2668,11 +2672,12 @@ export const SlideMock: React.FC<{
   );
 };
 
-export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, onOpenInEditor, disabled }) => {
+export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenChange, onUse, onOpenInEditor, disabled, focusSlideKind, highlightShared }) => {
   const [editing, setEditing] = useState(false);
   const initial = useMemo(() => (template ? buildInitialContent(template) : null), [template?.id]);
   const [content, setContent] = useState<DemoContent | null>(initial);
   const [saveOpen, setSaveOpen] = useState(false);
+  const slideRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     if (template) {
@@ -2680,6 +2685,16 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
       setEditing(false);
     }
   }, [template?.id, open]);
+
+  useEffect(() => {
+    if (!open || !focusSlideKind) return;
+    // Wait for the dialog content to mount before scrolling.
+    const id = window.setTimeout(() => {
+      const el = slideRefs.current[focusSlideKind];
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(id);
+  }, [open, focusSlideKind, template?.id]);
 
   if (!template || !content) return null;
   const t = template;
@@ -2780,18 +2795,35 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
         {/* Slide deck */}
         <ScrollArea className="flex-1">
           <div className="p-5 space-y-5">
-            {SLIDES.map((kind, i) => (
-              <SlideMock
-                key={kind}
-                template={t}
-                content={content}
-                setContent={setContent}
-                editing={editing}
-                kind={kind}
-                index={i}
-                total={SLIDES.length}
-              />
-            ))}
+            {SLIDES.map((kind, i) => {
+              const isFocused = focusSlideKind === kind;
+              return (
+                <div
+                  key={kind}
+                  ref={(el) => { slideRefs.current[kind] = el; }}
+                  className={cn(
+                    "relative rounded-xl transition-shadow scroll-mt-4",
+                    isFocused && highlightShared && "ring-4 ring-yellow-500/80 ring-offset-2 ring-offset-background",
+                    isFocused && !highlightShared && "ring-2 ring-primary/70 ring-offset-2 ring-offset-background",
+                  )}
+                >
+                  {isFocused && highlightShared && (
+                    <span className="absolute -top-3 left-4 z-30 rounded-full bg-yellow-500 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-black shadow">
+                      Shared region · {kind.replace(/-/g, " ")}
+                    </span>
+                  )}
+                  <SlideMock
+                    template={t}
+                    content={content}
+                    setContent={setContent}
+                    editing={editing}
+                    kind={kind}
+                    index={i}
+                    total={SLIDES.length}
+                  />
+                </div>
+              );
+            })}
 
             {/* Palette strip */}
             <div className="rounded-xl border bg-card p-4">
