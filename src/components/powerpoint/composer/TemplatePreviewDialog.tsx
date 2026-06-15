@@ -22,6 +22,7 @@ import {
   Image as ImageIcon,
   Check as CheckIcon,
   Bookmark,
+  Loader2,
 } from "lucide-react";
 import { SaveAsTemplateDialog } from "@/components/templates/SaveAsTemplateDialog";
 import type { DeckTemplate } from "./TemplateGallery";
@@ -33,6 +34,51 @@ import {
 } from "./TemplateDemoCard";
 import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
 import { cn } from "@/lib/utils";
+import { parsePptxFile } from "@/components/slides/importPptx";
+import { SlideRenderer } from "@/components/slides/SlideRenderer";
+import { ScaledSlide } from "@/components/slides/ScaledSlide";
+import type { SlideData } from "@/components/slides/slideTypes";
+import transperfectDeckAsset from "@/assets/transperfect-general-deck.pptx.asset.json";
+
+// Templates that ship with a real .pptx — when present, the preview dialog renders
+// the actual parsed slides instead of synthetic mocks.
+const BUILTIN_CORPORATE_DECKS: Record<string, { url: string; fileName: string; label: string }> = {
+  "transperfect-2026": {
+    url: transperfectDeckAsset.url,
+    fileName: "TransPerfect_General_Deck.pptx",
+    label: "TransPerfect Corporate Deck",
+  },
+};
+
+// Module-level cache so we only fetch+parse each corporate deck once per session.
+const corporateDeckCache: Map<string, SlideData[]> = new Map();
+const corporateDeckInflight: Map<string, Promise<SlideData[]>> = new Map();
+
+async function loadCorporateDeckSlides(templateId: string): Promise<SlideData[] | null> {
+  const corp = BUILTIN_CORPORATE_DECKS[templateId];
+  if (!corp) return null;
+  const cached = corporateDeckCache.get(templateId);
+  if (cached) return cached;
+  const inflight = corporateDeckInflight.get(templateId);
+  if (inflight) return inflight;
+  const p = (async () => {
+    const res = await fetch(corp.url);
+    if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
+    const blob = await res.blob();
+    const file = new File([blob], corp.fileName, {
+      type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    });
+    const slides = await parsePptxFile(file);
+    corporateDeckCache.set(templateId, slides);
+    return slides;
+  })();
+  corporateDeckInflight.set(templateId, p);
+  try {
+    return await p;
+  } finally {
+    corporateDeckInflight.delete(templateId);
+  }
+}
 
 interface Props {
   template: DeckTemplate | null;
