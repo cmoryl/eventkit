@@ -32,6 +32,7 @@ import {
   type DemoContent,
 } from "./TemplateDemoCard";
 import { TEMPLATE_THUMBNAILS } from "./templateThumbnails";
+import { cn } from "@/lib/utils";
 
 interface Props {
   template: DeckTemplate | null;
@@ -134,6 +135,100 @@ const Editable: React.FC<{
       {value}
     </Tag>
   );
+};
+
+const hexToRgba = (hex: string, alpha: number) => {
+  const clean = hex.replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(clean)) return `rgba(255,255,255,${alpha})`;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+};
+
+const hashString = (value: string) => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  return hash;
+};
+
+type DeckLookId =
+  | 'orbital-intelligence'
+  | 'terminal-grid'
+  | 'editorial-atlas'
+  | 'boardroom-ledger'
+  | 'startup-collage'
+  | 'organic-fieldnotes'
+  | 'brutalist-poster'
+  | 'broadcast-control'
+  | 'data-observatory'
+  | 'cinematic-storyboard'
+  | 'literary-monograph'
+  | 'systems-blueprint';
+
+type DataGraphicId =
+  | 'orbital-rings'
+  | 'terminal-spark'
+  | 'editorial-lollipop'
+  | 'ledger-waterfall'
+  | 'startup-sticker'
+  | 'fieldnotes-scatter'
+  | 'brutal-blocks'
+  | 'broadcast-vu'
+  | 'observatory-radar'
+  | 'storyboard-frames'
+  | 'monograph-slope'
+  | 'blueprint-node'
+  | 'heatmap-matrix'
+  | 'funnel-stack'
+  | 'treemap-tiles'
+  | 'gantt-roadmap'
+  | 'quadrant-bubbles'
+  | 'radial-bars'
+  | 'candlestick-tape'
+  | 'sankey-ribbons';
+
+const DATA_GRAPHICS: DataGraphicId[] = ['orbital-rings', 'terminal-spark', 'editorial-lollipop', 'ledger-waterfall', 'startup-sticker', 'fieldnotes-scatter', 'brutal-blocks', 'broadcast-vu', 'observatory-radar', 'storyboard-frames', 'monograph-slope', 'blueprint-node', 'heatmap-matrix', 'funnel-stack', 'treemap-tiles', 'gantt-roadmap', 'quadrant-bubbles', 'radial-bars', 'candlestick-tape', 'sankey-ribbons'];
+
+const TEMPLATE_SYSTEM_OVERRIDES: Record<string, { look: DeckLookId; graphic: DataGraphicId }> = {
+  'transperfect-2026': { look: 'orbital-intelligence', graphic: 'orbital-rings' },
+  'modern-dark': { look: 'terminal-grid', graphic: 'terminal-spark' },
+  'editorial-light': { look: 'editorial-atlas', graphic: 'editorial-lollipop' },
+  'corporate-navy': { look: 'boardroom-ledger', graphic: 'ledger-waterfall' },
+  'vibrant-startup': { look: 'startup-collage', graphic: 'startup-sticker' },
+  'warm-terracotta': { look: 'organic-fieldnotes', graphic: 'fieldnotes-scatter' },
+  'mono-brutalist': { look: 'brutalist-poster', graphic: 'brutal-blocks' },
+  'pres-title-dark': { look: 'data-observatory', graphic: 'observatory-radar' },
+  'pres-title-light': { look: 'literary-monograph', graphic: 'monograph-slope' },
+  'pres-content-two-column': { look: 'systems-blueprint', graphic: 'blueprint-node' },
+  'pres-image-left': { look: 'cinematic-storyboard', graphic: 'storyboard-frames' },
+  'pres-quote-slide': { look: 'editorial-atlas', graphic: 'editorial-lollipop' },
+  'pres-stats-grid': { look: 'data-observatory', graphic: 'heatmap-matrix' },
+  'pres-closing-cta': { look: 'literary-monograph', graphic: 'radial-bars' },
+  'webinar-title-modern': { look: 'broadcast-control', graphic: 'broadcast-vu' },
+  'webinar-agenda-slide': { look: 'systems-blueprint', graphic: 'gantt-roadmap' },
+  'webinar-speaker-bio': { look: 'cinematic-storyboard', graphic: 'quadrant-bubbles' },
+  'webinar-qa-slide': { look: 'broadcast-control', graphic: 'sankey-ribbons' },
+  'webinar-poll-slide': { look: 'startup-collage', graphic: 'funnel-stack' },
+  'stream-lower-third': { look: 'broadcast-control', graphic: 'candlestick-tape' },
+  'stream-starting-soon': { look: 'terminal-grid', graphic: 'terminal-spark' },
+  'stream-brb': { look: 'brutalist-poster', graphic: 'treemap-tiles' },
+  'stream-end-screen': { look: 'cinematic-storyboard', graphic: 'radial-bars' },
+  'pres-section-divider': { look: 'brutalist-poster', graphic: 'brutal-blocks' },
+  'pres-content-bullet': { look: 'systems-blueprint', graphic: 'blueprint-node' },
+  'pres-stat-highlight': { look: 'orbital-intelligence', graphic: 'orbital-rings' },
+  'pres-team-grid': { look: 'organic-fieldnotes', graphic: 'quadrant-bubbles' },
+  'pres-comparison-2col': { look: 'boardroom-ledger', graphic: 'ledger-waterfall' },
+  'pres-image-fullbleed': { look: 'cinematic-storyboard', graphic: 'storyboard-frames' },
+  'pres-thank-you': { look: 'literary-monograph', graphic: 'monograph-slope' },
+};
+
+const deckSystemFor = (template: DeckTemplate) => {
+  const override = TEMPLATE_SYSTEM_OVERRIDES[template.id];
+  if (override) return override;
+  const graphic = DATA_GRAPHICS[hashString(`${template.id}::graphic`) % DATA_GRAPHICS.length];
+  const look = (['orbital-intelligence', 'terminal-grid', 'editorial-atlas', 'boardroom-ledger', 'startup-collage', 'organic-fieldnotes', 'brutalist-poster', 'broadcast-control', 'data-observatory', 'cinematic-storyboard', 'literary-monograph', 'systems-blueprint'] as DeckLookId[])[hashString(`${template.id}::look`) % 12];
+  return { look, graphic };
 };
 
 /* ------------------------------ Charts ------------------------------ */
@@ -560,6 +655,96 @@ export const VisualVariant: React.FC<VVProps> = ({
   );
 };
 
+const DataGraphic: React.FC<{
+  system: DataGraphicId;
+  series?: { label: string; value: number }[];
+  accent: string;
+  secondary: string;
+  text: string;
+  bg: string;
+  muted: string;
+  seed?: number;
+}> = ({ system, series = [], accent, secondary, text, bg, muted, seed = 1 }) => {
+  const values = series.length ? series.map((s) => s.value) : [24, 46, 31, 68, 54, 82];
+  const max = Math.max(...values, 1);
+  const pct = (n: number) => Math.max(8, Math.min(100, (n / max) * 100));
+  const soft = hexToRgba(text, 0.16);
+  const faint = hexToRgba(text, 0.08);
+
+  switch (system) {
+    case 'orbital-rings':
+      return <div className="relative h-full min-h-[120px] w-full"><div className="absolute inset-[5%] rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.5)} 0 9%, transparent 10%), repeating-radial-gradient(circle, transparent 0 28px, ${hexToRgba(secondary, 0.38)} 29px 31px)` }} />{[18, 38, 63, 81, 50].map((x, i) => <span key={x} className="absolute rounded-full" style={{ left: `${x}%`, top: `${[61, 24, 68, 35, 48][i]}%`, width: 10 + i * 2, height: 10 + i * 2, background: i % 2 ? secondary : accent, boxShadow: `0 0 18px ${hexToRgba(i % 2 ? secondary : accent, 0.72)}` }} />)}</div>;
+    case 'terminal-spark':
+      return <svg viewBox="0 0 500 220" className="h-full w-full" preserveAspectRatio="none"><path d="M0 180H500M0 120H500M0 60H500M80 0V220M180 0V220M280 0V220M380 0V220" stroke={hexToRgba(accent, 0.16)} /><path d="M12 172 L70 184 L118 102 L180 132 L238 48 L310 86 L370 28 L438 70 L492 26" fill="none" stroke={accent} strokeWidth="8" strokeLinecap="square" /><path d="M12 198 H492" stroke={secondary} strokeWidth="3" strokeDasharray="10 12" />{[70, 180, 238, 370, 492].map((x, i) => <rect key={x} x={x - 7} y={[176, 124, 40, 20, 18][i]} width="14" height="24" fill={i === 2 ? secondary : accent} />)}</svg>;
+    case 'editorial-lollipop':
+      return <div className="grid h-full grid-cols-5 items-end gap-5 border-b px-4 pb-3" style={{ borderColor: soft }}>{values.slice(0, 5).map((n, i) => <div key={i} className="flex h-full flex-col items-center justify-end gap-2"><span className="h-5 w-5 rounded-full border-2" style={{ background: i === 2 ? accent : bg, borderColor: i === 2 ? accent : text }} /><span className="w-px" style={{ height: `${pct(n)}%`, background: i === 2 ? accent : hexToRgba(text, 0.45) }} /><span className="font-serif text-xs">{series[i]?.label || i + 1}</span></div>)}</div>;
+    case 'ledger-waterfall':
+      return <div className="relative flex h-full items-end gap-3 border-b border-l p-4" style={{ borderColor: soft }}>{values.slice(0, 6).map((n, i) => <div key={i} className="relative flex-1" style={{ height: `${Math.max(18, pct(n) * 0.55)}%`, marginBottom: `${[4, 26, 14, 42, 20, 54][i] || 0}%` }}><span className="absolute inset-x-0 bottom-0 block" style={{ height: '100%', background: i % 2 ? secondary : accent }} /><span className="absolute -right-4 top-0 h-px w-7" style={{ background: hexToRgba(text, 0.36) }} /></div>)}</div>;
+    case 'startup-sticker':
+      return <div className="relative h-full w-full overflow-hidden">{values.slice(0, 5).map((n, i) => <div key={i} className="absolute rounded-2xl border-4 px-4 py-2 text-2xl font-black" style={{ left: `${6 + i * 17}%`, top: `${[54, 18, 40, 8, 62][i]}%`, transform: `rotate(${[-8, 7, -4, 10, 3][i]}deg)`, borderColor: text, background: i % 2 ? secondary : accent, color: bg }}>{Math.round(n)}</div>)}<svg className="absolute inset-x-6 bottom-5 h-16" viewBox="0 0 220 58" fill="none"><path d="M4 42 C48 4 82 56 116 22 S176 10 216 36" stroke={text} strokeWidth="6" strokeLinecap="round" /></svg></div>;
+    case 'fieldnotes-scatter':
+      return <div className="relative h-full w-full rounded-[43%_57%_51%_49%]" style={{ background: hexToRgba(secondary, 0.12), border: `1px solid ${soft}` }}>{[12, 24, 38, 52, 64, 77, 88].map((x, i) => <span key={x} className="absolute rounded-[48%_52%_58%_42%] border" style={{ left: `${x}%`, top: `${[62, 34, 72, 24, 48, 16, 58][i]}%`, width: 14 + (i % 3) * 9, height: 12 + (i % 2) * 11, background: hexToRgba(i % 2 ? secondary : accent, 0.45), borderColor: i === 3 ? text : 'transparent' }} />)}<svg className="absolute inset-6 h-[calc(100%-48px)] w-[calc(100%-48px)]" viewBox="0 0 120 72" fill="none"><path d="M0 62 C34 54 48 34 70 32 C90 30 98 18 120 8" stroke={accent} strokeWidth="3" strokeDasharray="8 8" /></svg></div>;
+    case 'brutal-blocks':
+      return <div className="grid h-full grid-cols-5 grid-rows-4 gap-2">{Array.from({ length: 13 }).map((_, i) => <span key={i} className={cn(i === 0 && 'col-span-2 row-span-2', i === 5 && 'col-span-2', i === 8 && 'row-span-2')} style={{ background: i % 3 === 0 ? text : i % 2 ? accent : hexToRgba(text, 0.28), border: `4px solid ${i % 3 === 0 ? accent : text}` }} />)}</div>;
+    case 'broadcast-vu':
+      return <div className="flex h-full items-end gap-2 rounded-xl p-3" style={{ background: faint }}>{[32, 72, 45, 88, 60, 96, 42, 70, 54, 82].map((h, i) => <span key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i > 5 ? accent : secondary}, ${hexToRgba(i > 5 ? accent : secondary, 0.16)})` }} />)}</div>;
+    case 'observatory-radar':
+      return <svg viewBox="0 0 360 240" className="h-full w-full"><polygon points="180,18 332,120 180,222 28,120" fill="none" stroke={soft} strokeWidth="3" /><polygon points="180,62 270,120 180,178 90,120" fill="none" stroke={soft} strokeWidth="3" /><path d="M180 120 L180 18 M180 120 L332 120 M180 120 L180 222 M180 120 L28 120" stroke={soft} /><polygon points="180,38 270,116 212,184 86,152 126,84" fill={hexToRgba(accent, 0.34)} stroke={accent} strokeWidth="7" /></svg>;
+    case 'storyboard-frames':
+      return <div className="grid h-full grid-cols-3 gap-3">{[54, 78, 42].map((h, i) => <div key={i} className="relative border-2 p-2" style={{ borderColor: soft }}><span className="absolute left-2 top-2 text-xs font-black opacity-70">0{i + 1}</span><span className="absolute inset-x-2 bottom-2" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i === 1 ? accent : secondary}, transparent)` }} /></div>)}</div>;
+    case 'monograph-slope':
+      return <svg viewBox="0 0 360 230" className="h-full w-full"><path d="M60 34 V196 M300 34 V196" stroke={soft} strokeWidth="3" />{[38, 76, 118, 158].map((y, i) => <g key={y}><path d={`M60 ${y} L300 ${[168, 58, 126, 44][i]}`} stroke={i === 1 ? accent : hexToRgba(text, 0.42)} strokeWidth={i === 1 ? 7 : 4} /><circle cx="60" cy={y} r="7" fill={bg} stroke={text} strokeWidth="3" /><circle cx="300" cy={[168, 58, 126, 44][i]} r="7" fill={i === 1 ? accent : bg} stroke={i === 1 ? accent : text} strokeWidth="3" /></g>)}</svg>;
+    case 'blueprint-node':
+      return <svg viewBox="0 0 360 230" className="h-full w-full"><path d="M48 58 H150 V170 H278 M150 58 L278 92 M150 170 L74 198" fill="none" stroke={accent} strokeWidth="6" strokeDasharray="12 10" />{[[48,58],[150,58],[150,170],[278,170],[278,92],[74,198]].map(([x, y], i) => <rect key={`${x}-${y}`} x={x - 18} y={y - 18} width="36" height="36" fill={i % 2 ? bg : accent} stroke={i % 2 ? secondary : accent} strokeWidth="6" />)}</svg>;
+    case 'heatmap-matrix':
+      return <div className="grid h-full grid-cols-6 grid-rows-5 gap-2">{Array.from({ length: 30 }).map((_, i) => <span key={i} className="rounded-sm" style={{ background: [hexToRgba(text, 0.1), hexToRgba(secondary, 0.36), hexToRgba(accent, 0.68), accent][(i * 7 + seed) % 4] }} />)}</div>;
+    case 'funnel-stack':
+      return <div className="flex h-full flex-col items-center justify-center gap-3">{[92, 76, 59, 42, 26].map((w, i) => <span key={w} className="h-8 rounded-sm" style={{ width: `${w}%`, background: i === 0 ? accent : i === 2 ? secondary : hexToRgba(text, 0.3), clipPath: 'polygon(8% 0, 92% 0, 100% 100%, 0 100%)' }} />)}</div>;
+    case 'treemap-tiles':
+      return <div className="grid h-full grid-cols-5 grid-rows-4 gap-2">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={cn(i === 0 && 'col-span-3 row-span-2', i === 1 && 'col-span-2 row-span-2', i === 2 && 'col-span-2', i === 5 && 'col-span-2')} style={{ background: i % 2 ? hexToRgba(secondary, 0.6) : hexToRgba(accent, 0.74) }} />)}</div>;
+    case 'gantt-roadmap':
+      return <div className="flex h-full flex-col justify-center gap-4 border-l-2 pl-5" style={{ borderColor: soft }}>{[62, 38, 78, 50, 68].map((w, i) => <div key={i} className="grid grid-cols-[44px_1fr] items-center gap-2"><span className="text-xs font-black opacity-60">Q{i + 1}</span><span className="block h-5" style={{ width: `${w}%`, marginLeft: `${[0, 16, 8, 28, 5][i]}%`, background: i === 2 ? accent : secondary }} /></div>)}</div>;
+    case 'quadrant-bubbles':
+      return <div className="relative h-full w-full" style={{ background: `linear-gradient(90deg, transparent calc(50% - 1px), ${soft} 50%, transparent calc(50% + 1px)), linear-gradient(0deg, transparent calc(50% - 1px), ${soft} 50%, transparent calc(50% + 1px))` }}>{[[22,60,48],[36,30,30],[58,44,66],[76,20,38],[72,68,24]].map(([x, y, s], i) => <span key={i} className="absolute rounded-full border-2" style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, transform: 'translate(-50%, -50%)', background: hexToRgba(i === 2 ? accent : secondary, 0.42), borderColor: i === 2 ? accent : hexToRgba(text, 0.34) }} />)}</div>;
+    case 'radial-bars':
+      return <div className="relative h-full w-full">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className="absolute left-1/2 top-1/2 h-3 origin-left rounded-full" style={{ width: `${22 + i * 9}%`, background: i === 5 ? accent : hexToRgba(text, 0.38), transform: `rotate(${i * 34 - 86}deg)` }} />)}<span className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: secondary }} /></div>;
+    case 'candlestick-tape':
+      return <div className="flex h-full items-center gap-3 border-b-2 border-t-2 py-6" style={{ borderColor: soft }}>{[18, 34, 22, 48, 28, 40, 30, 52].map((h, i) => <span key={i} className="relative flex-1"><span className="absolute left-1/2 top-1/2 w-px -translate-x-1/2 -translate-y-1/2" style={{ height: `${h + 44}px`, background: hexToRgba(text, 0.48) }} /><span className="absolute left-0 right-0 top-1/2 -translate-y-1/2" style={{ height: `${h}px`, background: i % 2 ? secondary : accent }} /></span>)}</div>;
+    case 'sankey-ribbons':
+    default:
+      return <svg viewBox="0 0 360 230" className="h-full w-full"><path d="M20 42 C124 42 136 90 224 90 S304 62 340 62" fill="none" stroke={hexToRgba(accent, 0.62)} strokeWidth="34" strokeLinecap="round" /><path d="M20 124 C112 124 152 154 224 154 S304 190 340 190" fill="none" stroke={hexToRgba(secondary, 0.56)} strokeWidth="42" strokeLinecap="round" /><path d="M20 194 C98 194 152 90 224 90" fill="none" stroke={hexToRgba(text, 0.28)} strokeWidth="24" strokeLinecap="round" />{[20, 224, 340].map((x, i) => <rect key={x} x={x - 10} y="24" width="20" height="184" fill={i === 1 ? bg : text} stroke={i === 1 ? accent : text} strokeWidth="3" />)}</svg>;
+  }
+};
+
+const slideSurfaceFor = (template: DeckTemplate, look: DeckLookId) => {
+  const { bg, text, accent, secondary } = template.palette;
+  const patterns: Record<DeckLookId, string> = {
+    'orbital-intelligence': `radial-gradient(circle at 78% 34%, ${hexToRgba(accent, 0.42)}, transparent 22%), repeating-radial-gradient(circle at 72% 44%, transparent 0 48px, ${hexToRgba(secondary, 0.18)} 49px 51px), ${bg}`,
+    'terminal-grid': `linear-gradient(90deg, ${hexToRgba(accent, 0.13)} 1px, transparent 1px) 0 0 / 34px 34px, linear-gradient(0deg, ${hexToRgba(accent, 0.1)} 1px, transparent 1px) 0 0 / 34px 34px, ${bg}`,
+    'editorial-atlas': `linear-gradient(90deg, transparent 0 16%, ${hexToRgba(text, 0.18)} 16% calc(16% + 1px), transparent calc(16% + 1px)), ${bg}`,
+    'boardroom-ledger': `linear-gradient(90deg, ${hexToRgba(accent, 0.16)} 0 1px, transparent 1px) 0 0 / 76px 76px, linear-gradient(0deg, ${hexToRgba(text, 0.08)} 0 1px, transparent 1px) 0 0 / 76px 38px, ${bg}`,
+    'startup-collage': `radial-gradient(circle at 15% 20%, ${hexToRgba(accent, 0.34)} 0 8%, transparent 8.5%), radial-gradient(circle at 86% 18%, ${hexToRgba(secondary, 0.34)} 0 10%, transparent 10.5%), ${bg}`,
+    'organic-fieldnotes': `radial-gradient(ellipse at 14% 88%, ${hexToRgba(secondary, 0.34)}, transparent 42%), radial-gradient(ellipse at 84% 14%, ${hexToRgba(accent, 0.22)}, transparent 36%), ${bg}`,
+    'brutalist-poster': `linear-gradient(90deg, ${hexToRgba(text, 0.86)} 0 16px, transparent 16px), repeating-linear-gradient(45deg, transparent 0 28px, ${hexToRgba(text, 0.12)} 28px 31px), ${bg}`,
+    'broadcast-control': `linear-gradient(90deg, transparent 0 10%, ${hexToRgba(accent, 0.18)} 10% 10.5%, transparent 10.5%), repeating-linear-gradient(90deg, ${hexToRgba(text, 0.06)} 0 1px, transparent 1px 22px), ${bg}`,
+    'data-observatory': `radial-gradient(circle at 68% 48%, ${hexToRgba(accent, 0.25)} 0 12%, transparent 13%), repeating-radial-gradient(circle at 68% 48%, transparent 0 42px, ${hexToRgba(accent, 0.16)} 43px 45px), ${bg}`,
+    'cinematic-storyboard': `linear-gradient(90deg, ${hexToRgba('#000000', 0.38)} 0 7%, transparent 7% 93%, ${hexToRgba('#000000', 0.38)} 93%), ${bg}`,
+    'literary-monograph': `linear-gradient(90deg, transparent 0 22%, ${hexToRgba(accent, 0.48)} 22% calc(22% + 2px), transparent calc(22% + 2px)), ${bg}`,
+    'systems-blueprint': `linear-gradient(90deg, ${hexToRgba(accent, 0.13)} 1px, transparent 1px) 0 0 / 26px 26px, linear-gradient(0deg, ${hexToRgba(accent, 0.13)} 1px, transparent 1px) 0 0 / 26px 26px, ${bg}`,
+  };
+  return patterns[look];
+};
+
+const cardSurfaceFor = (look: DeckLookId, template: DeckTemplate, isLight: boolean) => {
+  const { bg, text, accent, secondary } = template.palette;
+  if (look === 'brutalist-poster') return hexToRgba(text, isLight ? 0.08 : 0.16);
+  if (look === 'editorial-atlas' || look === 'literary-monograph') return 'transparent';
+  if (look === 'startup-collage') return hexToRgba(accent, 0.12);
+  if (look === 'organic-fieldnotes') return hexToRgba(secondary, 0.14);
+  if (look === 'terminal-grid' || look === 'systems-blueprint') return hexToRgba(bg, 0.58);
+  return isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.07)';
+};
+
 /* ------------------------------ Slide kinds ------------------------------ */
 export type SlideKind =
   | "title"
@@ -614,7 +799,8 @@ export const SlideMock: React.FC<{
   const isLight = isLightColor(t.palette.bg);
   const muted = isLight ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.7)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.14)";
-  const cardBg = isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.07)";
+  const { look, graphic: dataGraphic } = deckSystemFor(t);
+  const cardBg = cardSurfaceFor(look, t, isLight);
   const thumb = TEMPLATE_THUMBNAILS[t.id];
   // Imagery rotation per slide so different layouts feature different visuals.
   const imagery = content.imagery && content.imagery.length > 0 ? content.imagery : (thumb ? [thumb] : []);
@@ -633,28 +819,17 @@ export const SlideMock: React.FC<{
 
   return (
     <div
-      className="relative w-full aspect-[16/9] rounded-xl border overflow-hidden shadow-md"
-      style={{ background: t.palette.bg, color: t.palette.text, borderColor: subtleBorder }}
+      className={cn(
+        "relative w-full aspect-[16/9] border overflow-hidden shadow-md",
+        look === 'brutalist-poster' ? 'rounded-none border-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'rounded-sm' : look === 'organic-fieldnotes' ? 'rounded-[2rem]' : look === 'terminal-grid' || look === 'systems-blueprint' ? 'rounded-md' : 'rounded-xl',
+      )}
+      style={{ background: slideSurfaceFor(t, look), color: t.palette.text, borderColor: look === 'brutalist-poster' ? t.palette.text : subtleBorder }}
     >
-      {/* Decorative orbs */}
-      <div
-        className="absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-25 blur-3xl pointer-events-none"
-        style={{ background: t.palette.accent }}
-      />
-      <div
-        className="absolute -bottom-16 -left-16 h-56 w-56 rounded-full opacity-20 blur-3xl pointer-events-none"
-        style={{ background: t.palette.secondary }}
-      />
-
-      {/* Decorative dotted grid (very low opacity) */}
-      <div
-        aria-hidden
-        className="absolute inset-0 pointer-events-none opacity-[0.06]"
-        style={{
-          backgroundImage: `radial-gradient(${t.palette.text} 1px, transparent 1px)`,
-          backgroundSize: "18px 18px",
-        }}
-      />
+      {look === 'startup-collage' && <><div className="absolute left-8 top-10 h-24 w-32 -rotate-6 rounded-2xl" style={{ background: t.palette.accent }} /><div className="absolute right-14 top-12 h-20 w-20 rotate-12 rounded-full" style={{ background: t.palette.secondary }} /></>}
+      {look === 'brutalist-poster' && <div className="absolute right-[-2rem] top-12 h-44 w-64 rotate-6 border-[14px]" style={{ borderColor: t.palette.text, background: t.palette.accent }} />}
+      {(look === 'orbital-intelligence' || look === 'data-observatory') && <div className="absolute right-[-5rem] bottom-[-6rem] h-80 w-80 rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(t.palette.accent, 0.28)}, transparent 30%), repeating-radial-gradient(circle, transparent 0 34px, ${hexToRgba(t.palette.secondary, 0.26)} 35px 37px)` }} />}
+      {look === 'cinematic-storyboard' && <div className="absolute inset-x-0 top-6 h-10" style={{ background: `repeating-linear-gradient(90deg, ${hexToRgba(t.palette.text, 0.24)} 0 22px, transparent 22px 42px)` }} />}
+      {(look === 'editorial-atlas' || look === 'literary-monograph') && <div className="absolute bottom-12 right-14 font-serif text-[11rem] leading-none opacity-10" style={{ color: t.palette.accent }}>{look === 'literary-monograph' ? '”' : '§'}</div>}
 
       {/* Decorative corner brackets */}
       <svg
@@ -939,14 +1114,15 @@ export const SlideMock: React.FC<{
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-[72%] h-[62%]">
-                <VisualVariant
-                  variant={pickVariant(t.id, "section-hero", index)}
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 2) % DATA_GRAPHICS.length]}
+                  series={content.chart.series}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                   seed={index + 7}
-                  size="lg"
                 />
               </div>
             </div>
@@ -1115,17 +1291,17 @@ export const SlideMock: React.FC<{
             className="text-2xl sm:text-3xl font-bold leading-tight tracking-tight"
             style={{ color: t.palette.text }}
           />
-          <div className="grid grid-cols-4 gap-3 mt-5 flex-1">
+          <div className={cn("mt-5 flex-1", look === 'brutalist-poster' ? 'grid grid-cols-[1.3fr_0.7fr_1fr_0.8fr] gap-2' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'grid grid-cols-4 gap-0 border-y' : look === 'startup-collage' ? 'grid grid-cols-4 gap-4 rotate-[-1deg]' : look === 'organic-fieldnotes' ? 'grid grid-cols-4 gap-3' : 'grid grid-cols-4 gap-3')} style={(look === 'editorial-atlas' || look === 'literary-monograph') ? { borderColor: hexToRgba(t.palette.text, 0.22) } : undefined}>
             {content.metrics.slice(0, 4).map((m, i) => {
               const Ic = m.icon;
               const numeric = parseFloat(String(m.value).replace(/[^0-9.]/g, "")) || (i + 1) * 17;
               const pct = Math.min(98, Math.max(12, (numeric % 100) + 8));
-              const variant = pickVariant(t.id, `metric-${i}`, index + i);
+              const metricGraphic = DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 3) % DATA_GRAPHICS.length];
               return (
                 <div
                   key={i}
-                  className="rounded-lg p-4 flex flex-col gap-3 relative overflow-hidden"
-                  style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}
+                  className={cn("p-4 flex flex-col gap-3 relative overflow-hidden", look === 'brutalist-poster' ? 'rounded-none border-4 uppercase' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'rounded-none border-x font-serif' : look === 'startup-collage' ? 'rounded-2xl border-4 odd:rotate-2 even:-rotate-2' : look === 'organic-fieldnotes' ? 'rounded-[1.75rem]' : 'rounded-lg')}
+                  style={{ background: look === 'brutalist-poster' && i === 0 ? t.palette.accent : cardBg, border: look === 'brutalist-poster' || look === 'startup-collage' ? `${look === 'brutalist-poster' ? 4 : 3}px solid ${t.palette.text}` : `1px solid ${subtleBorder}` }}
                 >
                   {/* corner accent stripe */}
                   <div
@@ -1160,17 +1336,17 @@ export const SlideMock: React.FC<{
                     )}
                   </div>
 
-                  {/* Visualization fills the empty middle — rotates per template + per card */}
+                    {/* Visualization fills the empty middle — unique graph system per template + card */}
                   <div className="flex-1 min-h-[60px] flex items-center justify-center">
-                    <VisualVariant
-                      variant={variant}
+                    <DataGraphic
+                      system={metricGraphic}
+                      series={[{ label: m.label, value: numeric }, { label: 'A', value: pct * 0.7 }, { label: 'B', value: pct }]}
                       accent={t.palette.accent}
                       secondary={t.palette.secondary}
                       text={t.palette.text}
+                      bg={t.palette.bg}
                       muted={muted}
                       seed={i + 2}
-                      percent={pct}
-                      size="md"
                     />
                   </div>
 
@@ -1217,12 +1393,18 @@ export const SlideMock: React.FC<{
 
       {/* CHART */}
       {kind === "chart" && (
-        <div className="relative h-full p-8 grid grid-cols-3 gap-4 z-10">
-          <div className="col-span-2 rounded-lg p-4 flex flex-col" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+        <div className={cn("relative h-full z-10", look === 'brutalist-poster' ? 'grid grid-cols-[0.62fr_1fr] gap-5 p-8' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'grid grid-cols-[0.52fr_1.25fr_0.58fr] gap-6 p-10' : look === 'startup-collage' ? 'p-8' : 'grid grid-cols-3 gap-4 p-8')}>
+          {(look === 'brutalist-poster' || look === 'editorial-atlas' || look === 'literary-monograph') && (
+            <div className={cn("flex flex-col justify-between", look === 'brutalist-poster' ? 'border-4 p-4 uppercase' : 'border-r pr-5 font-serif')} style={{ borderColor: look === 'brutalist-poster' ? t.palette.text : hexToRgba(t.palette.text, 0.26), background: look === 'brutalist-poster' ? t.palette.accent : 'transparent', color: look === 'brutalist-poster' ? t.palette.bg : t.palette.text }}>
+              <span className="text-xs font-black uppercase tracking-widest">{content.chart.unit || 'Index'}</span>
+              <span className={cn("leading-none", look === 'brutalist-poster' ? 'text-7xl font-black' : 'text-6xl')}>{content.chart.series.length}</span>
+            </div>
+          )}
+          <div className={cn("flex flex-col", look === 'startup-collage' ? 'absolute bottom-8 right-8 h-[68%] w-[72%] rotate-2 rounded-2xl border-4 p-5' : look === 'brutalist-poster' || look === 'editorial-atlas' || look === 'literary-monograph' ? 'p-0' : 'col-span-2 rounded-lg p-4')} style={{ background: look === 'startup-collage' ? hexToRgba(t.palette.bg, 0.86) : cardBg, border: look === 'startup-collage' ? `4px solid ${t.palette.text}` : look === 'brutalist-poster' || look === 'editorial-atlas' || look === 'literary-monograph' ? 'none' : `1px solid ${subtleBorder}` }}>
             <div className="flex items-center gap-2">
               <LineChartIcon className="h-3.5 w-3.5" style={{ color: t.palette.accent }} />
               <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                Trend
+                {dataGraphic.replace(/-/g, ' ')}
               </span>
             </div>
             <Editable
@@ -1235,41 +1417,35 @@ export const SlideMock: React.FC<{
               style={{ color: t.palette.text }}
             />
             <div className="flex-1 mt-2 min-h-0">
-              <BarLineChart
+              <DataGraphic
+                system={dataGraphic}
                 series={content.chart.series}
-                trendline={content.chart.trendline}
                 accent={t.palette.accent}
                 secondary={t.palette.secondary}
                 text={t.palette.text}
+                bg={t.palette.bg}
                 muted={muted}
-                unit={content.chart.unit}
+                seed={index + 3}
               />
             </div>
           </div>
-          <div className="flex flex-col gap-3 min-h-0">
-            <div className="rounded-lg p-4" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+          <div className={cn("flex flex-col gap-3 min-h-0", (look === 'brutalist-poster' || look === 'startup-collage') && 'hidden', (look === 'editorial-atlas' || look === 'literary-monograph') && 'border-l pl-5')} style={(look === 'editorial-atlas' || look === 'literary-monograph') ? { borderColor: hexToRgba(t.palette.text, 0.24) } : undefined}>
+            <div className="p-4" style={{ background: cardBg, border: `1px solid ${subtleBorder}`, borderRadius: look === 'terminal-grid' || look === 'systems-blueprint' ? 2 : look === 'organic-fieldnotes' ? 22 : 10 }}>
               <div className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: muted }}>
                 Distribution
               </div>
-              <Donut
-                percent={Math.min(
-                  100,
-                  Math.round(
-                    ((content.chart.series.at(-1)?.value || 0) /
-                      Math.max(content.chart.series.reduce((a, b) => a + b.value, 0), 1)) *
-                      100 *
-                      content.chart.series.length,
-                  ),
-                )}
+              <DataGraphic
+                system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 5) % DATA_GRAPHICS.length]}
+                series={content.chart.series.slice(0, 4)}
                 accent={t.palette.accent}
-                track={t.palette.text}
-                label="Latest share"
-                sub="of total period"
+                secondary={t.palette.secondary}
                 text={t.palette.text}
+                bg={t.palette.bg}
                 muted={muted}
+                seed={index + 9}
               />
             </div>
-            <div className="rounded-lg p-4 flex-1 flex items-center gap-3" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+            <div className="p-4 flex-1 flex items-center gap-3" style={{ background: cardBg, border: `1px solid ${subtleBorder}`, borderRadius: look === 'terminal-grid' || look === 'systems-blueprint' ? 2 : look === 'organic-fieldnotes' ? 22 : 10 }}>
               <TrendingUp className="h-5 w-5" style={{ color: t.palette.accent }} />
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
@@ -1442,7 +1618,7 @@ export const SlideMock: React.FC<{
                     onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, before: { ...c.compare.before, title: v } } }))}
                   />
                 </div>
-                <RingGauge percent={32} accent={t.palette.secondary} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
+                <div className="h-14 w-20"><DataGraphic system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 7) % DATA_GRAPHICS.length]} series={[{ label: 'A', value: 32 }, { label: 'B', value: 54 }]} accent={t.palette.secondary} secondary={t.palette.accent} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={4} /></div>
               </div>
               <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.before.points.map((p, i) => (
@@ -1466,15 +1642,17 @@ export const SlideMock: React.FC<{
                 <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: muted }}>
                   Baseline performance
                 </div>
-                <HBars
-                  values={[
-                    { label: "Speed", v: 28 },
-                    { label: "Cost", v: 64 },
-                    { label: "Effort", v: 78 },
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 11) % DATA_GRAPHICS.length]}
+                  series={[
+                    { label: "Speed", value: 28 },
+                    { label: "Cost", value: 64 },
+                    { label: "Effort", value: 78 },
                   ]}
                   accent={t.palette.secondary}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                 />
               </div>
@@ -1503,7 +1681,7 @@ export const SlideMock: React.FC<{
                     onChange={(v) => update((c) => ({ ...c, compare: { ...c.compare, after: { ...c.compare.after, title: v } } }))}
                   />
                 </div>
-                <RingGauge percent={91} accent={t.palette.accent} track={t.palette.text} size={48} thickness={6} text={t.palette.text} />
+                <div className="h-14 w-20"><DataGraphic system={dataGraphic} series={[{ label: 'A', value: 91 }, { label: 'B', value: 38 }]} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={8} /></div>
               </div>
               <ul className="mt-3 space-y-2 flex-1">
                 {content.compare.after.points.map((p, i) => (
@@ -1525,15 +1703,17 @@ export const SlideMock: React.FC<{
                 <div className="text-[9px] font-mono uppercase tracking-wider mb-1.5" style={{ color: t.palette.accent }}>
                   Lifted performance
                 </div>
-                <HBars
-                  values={[
-                    { label: "Speed", v: 92 },
-                    { label: "Cost", v: 38 },
-                    { label: "Effort", v: 22 },
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 3) % DATA_GRAPHICS.length]}
+                  series={[
+                    { label: "Speed", value: 92 },
+                    { label: "Cost", value: 38 },
+                    { label: "Effort", value: 22 },
                   ]}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                 />
               </div>
@@ -1751,7 +1931,7 @@ export const SlideMock: React.FC<{
             {content.kpi.supporting.map((s, i) => {
               const numeric = parseFloat(String(s.value).replace(/[^0-9.]/g, "")) || (i + 1) * 21;
               const pct = Math.min(96, Math.max(20, (numeric % 100) + 14));
-              const variant = pickVariant(t.id, `kpi-${i}`, index + i);
+              const kpiGraphic = DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 4 + 1) % DATA_GRAPHICS.length];
               return (
                 <div
                   key={i}
@@ -1775,15 +1955,15 @@ export const SlideMock: React.FC<{
                     />
                   </div>
                   <div className="flex-1 min-h-0">
-                    <VisualVariant
-                      variant={variant}
+                    <DataGraphic
+                      system={kpiGraphic}
+                      series={[{ label: s.label, value: numeric }, { label: 'Goal', value: pct }, { label: 'Base', value: pct * 0.54 }]}
                       accent={t.palette.accent}
                       secondary={t.palette.secondary}
                       text={t.palette.text}
+                      bg={t.palette.bg}
                       muted={muted}
                       seed={i + 9}
-                      percent={pct}
-                      size="sm"
                     />
                   </div>
                   <div
@@ -1863,14 +2043,15 @@ export const SlideMock: React.FC<{
                   {/* Non-image tile: inject a brand-tinted visual so it doesn't feel empty */}
                   {!tileImg && (
                     <div className="absolute inset-0 pointer-events-none opacity-80">
-                      <VisualVariant
-                        variant={pickVariant(t.id, `bento-${i}`, index + i)}
+                      <DataGraphic
+                        system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 2 + 4) % DATA_GRAPHICS.length]}
+                        series={content.chart.series.slice(0, 5)}
                         accent={t.palette.accent}
                         secondary={t.palette.secondary}
                         text={t.palette.text}
+                        bg={t.palette.bg}
                         muted={muted}
                         seed={i + 4}
-                        size="md"
                       />
                       <div
                         className="absolute inset-0"
@@ -1949,14 +2130,15 @@ export const SlideMock: React.FC<{
               />
             ) : (
               <div className="absolute inset-0">
-                <VisualVariant
-                  variant={pickVariant(t.id, "feature-split-bg", index)}
+                <DataGraphic
+                  system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 6) % DATA_GRAPHICS.length]}
+                  series={content.chart.series}
                   accent={t.palette.accent}
                   secondary={t.palette.secondary}
                   text={t.palette.text}
+                  bg={t.palette.bg}
                   muted={muted}
                   seed={index + 17}
-                  size="lg"
                 />
               </div>
             )}
@@ -1993,7 +2175,7 @@ export const SlideMock: React.FC<{
                   </div>
                 </div>
                 <div className="mt-2 h-12">
-                  <Sparkline accent={t.palette.accent} secondary={t.palette.secondary} muted={muted} seed={index + 11} />
+                  <DataGraphic system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 8) % DATA_GRAPHICS.length]} series={content.chart.series.slice(0, 4)} accent={t.palette.accent} secondary={t.palette.secondary} text={t.palette.text} bg={t.palette.bg} muted={muted} seed={index + 11} />
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-1.5">
                   {[

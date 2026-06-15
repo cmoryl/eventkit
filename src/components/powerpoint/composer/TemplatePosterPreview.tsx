@@ -77,7 +77,7 @@ type PreviewKind =
   | 'chart'
   | 'process';
 
-type PreviewArrangement = 'fan' | 'mosaic' | 'hero' | 'vertical' | 'rail';
+type PreviewArrangement = 'fan' | 'mosaic' | 'hero' | 'vertical' | 'rail' | 'split-stage' | 'contact-sheet' | 'cascade';
 type IconComponent = React.ComponentType<{ className?: string }>;
 
 const hexToRgba = (hex: string, alpha: number) => {
@@ -126,34 +126,34 @@ const kindFor = (template: DeckTemplate): PreviewKind => {
   return ALL_KINDS[h % ALL_KINDS.length];
 };
 
-const ALL_ARRANGEMENTS: PreviewArrangement[] = ['fan', 'mosaic', 'hero', 'vertical', 'rail'];
+const ALL_ARRANGEMENTS: PreviewArrangement[] = ['fan', 'mosaic', 'hero', 'vertical', 'rail', 'split-stage', 'contact-sheet', 'cascade'];
 
 const arrangementFor = (kind: PreviewKind, template: DeckTemplate): PreviewArrangement => {
   // Hash drives arrangement so visually-similar kinds still get different stacks
   const h = hashFor(`${template.id}//${kind}`);
   // Bias: some kinds have a clearly best arrangement, but still allow variation
   const bias: Partial<Record<PreviewKind, PreviewArrangement[]>> = {
-    stats: ['mosaic', 'rail', 'hero'],
-    team: ['mosaic', 'rail'],
-    comparison: ['mosaic', 'hero'],
-    poll: ['mosaic', 'vertical'],
-    section: ['hero', 'fan'],
-    'full-bleed': ['hero', 'rail'],
-    closing: ['hero', 'fan'],
-    'webinar-title': ['hero', 'vertical'],
-    stream: ['hero', 'rail'],
-    agenda: ['vertical', 'rail'],
-    speaker: ['vertical', 'hero'],
-    qa: ['vertical', 'fan'],
-    bullet: ['rail', 'vertical'],
-    columns: ['rail', 'mosaic'],
-    'image-split': ['rail', 'hero'],
-    editorial: ['rail', 'fan'],
-    chart: ['mosaic', 'fan'],
-    process: ['rail', 'fan'],
-    quote: ['hero', 'fan'],
-    'stat-hero': ['hero', 'mosaic'],
-    title: ['fan', 'hero'],
+    stats: ['mosaic', 'rail', 'split-stage', 'contact-sheet'],
+    team: ['mosaic', 'rail', 'contact-sheet'],
+    comparison: ['mosaic', 'hero', 'split-stage'],
+    poll: ['mosaic', 'vertical', 'cascade'],
+    section: ['hero', 'fan', 'split-stage'],
+    'full-bleed': ['hero', 'rail', 'cascade'],
+    closing: ['hero', 'fan', 'contact-sheet'],
+    'webinar-title': ['hero', 'vertical', 'split-stage'],
+    stream: ['hero', 'rail', 'cascade'],
+    agenda: ['vertical', 'rail', 'contact-sheet'],
+    speaker: ['vertical', 'hero', 'split-stage'],
+    qa: ['vertical', 'fan', 'cascade'],
+    bullet: ['rail', 'vertical', 'contact-sheet'],
+    columns: ['rail', 'mosaic', 'split-stage'],
+    'image-split': ['rail', 'hero', 'cascade'],
+    editorial: ['rail', 'fan', 'contact-sheet'],
+    chart: ['mosaic', 'fan', 'split-stage', 'cascade'],
+    process: ['rail', 'fan', 'contact-sheet'],
+    quote: ['hero', 'fan', 'split-stage'],
+    'stat-hero': ['hero', 'mosaic', 'cascade'],
+    title: ['fan', 'hero', 'split-stage'],
   };
   const pool = bias[kind] || ALL_ARRANGEMENTS;
   return pool[h % pool.length];
@@ -363,6 +363,29 @@ const FEATURED_GRAPH_SYSTEMS: Record<string, GraphSystemId> = {
   'vibrant-startup': 'startup-sticker',
   'warm-terracotta': 'fieldnotes-scatter',
   'mono-brutalist': 'brutal-blocks',
+  'pres-title-dark': 'observatory-radar',
+  'pres-title-light': 'monograph-slope',
+  'pres-content-two-column': 'blueprint-node',
+  'pres-image-left': 'storyboard-frames',
+  'pres-quote-slide': 'editorial-lollipop',
+  'pres-stats-grid': 'heatmap-matrix',
+  'pres-closing-cta': 'radial-bars',
+  'webinar-title-modern': 'broadcast-vu',
+  'webinar-agenda-slide': 'gantt-roadmap',
+  'webinar-speaker-bio': 'quadrant-bubbles',
+  'webinar-qa-slide': 'sankey-ribbons',
+  'webinar-poll-slide': 'funnel-stack',
+  'stream-lower-third': 'candlestick-tape',
+  'stream-starting-soon': 'terminal-spark',
+  'stream-brb': 'treemap-tiles',
+  'stream-end-screen': 'radial-bars',
+  'pres-section-divider': 'brutal-blocks',
+  'pres-content-bullet': 'blueprint-node',
+  'pres-stat-highlight': 'orbital-rings',
+  'pres-team-grid': 'quadrant-bubbles',
+  'pres-comparison-2col': 'ledger-waterfall',
+  'pres-image-fullbleed': 'storyboard-frames',
+  'pres-thank-you': 'monograph-slope',
 };
 
 const graphSystemFor = (template: DeckTemplate, kind: PreviewKind, look: DeckLookId): GraphSystemId => {
@@ -415,7 +438,42 @@ const ALL_LOOKS: DeckLookId[] = [
   'systems-blueprint',
 ];
 
+const TEMPLATE_LOOK_OVERRIDES: Record<string, DeckLookId> = {
+  'transperfect-2026': 'orbital-intelligence',
+  'modern-dark': 'terminal-grid',
+  'editorial-light': 'editorial-atlas',
+  'corporate-navy': 'boardroom-ledger',
+  'vibrant-startup': 'startup-collage',
+  'warm-terracotta': 'organic-fieldnotes',
+  'mono-brutalist': 'brutalist-poster',
+  'pres-title-dark': 'data-observatory',
+  'pres-title-light': 'literary-monograph',
+  'pres-content-two-column': 'systems-blueprint',
+  'pres-image-left': 'cinematic-storyboard',
+  'pres-quote-slide': 'editorial-atlas',
+  'pres-stats-grid': 'data-observatory',
+  'pres-closing-cta': 'literary-monograph',
+  'webinar-title-modern': 'broadcast-control',
+  'webinar-agenda-slide': 'systems-blueprint',
+  'webinar-speaker-bio': 'cinematic-storyboard',
+  'webinar-qa-slide': 'broadcast-control',
+  'webinar-poll-slide': 'startup-collage',
+  'stream-lower-third': 'broadcast-control',
+  'stream-starting-soon': 'terminal-grid',
+  'stream-brb': 'brutalist-poster',
+  'stream-end-screen': 'cinematic-storyboard',
+  'pres-section-divider': 'brutalist-poster',
+  'pres-content-bullet': 'systems-blueprint',
+  'pres-stat-highlight': 'orbital-intelligence',
+  'pres-team-grid': 'organic-fieldnotes',
+  'pres-comparison-2col': 'boardroom-ledger',
+  'pres-image-fullbleed': 'cinematic-storyboard',
+  'pres-thank-you': 'literary-monograph',
+};
+
 const lookFor = (template: DeckTemplate, kind: PreviewKind): DeckLookId => {
+  const override = TEMPLATE_LOOK_OVERRIDES[template.id];
+  if (override) return override;
   const hay = `${template.id} ${template.name} ${template.description || ''} ${(template.tags || []).join(' ')}`.toLowerCase();
   if (hay.includes('transperfect') || hay.includes('orb') || hay.includes('cosmic')) return 'orbital-intelligence';
   if (hay.includes('modern dark') || hay.includes('tech') || hay.includes('saas') || hay.includes('product')) return 'terminal-grid';
@@ -1367,6 +1425,37 @@ const DeckPreviewVisual = ({ t, kind, look }: { t: DeckTemplate; kind: PreviewKi
         <div className="absolute bottom-0 left-0 grid w-[74%] grid-cols-2 gap-1.5">
           {deck.slice(1).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
         </div>
+      </div>
+    );
+  }
+
+  if (arrangement === 'split-stage') {
+    return (
+      <div className="pointer-events-none absolute right-4 top-5 grid h-[46%] w-[56%] grid-cols-[1fr_0.72fr] gap-2">
+        <div className="min-w-0 overflow-hidden" style={{ transform: hash % 2 ? 'rotate(-1.5deg)' : 'rotate(1.5deg)' }}><MiniSlide kind={deck[0]} template={t} look={look} /></div>
+        <div className="flex min-w-0 flex-col gap-2 pt-4">
+          {deck.slice(1).map((slideKind, i) => <div key={`${slideKind}-${i}`} className="min-h-0 flex-1 overflow-hidden" style={{ transform: `translateX(${i ? -10 : 4}px) rotate(${i ? 2 : -3}deg)` }}><MiniSlide kind={slideKind} template={t} look={look} compact /></div>)}
+        </div>
+      </div>
+    );
+  }
+
+  if (arrangement === 'contact-sheet') {
+    return (
+      <div className="pointer-events-none absolute right-4 top-4 grid h-[50%] w-[54%] grid-cols-3 grid-rows-2 gap-1.5 p-1" style={{ background: hexToRgba(t.palette.text, 0.08), border: `1px solid ${hexToRgba(t.palette.text, 0.18)}` }}>
+        {[...deck, 'stats' as PreviewKind, 'quote' as PreviewKind, 'process' as PreviewKind].slice(0, 6).map((slideKind, i) => <MiniSlide key={`${slideKind}-${i}`} kind={slideKind} template={t} look={look} compact />)}
+      </div>
+    );
+  }
+
+  if (arrangement === 'cascade') {
+    return (
+      <div className="pointer-events-none absolute right-5 top-4 h-[56%] w-[52%]">
+        {deck.map((slideKind, i) => (
+          <div key={`${slideKind}-${i}`} className="absolute aspect-video overflow-hidden shadow-2xl" style={{ width: `${86 - i * 10}%`, right: `${i * 11}%`, top: `${i * 18}%`, transform: `rotate(${[-4, 3, -1][i]}deg)`, opacity: 1 - i * 0.12 }}>
+            <MiniSlide kind={slideKind} template={t} look={look} compact={i > 0} />
+          </div>
+        ))}
       </div>
     );
   }
