@@ -402,6 +402,13 @@ export const TemplateGallery: React.FC<Props> = ({ selectedId, onSelect, onOpenI
         }
         disabled={disabled}
       />
+
+      <TemplateCompareDialog
+        open={compareOpen}
+        onOpenChange={setCompareOpen}
+        templates={allTemplates}
+        initialIds={DECK_TEMPLATES.slice(0, 3).map((t) => t.id)}
+      />
     </div>
   );
 };
