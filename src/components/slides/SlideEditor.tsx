@@ -117,6 +117,26 @@ interface SlideEditorProps {
       colors: Record<string, string>;
       fonts: { major?: string; minor?: string };
     };
+    /** Real slide-layout catalog parsed from the deck's ppt/slideLayouts/*.xml. */
+    layoutCatalog?: {
+      slideWidthEmu: number;
+      slideHeightEmu: number;
+      layouts: Array<{
+        fileName: string;
+        name: string;
+        type?: string;
+        index: number;
+        placeholders: Array<{
+          type: string;
+          idx?: number;
+          sz?: string;
+          xPct?: number;
+          yPct?: number;
+          wPct?: number;
+          hPct?: number;
+        }>;
+      }>;
+    };
   } | null;
 }
 
