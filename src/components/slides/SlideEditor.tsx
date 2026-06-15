@@ -278,6 +278,58 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
   const updateSlide = useCallback((index: number, updates: Partial<SlideData>) => {
     setSlides(prev => prev.map((s, i) => i === index ? { ...s, ...updates } : s));
   }, []);
+  const [isGeneratingStyledSlide, setIsGeneratingStyledSlide] = useState(false);
+  const addStyledSlide = useCallback(async () => {
+    if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
+    setIsGeneratingStyledSlide(true);
+    const toastId = toast.loading(`Generating slide in ${corporateStyleRef.label} style…`);
+    try {
+      const refs = corporateStyleRef.slides.slice(0, 24).map((s) => ({
+        layout: s.layout,
+        title: s.title,
+        subtitle: s.subtitle,
+        body: typeof s.body === 'string' ? s.body : undefined,
+        bullets: Array.isArray((s as any).bullets) ? (s as any).bullets : undefined,
+        notes: s.notes,
+      }));
+      const { data, error } = await supabase.functions.invoke('add-styled-slide', {
+        body: {
+          styleName: corporateStyleRef.label,
+          deckTitle: assetName,
+          referenceSlides: refs,
+          insertPosition: activeIndex + 2,
+        },
+      });
+      if (error) throw new Error(error.message || 'Generation failed');
+      if (!data?.slide) throw new Error('No slide returned');
+      const g = data.slide as any;
+      const bulletsText = Array.isArray(g.bullets) && g.bullets.length
+        ? g.bullets.map((b: string) => `• ${b}`).join('\n')
+        : undefined;
+      const newSlide: SlideData = {
+        id: uuidv4(),
+        layout: (g.layout as SlideData['layout']) || 'content',
+        title: g.title || 'New Slide',
+        subtitle: g.subtitle,
+        body: g.body || bulletsText,
+        notes: g.notes,
+        variant: 'default',
+      };
+      setSlides((prev) => {
+        const next = [...prev];
+        next.splice(activeIndex + 1, 0, newSlide);
+        return next;
+      });
+      setActiveIndex(activeIndex + 1);
+      toast.success(`New ${corporateStyleRef.label} slide added ✨`, { id: toastId });
+    } catch (err) {
+      console.error('add-styled-slide failed', err);
+      toast.error(err instanceof Error ? err.message : 'Could not generate slide', { id: toastId });
+    } finally {
+      setIsGeneratingStyledSlide(false);
+    }
+  }, [corporateStyleRef, assetName, activeIndex]);
+
 
   const addSlide = useCallback((afterIndex: number) => {
     const newSlide: SlideData = {
