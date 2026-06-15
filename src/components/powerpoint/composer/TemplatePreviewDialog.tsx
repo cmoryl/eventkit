@@ -3604,8 +3604,11 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
               <p className="text-xs text-muted-foreground truncate">
                 {editing
                   ? "Click any text on the slides to edit it"
-                  : `${SLIDES.length} slides · ${t.description || "Look & feel preview"}`}
+                  : showRealDeck
+                    ? `${realSlides!.length} approved slides · ${corporateLabel ?? "Corporate deck"}`
+                    : `${SLIDES.length} slides · ${t.description || "Look & feel preview"}`}
               </p>
+
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
