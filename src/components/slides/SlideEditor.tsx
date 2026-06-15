@@ -137,6 +137,29 @@ interface SlideEditorProps {
         }>;
       }>;
     };
+    /** Per-slide shape blueprints (geometry/fills/sample text). */
+    slideBlueprints?: Array<{
+      slideNum: number;
+      layoutFile?: string;
+      bgFill?: string;
+      shapes: Array<{
+        kind: 'shape' | 'placeholder' | 'picture';
+        phType?: string;
+        geom?: string;
+        xPct?: number; yPct?: number; wPct?: number; hPct?: number;
+        fill?: string;
+        line?: string;
+        sampleText?: string;
+      }>;
+    }>;
+    /** Recurring decorative imagery pulled from slideMaster + slideLayouts. */
+    masterAssets?: Array<{
+      source: string;
+      fileName: string;
+      dataUrl: string;
+      xPct?: number; yPct?: number; wPct?: number; hPct?: number;
+      role: 'logo' | 'watermark' | 'decoration';
+    }>;
   } | null;
 }
 
