@@ -271,6 +271,12 @@ const miniBgFor = (kind: PreviewKind, template: DeckTemplate) => {
 
 const shortName = (value: string) => value.replace(/\s+[–-]\s+.*/, '').replace(/\s+Slide$/i, '').slice(0, 28);
 
+// Variant index per template — drives style differences inside each slide kind
+// (chart type, stats layout, bullet markers, process shape, etc.) so that two
+// templates that both lead with e.g. a "chart" slide still look distinct.
+const variantFor = (template: DeckTemplate, kind: PreviewKind, salt = '') =>
+  hashFor(`${template.id}::variant::${kind}::${salt}`);
+
 const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; template: DeckTemplate; compact?: boolean }) => {
   const title = shortName(template.name);
   const textColor = ['editorial', 'bullet', 'comparison'].includes(kind) && isLight(template.palette.bg) ? template.palette.text : template.palette.text;
@@ -278,10 +284,462 @@ const MiniSlide = ({ kind, template, compact = false }: { kind: PreviewKind; tem
   const faint = hexToRgba(textColor, 0.18);
   const accent = template.palette.accent;
   const secondary = template.palette.secondary;
+  const v = variantFor(template, kind);
 
   const Line = ({ w = '70%', color = lineColor }: { w?: string; color?: string }) => (
     <span className="block h-[3px] rounded-full" style={{ width: w, background: color }} />
   );
+
+  // ---------- chart variants ----------
+  const renderChart = () => {
+    const variant = v % 6;
+    if (variant === 0) {
+      // vertical bars
+      return (
+        <div className="flex h-full items-end gap-1.5">
+          {[36, 58, 44, 74, 92].map((h, i) => (
+            <span key={i} className="w-full rounded-t-sm" style={{ height: `${h}%`, background: i === 4 ? accent : hexToRgba(textColor, 0.28) }} />
+          ))}
+        </div>
+      );
+    }
+    if (variant === 1) {
+      // horizontal bars
+      return (
+        <div className="flex h-full flex-col justify-center gap-1.5">
+          {[88, 64, 46, 30].map((w, i) => (
+            <span key={i} className="block h-2.5 rounded-r-sm" style={{ width: `${w}%`, background: i === 0 ? accent : i === 1 ? secondary : hexToRgba(textColor, 0.28) }} />
+          ))}
+        </div>
+      );
+    }
+    if (variant === 2) {
+      // line chart
+      return (
+        <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full">
+          <polyline fill="none" stroke={hexToRgba(textColor, 0.3)} strokeWidth="1.4" points="0,50 20,42 40,46 60,28 80,32 100,12" />
+          <polyline fill="none" stroke={accent} strokeWidth="2.4" points="0,40 20,30 40,36 60,18 80,22 100,6" />
+          {[0, 20, 40, 60, 80, 100].map((x, i) => (
+            <circle key={i} cx={x} cy={[40, 30, 36, 18, 22, 6][i]} r="1.6" fill={accent} />
+          ))}
+        </svg>
+      );
+    }
+    if (variant === 3) {
+      // donut
+      return (
+        <div className="flex h-full items-center justify-center">
+          <div className="relative h-[78%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 42%, ${secondary} 42% 68%, ${hexToRgba(textColor, 0.28)} 68% 100%)` }}>
+            <div className="absolute inset-[22%] rounded-full" style={{ background: template.palette.bg }} />
+          </div>
+        </div>
+      );
+    }
+    if (variant === 4) {
+      // area chart
+      return (
+        <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full">
+          <polygon fill={hexToRgba(accent, 0.5)} points="0,60 0,38 20,28 40,32 60,16 80,22 100,8 100,60" />
+          <polyline fill="none" stroke={accent} strokeWidth="1.8" points="0,38 20,28 40,32 60,16 80,22 100,8" />
+        </svg>
+      );
+    }
+    // stacked bars
+    return (
+      <div className="flex h-full items-end gap-1.5">
+        {[55, 70, 60, 88, 76].map((h, i) => (
+          <div key={i} className="flex w-full flex-col" style={{ height: `${h}%` }}>
+            <span className="w-full rounded-t-sm" style={{ flex: 1, background: accent }} />
+            <span className="w-full" style={{ flex: 1.4, background: secondary }} />
+            <span className="w-full" style={{ flex: 1, background: hexToRgba(textColor, 0.32) }} />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ---------- stats variants ----------
+  const renderStats = () => {
+    const variant = v % 4;
+    const data = [
+      { v: '2.4M', l: 'Reach' },
+      { v: '98%', l: 'CSAT' },
+      { v: '150+', l: 'Cities' },
+      { v: '$12B', l: 'GMV' },
+    ];
+    if (variant === 0) {
+      return (
+        <div className="grid h-full grid-cols-2 gap-1.5">
+          {data.map((s, i) => (
+            <div key={s.v} className="rounded-md p-1" style={{ background: i % 2 ? faint : hexToRgba(accent, 0.16) }}>
+              <div className="text-[10px] font-black leading-none" style={{ color: i === 0 ? accent : textColor }}>{s.v}</div>
+              <Line w="54%" color={faint} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="flex h-full flex-col justify-center divide-y" style={{ color: textColor }}>
+          {data.slice(0, 3).map((s, i) => (
+            <div key={s.v} className="flex items-baseline justify-between py-1" style={{ borderColor: hexToRgba(textColor, 0.18) }}>
+              <span className="text-[11px] font-black" style={{ color: i === 0 ? accent : textColor }}>{s.v}</span>
+              <span className="text-[7px] font-bold opacity-70 uppercase tracking-wide">{s.l}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (variant === 2) {
+      return (
+        <div className="grid h-full grid-cols-4 items-end gap-1">
+          {data.map((s, i) => (
+            <div key={s.v} className="flex flex-col items-center gap-1">
+              <span className="w-full rounded-t-sm" style={{ height: `${40 + i * 14}%`, background: i === 1 ? accent : hexToRgba(textColor, 0.32) }} />
+              <span className="text-[7px] font-black" style={{ color: i === 1 ? accent : textColor }}>{s.v}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full flex-col justify-center gap-1.5">
+        {data.slice(0, 3).map((s, i) => (
+          <div key={s.v} className="flex items-center gap-2">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full text-[7px] font-black" style={{ background: i === 0 ? accent : secondary, color: template.palette.bg }}>{i + 1}</span>
+            <div className="flex-1">
+              <div className="text-[9px] font-black leading-none">{s.v}</div>
+              <Line w="58%" color={faint} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ---------- bullet variants ----------
+  const renderBullet = () => {
+    const variant = v % 4;
+    const widths = [62, 50, 38];
+    return (
+      <div className="space-y-2">
+        <div className="text-[10px] font-black leading-none">{title}</div>
+        {widths.map((w, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            {variant === 0 && <span className="h-2 w-2 rounded-full" style={{ background: i === 1 ? secondary : accent }} />}
+            {variant === 1 && <span className="h-2 w-2 rotate-45" style={{ background: i === 1 ? secondary : accent }} />}
+            {variant === 2 && <span className="text-[8px] font-black" style={{ color: accent }}>{`0${i + 1}`}</span>}
+            {variant === 3 && <span className="block h-2.5 w-0.5 rounded-full" style={{ background: i === 1 ? secondary : accent }} />}
+            <Line w={`${w}%`} />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ---------- process variants ----------
+  const renderProcess = () => {
+    const variant = v % 3;
+    if (variant === 0) {
+      return (
+        <div className="flex h-full items-center justify-between gap-1">
+          {['1', '2', '3'].map((n, i) => (
+            <React.Fragment key={n}>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full text-[10px] font-black" style={{ background: i === 1 ? secondary : accent, color: template.palette.bg }}>{n}</span>
+              {i < 2 && <Line w="18%" color={faint} />}
+            </React.Fragment>
+          ))}
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="flex h-full items-center justify-between gap-1">
+          {['1', '2', '3'].map((n, i) => (
+            <React.Fragment key={n}>
+              <span className="flex h-8 w-8 rotate-45 items-center justify-center text-[10px] font-black" style={{ background: i === 1 ? secondary : accent, color: template.palette.bg }}>
+                <span className="-rotate-45">{n}</span>
+              </span>
+              {i < 2 && <Line w="14%" color={faint} />}
+            </React.Fragment>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full flex-col justify-center gap-1.5">
+        {['Plan', 'Build', 'Ship'].map((s, i) => (
+          <div key={s} className="flex items-center gap-2 rounded-md px-1.5 py-1" style={{ background: hexToRgba(i === 1 ? secondary : accent, 0.18) }}>
+            <span className="flex h-4 w-4 items-center justify-center rounded-sm text-[7px] font-black" style={{ background: i === 1 ? secondary : accent, color: template.palette.bg }}>{i + 1}</span>
+            <Line w={`${70 - i * 10}%`} />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ---------- poll variants ----------
+  const renderPoll = () => {
+    const variant = v % 3;
+    const rows = ['76%', '48%', '31%'];
+    if (variant === 0) {
+      return (
+        <div className="space-y-2">
+          <div className="text-[10px] font-black">Poll</div>
+          {rows.map((n, i) => (
+            <div key={n}><div className="mb-0.5 text-[6px] font-bold opacity-80">{n}</div>
+              <span className="block h-2 rounded-full" style={{ width: n, background: i === 0 ? accent : faint }} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="flex h-full items-end gap-1.5">
+          {rows.concat(['58%']).map((n, i) => (
+            <div key={i} className="flex w-full flex-col items-center gap-1">
+              <span className="w-full rounded-t-sm" style={{ height: n, background: i === 0 ? accent : hexToRgba(textColor, 0.32) }} />
+              <span className="text-[6px] font-bold opacity-70">{n}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="relative h-[78%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 56%, ${secondary} 56% 80%, ${hexToRgba(textColor, 0.28)} 80% 100%)` }}>
+          <div className="absolute inset-[28%] flex items-center justify-center rounded-full text-[8px] font-black" style={{ background: template.palette.bg, color: accent }}>56%</div>
+        </div>
+      </div>
+    );
+  };
+
+  // ---------- agenda variants ----------
+  const renderAgenda = () => {
+    const variant = v % 3;
+    const items = ['01', '02', '03', '04'];
+    if (variant === 0) {
+      return (
+        <div className="space-y-1.5">
+          {items.map((n, i) => (
+            <div key={n} className="flex items-center gap-2 rounded-md px-1.5 py-1" style={{ background: i % 2 ? faint : hexToRgba(accent, 0.14) }}>
+              <span className="text-[8px] font-black" style={{ color: accent }}>{n}</span>
+              <Line w={`${72 - i * 8}%`} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="grid h-full grid-cols-2 gap-1.5">
+          {items.map((n, i) => (
+            <div key={n} className="rounded-md p-1.5" style={{ background: hexToRgba(i % 2 ? secondary : accent, 0.18) }}>
+              <div className="text-[9px] font-black" style={{ color: i % 2 ? secondary : accent }}>{n}</div>
+              <Line w="62%" color={faint} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="relative pl-3">
+        <span className="absolute left-1 top-0 h-full w-[2px]" style={{ background: hexToRgba(accent, 0.55) }} />
+        <div className="space-y-1.5">
+          {items.map((n, i) => (
+            <div key={n} className="flex items-center gap-2">
+              <span className="absolute left-0 h-2 w-2 -translate-x-[1px] rounded-full" style={{ background: i === 1 ? secondary : accent }} />
+              <span className="text-[7px] font-black opacity-80">{n}</span>
+              <Line w={`${66 - i * 8}%`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // ---------- comparison variants ----------
+  const renderComparison = () => {
+    const variant = v % 3;
+    if (variant === 0) {
+      return (
+        <div className="grid h-full grid-cols-2 gap-2">
+          <div className="rounded-md p-1.5" style={{ background: hexToRgba(secondary, 0.18) }}><Line color={secondary} /><Line w="55%" color={faint} /></div>
+          <div className="rounded-md p-1.5" style={{ background: hexToRgba(accent, 0.18) }}><Line color={accent} /><Line w="55%" color={faint} /></div>
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="grid h-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+          <div className="space-y-1 rounded-md p-1.5 text-center" style={{ background: hexToRgba(secondary, 0.2) }}>
+            <div className="text-[11px] font-black" style={{ color: secondary }}>A</div>
+            <Line w="80%" color={faint} />
+          </div>
+          <span className="text-[10px] font-black opacity-60">vs</span>
+          <div className="space-y-1 rounded-md p-1.5 text-center" style={{ background: hexToRgba(accent, 0.2) }}>
+            <div className="text-[11px] font-black" style={{ color: accent }}>B</div>
+            <Line w="80%" color={faint} />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full flex-col justify-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="grid grid-cols-[1fr_1fr] gap-1">
+            <span className="block h-2 rounded-r-sm" style={{ width: `${50 + i * 15}%`, background: hexToRgba(secondary, 0.7), marginLeft: 'auto' }} />
+            <span className="block h-2 rounded-l-sm" style={{ width: `${80 - i * 15}%`, background: hexToRgba(accent, 0.8) }} />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ---------- columns variants ----------
+  const renderColumns = () => {
+    const variant = v % 3;
+    if (variant === 0) {
+      return (
+        <div className="flex h-full flex-col gap-2">
+          <Line w="34%" color={accent} />
+          <div className="grid flex-1 grid-cols-2 gap-2">
+            <div className="space-y-1 rounded-md p-1" style={{ background: faint }}><Line /><Line w="65%" /></div>
+            <div className="space-y-1 rounded-md p-1" style={{ background: hexToRgba(accent, 0.16) }}><Line /><Line w="54%" /></div>
+          </div>
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="grid h-full grid-cols-3 gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="space-y-1 rounded-md p-1" style={{ background: hexToRgba(i === 1 ? accent : secondary, 0.16) }}>
+              <span className="block h-3 w-3 rounded-sm" style={{ background: i === 1 ? accent : secondary }} />
+              <Line /><Line w="58%" color={faint} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full flex-col gap-1.5">
+        {[0, 1].map((i) => (
+          <div key={i} className="grid flex-1 grid-cols-[0.3fr_1fr] gap-2 rounded-md p-1" style={{ background: faint }}>
+            <span className="rounded-sm" style={{ background: i === 0 ? accent : secondary }} />
+            <div className="space-y-1"><Line /><Line w="60%" color={faint} /></div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ---------- team variants ----------
+  const renderTeam = () => {
+    const variant = v % 3;
+    if (variant === 0) {
+      return (
+        <div className="grid h-full grid-cols-2 gap-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-md p-1" style={{ background: i % 2 ? faint : hexToRgba(accent, 0.14) }}>
+              <span className="block h-5 w-5 rounded-full" style={{ background: i % 2 ? secondary : accent }} />
+              <Line w="62%" color={faint} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="grid h-full grid-cols-3 items-center gap-1">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex flex-col items-center gap-1">
+              <span className="h-7 w-7 rounded-full" style={{ background: `linear-gradient(135deg, ${i === 1 ? secondary : accent}, ${i === 1 ? accent : secondary})` }} />
+              <Line w="80%" color={faint} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full flex-col justify-center gap-1.5">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="h-5 w-5 rounded-full" style={{ background: i === 1 ? secondary : accent }} />
+            <div className="flex-1"><Line /><Line w="48%" color={faint} /></div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // ---------- quote variants ----------
+  const renderQuote = () => {
+    const variant = v % 3;
+    if (variant === 0) {
+      return (
+        <div className="flex h-full flex-col items-center justify-center text-center">
+          <div className="font-serif text-[30px] leading-none opacity-40">"</div>
+          <div className="max-w-[84%] text-[9px] font-black italic leading-tight">{title}</div>
+          <Line w="24%" color={accent} />
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="flex h-full items-center gap-2">
+          <span className="block h-full w-1 rounded-full" style={{ background: accent }} />
+          <div className="space-y-1">
+            <div className="text-[9px] font-black italic leading-tight">{title}</div>
+            <Line w="38%" color={faint} />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full flex-col justify-between">
+        <div className="font-serif text-[42px] leading-[0.6]" style={{ color: accent }}>"</div>
+        <div className="text-[9px] font-black italic leading-tight">{title}</div>
+        <div className="flex items-center gap-1.5">
+          <span className="h-3 w-3 rounded-full" style={{ background: secondary }} />
+          <Line w="32%" color={faint} />
+        </div>
+      </div>
+    );
+  };
+
+  // ---------- stat-hero variants ----------
+  const renderStatHero = () => {
+    const variant = v % 3;
+    const values = ['87%', '3.2×', '$48M'];
+    const value = values[v % values.length];
+    if (variant === 0) {
+      return (
+        <div className="flex h-full flex-col justify-center">
+          <div className="text-[32px] font-black leading-none" style={{ color: accent }}>{value}</div>
+          <Line w="58%" /><Line w="38%" color={faint} />
+        </div>
+      );
+    }
+    if (variant === 1) {
+      return (
+        <div className="flex h-full items-center justify-center">
+          <div className="relative h-[80%] aspect-square rounded-full" style={{ background: `conic-gradient(${accent} 0 72%, ${hexToRgba(textColor, 0.2)} 72% 100%)` }}>
+            <div className="absolute inset-[18%] flex items-center justify-center rounded-full text-[10px] font-black" style={{ background: template.palette.bg, color: accent }}>{value}</div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-full flex-col items-center justify-center text-center">
+        <div className="text-[26px] font-black leading-none" style={{ color: accent }}>{value}</div>
+        <div className="mt-1 h-[2px] w-10 rounded-full" style={{ background: secondary }} />
+        <div className="mt-1 text-[6px] font-black uppercase opacity-70">vs last cycle</div>
+      </div>
+    );
+  };
 
   return (
     <div
