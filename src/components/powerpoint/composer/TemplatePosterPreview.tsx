@@ -4,7 +4,7 @@ import type { DeckTemplate } from './TemplateGallery';
 import { cn } from '@/lib/utils';
 import { ScaledSlide } from '@/components/slides/ScaledSlide';
 import { SlideRenderer } from '@/components/slides/SlideRenderer';
-import { applyDemoTheme, resolveDemoThemeId, type SlideData } from '@/components/slides/slideTypes';
+import { resolveDemoThemeId, type SlideData } from '@/components/slides/slideTypes';
 import { getThemePack } from '@/components/slides/themePacks';
 
 const isLight = (hex: string) => {
