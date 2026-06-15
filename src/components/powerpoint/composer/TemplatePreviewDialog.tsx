@@ -1392,12 +1392,18 @@ export const SlideMock: React.FC<{
 
       {/* CHART */}
       {kind === "chart" && (
-        <div className="relative h-full p-8 grid grid-cols-3 gap-4 z-10">
-          <div className="col-span-2 rounded-lg p-4 flex flex-col" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+        <div className={cn("relative h-full z-10", look === 'brutalist-poster' ? 'grid grid-cols-[0.62fr_1fr] gap-5 p-8' : look === 'editorial-atlas' || look === 'literary-monograph' ? 'grid grid-cols-[0.52fr_1.25fr_0.58fr] gap-6 p-10' : look === 'startup-collage' ? 'p-8' : 'grid grid-cols-3 gap-4 p-8')}>
+          {(look === 'brutalist-poster' || look === 'editorial-atlas' || look === 'literary-monograph') && (
+            <div className={cn("flex flex-col justify-between", look === 'brutalist-poster' ? 'border-4 p-4 uppercase' : 'border-r pr-5 font-serif')} style={{ borderColor: look === 'brutalist-poster' ? t.palette.text : hexToRgba(t.palette.text, 0.26), background: look === 'brutalist-poster' ? t.palette.accent : 'transparent', color: look === 'brutalist-poster' ? t.palette.bg : t.palette.text }}>
+              <span className="text-xs font-black uppercase tracking-widest">{content.chart.unit || 'Index'}</span>
+              <span className={cn("leading-none", look === 'brutalist-poster' ? 'text-7xl font-black' : 'text-6xl')}>{content.chart.series.length}</span>
+            </div>
+          )}
+          <div className={cn("flex flex-col", look === 'startup-collage' ? 'absolute bottom-8 right-8 h-[68%] w-[72%] rotate-2 rounded-2xl border-4 p-5' : look === 'brutalist-poster' || look === 'editorial-atlas' || look === 'literary-monograph' ? 'p-0' : 'col-span-2 rounded-lg p-4')} style={{ background: look === 'startup-collage' ? hexToRgba(t.palette.bg, 0.86) : cardBg, border: look === 'startup-collage' ? `4px solid ${t.palette.text}` : look === 'brutalist-poster' || look === 'editorial-atlas' || look === 'literary-monograph' ? 'none' : `1px solid ${subtleBorder}` }}>
             <div className="flex items-center gap-2">
               <LineChartIcon className="h-3.5 w-3.5" style={{ color: t.palette.accent }} />
               <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
-                Trend
+                {dataGraphic.replace(/-/g, ' ')}
               </span>
             </div>
             <Editable
@@ -1410,41 +1416,35 @@ export const SlideMock: React.FC<{
               style={{ color: t.palette.text }}
             />
             <div className="flex-1 mt-2 min-h-0">
-              <BarLineChart
+              <DataGraphic
+                system={dataGraphic}
                 series={content.chart.series}
-                trendline={content.chart.trendline}
                 accent={t.palette.accent}
                 secondary={t.palette.secondary}
                 text={t.palette.text}
+                bg={t.palette.bg}
                 muted={muted}
-                unit={content.chart.unit}
+                seed={index + 3}
               />
             </div>
           </div>
-          <div className="flex flex-col gap-3 min-h-0">
-            <div className="rounded-lg p-4" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+          <div className={cn("flex flex-col gap-3 min-h-0", (look === 'brutalist-poster' || look === 'startup-collage') && 'hidden', (look === 'editorial-atlas' || look === 'literary-monograph') && 'border-l pl-5')} style={(look === 'editorial-atlas' || look === 'literary-monograph') ? { borderColor: hexToRgba(t.palette.text, 0.24) } : undefined}>
+            <div className="p-4" style={{ background: cardBg, border: `1px solid ${subtleBorder}`, borderRadius: look === 'terminal-grid' || look === 'systems-blueprint' ? 2 : look === 'organic-fieldnotes' ? 22 : 10 }}>
               <div className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: muted }}>
                 Distribution
               </div>
-              <Donut
-                percent={Math.min(
-                  100,
-                  Math.round(
-                    ((content.chart.series.at(-1)?.value || 0) /
-                      Math.max(content.chart.series.reduce((a, b) => a + b.value, 0), 1)) *
-                      100 *
-                      content.chart.series.length,
-                  ),
-                )}
+              <DataGraphic
+                system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + 5) % DATA_GRAPHICS.length]}
+                series={content.chart.series.slice(0, 4)}
                 accent={t.palette.accent}
-                track={t.palette.text}
-                label="Latest share"
-                sub="of total period"
+                secondary={t.palette.secondary}
                 text={t.palette.text}
+                bg={t.palette.bg}
                 muted={muted}
+                seed={index + 9}
               />
             </div>
-            <div className="rounded-lg p-4 flex-1 flex items-center gap-3" style={{ background: cardBg, border: `1px solid ${subtleBorder}` }}>
+            <div className="p-4 flex-1 flex items-center gap-3" style={{ background: cardBg, border: `1px solid ${subtleBorder}`, borderRadius: look === 'terminal-grid' || look === 'systems-blueprint' ? 2 : look === 'organic-fieldnotes' ? 22 : 10 }}>
               <TrendingUp className="h-5 w-5" style={{ color: t.palette.accent }} />
               <div className="min-w-0">
                 <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: muted }}>
