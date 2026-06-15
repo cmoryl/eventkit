@@ -18,10 +18,11 @@ import { TemplatePreviewDialog, type SlideKind } from "./TemplatePreviewDialog";
 import type { DeckTemplate } from "./TemplateGallery";
 
 // Maps the gallery's PreviewKind taxonomy to the full preview dialog's SlideKind taxonomy.
-const PREVIEW_KIND_TO_SLIDE_KIND: Record<PreviewKind, SlideKind> = {
+const PREVIEW_KIND_TO_SLIDE_KIND: Partial<Record<PreviewKind, SlideKind>> = {
   title: "title",
   section: "section",
   stats: "kpi-hero",
+  "stat-hero": "stat",
   chart: "chart",
   quote: "quote",
   agenda: "agenda",
@@ -29,6 +30,16 @@ const PREVIEW_KIND_TO_SLIDE_KIND: Record<PreviewKind, SlideKind> = {
   process: "process",
   "image-split": "feature-split",
   closing: "stat",
+  editorial: "section",
+  columns: "cards",
+  bullet: "cards",
+  comparison: "compare",
+  "full-bleed": "gallery",
+  "webinar-title": "title",
+  speaker: "team",
+  qa: "quote",
+  poll: "metrics",
+  stream: "gallery",
 };
 
 interface Props {
