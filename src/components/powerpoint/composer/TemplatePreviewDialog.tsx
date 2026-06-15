@@ -2043,14 +2043,15 @@ export const SlideMock: React.FC<{
                   {/* Non-image tile: inject a brand-tinted visual so it doesn't feel empty */}
                   {!tileImg && (
                     <div className="absolute inset-0 pointer-events-none opacity-80">
-                      <VisualVariant
-                        variant={pickVariant(t.id, `bento-${i}`, index + i)}
+                      <DataGraphic
+                        system={DATA_GRAPHICS[(DATA_GRAPHICS.indexOf(dataGraphic) + i * 2 + 4) % DATA_GRAPHICS.length]}
+                        series={content.chart.series.slice(0, 5)}
                         accent={t.palette.accent}
                         secondary={t.palette.secondary}
                         text={t.palette.text}
+                        bg={t.palette.bg}
                         muted={muted}
                         seed={i + 4}
-                        size="md"
                       />
                       <div
                         className="absolute inset-0"
