@@ -53,6 +53,23 @@ interface ReqBody {
       }>;
     }>;
   };
+  // Per-slide shape blueprints (geometry/fills/sample text) — describes how
+  // the master deck actually composes pages so the AI can reuse compositional
+  // motifs (sidebars, accent bars, panels) instead of inventing them.
+  slideBlueprints?: Array<{
+    slideNum: number;
+    layoutFile?: string;
+    bgFill?: string;
+    shapes: Array<{
+      kind: 'shape' | 'placeholder' | 'picture';
+      phType?: string;
+      geom?: string;
+      xPct?: number; yPct?: number; wPct?: number; hPct?: number;
+      fill?: string;
+      line?: string;
+      sampleText?: string;
+    }>;
+  }>;
 }
 
 Deno.serve(async (req) => {
@@ -123,12 +140,38 @@ ${tokens.name ? `- Theme name: ${tokens.name}\n` : ""}${colorEntries.length ? `-
 ${JSON.stringify(compactLayouts, null, 2)}\n`
       : "";
 
+    // Compact blueprint summary — picks 6 distinctive slides and lists their
+    // non-placeholder decorative shapes (geometry + fill) so the model knows
+    // the master deck uses, e.g., a left accent bar or a colored sidebar.
+    const blueprints = body.slideBlueprints || [];
+    const interesting = blueprints
+      .map((b) => ({
+        slideNum: b.slideNum,
+        bgFill: b.bgFill,
+        // Only keep decorative shapes (non-placeholder, non-picture) with a fill
+        decor: b.shapes
+          .filter((s) => s.kind === 'shape' && s.fill && s.geom)
+          .slice(0, 6)
+          .map((s) => ({
+            geom: s.geom,
+            fill: s.fill,
+            x: s.xPct, y: s.yPct, w: s.wPct, h: s.hPct,
+          })),
+      }))
+      .filter((b) => b.decor.length > 0 || b.bgFill)
+      .slice(0, 6);
+    const blueprintBlock = interesting.length
+      ? `\nMaster-deck composition blueprints (real shapes pulled from existing slides — reuse the same compositional motifs):
+${JSON.stringify(interesting, null, 2)}
+When choosing a layout, prefer ones whose master slides already use similar decorative shapes. Mention in 'notes' any motif you're carrying over (e.g. "left accent bar from cover slide").\n`
+      : "";
+
     const userPrompt = `You are generating ONE new slide that must match the voice, tone, structure, and visual layout patterns of ${styleName}.
 
 Deck title: ${body.deckTitle || "(untitled)"}
 ${body.audience ? `Audience: ${body.audience}\n` : ""}
 ${body.styleNotes ? `Style notes: ${body.styleNotes}\n` : ""}
-${body.insertPosition ? `This slide will be inserted at position ${body.insertPosition}.\n` : ""}${tokensBlock}${layoutBlock}
+${body.insertPosition ? `This slide will be inserted at position ${body.insertPosition}.\n` : ""}${tokensBlock}${layoutBlock}${blueprintBlock}
 User request for the new slide: ${body.prompt?.trim() || "Create a useful next slide that fits naturally into the deck. Pick a layout the deck hasn't overused."}
 
 Reference slides (existing deck — match this style precisely):

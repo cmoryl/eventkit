@@ -137,6 +137,29 @@ interface SlideEditorProps {
         }>;
       }>;
     };
+    /** Per-slide shape blueprints (geometry/fills/sample text). */
+    slideBlueprints?: Array<{
+      slideNum: number;
+      layoutFile?: string;
+      bgFill?: string;
+      shapes: Array<{
+        kind: 'shape' | 'placeholder' | 'picture';
+        phType?: string;
+        geom?: string;
+        xPct?: number; yPct?: number; wPct?: number; hPct?: number;
+        fill?: string;
+        line?: string;
+        sampleText?: string;
+      }>;
+    }>;
+    /** Recurring decorative imagery pulled from slideMaster + slideLayouts. */
+    masterAssets?: Array<{
+      source: string;
+      fileName: string;
+      dataUrl: string;
+      xPct?: number; yPct?: number; wPct?: number; hPct?: number;
+      role: 'logo' | 'watermark' | 'decoration';
+    }>;
   } | null;
 }
 
@@ -389,6 +412,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           insertPosition: activeIndex + 2,
           themeTokens: corporateStyleRef.themeTokens,
           layoutCatalog: corporateStyleRef.layoutCatalog,
+          slideBlueprints: corporateStyleRef.slideBlueprints,
         },
       });
       if (error) throw new Error(error.message || 'Generation failed');
@@ -397,6 +421,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       const bulletsText = Array.isArray(g.bullets) && g.bullets.length
         ? g.bullets.map((b: string) => `• ${b}`).join('\n')
         : undefined;
+      // Theme tokens straight from theme1.xml — bake the master's bg/text
+      // colors directly into the generated slide so it visually inherits the
+      // template look instead of falling back to the editor's default theme.
+      const tk = corporateStyleRef.themeTokens?.colors || {};
+      const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
       const newSlide: SlideData = {
         id: uuidv4(),
         layout: (g.layout as SlideData['layout']) || 'content',
@@ -405,6 +434,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         body: g.body || bulletsText,
         notes: g.notes,
         variant: 'default',
+        ...(themeBg ? { bgColor: themeBg } : {}),
       };
       setPendingStyledSlide(newSlide);
       setPendingGenerated({
@@ -414,42 +444,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         notes: newSlide.notes,
       });
       const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
-
-      // Resolve the matching master layout from the catalog and label each
-      // placeholder with the slide field it will be filled by — drives the
-      // overlay in the preview dialog.
-      const catalogLayouts = corporateStyleRef.layoutCatalog?.layouts || [];
-      const matched = layoutName
-        ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
-        : undefined;
-      if (matched) {
-        const fillFor = (t: string): string | undefined => {
-          const k = t.toLowerCase();
-          if (k === 'ctrtitle' || k === 'title') return newSlide.title ? 'Title' : 'Title (empty)';
-          if (k === 'subtitle') return newSlide.subtitle ? 'Subtitle' : 'Subtitle (empty)';
-          if (k === 'body') return newSlide.body ? 'Body' : 'Body (empty)';
-          if (k === 'pic') return 'Image (none yet)';
-          if (k === 'ftr') return 'Footer';
-          if (k === 'sldnum') return 'Slide number';
-          if (k === 'dt') return 'Date';
-          return undefined;
-        };
-        setPendingStyledLayout({
-          name: matched.name,
-          type: matched.type,
-          placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
-        });
-        // Default every placeholder assignment to 'auto' so the live preview
-        // matches the AI's original mapping until the user overrides it.
-        const defaults: Record<string, PhAssign> = {};
-        matched.placeholders.forEach((p, i) => {
-          defaults[`${p.type}-${p.idx ?? i}`] = { source: 'auto' };
-        });
-        setPlaceholderAssignments(defaults);
-      } else {
-        setPendingStyledLayout(null);
-        setPlaceholderAssignments({});
-      }
+      applyResolvedLayout(layoutName, newSlide);
 
       toast.success(
         layoutName
@@ -463,7 +458,48 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     } finally {
       setIsGeneratingStyledSlide(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [corporateStyleRef, assetName, activeIndex]);
+
+  /** Resolve a master layout by name and set pendingStyledLayout + default assignments. */
+  const applyResolvedLayout = useCallback((layoutName: string | null, slideForFill: SlideData) => {
+    const catalogLayouts = corporateStyleRef?.layoutCatalog?.layouts || [];
+    const matched = layoutName
+      ? catalogLayouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase())
+      : undefined;
+    if (!matched) {
+      setPendingStyledLayout(null);
+      setPlaceholderAssignments({});
+      return;
+    }
+    const fillFor = (t: string): string | undefined => {
+      const k = t.toLowerCase();
+      if (k === 'ctrtitle' || k === 'title') return slideForFill.title ? 'Title' : 'Title (empty)';
+      if (k === 'subtitle') return slideForFill.subtitle ? 'Subtitle' : 'Subtitle (empty)';
+      if (k === 'body') return slideForFill.body ? 'Body' : 'Body (empty)';
+      if (k === 'pic') return slideForFill.imageUrl ? 'Image (master)' : 'Image (none yet)';
+      if (k === 'ftr') return 'Footer';
+      if (k === 'sldnum') return 'Slide number';
+      if (k === 'dt') return 'Date';
+      return undefined;
+    };
+    setPendingStyledLayout({
+      name: matched.name,
+      type: matched.type,
+      placeholders: matched.placeholders.map((p) => ({ ...p, fills: fillFor(p.type) })),
+    });
+    const defaults: Record<string, PhAssign> = {};
+    matched.placeholders.forEach((p, i) => {
+      defaults[`${p.type}-${p.idx ?? i}`] = { source: 'auto' };
+    });
+    setPlaceholderAssignments(defaults);
+  }, [corporateStyleRef]);
+
+  /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
+  const applyMasterAsset = useCallback((dataUrl: string | null) => {
+    setPendingStyledSlide((prev) => (prev ? { ...prev, imageUrl: dataUrl ?? undefined } : prev));
+  }, []);
+
   const addStyledSlide = generateStyledSlide;
   const confirmInsertPendingSlide = useCallback(() => {
     const slideToInsert = previewSlide ?? pendingStyledSlide;
@@ -2687,17 +2723,41 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 : <>Review before inserting after slide {activeIndex + 1}</>}
             </p>
           </div>
-          {pendingStyledLayout && pendingStyledLayout.placeholders.length > 0 && (
-            <Button
-              variant={showPlaceholderOverlay ? 'secondary' : 'outline'}
-              size="sm"
-              onClick={() => setShowPlaceholderOverlay((v) => !v)}
-              className="shrink-0"
-              title="Toggle master-layout placeholder overlay"
-            >
-              {showPlaceholderOverlay ? 'Hide placeholders' : 'Show placeholders'}
-            </Button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Layout picker — switch to any other layout in the master catalog. */}
+            {corporateStyleRef?.layoutCatalog?.layouts && corporateStyleRef.layoutCatalog.layouts.length > 0 && (
+              <Select
+                value={pendingStyledLayout?.name ?? ''}
+                onValueChange={(name) => {
+                  const slideForFill = previewSlide ?? pendingStyledSlide;
+                  if (slideForFill) applyResolvedLayout(name, slideForFill);
+                }}
+              >
+                <SelectTrigger className="h-8 w-[200px] text-xs">
+                  <SelectValue placeholder="Choose master layout…" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[60vh]">
+                  {Array.from(
+                    new Map(corporateStyleRef.layoutCatalog.layouts.map((l) => [l.name.trim().toLowerCase(), l])).values(),
+                  ).map((l) => (
+                    <SelectItem key={l.fileName} value={l.name}>
+                      {l.name} <span className="text-muted-foreground">({l.placeholders.length} ph)</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {pendingStyledLayout && pendingStyledLayout.placeholders.length > 0 && (
+              <Button
+                variant={showPlaceholderOverlay ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => setShowPlaceholderOverlay((v) => !v)}
+                title="Toggle master-layout placeholder overlay"
+              >
+                {showPlaceholderOverlay ? 'Hide placeholders' : 'Show placeholders'}
+              </Button>
+            )}
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px] bg-black/40">
           <div className="p-4 min-w-0">
@@ -2867,6 +2927,47 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 >
                   Reset to auto mapping
                 </Button>
+              </div>
+            )}
+
+            {/* Master imagery strip — drop a logo/decoration from the master deck onto this slide. */}
+            {corporateStyleRef?.masterAssets && corporateStyleRef.masterAssets.length > 0 && (
+              <div className="mt-5 pt-4 border-t border-border/60">
+                <h3 className="text-sm font-semibold">Master imagery</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5 mb-2">
+                  Recurring logos and decorations from the master deck. Click to attach.
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {pendingStyledSlide?.imageUrl && (
+                    <button
+                      type="button"
+                      className="aspect-video rounded border border-dashed border-border bg-muted/40 text-[10px] text-muted-foreground hover:bg-muted col-span-3 py-2"
+                      onClick={() => applyMasterAsset(null)}
+                    >
+                      Clear attached imagery
+                    </button>
+                  )}
+                  {corporateStyleRef.masterAssets.map((a) => {
+                    const active = pendingStyledSlide?.imageUrl === a.dataUrl;
+                    return (
+                      <button
+                        type="button"
+                        key={`${a.source}-${a.fileName}`}
+                        onClick={() => applyMasterAsset(a.dataUrl)}
+                        title={`${a.role} · from ${a.source}`}
+                        className={cn(
+                          'aspect-video rounded border bg-card/60 overflow-hidden relative group',
+                          active ? 'border-primary ring-2 ring-primary/40' : 'border-border hover:border-primary/60',
+                        )}
+                      >
+                        <img src={a.dataUrl} alt={a.role} className="w-full h-full object-contain p-1 bg-white/5" />
+                        <span className="absolute bottom-0 left-0 right-0 text-[9px] uppercase tracking-wide bg-black/60 text-white py-0.5 text-center opacity-0 group-hover:opacity-100">
+                          {a.role}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </aside>

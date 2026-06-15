@@ -4,7 +4,7 @@ import { ArrowLeft, Presentation, Loader2, Send, Download, Sparkles, RefreshCw, 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
-import { parsePptxFile, parsePptxThemeTokens, parsePptxLayoutCatalog, type PptxThemeTokens, type PptxLayoutCatalog } from "@/components/slides/importPptx";
+import { parsePptxFile, parsePptxThemeTokens, parsePptxLayoutCatalog, parsePptxSlideBlueprints, parsePptxMasterAssets, type PptxThemeTokens, type PptxLayoutCatalog, type PptxSlideBlueprint, type PptxMasterAsset } from "@/components/slides/importPptx";
 import { type SlideData } from "@/components/slides/slideTypes";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
 import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
@@ -142,6 +142,13 @@ const PowerPointAgent: React.FC = () => {
   // ppt/slideLayouts/*.xml. Lets the AI pick from layouts that actually exist
   // in the master (with their real placeholder geometry).
   const [templateLayoutCatalog, setTemplateLayoutCatalog] = useState<PptxLayoutCatalog | null>(null);
+  // Per-slide shape blueprints (geometry/fills/sample text) for every slide in
+  // the master deck. Lets the AI describe how the deck actually composes pages.
+  const [templateSlideBlueprints, setTemplateSlideBlueprints] = useState<PptxSlideBlueprint[] | null>(null);
+  // Recurring decorative imagery (logos / watermarks / decoration panels)
+  // pulled from the slide master + slide layouts. Surfaced in the preview so
+  // the user can attach any of them to a generated slide as the imageUrl.
+  const [templateMasterAssets, setTemplateMasterAssets] = useState<PptxMasterAsset[] | null>(null);
 
   // Stable key for SlideEditor — changes when a new AI deck or template starter is loaded,
   // forcing a remount so initialSlides are picked up rather than the stale state.
@@ -213,6 +220,21 @@ const PowerPointAgent: React.FC = () => {
       } catch (layoutErr) {
         console.warn("Layout catalog parse failed (non-fatal):", layoutErr);
         setTemplateLayoutCatalog(null);
+      }
+      // Per-slide shape blueprints + master-deck imagery
+      try {
+        const bp = await parsePptxSlideBlueprints(file);
+        setTemplateSlideBlueprints(bp.blueprints);
+      } catch (bpErr) {
+        console.warn("Slide blueprint parse failed (non-fatal):", bpErr);
+        setTemplateSlideBlueprints(null);
+      }
+      try {
+        const assets = await parsePptxMasterAssets(file);
+        setTemplateMasterAssets(assets);
+      } catch (assetErr) {
+        console.warn("Master-asset parse failed (non-fatal):", assetErr);
+        setTemplateMasterAssets(null);
       }
       // Also load as extracted source so the AI Agent can generate variations from it.
       setPdfFile(null);
@@ -1443,6 +1465,8 @@ const PowerPointAgent: React.FC = () => {
                 slides: templateStarterSlides,
                 themeTokens: templateThemeTokens ?? undefined,
                 layoutCatalog: templateLayoutCatalog ?? undefined,
+                slideBlueprints: templateSlideBlueprints ?? undefined,
+                masterAssets: templateMasterAssets ?? undefined,
               }
             : null
         }
