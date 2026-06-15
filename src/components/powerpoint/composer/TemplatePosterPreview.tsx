@@ -571,6 +571,34 @@ const MiniSlide = ({ kind, template, compact = false, look: forcedLook }: { kind
     const isData = ['stats', 'stat-hero', 'chart', 'poll', 'comparison'].includes(kind);
     const isPeople = ['team', 'speaker', 'webinar-title', 'qa', 'stream'].includes(kind);
 
+    if (isData) {
+      if (look === 'brutalist-poster') {
+        return <div className="grid h-full grid-cols-[0.42fr_1fr] gap-1.5"><div className="flex flex-col justify-between border-2 p-1" style={{ borderColor: textColor, background: accent, color: template.palette.bg }}><span className="text-[8px] font-black uppercase">{kind}</span><span className="text-[24px] font-black leading-none">96</span></div><div className="border-2 p-1" style={{ borderColor: textColor }}>{renderChart()}</div></div>;
+      }
+      if (look === 'editorial-atlas' || look === 'literary-monograph') {
+        return <div className="grid h-full grid-cols-[0.24fr_1fr] gap-2"><div className="border-r pr-1 font-serif" style={{ borderColor: hexToRgba(textColor, 0.32) }}><div className="text-[28px] leading-none" style={{ color: accent }}>{look === 'literary-monograph' ? 'Δ' : '04'}</div><div className="mt-1 text-[5px] font-black uppercase tracking-[0.2em] opacity-60">data</div></div><div className="border-b border-l p-1" style={{ borderColor: hexToRgba(textColor, 0.24) }}>{renderChart()}</div></div>;
+      }
+      if (look === 'startup-collage') {
+        return <div className="relative h-full w-full"><div className="absolute left-1 top-0 rounded-xl border-2 px-2 py-1 text-[7px] font-black rotate-[-6deg]" style={{ borderColor: textColor, background: accent, color: template.palette.bg }}>GROWTH</div><div className="absolute bottom-0 right-0 h-[78%] w-[88%] rotate-2 rounded-xl border-2 p-2" style={{ borderColor: textColor, background: hexToRgba(template.palette.bg, 0.84) }}>{renderChart()}</div></div>;
+      }
+      if (look === 'organic-fieldnotes') {
+        return <div className="relative h-full w-full"><div className="absolute inset-0 rounded-[42%_58%_51%_49%]" style={{ background: hexToRgba(secondary, 0.12), border: `1px solid ${hexToRgba(textColor, 0.2)}` }} /><div className="relative h-full p-2">{renderChart()}</div></div>;
+      }
+      if (look === 'broadcast-control') {
+        return <div className="grid h-full grid-rows-[auto_1fr] gap-1"><div className="flex items-center justify-between"><span className="rounded-full px-1.5 py-0.5 text-[6px] font-black" style={{ background: accent, color: template.palette.bg }}>LIVE DATA</span><span className="text-[6px] font-black opacity-60">REC ●</span></div><div className="rounded-lg border p-1" style={{ borderColor: hexToRgba(accent, 0.38), background: hexToRgba(template.palette.bg, 0.72) }}>{renderChart()}</div></div>;
+      }
+      if (look === 'systems-blueprint' || look === 'terminal-grid') {
+        return <div className="grid h-full grid-cols-[0.18fr_1fr] gap-1.5 font-mono"><div className="flex flex-col items-center justify-between border-r py-1 text-[6px] font-black" style={{ borderColor: hexToRgba(accent, 0.3), color: accent }}><span>Y</span><span>0</span><span>X</span></div><div className="border p-1" style={{ borderColor: hexToRgba(accent, 0.34) }}>{renderChart()}</div></div>;
+      }
+      if (look === 'boardroom-ledger') {
+        return <div className="grid h-full grid-rows-[auto_1fr] gap-1.5"><div className="flex justify-between border-b pb-1" style={{ borderColor: hexToRgba(accent, 0.42) }}><span className="text-[8px] font-black">Q4 MODEL</span><span className="text-[6px] opacity-60">AUDITED</span></div>{renderChart()}</div>;
+      }
+      if (look === 'cinematic-storyboard') {
+        return <div className="grid h-full grid-cols-[0.26fr_1fr] gap-1"><div className="grid grid-rows-4 gap-1">{[0, 1, 2, 3].map((i) => <span key={i} style={{ background: i === 1 ? accent : hexToRgba(textColor, 0.22) }} />)}</div><div className="border p-1" style={{ borderColor: hexToRgba(textColor, 0.24) }}>{renderChart()}</div></div>;
+      }
+      return <div className="h-full w-full rounded-md border p-1.5" style={{ borderColor: faint, background: hexToRgba(textColor, 0.05) }}>{renderChart()}</div>;
+    }
+
     if (look === 'orbital-intelligence' || look === 'data-observatory') {
       return (
         <div className="relative h-full w-full">
