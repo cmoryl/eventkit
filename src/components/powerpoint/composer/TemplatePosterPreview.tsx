@@ -1207,7 +1207,8 @@ export interface TemplatePosterPreviewProps {
 export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ template, selected, disabled, saved, shared, dense, onClick }) => {
   const light = isLight(template.palette.bg);
   const kind = kindFor(template);
-  const surface = surfaceFor(template, light, kind);
+  const look = lookFor(template, kind);
+  const surface = surfaceFor(template, light, kind, look);
   const icons = featureIconsFor(kind);
   return (
     <button
@@ -1224,7 +1225,8 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
     >
       <div className="absolute inset-0" style={{ background: surface.base }} />
       <div className="absolute inset-0 opacity-85" style={{ background: surface.pattern }} />
-      <DeckPreviewVisual t={template} kind={kind} />
+      <LookMotif look={look} template={template} textColor={template.palette.text} />
+      <DeckPreviewVisual t={template} kind={kind} look={look} />
 
       <div className="relative flex h-full min-h-[inherit] flex-col justify-between p-5">
         <div className="flex items-start justify-between gap-3">
