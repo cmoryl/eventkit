@@ -186,40 +186,66 @@ const miniDeckFor = (kind: PreviewKind): PreviewKind[] => {
   return map[kind];
 };
 
+const SURFACE_VARIANTS = [
+  // 0 — diagonal accent stripe + soft secondary glow
+  (t: DeckTemplate, l: boolean) =>
+    `linear-gradient(115deg, transparent 0 48%, ${hexToRgba(t.palette.accent, 0.28)} 48% 58%, transparent 58% 100%), radial-gradient(circle at 80% 20%, ${hexToRgba(t.palette.secondary, 0.32)}, transparent 45%)`,
+  // 1 — dot grid
+  (t: DeckTemplate, l: boolean) =>
+    `radial-gradient(${hexToRgba(t.palette.text, l ? 0.18 : 0.22)} 1px, transparent 1.4px) 0 0 / 18px 18px, linear-gradient(180deg, transparent, ${hexToRgba(t.palette.accent, 0.16)})`,
+  // 2 — corner orb / aurora
+  (t: DeckTemplate) =>
+    `radial-gradient(circle at 12% 88%, ${hexToRgba(t.palette.accent, 0.55)}, transparent 38%), radial-gradient(circle at 78% 14%, ${hexToRgba(t.palette.secondary, 0.45)}, transparent 42%)`,
+  // 3 — graph paper grid
+  (t: DeckTemplate, l: boolean) =>
+    `repeating-linear-gradient(90deg, ${hexToRgba(t.palette.text, l ? 0.06 : 0.08)} 0 1px, transparent 1px 32px), repeating-linear-gradient(0deg, ${hexToRgba(t.palette.text, l ? 0.05 : 0.07)} 0 1px, transparent 1px 32px)`,
+  // 4 — diagonal hatched stripes
+  (t: DeckTemplate) =>
+    `repeating-linear-gradient(45deg, ${hexToRgba(t.palette.accent, 0.16)} 0 6px, transparent 6px 22px), linear-gradient(180deg, transparent, ${hexToRgba(t.palette.secondary, 0.2)})`,
+  // 5 — editorial column rule
+  (t: DeckTemplate) =>
+    `linear-gradient(90deg, ${hexToRgba(t.palette.accent, 0.16)} 0 2px, transparent 2px 100%), repeating-linear-gradient(0deg, ${hexToRgba(t.palette.text, 0.04)} 0 1px, transparent 1px 16px)`,
+  // 6 — concentric arcs
+  (t: DeckTemplate) =>
+    `radial-gradient(circle at 100% 0%, transparent 22%, ${hexToRgba(t.palette.accent, 0.22)} 22% 24%, transparent 24% 38%, ${hexToRgba(t.palette.secondary, 0.18)} 38% 40%, transparent 40%)`,
+  // 7 — confetti dots in accent
+  (t: DeckTemplate) =>
+    `radial-gradient(${hexToRgba(t.palette.accent, 0.42)} 2px, transparent 2.4px) 4px 6px / 38px 38px, radial-gradient(${hexToRgba(t.palette.secondary, 0.32)} 1.6px, transparent 2px) 20px 22px / 46px 46px`,
+];
+
 const surfaceFor = (template: DeckTemplate, light: boolean, kind: PreviewKind) => {
   const bg = template.backgroundCss && template.backgroundCss !== 'transparent' ? template.backgroundCss : template.palette.bg;
   const base = bg.includes('gradient')
     ? bg
     : `linear-gradient(145deg, ${template.palette.bg} 0%, ${hexToRgba(template.palette.accent, light ? 0.14 : 0.2)} 58%, ${template.palette.secondary} 100%)`;
 
-  if (kind === 'editorial' || kind === 'bullet' || kind === 'comparison') {
-    return {
-      base,
-      pattern: `linear-gradient(90deg, ${hexToRgba(template.palette.accent, 0.1)} 0 1px, transparent 1px 100%), repeating-linear-gradient(0deg, ${hexToRgba(template.palette.text, 0.035)} 0 1px, transparent 1px 18px)`,
-    };
-  }
-  if (kind === 'stats' || kind === 'chart' || kind === 'stat-hero') {
-    return {
-      base,
-      pattern: `repeating-linear-gradient(90deg, ${hexToRgba(template.palette.text, light ? 0.06 : 0.08)} 0 1px, transparent 1px 34px), repeating-linear-gradient(0deg, ${hexToRgba(template.palette.text, light ? 0.04 : 0.06)} 0 1px, transparent 1px 34px)`,
-    };
-  }
-  if (kind === 'webinar-title' || kind === 'agenda' || kind === 'speaker' || kind === 'qa' || kind === 'poll') {
-    return {
-      base,
-      pattern: `linear-gradient(110deg, transparent 0 42%, ${hexToRgba(template.palette.accent, 0.22)} 42% 44%, transparent 44% 100%), linear-gradient(180deg, ${hexToRgba(template.palette.secondary, 0.16)}, transparent 55%)`,
-    };
-  }
-  if (kind === 'section' || kind === 'full-bleed' || kind === 'stream') {
-    return {
-      base,
-      pattern: `linear-gradient(115deg, transparent 0 52%, ${hexToRgba(template.palette.accent, 0.28)} 52% 64%, transparent 64% 100%), linear-gradient(25deg, ${hexToRgba(template.palette.secondary, 0.22)}, transparent 45%)`,
-    };
-  }
-  return {
-    base,
-    pattern: `linear-gradient(120deg, ${hexToRgba(template.palette.accent, 0.18)} 0 16%, transparent 16% 100%), linear-gradient(180deg, transparent, ${hexToRgba(template.palette.secondary, 0.18)})`,
+  // Kind-tied bias: each kind has 2-3 preferred surface variants, then hash picks
+  const bias: Partial<Record<PreviewKind, number[]>> = {
+    editorial: [5, 1],
+    bullet: [5, 3],
+    comparison: [3, 5],
+    stats: [3, 1],
+    chart: [3, 7],
+    'stat-hero': [2, 0],
+    'webinar-title': [2, 0],
+    agenda: [5, 3],
+    speaker: [2, 0],
+    qa: [6, 2],
+    poll: [3, 7],
+    section: [0, 4],
+    'full-bleed': [0, 2],
+    stream: [0, 4],
+    closing: [2, 6],
+    title: [0, 2, 6],
+    quote: [2, 6],
+    'image-split': [4, 0],
+    columns: [5, 3],
+    process: [6, 7],
+    team: [7, 1],
   };
+  const pool = bias[kind] || [0, 1, 2, 3, 4, 5, 6, 7];
+  const idx = pool[hashFor(`${template.id}~surface`) % pool.length];
+  return { base, pattern: SURFACE_VARIANTS[idx](template, light) };
 };
 
 const miniBgFor = (kind: PreviewKind, template: DeckTemplate) => {
