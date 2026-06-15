@@ -238,3 +238,58 @@ function inferVariant(xml: string, index: number, total: number): SlideData['var
   if (hasDarkBg) return 'dark';
   return 'default';
 }
+
+/**
+ * Read `ppt/theme/theme1.xml` (or the first available theme) from a PPTX and
+ * pull out the authoritative color scheme + font scheme. Falls back to an
+ * empty palette if the theme file is missing or malformed.
+ */
+export async function parsePptxThemeTokens(file: File): Promise<PptxThemeTokens> {
+  const zip = await JSZip.loadAsync(file);
+  const themePath = Object.keys(zip.files)
+    .filter((n) => /^ppt\/theme\/theme\d+\.xml$/.test(n))
+    .sort()[0];
+
+  const empty: PptxThemeTokens = { colors: {}, fonts: {} };
+  if (!themePath) return empty;
+
+  const xml = await zip.files[themePath].async('text');
+
+  const nameMatch = xml.match(/<a:theme\b[^>]*\sname="([^"]+)"/);
+  const name = nameMatch?.[1];
+
+  // Color scheme: <a:clrScheme>...</a:clrScheme>
+  const colors: Record<string, string> = {};
+  const schemeMatch = xml.match(/<a:clrScheme\b[^>]*>([\s\S]*?)<\/a:clrScheme>/);
+  if (schemeMatch) {
+    const scheme = schemeMatch[1];
+    // Each slot is e.g. <a:accent1><a:srgbClr val="03002C"/></a:accent1>
+    // or <a:dk1><a:sysClr val="windowText" lastClr="000000"/></a:dk1>
+    const slotRegex = /<a:(dk1|lt1|dk2|lt2|accent[1-6]|hlink|folHlink)\b[^>]*>([\s\S]*?)<\/a:\1>/g;
+    let m: RegExpExecArray | null;
+    while ((m = slotRegex.exec(scheme)) !== null) {
+      const slot = m[1];
+      const body = m[2];
+      const srgb = body.match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      const sysLast = body.match(/<a:sysClr\b[^>]*\slastClr="([0-9A-Fa-f]{6})"/);
+      const hex = srgb?.[1] || sysLast?.[1];
+      if (hex) colors[slot] = `#${hex.toUpperCase()}`;
+    }
+  }
+
+  // Font scheme: major (headings) + minor (body), latin typeface
+  const fonts: { major?: string; minor?: string } = {};
+  const majorMatch = xml.match(/<a:majorFont>([\s\S]*?)<\/a:majorFont>/);
+  if (majorMatch) {
+    const latin = majorMatch[1].match(/<a:latin\b[^>]*\stypeface="([^"]+)"/);
+    if (latin) fonts.major = latin[1];
+  }
+  const minorMatch = xml.match(/<a:minorFont>([\s\S]*?)<\/a:minorFont>/);
+  if (minorMatch) {
+    const latin = minorMatch[1].match(/<a:latin\b[^>]*\stypeface="([^"]+)"/);
+    if (latin) fonts.minor = latin[1];
+  }
+
+  return { name, colors, fonts };
+}
+
