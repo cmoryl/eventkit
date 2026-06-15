@@ -390,8 +390,11 @@ const FEATURED_GRAPH_SYSTEMS: Record<string, GraphSystemId> = {
 
 export const graphSystemFor = (template: DeckTemplate, kind: PreviewKind, look: DeckLookId): GraphSystemId => {
   const featured = FEATURED_GRAPH_SYSTEMS[template.id];
-  if (featured) return featured;
-  return GRAPH_SYSTEMS[hashFor(`${template.id}::${template.name}::${kind}::${look}::graph-system`) % GRAPH_SYSTEMS.length];
+  const baseIndex = featured
+    ? GRAPH_SYSTEMS.indexOf(featured)
+    : hashFor(`${template.id}::${template.name}::${look}::graph-system`) % GRAPH_SYSTEMS.length;
+  const kindShift = hashFor(`${template.id}::${kind}::${look}::graph-shift`) % 11;
+  return GRAPH_SYSTEMS[(baseIndex + kindShift) % GRAPH_SYSTEMS.length];
 };
 
 export type DeckLookId =
@@ -767,106 +770,136 @@ export const MiniSlide = ({ kind, template, compact = false, look: forcedLook }:
     const strokeDash = chartStyle === 'dotted' ? '1 3' : chartStyle === 'segmented' ? '5 3' : chartStyle === 'hatched' ? '2 2' : undefined;
     const glow = chartStyle === 'glow' ? `drop-shadow(0 0 3px ${accent})` : undefined;
     const softPanel: React.CSSProperties = { background: hexToRgba(textColor, 0.06), border: `1px solid ${hexToRgba(textColor, 0.18)}` };
+    const seed = variantFor(template, kind, graphSystem);
+    const metric = (i: number, min = 18, span = 74) => min + ((seed >>> (i % 16)) + i * 23) % span;
+    const miniSeries = Array.from({ length: 8 }, (_, i) => metric(i, 16, 78));
+    const xy = (i: number) => [12 + ((seed + i * 19) % 76), 12 + (((seed >> 3) + i * 31) % 48)] as const;
+    const pathFrom = (vals: number[], w = 100, h = 60) => vals.map((n, i) => `${i ? 'L' : 'M'}${(i / Math.max(vals.length - 1, 1)) * w} ${h - (n / 100) * h}`).join(' ');
 
     switch (graphSystem) {
-      case 'orbital-rings':
+      case 'orbital-rings': {
+        const orbitNodes = Array.from({ length: 5 }, (_, i) => ({ left: 14 + metric(i, 0, 72), top: 18 + metric(i + 4, 0, 58) }));
         return (
           <div className="relative h-full w-full">
             <div className="absolute left-1 top-1 text-[6px] font-black uppercase tracking-[0.14em] opacity-70">Orbit</div>
-            <div className="absolute inset-2 rounded-full" style={{ background: `radial-gradient(circle, ${hexToRgba(accent, 0.42)} 0 11%, transparent 12%), repeating-radial-gradient(circle, transparent 0 13px, ${hexToRgba(secondary, 0.42)} 14px 15px)` }} />
-            {[18, 42, 70, 84].map((p, i) => <span key={p} className="absolute h-2.5 w-2.5 rounded-full" style={{ left: `${p}%`, top: `${[58, 26, 68, 34][i]}%`, background: i % 2 ? secondary : accent, boxShadow: `0 0 10px ${hexToRgba(i % 2 ? secondary : accent, 0.8)}` }} />)}
+            <div className="absolute inset-2 rounded-full" style={{ background: `radial-gradient(circle at ${44 + metric(1, 0, 24)}% ${38 + metric(2, 0, 20)}%, ${hexToRgba(accent, 0.42)} 0 11%, transparent 12%), repeating-radial-gradient(circle, transparent 0 ${10 + metric(3, 0, 8)}px, ${hexToRgba(secondary, 0.42)} ${11 + metric(3, 0, 8)}px ${12 + metric(3, 0, 8)}px)` }} />
+            {orbitNodes.map((p, i) => <span key={`${p.left}-${p.top}`} className="absolute h-2.5 w-2.5 rounded-full" style={{ left: `${p.left}%`, top: `${p.top}%`, background: i % 2 ? secondary : accent, boxShadow: `0 0 10px ${hexToRgba(i % 2 ? secondary : accent, 0.8)}` }} />)}
           </div>
         );
+      }
       case 'terminal-spark':
         return (
           <div className="grid h-full grid-cols-[0.28fr_1fr] gap-1.5 font-mono">
             <div className="flex flex-col justify-between border-r pr-1 text-[6px]" style={{ borderColor: hexToRgba(accent, 0.36), color: accent }}>{['>', '02', 'Δ', 'OK'].map((n) => <span key={n}>{n}</span>)}</div>
             <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full" style={{ filter: glow }}>
               <path d="M0 48 H100 M0 30 H100 M0 12 H100 M20 0 V60 M45 0 V60 M70 0 V60" stroke={hexToRgba(accent, 0.16)} strokeWidth="1" />
-              <path d="M2 44 L14 48 L24 28 L36 36 L48 12 L60 24 L74 8 L88 18 L98 6" fill="none" stroke={accent} strokeWidth="2.4" strokeDasharray={strokeDash} strokeLinecap="square" />
-              {[14, 36, 48, 74, 98].map((x, i) => <rect key={x} x={x - 1.5} y={[46, 34, 10, 6, 4][i]} width="3" height="6" fill={i === 2 ? secondary : accent} />)}
+              <path d={pathFrom(miniSeries, 100, 56)} fill="none" stroke={accent} strokeWidth="2.4" strokeDasharray={strokeDash} strokeLinecap="square" />
+              {miniSeries.filter((_, i) => i % 2 === 1).map((n, i) => <rect key={i} x={((i * 2 + 1) / 7) * 100 - 1.5} y={56 - (n / 100) * 56 - 2} width="3" height="6" fill={i === 1 ? secondary : accent} />)}
             </svg>
           </div>
         );
       case 'editorial-lollipop':
         return (
           <div className="grid h-full grid-cols-5 items-end gap-2 border-b" style={{ borderColor: hexToRgba(textColor, 0.32) }}>
-            {[62, 38, 80, 52, 70].map((h, i) => <div key={i} className="flex h-full flex-col items-center justify-end gap-1"><span className="h-3 w-3 rounded-full border" style={{ background: i === 2 ? accent : template.palette.bg, borderColor: i === 2 ? accent : textColor }} /><span className="w-px" style={{ height: `${h}%`, background: i === 2 ? accent : hexToRgba(textColor, 0.45) }} /><span className="font-serif text-[6px]">{i + 1}</span></div>)}
+            {miniSeries.slice(0, 5).map((h, i) => <div key={i} className="flex h-full flex-col items-center justify-end gap-1"><span className="h-3 w-3 rounded-full border" style={{ background: h === Math.max(...miniSeries.slice(0, 5)) ? accent : template.palette.bg, borderColor: h === Math.max(...miniSeries.slice(0, 5)) ? accent : textColor }} /><span className="w-px" style={{ height: `${h}%`, background: h === Math.max(...miniSeries.slice(0, 5)) ? accent : hexToRgba(textColor, 0.45) }} /><span className="font-serif text-[6px]">{i + 1}</span></div>)}
           </div>
         );
       case 'ledger-waterfall':
         return (
           <div className="relative flex h-full items-end gap-1.5 border-b border-l p-1" style={{ borderColor: hexToRgba(textColor, 0.26) }}>
-            {[18, 42, 28, 60, 34].map((bottom, i) => <div key={i} className="relative flex-1" style={{ height: `${26 + i * 8}%`, marginBottom: `${bottom}%` }}><span className="absolute inset-x-0 bottom-0 block" style={{ height: '100%', ...bar(i % 2 ? secondary : accent, 'v') }} /><span className="absolute -right-2 top-0 h-px w-4" style={{ background: hexToRgba(textColor, 0.38) }} /></div>)}
+            {miniSeries.slice(0, 5).map((height, i) => <div key={i} className="relative flex-1" style={{ height: `${Math.max(18, height * 0.72)}%`, marginBottom: `${metric(i + 9, 6, 46)}%` }}><span className="absolute inset-x-0 bottom-0 block" style={{ height: '100%', ...bar(i % 2 ? secondary : accent, 'v') }} /><span className="absolute -right-2 top-0 h-px w-4" style={{ background: hexToRgba(textColor, 0.38) }} /></div>)}
           </div>
         );
       case 'startup-sticker':
         return (
           <div className="relative h-full w-full overflow-hidden">
-            {[0, 1, 2, 3].map((i) => <div key={i} className="absolute rounded-xl border-2 px-2 py-1 text-[8px] font-black" style={{ left: `${8 + i * 18}%`, top: `${[52, 24, 42, 12][i]}%`, transform: `rotate(${[-8, 7, -3, 10][i]}deg)`, borderColor: textColor, background: i % 2 ? secondary : accent, color: template.palette.bg }}>{['76', '2×', '44', '91'][i]}</div>)}
-            <svg className="absolute inset-x-2 bottom-2 h-9" viewBox="0 0 100 30" fill="none"><path d="M2 22 C22 4 36 28 52 12 S78 5 98 18" stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeDasharray={strokeDash}/></svg>
+            {miniSeries.slice(0, 4).map((n, i) => <div key={i} className="absolute rounded-xl border-2 px-2 py-1 text-[8px] font-black" style={{ left: `${8 + i * 18 + metric(i, 0, 5)}%`, top: `${metric(i + 2, 10, 48)}%`, transform: `rotate(${[-10, 8, -4, 12][i] + (seed % 5)}deg)`, borderColor: textColor, background: i % 2 ? secondary : accent, color: template.palette.bg }}>{i === 1 ? `${Math.max(2, Math.round(n / 18))}×` : n}</div>)}
+            <svg className="absolute inset-x-2 bottom-2 h-9" viewBox="0 0 100 30" fill="none"><path d={`M2 ${26 - metric(1, 0, 10)} C22 ${metric(2, 2, 18)} 36 ${metric(3, 12, 16)} 52 ${metric(4, 4, 18)} S78 ${metric(5, 2, 18)} 98 ${metric(6, 8, 18)}`} stroke={textColor} strokeWidth="2" strokeLinecap="round" strokeDasharray={strokeDash}/></svg>
           </div>
         );
       case 'fieldnotes-scatter':
         return (
           <div className="relative h-full w-full rounded-[45%_55%_52%_48%]" style={{ ...softPanel, background: hexToRgba(secondary, 0.12) }}>
-            {[18, 28, 42, 55, 66, 78, 86].map((x, i) => <span key={x} className="absolute rounded-[48%_52%_58%_42%] border" style={{ left: `${x}%`, top: `${[60, 36, 72, 25, 48, 18, 58][i]}%`, width: `${7 + (i % 3) * 4}px`, height: `${7 + (i % 2) * 5}px`, background: hexToRgba(i % 2 ? secondary : accent, 0.45), borderColor: i === 3 ? textColor : 'transparent' }} />)}
-            <svg className="absolute inset-2 h-[calc(100%-16px)] w-[calc(100%-16px)]" viewBox="0 0 100 60" fill="none"><path d="M0 52 C28 46 40 30 58 28 C74 26 82 18 100 10" stroke={accent} strokeWidth="1.4" strokeDasharray="4 4" /></svg>
+            {Array.from({ length: 7 }).map((_, i) => { const [x, y] = xy(i); return <span key={`${x}-${y}`} className="absolute rounded-[48%_52%_58%_42%] border" style={{ left: `${x}%`, top: `${y}%`, width: `${7 + metric(i, 0, 9)}px`, height: `${7 + metric(i + 3, 0, 8)}px`, background: hexToRgba(i % 2 ? secondary : accent, 0.45), borderColor: i === seed % 7 ? textColor : 'transparent' }} />; })}
+            <svg className="absolute inset-2 h-[calc(100%-16px)] w-[calc(100%-16px)]" viewBox="0 0 100 60" fill="none"><path d={pathFrom(miniSeries.slice(0, 6), 100, 58).replace(/L/g, ' L')} stroke={accent} strokeWidth="1.4" strokeDasharray="4 4" fill="none" /></svg>
           </div>
         );
       case 'brutal-blocks':
         return <div className="grid h-full grid-cols-4 grid-rows-3 gap-1">{[1, 2, 3, 4, 5, 6, 7, 8].map((n, i) => <span key={n} className={cn(i === 0 && 'col-span-2 row-span-2', i === 5 && 'col-span-2')} style={{ background: i % 3 === 0 ? textColor : i % 2 ? accent : hexToRgba(textColor, 0.32), border: `2px solid ${i % 3 === 0 ? accent : textColor}` }} />)}</div>;
       case 'broadcast-vu':
-        return <div className="flex h-full items-end gap-1 rounded-lg p-1" style={softPanel}>{[32, 72, 45, 88, 60, 96, 42, 70, 54].map((h, i) => <span key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i > 5 ? accent : secondary}, ${hexToRgba(i > 5 ? accent : secondary, 0.18)})`, boxShadow: i > 5 && chartStyle === 'glow' ? `0 0 8px ${accent}` : undefined }} />)}</div>;
+        return <div className="flex h-full items-end gap-1 rounded-lg p-1" style={softPanel}>{Array.from({ length: 9 }, (_, i) => metric(i, 24, 72)).map((h, i) => <span key={i} className="flex-1 rounded-sm" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${h > 76 ? accent : secondary}, ${hexToRgba(h > 76 ? accent : secondary, 0.18)})`, boxShadow: h > 76 && chartStyle === 'glow' ? `0 0 8px ${accent}` : undefined }} />)}</div>;
       case 'observatory-radar':
+      {
+        const radarPts = Array.from({ length: 5 }, (_, i) => {
+          const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+          const r = 18 + metric(i, 0, 30);
+          return `${50 + Math.cos(a) * r},${35 + Math.sin(a) * r}`;
+        }).join(' ');
         return (
           <svg viewBox="0 0 100 70" className="h-full w-full" style={{ filter: glow }}>
             <polygon points="50,5 92,35 50,65 8,35" fill="none" stroke={hexToRgba(textColor, 0.18)} strokeWidth="1" />
             <polygon points="50,18 78,35 50,52 22,35" fill="none" stroke={hexToRgba(textColor, 0.18)} strokeWidth="1" />
             <path d="M50 35 L50 5 M50 35 L92 35 M50 35 L50 65 M50 35 L8 35" stroke={hexToRgba(textColor, 0.16)} />
-            <polygon points="50,12 78,34 58,54 24,44 34,26" fill={hexToRgba(accent, 0.35)} stroke={accent} strokeWidth="2" strokeDasharray={strokeDash} />
+            <polygon points={radarPts} fill={hexToRgba(accent, 0.35)} stroke={accent} strokeWidth="2" strokeDasharray={strokeDash} />
           </svg>
         );
+      }
       case 'storyboard-frames':
-        return <div className="grid h-full grid-cols-3 gap-1.5">{[54, 78, 42].map((h, i) => <div key={i} className="relative border p-1" style={{ borderColor: hexToRgba(textColor, 0.34) }}><span className="absolute left-1 top-1 text-[5px] font-black opacity-70">0{i + 1}</span><span className="absolute inset-x-1 bottom-1" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${i === 1 ? accent : secondary}, transparent)` }} /></div>)}</div>;
+        return <div className="grid h-full grid-cols-3 gap-1.5">{miniSeries.slice(0, 3).map((h, i) => <div key={i} className="relative border p-1" style={{ borderColor: hexToRgba(textColor, 0.34) }}><span className="absolute left-1 top-1 text-[5px] font-black opacity-70">0{i + 1}</span><span className="absolute inset-x-1 bottom-1" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${h === Math.max(...miniSeries.slice(0, 3)) ? accent : secondary}, transparent)` }} /></div>)}</div>;
       case 'monograph-slope':
+      {
+        const slopeRows = Array.from({ length: 4 }, (_, i) => ({ y1: metric(i, 10, 48), y2: metric(i + 5, 10, 48) }));
         return (
           <svg viewBox="0 0 100 70" className="h-full w-full">
             <path d="M18 10 V62 M82 10 V62" stroke={hexToRgba(textColor, 0.28)} />
-            {[14, 28, 45, 58].map((y, i) => <g key={y}><path d={`M18 ${y} L82 ${[48, 18, 34, 12][i]}`} stroke={i === 1 ? accent : hexToRgba(textColor, 0.42)} strokeWidth={i === 1 ? 2.2 : 1.1} strokeDasharray={i === 2 ? '3 2' : undefined}/><circle cx="18" cy={y} r="2" fill={template.palette.bg} stroke={textColor}/><circle cx="82" cy={[48, 18, 34, 12][i]} r="2" fill={i === 1 ? accent : template.palette.bg} stroke={i === 1 ? accent : textColor}/></g>)}
+            {slopeRows.map(({ y1, y2 }, i) => <g key={i}><path d={`M18 ${y1} L82 ${y2}`} stroke={i === seed % 4 ? accent : hexToRgba(textColor, 0.42)} strokeWidth={i === seed % 4 ? 2.2 : 1.1} strokeDasharray={i === 2 ? '3 2' : undefined}/><circle cx="18" cy={y1} r="2" fill={template.palette.bg} stroke={textColor}/><circle cx="82" cy={y2} r="2" fill={i === seed % 4 ? accent : template.palette.bg} stroke={i === seed % 4 ? accent : textColor}/></g>)}
           </svg>
         );
+      }
       case 'blueprint-node':
+      {
+        const nodes = Array.from({ length: 6 }, (_, i) => xy(i)).map(([x, y], i) => [Math.max(12, Math.min(88, x)), Math.max(12, Math.min(58, y)), i] as const);
         return (
           <svg viewBox="0 0 100 70" className="h-full w-full">
-            <path d="M14 18 H42 V52 H78 M42 18 L78 28 M42 52 L20 58" fill="none" stroke={accent} strokeWidth="1.6" strokeDasharray={strokeDash}/>
-            {[[14,18],[42,18],[42,52],[78,52],[78,28],[20,58]].map(([x, y], i) => <rect key={`${x}-${y}`} x={x - 5} y={y - 5} width="10" height="10" fill={i % 2 ? template.palette.bg : accent} stroke={i % 2 ? secondary : accent} strokeWidth="2" />)}
+            <path d={`M${nodes[0][0]} ${nodes[0][1]} L${nodes[1][0]} ${nodes[1][1]} L${nodes[3][0]} ${nodes[3][1]} M${nodes[0][0]} ${nodes[0][1]} L${nodes[2][0]} ${nodes[2][1]} L${nodes[4][0]} ${nodes[4][1]} M${nodes[2][0]} ${nodes[2][1]} L${nodes[5][0]} ${nodes[5][1]}`} fill="none" stroke={accent} strokeWidth="1.6" strokeDasharray={strokeDash}/>
+            {nodes.map(([x, y], i) => <rect key={`${x}-${y}`} x={x - 5} y={y - 5} width="10" height="10" fill={i % 2 ? template.palette.bg : accent} stroke={i % 2 ? secondary : accent} strokeWidth="2" />)}
           </svg>
         );
+      }
       case 'heatmap-matrix':
-        return <div className="grid h-full grid-cols-5 grid-rows-4 gap-1">{Array.from({ length: 20 }).map((_, i) => <span key={i} className="rounded-sm" style={{ background: [hexToRgba(textColor, 0.12), hexToRgba(secondary, 0.36), hexToRgba(accent, 0.68), accent][(i * 7 + v) % 4], border: chartStyle === 'outline' ? `1px solid ${hexToRgba(textColor, 0.22)}` : undefined }} />)}</div>;
+        return <div className="grid h-full grid-cols-5 grid-rows-4 gap-1">{Array.from({ length: 20 }).map((_, i) => <span key={i} className="rounded-sm" style={{ background: [hexToRgba(textColor, 0.12), hexToRgba(secondary, 0.36), hexToRgba(accent, 0.68), accent][(metric(i, 0, 99) + i) % 4], border: chartStyle === 'outline' ? `1px solid ${hexToRgba(textColor, 0.22)}` : undefined }} />)}</div>;
       case 'funnel-stack':
-        return <div className="flex h-full flex-col items-center justify-center gap-1.5">{[88, 72, 55, 38, 22].map((w, i) => <span key={w} className="h-3 rounded-sm" style={{ width: `${w}%`, background: i === 0 ? accent : i === 2 ? secondary : hexToRgba(textColor, 0.3), clipPath: 'polygon(8% 0, 92% 0, 100% 100%, 0 100%)' }} />)}</div>;
+        return <div className="flex h-full flex-col items-center justify-center gap-1.5">{miniSeries.slice(0, 5).sort((a, b) => b - a).map((w, i) => <span key={`${w}-${i}`} className="h-3 rounded-sm" style={{ width: `${Math.max(20, w)}%`, background: i === 0 ? accent : i === 2 ? secondary : hexToRgba(textColor, 0.3), clipPath: 'polygon(8% 0, 92% 0, 100% 100%, 0 100%)' }} />)}</div>;
       case 'treemap-tiles':
-        return <div className="grid h-full grid-cols-5 grid-rows-4 gap-1">{[0, 1, 2, 3, 4, 5].map((i) => <span key={i} className={cn(i === 0 && 'col-span-3 row-span-2', i === 1 && 'col-span-2 row-span-2', i === 2 && 'col-span-2', i === 5 && 'col-span-2')} style={{ background: i % 2 ? hexToRgba(secondary, 0.6) : hexToRgba(accent, 0.72), borderRadius: chartStyle === 'pill' ? 10 : chartStyle === 'flat' ? 0 : 3 }} />)}</div>;
+      {
+        const tileLayouts = [
+          ['col-span-3 row-span-2', 'col-span-2 row-span-2', 'col-span-2', '', '', 'col-span-2'],
+          ['col-span-2 row-span-3', 'col-span-3', 'col-span-2', '', 'col-span-2', ''],
+          ['col-span-5', 'col-span-2 row-span-2', 'col-span-3 row-span-2', '', '', 'col-span-2'],
+        ];
+        return <div className="grid h-full grid-cols-5 grid-rows-4 gap-1">{tileLayouts[seed % tileLayouts.length].map((cls, i) => <span key={i} className={cn(cls)} style={{ background: i % 2 ? hexToRgba(secondary, 0.6) : hexToRgba(accent, 0.72), borderRadius: chartStyle === 'pill' ? 10 : chartStyle === 'flat' ? 0 : 3 }} />)}</div>;
+      }
       case 'gantt-roadmap':
-        return <div className="flex h-full flex-col justify-center gap-1.5 border-l pl-2" style={{ borderColor: hexToRgba(textColor, 0.28) }}>{[62, 38, 78, 50].map((w, i) => <div key={i} className="grid grid-cols-[14px_1fr] items-center gap-1"><span className="text-[6px] font-black opacity-60">Q{i + 1}</span><span className="block h-2.5" style={{ width: `${w}%`, marginLeft: `${[0, 16, 8, 28][i]}%`, ...bar(i === 2 ? accent : secondary, 'h') }} /></div>)}</div>;
+        return <div className="flex h-full flex-col justify-center gap-1.5 border-l pl-2" style={{ borderColor: hexToRgba(textColor, 0.28) }}>{miniSeries.slice(0, 4).map((w, i) => <div key={i} className="grid grid-cols-[14px_1fr] items-center gap-1"><span className="text-[6px] font-black opacity-60">Q{i + 1}</span><span className="block h-2.5" style={{ width: `${Math.max(28, w)}%`, marginLeft: `${metric(i + 5, 0, 26)}%`, ...bar(w === Math.max(...miniSeries.slice(0, 4)) ? accent : secondary, 'h') }} /></div>)}</div>;
       case 'quadrant-bubbles':
-        return <div className="relative h-full w-full" style={{ background: `linear-gradient(90deg, transparent calc(50% - 0.5px), ${faint} 50%, transparent calc(50% + 0.5px)), linear-gradient(0deg, transparent calc(50% - 0.5px), ${faint} 50%, transparent calc(50% + 0.5px))` }}>{[[22,60,18],[36,30,11],[58,44,24],[76,20,14],[72,68,9]].map(([x, y, s], i) => <span key={i} className="absolute rounded-full border" style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, transform: 'translate(-50%, -50%)', background: hexToRgba(i === 2 ? accent : secondary, 0.42), borderColor: i === 2 ? accent : hexToRgba(textColor, 0.34) }} />)}</div>;
+        return <div className="relative h-full w-full" style={{ background: `linear-gradient(90deg, transparent calc(50% - 0.5px), ${faint} 50%, transparent calc(50% + 0.5px)), linear-gradient(0deg, transparent calc(50% - 0.5px), ${faint} 50%, transparent calc(50% + 0.5px))` }}>{Array.from({ length: 5 }).map((_, i) => { const [x, y] = xy(i + 1); const s = 8 + metric(i, 0, 17); return <span key={i} className="absolute rounded-full border" style={{ left: `${x}%`, top: `${y}%`, width: s, height: s, transform: 'translate(-50%, -50%)', background: hexToRgba(i === seed % 5 ? accent : secondary, 0.42), borderColor: i === seed % 5 ? accent : hexToRgba(textColor, 0.34) }} />; })}</div>;
       case 'radial-bars':
-        return <div className="relative h-full w-full">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="absolute left-1/2 top-1/2 h-1.5 origin-left rounded-full" style={{ width: `${25 + i * 8}%`, background: i === 4 ? accent : hexToRgba(textColor, 0.38), transform: `rotate(${i * 38 - 72}deg)`, boxShadow: chartStyle === 'glow' && i === 4 ? `0 0 10px ${accent}` : undefined }} />)}<span className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: secondary }} /></div>;
+        return <div className="relative h-full w-full">{miniSeries.slice(0, 5).map((w, i) => <span key={i} className="absolute left-1/2 top-1/2 h-1.5 origin-left rounded-full" style={{ width: `${18 + w * 0.45}%`, background: w === Math.max(...miniSeries.slice(0, 5)) ? accent : hexToRgba(textColor, 0.38), transform: `rotate(${i * (32 + seed % 17) - 72}deg)`, boxShadow: chartStyle === 'glow' && w === Math.max(...miniSeries.slice(0, 5)) ? `0 0 10px ${accent}` : undefined }} />)}<span className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: secondary }} /></div>;
       case 'candlestick-tape':
-        return <div className="flex h-full items-center gap-1 border-b border-t py-2" style={{ borderColor: hexToRgba(textColor, 0.2) }}>{[18, 34, 22, 48, 28, 40, 30].map((h, i) => <span key={i} className="relative flex-1"><span className="absolute left-1/2 top-1/2 w-px -translate-x-1/2 -translate-y-1/2" style={{ height: `${h + 18}px`, background: hexToRgba(textColor, 0.48) }} /><span className="absolute left-0 right-0 top-1/2 -translate-y-1/2" style={{ height: `${h}px`, background: i % 2 ? secondary : accent }} /></span>)}</div>;
+        return <div className="flex h-full items-center gap-1 border-b border-t py-2" style={{ borderColor: hexToRgba(textColor, 0.2) }}>{miniSeries.slice(0, 7).map((h, i) => <span key={i} className="relative flex-1"><span className="absolute left-1/2 top-1/2 w-px -translate-x-1/2 -translate-y-1/2" style={{ height: `${14 + h * 0.42}px`, background: hexToRgba(textColor, 0.48) }} /><span className="absolute left-0 right-0 top-1/2 -translate-y-1/2" style={{ height: `${8 + h * 0.34}px`, background: i % 2 ? secondary : accent }} /></span>)}</div>;
       case 'sankey-ribbons':
       default:
+      {
+        const r1 = 5 + metric(0, 0, 18), r2 = 25 + metric(1, 0, 22), r3 = 45 + metric(2, 0, 12);
         return (
           <svg viewBox="0 0 100 70" className="h-full w-full">
-            <path d="M4 14 C34 14 38 28 62 28 S82 18 96 18" fill="none" stroke={hexToRgba(accent, 0.62)} strokeWidth="9" strokeLinecap="round" />
-            <path d="M4 38 C30 38 42 46 62 46 S82 56 96 56" fill="none" stroke={hexToRgba(secondary, 0.56)} strokeWidth="11" strokeLinecap="round" />
-            <path d="M4 58 C26 58 42 28 62 28" fill="none" stroke={hexToRgba(textColor, 0.28)} strokeWidth="6" strokeLinecap="round" />
+            <path d={`M4 ${r1} C34 ${r1} 38 ${r2} 62 ${r2} S82 ${r1 + 4} 96 ${r1 + 4}`} fill="none" stroke={hexToRgba(accent, 0.62)} strokeWidth={`${7 + metric(4, 0, 5)}`} strokeLinecap="round" />
+            <path d={`M4 ${r2 + 12} C30 ${r2 + 12} 42 ${r3} 62 ${r3} S82 ${r3 + 10} 96 ${r3 + 10}`} fill="none" stroke={hexToRgba(secondary, 0.56)} strokeWidth={`${8 + metric(5, 0, 6)}`} strokeLinecap="round" />
+            <path d={`M4 ${r3 + 10} C26 ${r3 + 10} 42 ${r2} 62 ${r2}`} fill="none" stroke={hexToRgba(textColor, 0.28)} strokeWidth={`${4 + metric(6, 0, 4)}`} strokeLinecap="round" />
             {[4, 62, 96].map((x, i) => <rect key={x} x={x - 3} y="8" width="6" height="54" fill={i === 1 ? template.palette.bg : textColor} stroke={i === 1 ? accent : textColor} />)}
           </svg>
         );
+      }
     }
   };
 

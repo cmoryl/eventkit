@@ -227,10 +227,14 @@ const TEMPLATE_SYSTEM_OVERRIDES: Record<string, { look: DeckLookId; graphic: Dat
   'pres-thank-you': { look: 'literary-monograph', graphic: 'monograph-slope' },
 };
 
-const deckSystemFor = (template: DeckTemplate) => {
+const deckSystemFor = (template: DeckTemplate, channel = 'deck') => {
   const override = TEMPLATE_SYSTEM_OVERRIDES[template.id];
-  if (override) return override;
-  const graphic = DATA_GRAPHICS[hashString(`${template.id}::graphic`) % DATA_GRAPHICS.length];
+  const baseGraphic = override
+    ? DATA_GRAPHICS.indexOf(override.graphic)
+    : hashString(`${template.id}::graphic`) % DATA_GRAPHICS.length;
+  const channelShift = hashString(`${template.id}::${channel}::graphic-system`) % DATA_GRAPHICS.length;
+  const graphic = DATA_GRAPHICS[(baseGraphic + channelShift) % DATA_GRAPHICS.length];
+  if (override) return { look: override.look, graphic };
   const look = (['orbital-intelligence', 'terminal-grid', 'editorial-atlas', 'boardroom-ledger', 'startup-collage', 'organic-fieldnotes', 'brutalist-poster', 'broadcast-control', 'data-observatory', 'cinematic-storyboard', 'literary-monograph', 'systems-blueprint'] as DeckLookId[])[hashString(`${template.id}::look`) % 12];
   return { look, graphic };
 };
@@ -1557,7 +1561,7 @@ export const SlideMock: React.FC<{
   const isLight = isLightColor(t.palette.bg);
   const muted = isLight ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.7)";
   const subtleBorder = isLight ? "rgba(0,0,0,0.1)" : "rgba(255,255,255,0.14)";
-  const { look, graphic: dataGraphic } = deckSystemFor(t);
+  const { look, graphic: dataGraphic } = deckSystemFor(t, kind);
   const cardBg = cardSurfaceFor(look, t, isLight);
   const thumb = TEMPLATE_THUMBNAILS[t.id];
   // Imagery rotation per slide so different layouts feature different visuals.

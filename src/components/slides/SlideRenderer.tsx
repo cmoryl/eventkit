@@ -60,6 +60,12 @@ function SlideImages({ images, variant }: { images: string[]; variant: SlideData
   );
 }
 
+function chartHash(value: string) {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  return hash;
+}
+
 export function SlideRenderer({ slide, brandColors, brandFonts, animated, parallaxMotion = 'mouse', parallaxProgress, editable, onDemoContentChange }: SlideRendererProps) {
   const headingFont = brandFonts?.heading || 'inherit';
   const bodyFont = brandFonts?.body || 'inherit';
@@ -492,8 +498,13 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               ];
               const tickColor = isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)';
               const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)';
+              const chartSeed = chartHash(`${slide.id}:${slide.title}:${c.type}:${c.title || ''}`);
+              const chartMode = chartSeed % 4;
+              const axisStyle = { fontSize: chartMode === 2 ? 20 : 22, fill: tickColor, fontFamily: bodyFont };
+              const gridDash = chartMode === 0 ? '3 6' : chartMode === 1 ? '1 8' : chartMode === 2 ? '8 4' : undefined;
 
               if (c.type === 'pie' || c.type === 'doughnut') {
+                const innerRadius = c.type === 'doughnut' ? `${38 + (chartSeed % 14)}%` : chartMode === 3 ? '24%' : 0;
                 return (
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
@@ -503,14 +514,18 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
                         nameKey="label"
                         cx="50%"
                         cy="50%"
-                        outerRadius="80%"
-                        innerRadius={c.type === 'doughnut' ? '45%' : 0}
-                        label={{ fontSize: 24, fill: tickColor }}
+                        outerRadius={`${74 + (chartSeed % 12)}%`}
+                        innerRadius={innerRadius}
+                        startAngle={chartMode % 2 ? 90 : 220}
+                        endAngle={chartMode % 2 ? -270 : -140}
+                        paddingAngle={chartMode === 1 ? 3 : chartMode === 2 ? 1 : 0}
+                        cornerRadius={chartMode === 1 ? 10 : chartMode === 3 ? 3 : 0}
+                        label={{ fontSize: 22, fill: tickColor, fontFamily: bodyFont }}
                       >
                         {c.data.map((_, i) => <Cell key={i} fill={palette[i % palette.length]} />)}
                       </Pie>
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 24 }} />
+                      <Legend wrapperStyle={{ fontSize: 22, fontFamily: bodyFont }} layout={chartMode === 2 ? 'vertical' : 'horizontal'} align={chartMode === 2 ? 'right' : 'center'} />
                     </PieChart>
                   </ResponsiveContainer>
                 );
@@ -523,32 +538,49 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
               }));
 
               if (c.type === 'line') {
+                const lineType: 'stepAfter' | 'linear' | 'monotone' = chartMode === 1 ? 'stepAfter' : chartMode === 2 ? 'linear' : 'monotone';
                 return (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={merged}>
-                      <CartesianGrid stroke={gridColor} />
-                      <XAxis dataKey="label" tick={{ fontSize: 22, fill: tickColor }} />
-                      <YAxis tick={{ fontSize: 22, fill: tickColor }} />
+                      <CartesianGrid stroke={gridColor} strokeDasharray={gridDash} vertical={chartMode !== 1} />
+                      <XAxis dataKey="label" tick={axisStyle} axisLine={chartMode !== 1} />
+                      <YAxis tick={axisStyle} axisLine={chartMode !== 1} />
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 24 }} />
-                      <Line type="monotone" dataKey={c.series1Name || 'Value'} stroke={palette[0]} strokeWidth={4} dot={{ r: 6 }} />
-                      {c.series2 && <Line type="monotone" dataKey={c.series2Name || 'Series 2'} stroke={palette[1]} strokeWidth={4} dot={{ r: 6 }} />}
+                      <Legend wrapperStyle={{ fontSize: 22, fontFamily: bodyFont }} />
+                      <Line type={lineType} dataKey={c.series1Name || 'Value'} stroke={palette[0]} strokeWidth={chartMode === 2 ? 6 : 4} strokeDasharray={chartMode === 3 ? '10 6' : undefined} dot={{ r: chartMode === 1 ? 0 : 6, strokeWidth: 3, fill: isDark ? '#0B0F19' : '#FFFFFF' }} />
+                      {c.series2 && <Line type={lineType} dataKey={c.series2Name || 'Series 2'} stroke={palette[1]} strokeWidth={4} strokeDasharray={chartMode === 2 ? '4 7' : undefined} dot={{ r: chartMode === 1 ? 0 : 6, strokeWidth: 3, fill: isDark ? '#0B0F19' : '#FFFFFF' }} />}
                     </LineChart>
                   </ResponsiveContainer>
                 );
               }
 
               // bar (default)
+              if (chartMode === 1 || chartMode === 3) {
+                return (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={merged} layout="vertical" margin={{ top: 12, right: 36, left: 42, bottom: 12 }}>
+                      <CartesianGrid stroke={gridColor} strokeDasharray={gridDash} horizontal={false} />
+                      <XAxis type="number" tick={axisStyle} axisLine={false} />
+                      <YAxis type="category" dataKey="label" tick={axisStyle} width={92} axisLine={false} />
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 22, fontFamily: bodyFont }} />
+                      <Bar dataKey={c.series1Name || 'Value'} fill={palette[0]} radius={[0, 12, 12, 0]} barSize={chartMode === 3 ? 34 : 26} />
+                      {c.series2 && <Bar dataKey={c.series2Name || 'Series 2'} fill={palette[1]} radius={[0, 12, 12, 0]} barSize={chartMode === 3 ? 34 : 26} />}
+                    </BarChart>
+                  </ResponsiveContainer>
+                );
+              }
+
               return (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={merged}>
-                    <CartesianGrid stroke={gridColor} />
-                    <XAxis dataKey="label" tick={{ fontSize: 22, fill: tickColor }} />
-                    <YAxis tick={{ fontSize: 22, fill: tickColor }} />
+                  <BarChart data={merged} barCategoryGap={chartMode === 2 ? "22%" : "12%"}>
+                    <CartesianGrid stroke={gridColor} strokeDasharray={gridDash} vertical={chartMode === 2} />
+                    <XAxis dataKey="label" tick={axisStyle} axisLine={chartMode !== 2} />
+                    <YAxis tick={axisStyle} axisLine={chartMode !== 2} />
                     <Tooltip />
-                    <Legend wrapperStyle={{ fontSize: 24 }} />
-                    <Bar dataKey={c.series1Name || 'Value'} fill={palette[0]} radius={[8, 8, 0, 0]} />
-                    {c.series2 && <Bar dataKey={c.series2Name || 'Series 2'} fill={palette[1]} radius={[8, 8, 0, 0]} />}
+                    <Legend wrapperStyle={{ fontSize: 22, fontFamily: bodyFont }} />
+                    <Bar dataKey={c.series1Name || 'Value'} fill={palette[0]} radius={chartMode === 2 ? [0, 0, 0, 0] : [12, 12, 0, 0]} barSize={chartMode === 2 ? 42 : undefined} />
+                    {c.series2 && <Bar dataKey={c.series2Name || 'Series 2'} fill={palette[1]} radius={chartMode === 2 ? [0, 0, 0, 0] : [12, 12, 0, 0]} barSize={chartMode === 2 ? 42 : undefined} />}
                   </BarChart>
                 </ResponsiveContainer>
               );
