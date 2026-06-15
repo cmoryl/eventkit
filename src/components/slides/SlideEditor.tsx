@@ -325,6 +325,49 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     | null
   >(null);
   const [showPlaceholderOverlay, setShowPlaceholderOverlay] = useState(true);
+  /** Snapshot of generated content the user can remap into placeholders. */
+  const [pendingGenerated, setPendingGenerated] = useState<{ title?: string; subtitle?: string; body?: string; notes?: string } | null>(null);
+  /** Per-placeholder override: which generated source feeds each placeholder. */
+  type PhAssign = { source: 'auto' | 'title' | 'subtitle' | 'body' | 'notes' | 'empty' | 'custom'; custom?: string };
+  const [placeholderAssignments, setPlaceholderAssignments] = useState<Record<string, PhAssign>>({});
+  const phKey = (ph: { type: string; idx?: number }, i: number) => `${ph.type}-${ph.idx ?? i}`;
+  const targetFieldForType = (t: string): 'title' | 'subtitle' | 'body' | null => {
+    const k = t.toLowerCase();
+    if (k === 'ctrtitle' || k === 'title') return 'title';
+    if (k === 'subtitle') return 'subtitle';
+    if (k === 'body') return 'body';
+    return null;
+  };
+  const autoSourceForType = (t: string): PhAssign['source'] => {
+    const tgt = targetFieldForType(t);
+    return tgt ?? 'empty';
+  };
+  const resolveAssignedText = useCallback((assign: PhAssign | undefined, type: string): string | undefined => {
+    if (!pendingGenerated) return undefined;
+    const a = assign ?? { source: 'auto' };
+    const src = a.source === 'auto' ? autoSourceForType(type) : a.source;
+    if (src === 'empty') return '';
+    if (src === 'custom') return a.custom ?? '';
+    return pendingGenerated[src as 'title' | 'subtitle' | 'body' | 'notes'];
+  }, [pendingGenerated]);
+  /** The slide as it will be inserted, reflecting per-placeholder overrides. */
+  const previewSlide = React.useMemo<SlideData | null>(() => {
+    if (!pendingStyledSlide) return null;
+    if (!pendingStyledLayout || !pendingGenerated) return pendingStyledSlide;
+    const next: SlideData = { ...pendingStyledSlide };
+    // Reset fields the user can remap; re-aggregate from placeholders.
+    const buckets: Record<'title' | 'subtitle' | 'body', string[]> = { title: [], subtitle: [], body: [] };
+    pendingStyledLayout.placeholders.forEach((ph, i) => {
+      const tgt = targetFieldForType(ph.type);
+      if (!tgt) return;
+      const txt = resolveAssignedText(placeholderAssignments[phKey(ph, i)], ph.type);
+      if (txt && txt.trim()) buckets[tgt].push(txt);
+    });
+    next.title = buckets.title.length ? buckets.title.join(' ') : '';
+    next.subtitle = buckets.subtitle.length ? buckets.subtitle.join(' ') : undefined;
+    next.body = buckets.body.length ? buckets.body.join('\n\n') : undefined;
+    return next;
+  }, [pendingStyledSlide, pendingStyledLayout, pendingGenerated, placeholderAssignments, resolveAssignedText]);
   const generateStyledSlide = useCallback(async () => {
     if (!corporateStyleRef || corporateStyleRef.slides.length === 0) return;
     setIsGeneratingStyledSlide(true);
