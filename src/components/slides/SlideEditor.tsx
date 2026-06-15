@@ -412,6 +412,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           insertPosition: activeIndex + 2,
           themeTokens: corporateStyleRef.themeTokens,
           layoutCatalog: corporateStyleRef.layoutCatalog,
+          slideBlueprints: corporateStyleRef.slideBlueprints,
         },
       });
       if (error) throw new Error(error.message || 'Generation failed');
