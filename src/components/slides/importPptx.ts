@@ -293,3 +293,127 @@ export async function parsePptxThemeTokens(file: File): Promise<PptxThemeTokens>
   return { name, colors, fonts };
 }
 
+/**
+ * A single placeholder within a slide layout — geometry is normalized to
+ * percentages of the slide so it survives any aspect ratio.
+ */
+export interface PptxLayoutPlaceholder {
+  /** Placeholder type as declared on `<p:ph type="...">` (title, body, ctrTitle, subTitle, pic, ftr, sldNum, dt, etc.). */
+  type: string;
+  /** Optional 0-based index when there are multiple of the same type. */
+  idx?: number;
+  /** Size hint from `<p:ph sz="...">` (full, half, quarter). */
+  sz?: string;
+  /** Geometry in % of slide width/height (0-100). Missing if the placeholder inherits from master. */
+  xPct?: number;
+  yPct?: number;
+  wPct?: number;
+  hPct?: number;
+}
+
+export interface PptxLayoutDefinition {
+  /** Layout file name (e.g. "slideLayout5.xml"). */
+  fileName: string;
+  /** Human-readable layout name from `<p:cSld name="...">`. */
+  name: string;
+  /** Layout class from `<p:sldLayout type="...">` — title, obj, twoObjTx, secHead, blank, etc. */
+  type?: string;
+  /** Ordered list of placeholders with normalized geometry. */
+  placeholders: PptxLayoutPlaceholder[];
+  /** Slide-layout index in the deck (1-based, from file name). */
+  index: number;
+}
+
+export interface PptxLayoutCatalog {
+  /** Slide width in EMU from presentation.xml (914400 EMU = 1 inch). */
+  slideWidthEmu: number;
+  /** Slide height in EMU. */
+  slideHeightEmu: number;
+  layouts: PptxLayoutDefinition[];
+}
+
+/**
+ * Parse `ppt/slideLayouts/slideLayout*.xml` into a reusable layout catalog so
+ * downstream AI prompts can pick from real layouts that exist in the master
+ * deck (with their actual placeholder geometry) instead of inventing layouts.
+ */
+export async function parsePptxLayoutCatalog(file: File): Promise<PptxLayoutCatalog> {
+  const zip = await JSZip.loadAsync(file);
+
+  // Slide dimensions live in presentation.xml: <p:sldSz cx="..." cy="..."/>
+  let slideWidthEmu = 9144000; // 10in default
+  let slideHeightEmu = 6858000; // 7.5in default
+  const presPath = 'ppt/presentation.xml';
+  if (zip.files[presPath]) {
+    const presXml = await zip.files[presPath].async('text');
+    const sldSz = presXml.match(/<p:sldSz\b[^/>]*\scx="(\d+)"[^/>]*\scy="(\d+)"/);
+    if (sldSz) {
+      slideWidthEmu = parseInt(sldSz[1], 10) || slideWidthEmu;
+      slideHeightEmu = parseInt(sldSz[2], 10) || slideHeightEmu;
+    }
+  }
+
+  const layoutFiles = Object.keys(zip.files)
+    .filter((n) => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(n))
+    .sort((a, b) => {
+      const ia = parseInt(a.match(/slideLayout(\d+)/)?.[1] || '0', 10);
+      const ib = parseInt(b.match(/slideLayout(\d+)/)?.[1] || '0', 10);
+      return ia - ib;
+    });
+
+  const layouts: PptxLayoutDefinition[] = [];
+  for (const path of layoutFiles) {
+    const xml = await zip.files[path].async('text');
+    const fileName = path.split('/').pop()!;
+    const index = parseInt(fileName.match(/slideLayout(\d+)/)?.[1] || '0', 10);
+
+    const nameMatch = xml.match(/<p:cSld\b[^>]*\sname="([^"]+)"/);
+    const typeMatch = xml.match(/<p:sldLayout\b[^>]*\stype="([^"]+)"/);
+
+    const placeholders: PptxLayoutPlaceholder[] = [];
+    const shapeRegex = /<p:sp\b[^>]*>([\s\S]*?)<\/p:sp>/g;
+    let shapeMatch: RegExpExecArray | null;
+    while ((shapeMatch = shapeRegex.exec(xml)) !== null) {
+      const shape = shapeMatch[1];
+      const phMatch = shape.match(/<p:ph\b([^/>]*)\/?>/);
+      if (!phMatch) continue; // not a placeholder, skip decorative shapes on the layout
+      const phAttrs = phMatch[1];
+      const type = phAttrs.match(/\stype="([^"]+)"/)?.[1] || 'body';
+      const idxRaw = phAttrs.match(/\sidx="(\d+)"/)?.[1];
+      const idx = idxRaw ? parseInt(idxRaw, 10) : undefined;
+      const sz = phAttrs.match(/\ssz="([^"]+)"/)?.[1];
+
+      // Geometry: <a:xfrm><a:off x=".." y=".."/><a:ext cx=".." cy=".."/></a:xfrm>
+      const xfrm = shape.match(/<a:xfrm\b[^>]*>([\s\S]*?)<\/a:xfrm>/);
+      let xPct: number | undefined;
+      let yPct: number | undefined;
+      let wPct: number | undefined;
+      let hPct: number | undefined;
+      if (xfrm) {
+        const off = xfrm[1].match(/<a:off\b[^/>]*\sx="(-?\d+)"[^/>]*\sy="(-?\d+)"/);
+        const ext = xfrm[1].match(/<a:ext\b[^/>]*\scx="(\d+)"[^/>]*\scy="(\d+)"/);
+        if (off) {
+          xPct = +((parseInt(off[1], 10) / slideWidthEmu) * 100).toFixed(2);
+          yPct = +((parseInt(off[2], 10) / slideHeightEmu) * 100).toFixed(2);
+        }
+        if (ext) {
+          wPct = +((parseInt(ext[1], 10) / slideWidthEmu) * 100).toFixed(2);
+          hPct = +((parseInt(ext[2], 10) / slideHeightEmu) * 100).toFixed(2);
+        }
+      }
+
+      placeholders.push({ type, idx, sz, xPct, yPct, wPct, hPct });
+    }
+
+    layouts.push({
+      fileName,
+      name: nameMatch?.[1] || `Layout ${index}`,
+      type: typeMatch?.[1],
+      placeholders,
+      index,
+    });
+  }
+
+  return { slideWidthEmu, slideHeightEmu, layouts };
+}
+
