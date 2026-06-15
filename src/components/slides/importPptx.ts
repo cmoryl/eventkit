@@ -5,6 +5,20 @@ import type { SlideData } from './slideTypes';
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'svg', 'emf', 'wmf'];
 
 /**
+ * Brand tokens extracted from a PPTX `ppt/theme/theme1.xml` (the authoritative
+ * color + font palette baked into the master deck). All values are best-effort
+ * and may be missing if the theme file is unconventional.
+ */
+export interface PptxThemeTokens {
+  /** Theme name (e.g. "Office Theme" or "TransPerfect 2026"). */
+  name?: string;
+  /** Color scheme — keys are theme slot names (dk1, lt1, dk2, lt2, accent1-6, hlink, folHlink). */
+  colors: Record<string, string>;
+  /** Major (heading) + minor (body) latin typefaces from `<a:fontScheme>`. */
+  fonts: { major?: string; minor?: string };
+}
+
+/**
  * Parse a PPTX file and extract slides as SlideData[], including embedded images.
  */
 export async function parsePptxFile(file: File): Promise<SlideData[]> {
