@@ -311,6 +311,16 @@ export interface PptxLayoutPlaceholder {
   hPct?: number;
 }
 
+export interface PptxLayoutDecorShape {
+  /** Preset geometry name (rect, roundRect, ellipse, line, triangle, etc.). */
+  geom?: string;
+  xPct: number; yPct: number; wPct: number; hPct: number;
+  /** Resolved hex color or `theme:<key>` reference. */
+  fill?: string;
+  /** Resolved hex color or `theme:<key>` reference. */
+  line?: string;
+}
+
 export interface PptxLayoutDefinition {
   /** Layout file name (e.g. "slideLayout5.xml"). */
   fileName: string;
@@ -322,6 +332,10 @@ export interface PptxLayoutDefinition {
   placeholders: PptxLayoutPlaceholder[];
   /** Slide-layout index in the deck (1-based, from file name). */
   index: number;
+  /** Layout-level background fill (hex or `theme:<key>`), if explicitly set. */
+  bgFill?: string;
+  /** Decorative non-placeholder shapes drawn on the layout (accent bars, dividers, color blocks). */
+  decorShapes: PptxLayoutDecorShape[];
 }
 
 export interface PptxLayoutCatalog {
