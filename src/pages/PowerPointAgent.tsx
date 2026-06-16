@@ -461,8 +461,6 @@ const PowerPointAgent: React.FC = () => {
   }, [selectedBrandId, brands, activeBrand?.name]);
 
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeBrand?.id, brands]);
 
   // Load suggestion chips from agent_prompt_presets so admins can edit them
   // without redeploys. Falls back to the hardcoded list on any failure.
