@@ -135,6 +135,29 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
     }
   };
 
+  const canApplyFixes = !!getLastPptxImportFile();
+
+  const runApplyFixes = async () => {
+    if (!canApplyFixes) {
+      toast.error('No imported PPTX available to re-run.');
+      return;
+    }
+    setApplying(true);
+    try {
+      const result = await applyPptxImportFixes();
+      if (!result) throw new Error('Re-import failed');
+      const recovered = result.report?.issues.filter(i => i.reason.startsWith('Recovered')).length ?? 0;
+      toast.success(
+        `Re-imported ${result.slides.length} slides` + (recovered ? ` · ${recovered} recovered` : '')
+      );
+    } catch (e) {
+      console.error('Apply fixes error', e);
+      toast.error(e instanceof Error ? e.message : 'Failed to apply fixes');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const severityClass: Record<NonNullable<AiResolveResult['severity']>, string> = {
     clean: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
     minor: 'bg-sky-500/15 text-sky-700 border-sky-500/30',
