@@ -21,6 +21,20 @@ const BUILTIN_CORPORATE_DECKS: Record<string, { url: string; fileName: string; l
   },
 };
 
+// Brands that have an approved corporate deck wired in. When one of these is
+// the active brand, the Editor auto-attaches that deck as the style source so
+// AI-generated slides, blank slides, and the "Brand Slide" style match the
+// uploaded PPT instead of a generic theme.
+const BRAND_CORPORATE_TEMPLATE_MAP: { match: (name: string) => boolean; templateId: string }[] = [
+  { match: (n) => n.toLowerCase().includes('transperfect'), templateId: 'transperfect-2026' },
+];
+
+const resolveCorporateTemplateForBrand = (brandName?: string | null): string | null => {
+  if (!brandName) return null;
+  const hit = BRAND_CORPORATE_TEMPLATE_MAP.find((m) => m.match(brandName));
+  return hit?.templateId ?? null;
+};
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
