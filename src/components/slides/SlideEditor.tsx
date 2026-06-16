@@ -1691,6 +1691,52 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                 <span className="text-sm font-bold">?</span>
               </Button>
 
+              {corporateStyleRef && brandPreviewSlide && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 px-2 text-xs"
+                      title={`Live preview of the ${corporateStyleRef.label} style on this slide`}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Brand preview
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[520px] p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Brand style preview
+                        </div>
+                        <div className="text-sm font-semibold truncate">
+                          {corporateStyleRef.label}
+                        </div>
+                      </div>
+                      <Button size="sm" className="h-7 text-xs" onClick={applyBrandStyleToActiveSlide}>
+                        Apply to slide
+                      </Button>
+                    </div>
+                    <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-black">
+                      <CenteredScaledSlide>
+                        <SlideRenderer
+                          slide={brandPreviewSlide}
+                          brandColors={brandColors}
+                          brandFonts={brandFonts}
+                        />
+                      </CenteredScaledSlide>
+                    </div>
+                    <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
+                      Live preview applies the parsed master chrome (logos, decorative shapes,
+                      brand background) from the attached deck onto slide {activeIndex + 1}.
+                      Click <span className="font-semibold">Apply to slide</span> to commit, or close to discard.
+                    </p>
+                  </PopoverContent>
+                </Popover>
+              )}
+
+
               <BrandLockBar
                 brandName={brand?.name}
                 brandColors={brandColors}
