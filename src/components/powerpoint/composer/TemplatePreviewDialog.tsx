@@ -3578,14 +3578,19 @@ export const TemplatePreviewDialog: React.FC<Props> = ({ template, open, onOpenC
     };
   }, [template?.id, open]);
 
-  if (!template || !content) return null;
-  const t = template;
-  const showRealDeck = isCorporate && (realSlides?.length ?? 0) > 0;
+  // NOTE: all hooks must run unconditionally — keep the early return BELOW
+  // every hook call to avoid "Rendered more hooks than during the previous
+  // render" when content/template become available after first paint.
+  const isCorporateTemplate = !!template && isCorporate;
+  const showRealDeck = isCorporateTemplate && (realSlides?.length ?? 0) > 0;
   const { thumbs: realThumbs, ready: thumbsReady, progress: thumbProgress } = useSlideThumbnails(
     showRealDeck && template ? template.id : null,
     showRealDeck ? realSlides : null,
     { width: 480, quality: 0.72 },
   );
+
+  if (!template || !content) return null;
+  const t = template;
 
 
   return (
