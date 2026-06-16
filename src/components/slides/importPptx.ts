@@ -59,6 +59,14 @@ export interface PptxThemeTokens {
  * Parse a PPTX file and extract slides as SlideData[], including embedded images.
  */
 export async function parsePptxFile(file: File): Promise<SlideData[]> {
+  const startedAt = Date.now();
+  const issues: PptxImportIssue[] = [];
+  let mediaTotal = 0;
+  let mediaLoaded = 0;
+  let mediaSkipped = 0;
+  let picturesResolved = 0;
+  let picturesUnresolved = 0;
+
   const zip = await JSZip.loadAsync(file);
 
   // Slide dimensions (EMU) so we can map shape geometry to %.
@@ -77,15 +85,31 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
   const mediaMap = new Map<string, string>();
   for (const [path, zipEntry] of Object.entries(zip.files)) {
     if (!path.startsWith('ppt/media/')) continue;
+    mediaTotal++;
     const ext = path.split('.').pop()?.toLowerCase() || '';
-    if (!IMAGE_EXTENSIONS.includes(ext)) continue;
-    if (ext === 'emf' || ext === 'wmf') continue;
-    const blob = await zipEntry.async('blob');
-    const mimeType = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
-    const dataUrl = await blobToDataUrl(blob, mimeType);
     const filename = path.split('/').pop()!;
-    mediaMap.set(filename, dataUrl);
+    if (!IMAGE_EXTENSIONS.includes(ext)) {
+      mediaSkipped++;
+      issues.push({ scope: 'media', path: filename, reason: 'Unsupported file type', detail: `.${ext || 'unknown'}` });
+      continue;
+    }
+    if (ext === 'emf' || ext === 'wmf') {
+      mediaSkipped++;
+      issues.push({ scope: 'media', path: filename, reason: 'Vector metafile not renderable in browser', detail: `.${ext}` });
+      continue;
+    }
+    try {
+      const blob = await zipEntry.async('blob');
+      const mimeType = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
+      const dataUrl = await blobToDataUrl(blob, mimeType);
+      mediaMap.set(filename, dataUrl);
+      mediaLoaded++;
+    } catch (err) {
+      mediaSkipped++;
+      issues.push({ scope: 'media', path: filename, reason: 'Failed to decode media blob', detail: String((err as Error)?.message || err) });
+    }
   }
+
 
   // 2. Per-slide rels — flat list of media filenames AND Map<embedId, filename>
   //    so <a:blip r:embed="rIdX"/> resolves to its actual file at xfrm coords.
