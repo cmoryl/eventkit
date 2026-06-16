@@ -1,11 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, X } from 'lucide-react';
+import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, Sparkles, X } from 'lucide-react';
 import {
   getLastPptxImportReport,
   type PptxImportIssue,
   type PptxImportReport,
 } from './importPptx';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+interface AiResolution {
+  title: string;
+  action: string;
+  audience: 'user' | 'developer';
+  affectedScopes?: string[];
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface AiResolveResult {
+  summary: string;
+  severity: 'clean' | 'minor' | 'moderate' | 'severe';
+  resolutions: AiResolution[];
+  followUps?: string[];
+}
 
 const scopeBadge: Record<PptxImportIssue['scope'], string> = {
   media: 'bg-amber-500/15 text-amber-600 border-amber-500/30',
