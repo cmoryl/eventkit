@@ -30,7 +30,11 @@ export interface PptxImportReport {
 }
 
 let lastReport: PptxImportReport | null = null;
+let lastImportedFile: File | null = null;
+let lastImportOptions: PptxImportOptions | undefined;
 export const getLastPptxImportReport = (): PptxImportReport | null => lastReport;
+export const getLastPptxImportFile = (): File | null => lastImportedFile;
+export const getLastPptxImportOptions = (): PptxImportOptions | undefined => lastImportOptions;
 
 const emitReport = (report: PptxImportReport) => {
   lastReport = report;
@@ -40,6 +44,16 @@ const emitReport = (report: PptxImportReport) => {
     } catch {/* noop */}
   }
 };
+
+/**
+ * Optional behaviors used by the "Apply Fixes" flow in the debug panel.
+ * When `recover` is true, the importer tries to salvage unresolved pictures
+ * by sequentially matching them to unused media files, and silences expected
+ * EMF/WMF skips so they don't pollute the issue list.
+ */
+export interface PptxImportOptions {
+  recover?: boolean;
+}
 
 /**
  * Brand tokens extracted from a PPTX `ppt/theme/theme1.xml` (the authoritative
