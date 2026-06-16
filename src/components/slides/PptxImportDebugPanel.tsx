@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, X } from 'lucide-react';
 import {
   getLastPptxImportReport,
   type PptxImportIssue,
