@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import type { DeckTemplate } from './TemplateGallery';
 import { cn } from '@/lib/utils';
+import { getCorporateDeckRef } from './corporateDeckPreviews';
+import { CorporateDeckLiveThumb } from './CorporateDeckLiveThumb';
 
 const isLight = (hex: string) => {
   const bg = hex.replace('#', '');
@@ -1584,8 +1586,32 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
       >
         <div className="absolute inset-0" style={{ background: surface.base }} />
         <div className="absolute inset-0 opacity-80" style={{ background: surface.pattern }} />
-        <LookMotif look={look} template={template} textColor={template.palette.text} />
-        <DeckPreviewVisual t={template} kind={kind} look={look} dense={dense} />
+        {(() => {
+          // If this template ships with a real bundled .pptx (e.g. TransPerfect
+          // Corporate Deck), render the actual first slide so the gallery card
+          // matches what opens in the editor — no more generic gradient-orb
+          // illustration that drifts from the brand reality.
+          const corp = getCorporateDeckRef(template.id);
+          if (corp) {
+            return (
+              <CorporateDeckLiveThumb
+                deck={corp}
+                fallback={
+                  <>
+                    <LookMotif look={look} template={template} textColor={template.palette.text} />
+                    <DeckPreviewVisual t={template} kind={kind} look={look} dense={dense} />
+                  </>
+                }
+              />
+            );
+          }
+          return (
+            <>
+              <LookMotif look={look} template={template} textColor={template.palette.text} />
+              <DeckPreviewVisual t={template} kind={kind} look={look} dense={dense} />
+            </>
+          );
+        })()}
 
         {/* Tiny label badges in preview corner */}
         <div className="absolute left-3 top-3 flex flex-wrap items-center gap-1.5">
