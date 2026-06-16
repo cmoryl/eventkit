@@ -230,6 +230,15 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
         >
           <Sparkles className="h-3 w-3" /> {aiLoading ? 'Resolving…' : 'AI Resolve'}
         </button>
+        <button
+          type="button"
+          onClick={runApplyFixes}
+          disabled={applying || !canApplyFixes || (!aiResult && !hasIssues)}
+          className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary/20 disabled:opacity-50"
+          title={aiResult ? 'Re-run import with AI recovery and update slides' : 'Run AI Resolve first'}
+        >
+          <Wand2 className="h-3 w-3" /> {applying ? 'Applying…' : 'Apply Fixes'}
+        </button>
         <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Export</span>
         <button
           type="button"
