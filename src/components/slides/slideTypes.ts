@@ -281,6 +281,32 @@ export interface SlideData {
   templateId?: string;
   /** Named-slot values matching the template's slots[] schema. */
   slotValues?: Record<string, unknown>;
+  /**
+   * Look-and-feel chrome lifted from an imported master deck. When set, the
+   * SlideRenderer paints the layout's background fill, decorative shapes, and
+   * master imagery (logo, footer marks) beneath the slide's content so AI-
+   * generated slides visually inherit the source template's identity.
+   * All positions are in % of slide width/height (0-100).
+   */
+  masterChrome?: {
+    /** Resolved hex background (already theme-resolved). */
+    bgFill?: string;
+    /** Decorative shapes (accent bars, color blocks, dividers). */
+    shapes?: Array<{
+      geom?: string;
+      xPct: number; yPct: number; wPct: number; hPct: number;
+      fill?: string;
+      line?: string;
+    }>;
+    /** Recurring master imagery (logos, watermarks, footer marks) as data URLs. */
+    assets?: Array<{
+      dataUrl: string;
+      xPct: number; yPct: number; wPct: number; hPct: number;
+      role?: 'logo' | 'watermark' | 'decoration';
+    }>;
+    /** Name of the source layout for debugging / overlay labels. */
+    layoutName?: string;
+  };
 }
 
 /** Per-layout visual variations — only layouts with shipped alternates are listed. */
