@@ -326,12 +326,24 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const chromeShapes: InheritedChrome['shapes'] = [];
     const chromeAssets: InheritedChrome['assets'] = [];
 
+    const slideScopeId = `slide ${slideNum}`;
     for (const sh of parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu)) {
-      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) {
+        if (sh.kind === 'picture') {
+          picturesUnresolved++;
+          issues.push({ scope: 'slide', scopeId: slideScopeId, reason: 'Picture missing geometry', detail: `embed ${sh.picTarget ?? '?'}` });
+        }
+        continue;
+      }
       if (sh.kind === 'picture') {
         const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
         const dataUrl = file ? mediaMap.get(file) : undefined;
-        if (!dataUrl) continue;
+        if (!dataUrl) {
+          picturesUnresolved++;
+          issues.push({ scope: 'slide', scopeId: slideScopeId, path: file, reason: 'Picture embed could not resolve to media', detail: `embed ${sh.picTarget ?? '?'}` });
+          continue;
+        }
+        picturesResolved++;
         const small = sh.wPct < 25 && sh.hPct < 25;
         chromeAssets.push({
           dataUrl,
@@ -348,6 +360,7 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
         });
       }
     }
+
 
     const layoutFile = slideLayoutMap.get(slideNum);
     let inherited: InheritedChrome = { shapes: [], assets: [] };
