@@ -129,9 +129,16 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
       const rId = relMatch[1];
       const target = relMatch[2];
       const mediaName = target.match(/\/media\/([^"/]+)$/)?.[1];
-      if (mediaName && mediaMap.has(mediaName)) {
-        embeds.set(rId, mediaName);
-        images.push(mediaName);
+      if (mediaName) {
+        if (mediaMap.has(mediaName)) {
+          embeds.set(rId, mediaName);
+          images.push(mediaName);
+        } else {
+          issues.push({
+            scope: 'slide', scopeId: `slide ${slideNum}`, path: mediaName,
+            reason: 'Slide references media not loaded', detail: `rel ${rId} → ${target}`,
+          });
+        }
       }
       const layoutName = target.match(/\/slideLayouts\/(slideLayout\d+\.xml)$/)?.[1];
       if (layoutName) slideLayoutMap.set(slideNum, layoutName);
