@@ -431,6 +431,33 @@ export async function parsePptxFile(file: File, options: PptxImportOptions = {})
   return slides;
 }
 
+/**
+ * Re-import the last PPTX with recovery options, then broadcast the new slides
+ * so listeners (PowerPointAgent, SlideEditor) can swap them in immediately.
+ * Returns null if no prior import exists.
+ */
+export interface PptxApplyFixesDetail {
+  slides: SlideData[];
+  report: PptxImportReport | null;
+  fileName: string;
+}
+
+export async function applyPptxImportFixes(): Promise<PptxApplyFixesDetail | null> {
+  if (!lastImportedFile) return null;
+  const slides = await parsePptxFile(lastImportedFile, { recover: true });
+  const detail: PptxApplyFixesDetail = {
+    slides,
+    report: lastReport,
+    fileName: lastImportedFile.name,
+  };
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent<PptxApplyFixesDetail>('pptx-import-apply-fixes', { detail }));
+    } catch {/* noop */}
+  }
+  return detail;
+}
+
 function blobToDataUrl(blob: Blob, mimeType: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
