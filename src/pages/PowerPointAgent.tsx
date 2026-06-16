@@ -440,25 +440,45 @@ const PowerPointAgent: React.FC = () => {
   // moment that brand becomes active — so the editor's blank/brand slides and
   // every AI generation inherit the real PPT look & feel without the user
   // having to manually pick the template from the gallery. Tracks the last
-  // brand we auto-applied so re-selecting the same brand isn't noisy.
+  // brand+template combo we auto-applied so re-selecting the same brand isn't
+  // noisy, while still re-firing if the user lands on the editor tab without
+  // starter slides yet (e.g. fresh reload directly on ?tab=editor).
   const lastAutoTemplateBrandRef = useRef<string>("");
   useEffect(() => {
     const brandRecord = brands.find((b) => b.id === selectedBrandId);
     const brandName = brandRecord?.name || activeBrand?.name;
-    if (!brandName || !selectedBrandId) return;
-    if (lastAutoTemplateBrandRef.current === selectedBrandId) return;
+    if (!brandName || !selectedBrandId) {
+      console.debug("[CorporateDeck] skip — no brand resolved yet", { selectedBrandId, brandName });
+      return;
+    }
     const templateId = resolveCorporateTemplateForBrand(brandName);
     if (!templateId) return;
-    // Don't override a deliberate user pick of a *different* template.
-    if (selectedTemplateId && selectedTemplateId !== templateId) return;
     const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === templateId);
     if (!tpl) return;
+    const alreadyLoaded =
+      selectedTemplateId === templateId &&
+      templateStarterSlides &&
+      templateStarterSlides.length > 0;
+    if (alreadyLoaded) {
+      lastAutoTemplateBrandRef.current = selectedBrandId;
+      return;
+    }
+    // Don't override a deliberate user pick of a *different* template (only
+    // when we've already auto-applied for this brand at least once).
+    if (
+      lastAutoTemplateBrandRef.current === selectedBrandId &&
+      selectedTemplateId &&
+      selectedTemplateId !== templateId
+    ) {
+      return;
+    }
+    console.debug("[CorporateDeck] auto-loading deck for brand", { brandName, templateId });
     lastAutoTemplateBrandRef.current = selectedBrandId;
     setSelectedTemplateId(templateId);
     setThemeOverride(tpl.themePrompt);
     void loadCorporateDeckForTemplate(tpl, { jumpToEditor: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedBrandId, brands, activeBrand?.name]);
+  }, [selectedBrandId, brands, activeBrand?.name, activeTab, templateStarterSlides]);
 
 
 
