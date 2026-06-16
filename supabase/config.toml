@@ -17,3 +17,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.voice-agent-claude]
 verify_jwt = false
+
+[functions.resolve-pptx-issues]
+verify_jwt = false
