@@ -358,13 +358,31 @@ export async function parsePptxFile(file: File, options: PptxImportOptions = {})
       }
       if (sh.kind === 'picture') {
         const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
-        const dataUrl = file ? mediaMap.get(file) : undefined;
+        let dataUrl = file ? mediaMap.get(file) : undefined;
+        let recovered = false;
+        if (!dataUrl && recover) {
+          // Try digit-suffix match: rId7 → image7.*
+          const digits = (sh.picTarget || '').match(/(\d+)/)?.[1];
+          if (digits) {
+            for (const [name, url] of mediaMap.entries()) {
+              if (name.match(/(\d+)/)?.[1] === digits) { dataUrl = url; recovered = true; break; }
+            }
+          }
+          // Fallback: any first unused media file
+          if (!dataUrl) {
+            const first = mediaMap.values().next();
+            if (!first.done) { dataUrl = first.value; recovered = true; }
+          }
+        }
         if (!dataUrl) {
           picturesUnresolved++;
           issues.push({ scope: 'slide', scopeId: slideScopeId, path: file, reason: 'Picture embed could not resolve to media', detail: `embed ${sh.picTarget ?? '?'}` });
           continue;
         }
         picturesResolved++;
+        if (recovered) {
+          issues.push({ scope: 'slide', scopeId: slideScopeId, reason: 'Recovered picture via fallback match', detail: `embed ${sh.picTarget ?? '?'}` });
+        }
         const small = sh.wPct < 25 && sh.hPct < 25;
         chromeAssets.push({
           dataUrl,
