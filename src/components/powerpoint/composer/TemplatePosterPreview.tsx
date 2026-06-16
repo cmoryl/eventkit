@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import type { DeckTemplate } from './TemplateGallery';
 import { cn } from '@/lib/utils';
+import { getCorporateDeckRef } from './corporateDeckPreviews';
+import { CorporateDeckLiveThumb } from './CorporateDeckLiveThumb';
 
 const isLight = (hex: string) => {
   const bg = hex.replace('#', '');
