@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Plus, Trash2, Copy, ChevronLeft, ChevronRight, Play,
@@ -426,28 +426,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       });
       if (error) throw new Error(error.message || 'Generation failed');
       if (!data?.slide) throw new Error('No slide returned');
-      const g = data.slide as any;
-      const bulletsText = Array.isArray(g.bullets) && g.bullets.length
-        ? g.bullets.map((b: string) => `• ${b}`).join('\n')
-        : undefined;
-      // Theme tokens straight from theme1.xml — bake the master's bg/text
-      // colors directly into the generated slide so it visually inherits the
-      // template look instead of falling back to the editor's default theme.
-      const tk = corporateStyleRef.themeTokens?.colors || {};
-      const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
-      const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
-      const chrome = buildMasterChromeForLayoutName(layoutName);
-      const newSlide: SlideData = {
-        id: uuidv4(),
-        layout: (g.layout as SlideData['layout']) || 'content',
-        title: g.title || 'New Slide',
-        subtitle: g.subtitle,
-        body: g.body || bulletsText,
-        notes: g.notes,
-        variant: 'default',
-        ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
-        ...(chrome ? { masterChrome: chrome } : {}),
-      };
+      const { slide: newSlide, layoutName } = materializeGeneratedSlide(data.slide);
       setPendingStyledSlide(newSlide);
       setPendingGenerated({
         title: newSlide.title,
@@ -521,11 +500,30 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
    * dropped onto the slide as `masterChrome` so SlideRenderer paints the
    * Transperfect (or any imported) template's identity behind generated text.
    */
+  /**
+   * Per-corporateStyleRef cache so every regenerate call (single or batch) that
+   * targets the same master layoutName produces an *identical* chrome object —
+   * same bgFill, decor shapes, and master assets. This guarantees cohesion
+   * across an entire batch and across successive regenerations.
+   */
+  const chromeCacheRef = useRef<{ key: unknown; cache: Map<string, NonNullable<SlideData['masterChrome']> | undefined> }>({ key: null, cache: new Map() });
+
   const buildMasterChromeForLayoutName = useCallback((layoutName: string | null): NonNullable<SlideData['masterChrome']> | undefined => {
     if (!corporateStyleRef || !layoutName) return undefined;
+    // Reset cache when the parsed template (corporateStyleRef) changes.
+    if (chromeCacheRef.current.key !== corporateStyleRef) {
+      chromeCacheRef.current = { key: corporateStyleRef, cache: new Map() };
+    }
+    const cacheKey = layoutName.trim().toLowerCase();
+    const cached = chromeCacheRef.current.cache.get(cacheKey);
+    if (cached !== undefined || chromeCacheRef.current.cache.has(cacheKey)) return cached;
+
     const layouts = corporateStyleRef.layoutCatalog?.layouts || [];
-    const matched = layouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase());
-    if (!matched) return undefined;
+    const matched = layouts.find((l) => l.name.trim().toLowerCase() === cacheKey);
+    if (!matched) {
+      chromeCacheRef.current.cache.set(cacheKey, undefined);
+      return undefined;
+    }
     const tokens = corporateStyleRef.themeTokens?.colors || {};
     const resolveColor = (c?: string): string | undefined => {
       if (!c) return undefined;
@@ -549,8 +547,6 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       fill: resolveColor(sh.fill),
       line: resolveColor(sh.line),
     }));
-    // Also include decor shapes from a representative slide using this layout
-    // (catches motifs the layout XML didn't bake in but the master deck reuses).
     const slideShapes = (bpForLayout?.shapes || [])
       .filter((s) => s.kind === 'shape' && s.fill && s.xPct !== undefined && s.yPct !== undefined && s.wPct !== undefined && s.hPct !== undefined)
       .slice(0, 12)
@@ -561,8 +557,6 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         line: resolveColor(s.line),
       }));
 
-    // Master imagery that has positions — logos, footer marks. Prefer assets
-    // tagged for this specific layout, falling back to slide-master assets.
     const layoutTag = `layout:${matched.fileName.replace('.xml', '')}`;
     const layoutAssets = (corporateStyleRef.masterAssets || [])
       .filter((a) => a.xPct !== undefined && a.yPct !== undefined && a.wPct !== undefined && a.hPct !== undefined)
@@ -573,13 +567,45 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       role: a.role,
     }));
 
-    return {
+    const chrome = {
       bgFill,
       shapes: [...layoutShapes, ...slideShapes],
       assets,
       layoutName: matched.name,
     };
+    chromeCacheRef.current.cache.set(cacheKey, chrome);
+    return chrome;
   }, [corporateStyleRef]);
+
+  /**
+   * Single source of truth that turns an AI-generated slide payload into a
+   * SlideData + resolved layout overlay. Used by single-slide generation,
+   * batch generation, and every regenerate path so chrome is always re-resolved
+   * the same way from the same parsed template assets.
+   */
+  const materializeGeneratedSlide = useCallback((g: any): { slide: SlideData; layout: ResolvedLayout | null; layoutName: string | null } => {
+    const bulletsText = Array.isArray(g?.bullets) && g.bullets.length
+      ? g.bullets.map((b: string) => `• ${b}`).join('\n')
+      : undefined;
+    const tk = corporateStyleRef?.themeTokens?.colors || {};
+    const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
+    const layoutName = typeof g?.layoutName === 'string' ? g.layoutName : null;
+    const chrome = buildMasterChromeForLayoutName(layoutName);
+    const slide: SlideData = {
+      id: uuidv4(),
+      layout: (g?.layout as SlideData['layout']) || 'content',
+      title: g?.title || 'New Slide',
+      subtitle: g?.subtitle,
+      body: g?.body || bulletsText,
+      notes: g?.notes,
+      variant: 'default',
+      ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
+      ...(chrome ? { masterChrome: chrome } : {}),
+    };
+    const layout = resolveLayoutForSlide(layoutName, slide);
+    return { slide, layout, layoutName };
+  }, [corporateStyleRef, buildMasterChromeForLayoutName, resolveLayoutForSlide]);
+
 
   /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
   const applyMasterAsset = useCallback((dataUrl: string | null) => {
@@ -647,30 +673,11 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
 
       // Apply the same theme tokens + master chrome across the whole batch so
       // the staged preview looks like one cohesive run that actually matches
-      // the imported template's identity.
-      const tk = corporateStyleRef.themeTokens?.colors || {};
-      const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
+      // the imported template's identity. materializeGeneratedSlide() shares
+      // the chrome cache with single-slide + regenerate flows for consistency.
 
-      const staged: PendingBatchEntry[] = out.map((g: any) => {
-        const bulletsText = Array.isArray(g.bullets) && g.bullets.length
-          ? g.bullets.map((b: string) => `• ${b}`).join('\n')
-          : undefined;
-        const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
-        const chrome = buildMasterChromeForLayoutName(layoutName);
-        const slide: SlideData = {
-          id: uuidv4(),
-          layout: (g.layout as SlideData['layout']) || 'content',
-          title: g.title || 'New Slide',
-          subtitle: g.subtitle,
-          body: g.body || bulletsText,
-          notes: g.notes,
-          variant: 'default',
-          ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
-          ...(chrome ? { masterChrome: chrome } : {}),
-        };
-        const layout = resolveLayoutForSlide(layoutName, slide);
-        return { slide, layout, layoutName };
-      });
+
+      const staged: PendingBatchEntry[] = out.map((g: any) => materializeGeneratedSlide(g));
 
       setPendingBatch(staged);
       setBatchPreviewShowOverlay(true);
@@ -683,7 +690,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setIsBatchGenerating(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt, resolveLayoutForSlide]);
+  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt, materializeGeneratedSlide]);
 
   const confirmInsertPendingBatch = useCallback(() => {
     if (!pendingBatch || pendingBatch.length === 0) return;
@@ -697,6 +704,46 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setPendingBatch(null);
     toast.success(`Inserted ${inserted.length} slides`);
   }, [pendingBatch, activeIndex]);
+
+  /** Regenerate a single staged batch slide in place — keeps every other
+   *  slide intact and re-resolves chrome from the same parsed template. */
+  const [regeneratingBatchIdx, setRegeneratingBatchIdx] = useState<number | null>(null);
+  const regenerateOneInBatch = useCallback(async (idx: number) => {
+    if (!corporateStyleRef || !pendingBatch) return;
+    setRegeneratingBatchIdx(idx);
+    const toastId = toast.loading(`Regenerating slide ${idx + 1}…`);
+    try {
+      const refs = corporateStyleRef.slides.slice(0, 24).map((s) => ({
+        layout: s.layout,
+        title: s.title,
+        subtitle: s.subtitle,
+        body: typeof s.body === 'string' ? s.body : undefined,
+        bullets: Array.isArray((s as any).bullets) ? (s as any).bullets : undefined,
+        notes: s.notes,
+      }));
+      const { data, error } = await supabase.functions.invoke('add-styled-slide', {
+        body: {
+          styleName: corporateStyleRef.label,
+          deckTitle: assetName,
+          referenceSlides: refs,
+          insertPosition: activeIndex + 2 + idx,
+          themeTokens: corporateStyleRef.themeTokens,
+          layoutCatalog: corporateStyleRef.layoutCatalog,
+          slideBlueprints: corporateStyleRef.slideBlueprints,
+        },
+      });
+      if (error) throw new Error(error.message || 'Regeneration failed');
+      if (!data?.slide) throw new Error('No slide returned');
+      const next = materializeGeneratedSlide(data.slide);
+      setPendingBatch((prev) => prev ? prev.map((e, i) => (i === idx ? next : e)) : prev);
+      toast.success(`Slide ${idx + 1} regenerated`, { id: toastId });
+    } catch (err) {
+      console.error('regenerate batch slide failed', err);
+      toast.error(err instanceof Error ? err.message : 'Could not regenerate slide', { id: toastId });
+    } finally {
+      setRegeneratingBatchIdx(null);
+    }
+  }, [corporateStyleRef, pendingBatch, assetName, activeIndex, materializeGeneratedSlide]);
 
 
   const addSlide = useCallback((afterIndex: number) => {
@@ -3290,11 +3337,22 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingBatch?.map((entry, idx) => (
               <div key={entry.slide.id} className="bg-background/60 border border-border/60 rounded-md overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 text-xs">
-                  <span className="font-semibold">Slide {idx + 1}</span>
-                  <span className="text-muted-foreground truncate ml-2">
+                <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/60 text-xs">
+                  <span className="font-semibold shrink-0">Slide {idx + 1}</span>
+                  <span className="text-muted-foreground truncate flex-1 ml-2">
                     {entry.layout ? `"${entry.layout.name}"` : entry.layoutName || 'auto layout'}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 gap-1 text-[10px] shrink-0"
+                    onClick={() => regenerateOneInBatch(idx)}
+                    disabled={regeneratingBatchIdx !== null}
+                    title="Regenerate this slide — re-uses the same template chrome cache"
+                  >
+                    <Wand2 className={cn('h-3 w-3', regeneratingBatchIdx === idx && 'animate-pulse')} />
+                    {regeneratingBatchIdx === idx ? 'Regenerating…' : 'Regenerate'}
+                  </Button>
                 </div>
                 <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
                   <CenteredScaledSlide>
@@ -3359,11 +3417,21 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             {pendingBatch?.length ?? 0} slides will be inserted after slide {activeIndex + 1}.
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setPendingBatch(null)}>Discard</Button>
-            <Button variant="outline" onClick={() => { setPendingBatch(null); setBatchDialogOpen(true); }}>
-              Regenerate…
+            <Button variant="outline" onClick={() => setPendingBatch(null)} disabled={isBatchGenerating || regeneratingBatchIdx !== null}>Discard</Button>
+            <Button
+              variant="outline"
+              onClick={() => { setPendingBatch(null); runBatchGeneration(); }}
+              disabled={isBatchGenerating || regeneratingBatchIdx !== null}
+              className="gap-1.5"
+              title="Regenerate all slides with the same prompt, count, and template chrome"
+            >
+              <Wand2 className={cn('h-3.5 w-3.5', isBatchGenerating && 'animate-pulse')} />
+              {isBatchGenerating ? 'Regenerating…' : 'Regenerate all'}
             </Button>
-            <Button onClick={confirmInsertPendingBatch} className="gap-1.5">
+            <Button variant="ghost" size="sm" onClick={() => setBatchDialogOpen(true)} disabled={isBatchGenerating || regeneratingBatchIdx !== null}>
+              Edit prompt…
+            </Button>
+            <Button onClick={confirmInsertPendingBatch} className="gap-1.5" disabled={isBatchGenerating || regeneratingBatchIdx !== null}>
               <Sparkles className="h-3.5 w-3.5" />
               Insert {pendingBatch?.length ?? 0} slides
             </Button>
