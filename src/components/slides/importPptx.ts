@@ -419,12 +419,37 @@ export async function parsePptxLayoutCatalog(file: File): Promise<PptxLayoutCata
       placeholders.push({ type, idx, sz, xPct, yPct, wPct, hPct });
     }
 
+    // Decorative non-placeholder shapes on this layout — accent bars, dividers, color blocks.
+    const decorShapes: PptxLayoutDecorShape[] = [];
+    const allShapes = parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu);
+    for (const sh of allShapes) {
+      if (sh.kind !== 'shape') continue;
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (!sh.fill && !sh.line) continue; // skip invisible markers
+      decorShapes.push({
+        geom: sh.geom, xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
+        fill: sh.fill, line: sh.line,
+      });
+    }
+
+    // Layout-level background fill, if explicitly declared.
+    const bgMatch = xml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
+    let bgFill: string | undefined;
+    if (bgMatch) {
+      const srgb = bgMatch[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      const scheme = bgMatch[1].match(/<a:schemeClr\s+val="([^"]+)"/);
+      if (srgb) bgFill = `#${srgb[1].toUpperCase()}`;
+      else if (scheme) bgFill = `theme:${scheme[1]}`;
+    }
+
     layouts.push({
       fileName,
       name: nameMatch?.[1] || `Layout ${index}`,
       type: typeMatch?.[1],
       placeholders,
       index,
+      bgFill,
+      decorShapes,
     });
   }
 
