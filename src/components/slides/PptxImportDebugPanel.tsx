@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, X } from 'lucide-react';
 import {
   getLastPptxImportReport,
   type PptxImportIssue,
@@ -42,6 +42,46 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
   if (!report || dismissed) return null;
 
   const hasIssues = report.issues.length > 0;
+
+  const triggerDownload = (filename: string, mime: string, content: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const baseName = (report.fileName || 'pptx-import').replace(/\.pptx$/i, '') + '-import-report';
+
+  const exportJson = () => {
+    triggerDownload(`${baseName}.json`, 'application/json', JSON.stringify(report, null, 2));
+  };
+
+  const exportCsv = () => {
+    const header = ['scope', 'scopeId', 'reason', 'detail', 'path'];
+    const escape = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const meta = [
+      `# file,${escape(report.fileName)}`,
+      `# durationMs,${report.durationMs}`,
+      `# slidesParsed,${report.slidesParsed}`,
+      `# mediaTotal,${report.mediaTotal}`,
+      `# mediaLoaded,${report.mediaLoaded}`,
+      `# mediaSkipped,${report.mediaSkipped}`,
+      `# picturesResolved,${report.picturesResolved}`,
+      `# picturesUnresolved,${report.picturesUnresolved}`,
+    ].join('\n');
+    const rows = report.issues.map((i) =>
+      [i.scope, i.scopeId, i.reason, i.detail, i.path].map(escape).join(',')
+    );
+    triggerDownload(`${baseName}.csv`, 'text/csv', `${meta}\n${header.join(',')}\n${rows.join('\n')}\n`);
+  };
 
   return (
     <div className={cn('fixed bottom-4 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card/95 text-xs shadow-2xl backdrop-blur-xl', className)}>
@@ -90,6 +130,24 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
             <span>Unresolved: 0</span>
           )}
         </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 border-b border-border/60 px-3 py-1.5">
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Export</span>
+        <button
+          type="button"
+          onClick={exportJson}
+          className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-bold hover:bg-muted"
+        >
+          <Download className="h-3 w-3" /> JSON
+        </button>
+        <button
+          type="button"
+          onClick={exportCsv}
+          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-bold hover:bg-muted"
+        >
+          <Download className="h-3 w-3" /> CSV
+        </button>
       </div>
 
       {open && (
