@@ -435,6 +435,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       // template look instead of falling back to the editor's default theme.
       const tk = corporateStyleRef.themeTokens?.colors || {};
       const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
+      const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+      const chrome = buildMasterChromeForLayoutName(layoutName);
       const newSlide: SlideData = {
         id: uuidv4(),
         layout: (g.layout as SlideData['layout']) || 'content',
@@ -443,7 +445,8 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         body: g.body || bulletsText,
         notes: g.notes,
         variant: 'default',
-        ...(themeBg ? { bgColor: themeBg } : {}),
+        ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
+        ...(chrome ? { masterChrome: chrome } : {}),
       };
       setPendingStyledSlide(newSlide);
       setPendingGenerated({
@@ -452,7 +455,6 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         body: newSlide.body,
         notes: newSlide.notes,
       });
-      const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
       applyResolvedLayout(layoutName, newSlide);
 
       toast.success(
