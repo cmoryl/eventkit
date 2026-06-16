@@ -500,11 +500,30 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
    * dropped onto the slide as `masterChrome` so SlideRenderer paints the
    * Transperfect (or any imported) template's identity behind generated text.
    */
+  /**
+   * Per-corporateStyleRef cache so every regenerate call (single or batch) that
+   * targets the same master layoutName produces an *identical* chrome object —
+   * same bgFill, decor shapes, and master assets. This guarantees cohesion
+   * across an entire batch and across successive regenerations.
+   */
+  const chromeCacheRef = useRef<{ key: unknown; cache: Map<string, NonNullable<SlideData['masterChrome']> | undefined> }>({ key: null, cache: new Map() });
+
   const buildMasterChromeForLayoutName = useCallback((layoutName: string | null): NonNullable<SlideData['masterChrome']> | undefined => {
     if (!corporateStyleRef || !layoutName) return undefined;
+    // Reset cache when the parsed template (corporateStyleRef) changes.
+    if (chromeCacheRef.current.key !== corporateStyleRef) {
+      chromeCacheRef.current = { key: corporateStyleRef, cache: new Map() };
+    }
+    const cacheKey = layoutName.trim().toLowerCase();
+    const cached = chromeCacheRef.current.cache.get(cacheKey);
+    if (cached !== undefined || chromeCacheRef.current.cache.has(cacheKey)) return cached;
+
     const layouts = corporateStyleRef.layoutCatalog?.layouts || [];
-    const matched = layouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase());
-    if (!matched) return undefined;
+    const matched = layouts.find((l) => l.name.trim().toLowerCase() === cacheKey);
+    if (!matched) {
+      chromeCacheRef.current.cache.set(cacheKey, undefined);
+      return undefined;
+    }
     const tokens = corporateStyleRef.themeTokens?.colors || {};
     const resolveColor = (c?: string): string | undefined => {
       if (!c) return undefined;
@@ -528,8 +547,6 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       fill: resolveColor(sh.fill),
       line: resolveColor(sh.line),
     }));
-    // Also include decor shapes from a representative slide using this layout
-    // (catches motifs the layout XML didn't bake in but the master deck reuses).
     const slideShapes = (bpForLayout?.shapes || [])
       .filter((s) => s.kind === 'shape' && s.fill && s.xPct !== undefined && s.yPct !== undefined && s.wPct !== undefined && s.hPct !== undefined)
       .slice(0, 12)
@@ -540,8 +557,6 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
         line: resolveColor(s.line),
       }));
 
-    // Master imagery that has positions — logos, footer marks. Prefer assets
-    // tagged for this specific layout, falling back to slide-master assets.
     const layoutTag = `layout:${matched.fileName.replace('.xml', '')}`;
     const layoutAssets = (corporateStyleRef.masterAssets || [])
       .filter((a) => a.xPct !== undefined && a.yPct !== undefined && a.wPct !== undefined && a.hPct !== undefined)
@@ -552,13 +567,45 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       role: a.role,
     }));
 
-    return {
+    const chrome = {
       bgFill,
       shapes: [...layoutShapes, ...slideShapes],
       assets,
       layoutName: matched.name,
     };
+    chromeCacheRef.current.cache.set(cacheKey, chrome);
+    return chrome;
   }, [corporateStyleRef]);
+
+  /**
+   * Single source of truth that turns an AI-generated slide payload into a
+   * SlideData + resolved layout overlay. Used by single-slide generation,
+   * batch generation, and every regenerate path so chrome is always re-resolved
+   * the same way from the same parsed template assets.
+   */
+  const materializeGeneratedSlide = useCallback((g: any): { slide: SlideData; layout: ResolvedLayout | null; layoutName: string | null } => {
+    const bulletsText = Array.isArray(g?.bullets) && g.bullets.length
+      ? g.bullets.map((b: string) => `• ${b}`).join('\n')
+      : undefined;
+    const tk = corporateStyleRef?.themeTokens?.colors || {};
+    const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
+    const layoutName = typeof g?.layoutName === 'string' ? g.layoutName : null;
+    const chrome = buildMasterChromeForLayoutName(layoutName);
+    const slide: SlideData = {
+      id: uuidv4(),
+      layout: (g?.layout as SlideData['layout']) || 'content',
+      title: g?.title || 'New Slide',
+      subtitle: g?.subtitle,
+      body: g?.body || bulletsText,
+      notes: g?.notes,
+      variant: 'default',
+      ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
+      ...(chrome ? { masterChrome: chrome } : {}),
+    };
+    const layout = resolveLayoutForSlide(layoutName, slide);
+    return { slide, layout, layoutName };
+  }, [corporateStyleRef, buildMasterChromeForLayoutName, resolveLayoutForSlide]);
+
 
   /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
   const applyMasterAsset = useCallback((dataUrl: string | null) => {
