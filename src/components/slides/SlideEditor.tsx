@@ -426,28 +426,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       });
       if (error) throw new Error(error.message || 'Generation failed');
       if (!data?.slide) throw new Error('No slide returned');
-      const g = data.slide as any;
-      const bulletsText = Array.isArray(g.bullets) && g.bullets.length
-        ? g.bullets.map((b: string) => `• ${b}`).join('\n')
-        : undefined;
-      // Theme tokens straight from theme1.xml — bake the master's bg/text
-      // colors directly into the generated slide so it visually inherits the
-      // template look instead of falling back to the editor's default theme.
-      const tk = corporateStyleRef.themeTokens?.colors || {};
-      const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
-      const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
-      const chrome = buildMasterChromeForLayoutName(layoutName);
-      const newSlide: SlideData = {
-        id: uuidv4(),
-        layout: (g.layout as SlideData['layout']) || 'content',
-        title: g.title || 'New Slide',
-        subtitle: g.subtitle,
-        body: g.body || bulletsText,
-        notes: g.notes,
-        variant: 'default',
-        ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
-        ...(chrome ? { masterChrome: chrome } : {}),
-      };
+      const { slide: newSlide, layoutName } = materializeGeneratedSlide(data.slide);
       setPendingStyledSlide(newSlide);
       setPendingGenerated({
         title: newSlide.title,
