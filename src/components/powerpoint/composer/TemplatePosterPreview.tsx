@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 import type { DeckTemplate } from './TemplateGallery';
 import { cn } from '@/lib/utils';
-import { getCorporateDeckRef } from './corporateDeckPreviews';
-import { CorporateDeckLiveThumb } from './CorporateDeckLiveThumb';
+import { getCorporateDeckRef, formatDeckSize } from './corporateDeckPreviews';
+import { CorporateDeckLiveThumb, useDeckAttachmentStatus } from './CorporateDeckLiveThumb';
+import { Paperclip, AlertTriangle, Loader2 as DeckLoader } from 'lucide-react';
 
 const isLight = (hex: string) => {
   const bg = hex.replace('#', '');
@@ -1647,6 +1648,13 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
             <Check className="h-3.5 w-3.5" />
           </span>
         )}
+
+        {/* Deck attachment status — confirms the right .pptx is wired up. */}
+        {(() => {
+          const corp = getCorporateDeckRef(template.id);
+          if (!corp) return null;
+          return <DeckAttachmentBadge deck={corp} template={template} />;
+        })()}
       </div>
 
       {/* Info zone — uses the template's own colors so each card carries its own look & feel */}
