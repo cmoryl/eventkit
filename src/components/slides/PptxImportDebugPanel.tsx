@@ -47,6 +47,7 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [aiResult, setAiResult] = useState<AiResolveResult | null>(null);
 
   useEffect(() => {
