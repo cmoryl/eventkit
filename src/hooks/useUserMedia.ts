@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { sanitizeSvg } from '@/utils/svgUtils';
 
 export interface UserMediaItem {
   id: string;
@@ -86,9 +87,30 @@ export function useUserMedia() {
         }
         const ext = (file.name.split('.').pop() || 'png').toLowerCase();
         const path = `library/${user.id}/${crypto.randomUUID()}.${ext}`;
+
+        // Sanitize SVGs before upload: strip <script>, on* handlers, foreignObject,
+        // external refs, etc. Reject if it doesn't parse to a valid <svg>.
+        let uploadBody: Blob | File = file;
+        let uploadSize = file.size;
+        if (mime === 'image/svg+xml') {
+          try {
+            const raw = await file.text();
+            const cleaned = sanitizeSvg(raw);
+            if (!cleaned || !cleaned.includes('<svg')) {
+              console.warn(`Skipping ${file.name}: invalid or unsafe SVG`);
+              continue;
+            }
+            uploadBody = new Blob([cleaned], { type: 'image/svg+xml' });
+            uploadSize = uploadBody.size;
+          } catch (e) {
+            console.warn(`Skipping ${file.name}: SVG sanitization failed`, e);
+            continue;
+          }
+        }
+
         const { error: upErr } = await supabase.storage
           .from('slide-uploads')
-          .upload(path, file, { cacheControl: '3600', upsert: false, contentType: mime });
+          .upload(path, uploadBody, { cacheControl: '3600', upsert: false, contentType: mime });
         if (upErr) {
           console.error('Upload failed', file.name, upErr);
           continue;
@@ -104,7 +126,7 @@ export function useUserMedia() {
             storage_path: path,
             mime,
             kind: mime === 'image/svg+xml' ? 'svg' : 'image',
-            size: file.size,
+            size: uploadSize,
             width: dims.width ?? null,
             height: dims.height ?? null,
           })
