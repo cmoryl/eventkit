@@ -126,7 +126,7 @@ export function useUserMedia() {
             storage_path: path,
             mime,
             kind: mime === 'image/svg+xml' ? 'svg' : 'image',
-            size: file.size,
+            size: uploadSize,
             width: dims.width ?? null,
             height: dims.height ?? null,
           })
