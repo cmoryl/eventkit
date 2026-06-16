@@ -222,7 +222,50 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
       </div>
 
       {open && (
-        <div className="max-h-[280px] overflow-auto p-2">
+        <div className="max-h-[360px] overflow-auto p-2 space-y-2">
+          {aiResult && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-2">
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-primary">AI Resolution</span>
+                <span className={cn('ml-auto rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide', severityClass[aiResult.severity])}>
+                  {aiResult.severity}
+                </span>
+              </div>
+              <p className="text-[11px] text-foreground">{aiResult.summary}</p>
+              {aiResult.resolutions.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {aiResult.resolutions.map((r, i) => (
+                    <li key={i} className="rounded-lg border border-border/70 bg-background/80 p-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={cn('rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide', priorityClass[r.priority])}>
+                          {r.priority}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{r.audience}</span>
+                        <span className="ml-auto text-[10px] font-bold text-foreground">{r.title}</span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-foreground">{r.action}</div>
+                      {r.affectedScopes && r.affectedScopes.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {r.affectedScopes.map((s, j) => (
+                            <span key={j} className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">{s}</span>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {aiResult.followUps && aiResult.followUps.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Verify after fixing</div>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-foreground">
+                    {aiResult.followUps.map((f, i) => <li key={i}>{f}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           {!hasIssues && (
             <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-emerald-700">
               <CheckCircle2 className="h-4 w-4" /> All embedded images and SVGs imported cleanly.
