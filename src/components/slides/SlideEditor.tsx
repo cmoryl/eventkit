@@ -645,17 +645,18 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       const out = Array.isArray(data?.slides) ? data.slides : [];
       if (!out.length) throw new Error('No slides returned');
 
-      // Apply the same theme tokens + master asset across the whole batch so
-      // the staged preview looks like one cohesive run.
+      // Apply the same theme tokens + master chrome across the whole batch so
+      // the staged preview looks like one cohesive run that actually matches
+      // the imported template's identity.
       const tk = corporateStyleRef.themeTokens?.colors || {};
       const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
-      const masterImg = corporateStyleRef.masterAssets?.find((a) => a.role === 'logo')?.dataUrl
-        || corporateStyleRef.masterAssets?.[0]?.dataUrl;
 
       const staged: PendingBatchEntry[] = out.map((g: any) => {
         const bulletsText = Array.isArray(g.bullets) && g.bullets.length
           ? g.bullets.map((b: string) => `• ${b}`).join('\n')
           : undefined;
+        const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
+        const chrome = buildMasterChromeForLayoutName(layoutName);
         const slide: SlideData = {
           id: uuidv4(),
           layout: (g.layout as SlideData['layout']) || 'content',
@@ -664,10 +665,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           body: g.body || bulletsText,
           notes: g.notes,
           variant: 'default',
-          ...(themeBg ? { bgColor: themeBg } : {}),
-          ...(masterImg ? { imageUrl: masterImg } : {}),
+          ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
+          ...(chrome ? { masterChrome: chrome } : {}),
         };
-        const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
         const layout = resolveLayoutForSlide(layoutName, slide);
         return { slide, layout, layoutName };
       });
