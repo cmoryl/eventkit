@@ -1246,6 +1246,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_media: {
+        Row: {
+          created_at: string
+          height: number | null
+          id: string
+          kind: string
+          mime: string | null
+          name: string
+          size: number | null
+          storage_path: string
+          tags: string[]
+          updated_at: string
+          url: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          kind?: string
+          mime?: string | null
+          name: string
+          size?: number | null
+          storage_path: string
+          tags?: string[]
+          updated_at?: string
+          url: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          created_at?: string
+          height?: number | null
+          id?: string
+          kind?: string
+          mime?: string | null
+          name?: string
+          size?: number | null
+          storage_path?: string
+          tags?: string[]
+          updated_at?: string
+          url?: string
+          user_id?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
