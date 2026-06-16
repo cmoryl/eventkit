@@ -5,6 +5,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SlideEditor } from "@/components/slides/SlideEditor";
 import { outlineToThemedSlides } from "@/components/slides/outlineToSlides";
 import { parsePptxFile, parsePptxThemeTokens, parsePptxLayoutCatalog, parsePptxSlideBlueprints, parsePptxMasterAssets, type PptxThemeTokens, type PptxLayoutCatalog, type PptxSlideBlueprint, type PptxMasterAsset } from "@/components/slides/importPptx";
+import { PptxImportDebugPanel } from "@/components/slides/PptxImportDebugPanel";
 import { type SlideData } from "@/components/slides/slideTypes";
 import { DEMO_BY_TEMPLATE, FALLBACK_DEMO } from "@/components/powerpoint/composer/TemplateDemoCard";
 import { demoContentToSlides } from "@/components/powerpoint/composer/demoContentToSlides";
