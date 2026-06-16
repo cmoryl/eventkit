@@ -5,6 +5,7 @@ import { renderLayoutVariation } from './SlideLayoutVariations';
 import { ParallaxRenderer } from './ParallaxRenderer';
 import { BrandHubGrowthChart, BrandHubKpiTiles } from './BrandHubVisualizations';
 import { SlideMock } from '@/components/powerpoint/composer/TemplatePreviewDialog';
+import { MasterChromeLayer } from './MasterChromeLayer';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -138,6 +139,7 @@ export function SlideRenderer({ slide, brandColors, brandFonts, animated, parall
 
   return (
     <SlideLayout variant={slide.variant} accentColor={accentColor} bgColor={slide.bgColor} animated={animated} bgEffect={animated ? slide.bgEffect : undefined}>
+      {slide.masterChrome && <MasterChromeLayer chrome={slide.masterChrome} />}
       {variationNode || <>
       {slide.layout === 'title' && (
         <div className="flex flex-col items-center justify-center h-full px-[200px] text-center">
