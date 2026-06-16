@@ -43,6 +43,46 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
 
   const hasIssues = report.issues.length > 0;
 
+  const triggerDownload = (filename: string, mime: string, content: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const baseName = (report.fileName || 'pptx-import').replace(/\.pptx$/i, '') + '-import-report';
+
+  const exportJson = () => {
+    triggerDownload(`${baseName}.json`, 'application/json', JSON.stringify(report, null, 2));
+  };
+
+  const exportCsv = () => {
+    const header = ['scope', 'scopeId', 'reason', 'detail', 'path'];
+    const escape = (v: unknown) => {
+      const s = v == null ? '' : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const meta = [
+      `# file,${escape(report.fileName)}`,
+      `# durationMs,${report.durationMs}`,
+      `# slidesParsed,${report.slidesParsed}`,
+      `# mediaTotal,${report.mediaTotal}`,
+      `# mediaLoaded,${report.mediaLoaded}`,
+      `# mediaSkipped,${report.mediaSkipped}`,
+      `# picturesResolved,${report.picturesResolved}`,
+      `# picturesUnresolved,${report.picturesUnresolved}`,
+    ].join('\n');
+    const rows = report.issues.map((i) =>
+      [i.scope, i.scopeId, i.reason, i.detail, i.path].map(escape).join(',')
+    );
+    triggerDownload(`${baseName}.csv`, 'text/csv', `${meta}\n${header.join(',')}\n${rows.join('\n')}\n`);
+  };
+
   return (
     <div className={cn('fixed bottom-4 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card/95 text-xs shadow-2xl backdrop-blur-xl', className)}>
       <button
