@@ -163,13 +163,18 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const xml = await entry.async('text');
     const relsPath = xmlPath.replace(/([^/]+)\.xml$/, '_rels/$1.xml.rels');
     const embedMap = new Map<string, string>();
+    const scope: PptxImportIssue['scope'] = xmlPath.includes('slideMasters') ? 'master' : 'layout';
+    const scopeId = xmlPath.split('/').pop();
     if (zip.files[relsPath]) {
       const relsXml = await zip.files[relsPath].async('text');
       const reRel = /<Relationship\b[^>]*\sId="([^"]+)"[^>]*\sTarget="([^"]+)"/g;
       let mr: RegExpExecArray | null;
       while ((mr = reRel.exec(relsXml)) !== null) {
         const mediaName = mr[2].match(/\/media\/([^"/]+)$/)?.[1];
-        if (mediaName && mediaMap.has(mediaName)) embedMap.set(mr[1], mediaName);
+        if (mediaName) {
+          if (mediaMap.has(mediaName)) embedMap.set(mr[1], mediaName);
+          else issues.push({ scope, scopeId, path: mediaName, reason: 'Chrome references media not loaded', detail: `rel ${mr[1]}` });
+        }
       }
     }
     const bgM = xml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
@@ -182,11 +187,22 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const assets: InheritedChrome['assets'] = [];
     const isHex = (v?: string) => !!v && v.startsWith('#');
     for (const sh of parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu)) {
-      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) {
+        if (sh.kind === 'picture') {
+          picturesUnresolved++;
+          issues.push({ scope, scopeId, reason: 'Picture missing geometry', detail: `embed ${sh.picTarget ?? '?'}` });
+        }
+        continue;
+      }
       if (sh.kind === 'picture') {
         const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
         const dataUrl = file ? mediaMap.get(file) : undefined;
-        if (!dataUrl) continue;
+        if (!dataUrl) {
+          picturesUnresolved++;
+          issues.push({ scope, scopeId, path: file, reason: 'Picture embed could not resolve to media', detail: `embed ${sh.picTarget ?? '?'}` });
+          continue;
+        }
+        picturesResolved++;
         const small = sh.wPct < 25 && sh.hPct < 25;
         assets.push({
           dataUrl,
