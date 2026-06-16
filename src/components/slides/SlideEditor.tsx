@@ -677,26 +677,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       const tk = corporateStyleRef.themeTokens?.colors || {};
       const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
 
-      const staged: PendingBatchEntry[] = out.map((g: any) => {
-        const bulletsText = Array.isArray(g.bullets) && g.bullets.length
-          ? g.bullets.map((b: string) => `• ${b}`).join('\n')
-          : undefined;
-        const layoutName = typeof g.layoutName === 'string' ? g.layoutName : null;
-        const chrome = buildMasterChromeForLayoutName(layoutName);
-        const slide: SlideData = {
-          id: uuidv4(),
-          layout: (g.layout as SlideData['layout']) || 'content',
-          title: g.title || 'New Slide',
-          subtitle: g.subtitle,
-          body: g.body || bulletsText,
-          notes: g.notes,
-          variant: 'default',
-          ...(chrome?.bgFill ? { bgColor: chrome.bgFill } : themeBg ? { bgColor: themeBg } : {}),
-          ...(chrome ? { masterChrome: chrome } : {}),
-        };
-        const layout = resolveLayoutForSlide(layoutName, slide);
-        return { slide, layout, layoutName };
-      });
+      const staged: PendingBatchEntry[] = out.map((g: any) => materializeGeneratedSlide(g));
 
       setPendingBatch(staged);
       setBatchPreviewShowOverlay(true);
