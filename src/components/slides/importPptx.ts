@@ -4,6 +4,43 @@ import type { SlideData } from './slideTypes';
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'svg', 'emf', 'wmf'];
 
+// =====================================================================
+// PPTX import debug report — tracks skipped/failed embedded images/SVGs
+// so a debug panel can surface what didn't make it into the editor.
+// =====================================================================
+export interface PptxImportIssue {
+  scope: 'slide' | 'layout' | 'master' | 'media';
+  scopeId?: string; // e.g. "slide 4", "slideLayout7.xml"
+  path?: string; // zip path or media filename
+  reason: string;
+  detail?: string;
+}
+
+export interface PptxImportReport {
+  fileName: string;
+  startedAt: number;
+  durationMs: number;
+  mediaTotal: number;
+  mediaLoaded: number;
+  mediaSkipped: number;
+  slidesParsed: number;
+  picturesResolved: number;
+  picturesUnresolved: number;
+  issues: PptxImportIssue[];
+}
+
+let lastReport: PptxImportReport | null = null;
+export const getLastPptxImportReport = (): PptxImportReport | null => lastReport;
+
+const emitReport = (report: PptxImportReport) => {
+  lastReport = report;
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent<PptxImportReport>('pptx-import-report', { detail: report }));
+    } catch {/* noop */}
+  }
+};
+
 /**
  * Brand tokens extracted from a PPTX `ppt/theme/theme1.xml` (the authoritative
  * color + font palette baked into the master deck). All values are best-effort
