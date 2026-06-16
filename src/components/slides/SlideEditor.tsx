@@ -135,6 +135,15 @@ interface SlideEditorProps {
           wPct?: number;
           hPct?: number;
         }>;
+        /** Layout-level background fill (hex or `theme:<key>`). */
+        bgFill?: string;
+        /** Decorative non-placeholder shapes on the layout. */
+        decorShapes?: Array<{
+          geom?: string;
+          xPct: number; yPct: number; wPct: number; hPct: number;
+          fill?: string;
+          line?: string;
+        }>;
       }>;
     };
     /** Per-slide shape blueprints (geometry/fills/sample text). */
