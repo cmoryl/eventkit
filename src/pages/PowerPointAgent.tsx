@@ -1693,6 +1693,7 @@ const PowerPointAgent: React.FC = () => {
           triggerGenerate: () => planOutline(),
         }}
       />
+      <PptxImportDebugPanel />
     </div>
   );
 };
