@@ -375,6 +375,41 @@ export async function parsePptxLayoutCatalog(file: File): Promise<PptxLayoutCata
       return ia - ib;
     });
 
+  // Parse slide masters once — layouts inherit their background fill and
+  // decorative shapes (accent bars, sidebars, logo blocks) from the master
+  // they reference. Without this, layouts that don't redeclare bg/decor (the
+  // common case in real corporate decks like TransPerfect) come back empty
+  // and the rendered chrome looks like a blank white slide.
+  const masterCache = new Map<string, { bgFill?: string; decorShapes: PptxLayoutDecorShape[] }>();
+  const parseMasterChrome = async (masterPath: string) => {
+    if (masterCache.has(masterPath)) return masterCache.get(masterPath)!;
+    const entry = zip.files[masterPath];
+    if (!entry) {
+      const empty = { decorShapes: [] as PptxLayoutDecorShape[] };
+      masterCache.set(masterPath, empty);
+      return empty;
+    }
+    const mXml = await entry.async('text');
+    const bgM = mXml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
+    let mBg: string | undefined;
+    if (bgM) {
+      const srgb = bgM[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      const scheme = bgM[1].match(/<a:schemeClr\s+val="([^"]+)"/);
+      if (srgb) mBg = `#${srgb[1].toUpperCase()}`;
+      else if (scheme) mBg = `theme:${scheme[1]}`;
+    }
+    const decor: PptxLayoutDecorShape[] = [];
+    for (const sh of parseShapesFromXml(mXml, slideWidthEmu, slideHeightEmu)) {
+      if (sh.kind !== 'shape') continue;
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (!sh.fill && !sh.line) continue;
+      decor.push({ geom: sh.geom, xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct, fill: sh.fill, line: sh.line });
+    }
+    const out = { bgFill: mBg, decorShapes: decor };
+    masterCache.set(masterPath, out);
+    return out;
+  };
+
   const layouts: PptxLayoutDefinition[] = [];
   for (const path of layoutFiles) {
     const xml = await zip.files[path].async('text');
@@ -383,6 +418,17 @@ export async function parsePptxLayoutCatalog(file: File): Promise<PptxLayoutCata
 
     const nameMatch = xml.match(/<p:cSld\b[^>]*\sname="([^"]+)"/);
     const typeMatch = xml.match(/<p:sldLayout\b[^>]*\stype="([^"]+)"/);
+
+    // Follow the layout's .rels file to find the slideMaster it inherits from.
+    const relsPath = `ppt/slideLayouts/_rels/${fileName}.rels`;
+    let masterChrome: { bgFill?: string; decorShapes: PptxLayoutDecorShape[] } = { decorShapes: [] };
+    if (zip.files[relsPath]) {
+      const relsXml = await zip.files[relsPath].async('text');
+      const masterTarget = relsXml.match(/Target="\.\.\/slideMasters\/(slideMaster\d+\.xml)"/)?.[1];
+      if (masterTarget) {
+        masterChrome = await parseMasterChrome(`ppt/slideMasters/${masterTarget}`);
+      }
+    }
 
     const placeholders: PptxLayoutPlaceholder[] = [];
     const shapeRegex = /<p:sp\b[^>]*>([\s\S]*?)<\/p:sp>/g;
@@ -419,14 +465,14 @@ export async function parsePptxLayoutCatalog(file: File): Promise<PptxLayoutCata
       placeholders.push({ type, idx, sz, xPct, yPct, wPct, hPct });
     }
 
-    // Decorative non-placeholder shapes on this layout — accent bars, dividers, color blocks.
-    const decorShapes: PptxLayoutDecorShape[] = [];
+    // Decorative non-placeholder shapes on THIS layout — accent bars, dividers, color blocks.
+    const layoutDecor: PptxLayoutDecorShape[] = [];
     const allShapes = parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu);
     for (const sh of allShapes) {
       if (sh.kind !== 'shape') continue;
       if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
       if (!sh.fill && !sh.line) continue; // skip invisible markers
-      decorShapes.push({
+      layoutDecor.push({
         geom: sh.geom, xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
         fill: sh.fill, line: sh.line,
       });
@@ -434,13 +480,19 @@ export async function parsePptxLayoutCatalog(file: File): Promise<PptxLayoutCata
 
     // Layout-level background fill, if explicitly declared.
     const bgMatch = xml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
-    let bgFill: string | undefined;
+    let layoutBgFill: string | undefined;
     if (bgMatch) {
       const srgb = bgMatch[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
       const scheme = bgMatch[1].match(/<a:schemeClr\s+val="([^"]+)"/);
-      if (srgb) bgFill = `#${srgb[1].toUpperCase()}`;
-      else if (scheme) bgFill = `theme:${scheme[1]}`;
+      if (srgb) layoutBgFill = `#${srgb[1].toUpperCase()}`;
+      else if (scheme) layoutBgFill = `theme:${scheme[1]}`;
     }
+
+    // Merge: master paints first (background + base decor), then layout-specific
+    // decor stacks on top. Background prefers the layout's own declaration and
+    // falls back to the master so inheriting layouts still render correctly.
+    const bgFill = layoutBgFill || masterChrome.bgFill;
+    const decorShapes = [...masterChrome.decorShapes, ...layoutDecor];
 
     layouts.push({
       fileName,
