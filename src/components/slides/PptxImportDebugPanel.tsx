@@ -132,6 +132,24 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
         </div>
       </div>
 
+      <div className="flex items-center gap-1.5 border-b border-border/60 px-3 py-1.5">
+        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Export</span>
+        <button
+          type="button"
+          onClick={exportJson}
+          className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-bold hover:bg-muted"
+        >
+          <Download className="h-3 w-3" /> JSON
+        </button>
+        <button
+          type="button"
+          onClick={exportCsv}
+          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-bold hover:bg-muted"
+        >
+          <Download className="h-3 w-3" /> CSV
+        </button>
+      </div>
+
       {open && (
         <div className="max-h-[280px] overflow-auto p-2">
           {!hasIssues && (
