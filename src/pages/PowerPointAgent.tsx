@@ -21,6 +21,20 @@ const BUILTIN_CORPORATE_DECKS: Record<string, { url: string; fileName: string; l
   },
 };
 
+// Brands that have an approved corporate deck wired in. When one of these is
+// the active brand, the Editor auto-attaches that deck as the style source so
+// AI-generated slides, blank slides, and the "Brand Slide" style match the
+// uploaded PPT instead of a generic theme.
+const BRAND_CORPORATE_TEMPLATE_MAP: { match: (name: string) => boolean; templateId: string }[] = [
+  { match: (n) => n.toLowerCase().includes('transperfect'), templateId: 'transperfect-2026' },
+];
+
+const resolveCorporateTemplateForBrand = (brandName?: string | null): string | null => {
+  if (!brandName) return null;
+  const hit = BRAND_CORPORATE_TEMPLATE_MAP.find((m) => m.match(brandName));
+  return hit?.templateId ?? null;
+};
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -421,6 +435,32 @@ const PowerPointAgent: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBrand?.id, brands]);
+
+  // Auto-attach the brand's approved corporate deck (e.g. TransPerfect) the
+  // moment that brand becomes active — so the editor's blank/brand slides and
+  // every AI generation inherit the real PPT look & feel without the user
+  // having to manually pick the template from the gallery. Tracks the last
+  // brand we auto-applied so re-selecting the same brand isn't noisy.
+  const lastAutoTemplateBrandRef = useRef<string>("");
+  useEffect(() => {
+    const brandRecord = brands.find((b) => b.id === selectedBrandId);
+    const brandName = brandRecord?.name || activeBrand?.name;
+    if (!brandName || !selectedBrandId) return;
+    if (lastAutoTemplateBrandRef.current === selectedBrandId) return;
+    const templateId = resolveCorporateTemplateForBrand(brandName);
+    if (!templateId) return;
+    // Don't override a deliberate user pick of a *different* template.
+    if (selectedTemplateId && selectedTemplateId !== templateId) return;
+    const tpl = ALL_DECK_TEMPLATES.find((t) => t.id === templateId);
+    if (!tpl) return;
+    lastAutoTemplateBrandRef.current = selectedBrandId;
+    setSelectedTemplateId(templateId);
+    setThemeOverride(tpl.themePrompt);
+    void loadCorporateDeckForTemplate(tpl, { jumpToEditor: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBrandId, brands, activeBrand?.name]);
+
+
 
   // Load suggestion chips from agent_prompt_presets so admins can edit them
   // without redeploys. Falls back to the hardcoded list on any failure.
