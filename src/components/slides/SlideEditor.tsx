@@ -690,7 +690,7 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
       setIsBatchGenerating(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt, resolveLayoutForSlide]);
+  }, [corporateStyleRef, assetName, activeIndex, batchCount, batchPrompt, materializeGeneratedSlide]);
 
   const confirmInsertPendingBatch = useCallback(() => {
     if (!pendingBatch || pendingBatch.length === 0) return;
