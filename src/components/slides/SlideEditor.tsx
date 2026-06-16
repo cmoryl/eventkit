@@ -47,7 +47,7 @@ import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialo
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
 import { useSlidesHistory } from '@/hooks/useSlidesHistory';
-import { Undo2, Redo2, Wand2 } from 'lucide-react';
+import { Undo2, Redo2, Wand2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
 import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
@@ -605,6 +605,43 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     const layout = resolveLayoutForSlide(layoutName, slide);
     return { slide, layout, layoutName };
   }, [corporateStyleRef, buildMasterChromeForLayoutName, resolveLayoutForSlide]);
+
+  /**
+   * Live preview of how the current editor slide would look once the active
+   * corporate brand (e.g. TransPerfect) master chrome is applied — without
+   * mutating the underlying slide. Drives the "Brand preview" popover on the
+   * toolbar so the user can A/B before committing the look.
+   */
+  const brandPreviewSlide = useMemo<SlideData | null>(() => {
+    if (!corporateStyleRef) return null;
+    const current = slides[activeIndex];
+    if (!current) return null;
+    // Prefer a layout name the slide already carries, otherwise fall back to
+    // the first layout in the parsed catalog (the master's "default" page).
+    const existing = (current as any).layoutName as string | undefined;
+    const catalogFirst = corporateStyleRef.layoutCatalog?.layouts?.[0]?.name || null;
+    const layoutName = existing || catalogFirst;
+    const chrome = buildMasterChromeForLayoutName(layoutName);
+    if (!chrome) return current;
+    const tk = corporateStyleRef.themeTokens?.colors || {};
+    const themeBg = chrome.bgFill || tk.lt1 || tk.dk2 || tk.bg1;
+    return {
+      ...current,
+      ...(themeBg ? { bgColor: themeBg } : {}),
+      masterChrome: chrome,
+    };
+  }, [corporateStyleRef, slides, activeIndex, buildMasterChromeForLayoutName]);
+
+  const applyBrandStyleToActiveSlide = useCallback(() => {
+    if (!brandPreviewSlide) return;
+    updateSlide(activeIndex, {
+      bgColor: brandPreviewSlide.bgColor,
+      masterChrome: brandPreviewSlide.masterChrome,
+    } as Partial<SlideData>);
+    toast.success(`${corporateStyleRef?.label || 'Brand'} style applied to slide ${activeIndex + 1}`);
+  }, [brandPreviewSlide, updateSlide, activeIndex, corporateStyleRef]);
+
+
 
 
   /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
@@ -1653,6 +1690,52 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
               >
                 <span className="text-sm font-bold">?</span>
               </Button>
+
+              {corporateStyleRef && brandPreviewSlide && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 gap-1.5 px-2 text-xs"
+                      title={`Live preview of the ${corporateStyleRef.label} style on this slide`}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Brand preview
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[520px] p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Brand style preview
+                        </div>
+                        <div className="text-sm font-semibold truncate">
+                          {corporateStyleRef.label}
+                        </div>
+                      </div>
+                      <Button size="sm" className="h-7 text-xs" onClick={applyBrandStyleToActiveSlide}>
+                        Apply to slide
+                      </Button>
+                    </div>
+                    <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-black">
+                      <CenteredScaledSlide>
+                        <SlideRenderer
+                          slide={brandPreviewSlide}
+                          brandColors={brandColors}
+                          brandFonts={brandFonts}
+                        />
+                      </CenteredScaledSlide>
+                    </div>
+                    <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
+                      Live preview applies the parsed master chrome (logos, decorative shapes,
+                      brand background) from the attached deck onto slide {activeIndex + 1}.
+                      Click <span className="font-semibold">Apply to slide</span> to commit, or close to discard.
+                    </p>
+                  </PopoverContent>
+                </Popover>
+              )}
+
 
               <BrandLockBar
                 brandName={brand?.name}
