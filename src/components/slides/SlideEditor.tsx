@@ -35,6 +35,7 @@ import { BrandAssetsLibrary } from '@/components/brand/BrandAssetsLibrary';
 import { useBrandHubFiles, type BrandFile } from '@/hooks/useBrandHubFiles';
 import { Library } from 'lucide-react';
 import { SlideAssetSearchPanel, SLIDE_ASSET_IMAGE_MIME } from './SlideAssetSearchPanel';
+import { UserUploadsPanel } from './UserUploadsPanel';
 import { SlideSmartLayoutsPanel, SLIDE_SECTION_MIME } from './SlideSmartLayoutsPanel';
 import { AccentImagePanel } from './AccentImagePanel';
 import { AccentImageLayer } from './AccentImageLayer';
