@@ -705,6 +705,46 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     toast.success(`Inserted ${inserted.length} slides`);
   }, [pendingBatch, activeIndex]);
 
+  /** Regenerate a single staged batch slide in place — keeps every other
+   *  slide intact and re-resolves chrome from the same parsed template. */
+  const [regeneratingBatchIdx, setRegeneratingBatchIdx] = useState<number | null>(null);
+  const regenerateOneInBatch = useCallback(async (idx: number) => {
+    if (!corporateStyleRef || !pendingBatch) return;
+    setRegeneratingBatchIdx(idx);
+    const toastId = toast.loading(`Regenerating slide ${idx + 1}…`);
+    try {
+      const refs = corporateStyleRef.slides.slice(0, 24).map((s) => ({
+        layout: s.layout,
+        title: s.title,
+        subtitle: s.subtitle,
+        body: typeof s.body === 'string' ? s.body : undefined,
+        bullets: Array.isArray((s as any).bullets) ? (s as any).bullets : undefined,
+        notes: s.notes,
+      }));
+      const { data, error } = await supabase.functions.invoke('add-styled-slide', {
+        body: {
+          styleName: corporateStyleRef.label,
+          deckTitle: assetName,
+          referenceSlides: refs,
+          insertPosition: activeIndex + 2 + idx,
+          themeTokens: corporateStyleRef.themeTokens,
+          layoutCatalog: corporateStyleRef.layoutCatalog,
+          slideBlueprints: corporateStyleRef.slideBlueprints,
+        },
+      });
+      if (error) throw new Error(error.message || 'Regeneration failed');
+      if (!data?.slide) throw new Error('No slide returned');
+      const next = materializeGeneratedSlide(data.slide);
+      setPendingBatch((prev) => prev ? prev.map((e, i) => (i === idx ? next : e)) : prev);
+      toast.success(`Slide ${idx + 1} regenerated`, { id: toastId });
+    } catch (err) {
+      console.error('regenerate batch slide failed', err);
+      toast.error(err instanceof Error ? err.message : 'Could not regenerate slide', { id: toastId });
+    } finally {
+      setRegeneratingBatchIdx(null);
+    }
+  }, [corporateStyleRef, pendingBatch, assetName, activeIndex, materializeGeneratedSlide]);
+
 
   const addSlide = useCallback((afterIndex: number) => {
     const newSlide: SlideData = {
