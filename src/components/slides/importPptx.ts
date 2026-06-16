@@ -107,12 +107,16 @@ export async function parsePptxFile(file: File, options: PptxImportOptions = {})
     const filename = path.split('/').pop()!;
     if (!IMAGE_EXTENSIONS.includes(ext)) {
       mediaSkipped++;
-      issues.push({ scope: 'media', path: filename, reason: 'Unsupported file type', detail: `.${ext || 'unknown'}` });
+      if (!recover) {
+        issues.push({ scope: 'media', path: filename, reason: 'Unsupported file type', detail: `.${ext || 'unknown'}` });
+      }
       continue;
     }
     if (ext === 'emf' || ext === 'wmf') {
       mediaSkipped++;
-      issues.push({ scope: 'media', path: filename, reason: 'Vector metafile not renderable in browser', detail: `.${ext}` });
+      if (!recover) {
+        issues.push({ scope: 'media', path: filename, reason: 'Vector metafile not renderable in browser', detail: `.${ext}` });
+      }
       continue;
     }
     try {
