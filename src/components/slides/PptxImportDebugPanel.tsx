@@ -44,6 +44,12 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
   const [report, setReport] = useState<PptxImportReport | null>(() => getLastPptxImportReport());
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<AiResolveResult | null>(null);
+
+  useEffect(() => {
+    setAiResult(null);
+  }, [report?.fileName, report?.startedAt as unknown as number]);
 
   useEffect(() => {
     const onReport = (e: Event) => {
