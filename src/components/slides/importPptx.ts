@@ -72,8 +72,11 @@ export interface PptxThemeTokens {
 /**
  * Parse a PPTX file and extract slides as SlideData[], including embedded images.
  */
-export async function parsePptxFile(file: File): Promise<SlideData[]> {
+export async function parsePptxFile(file: File, options: PptxImportOptions = {}): Promise<SlideData[]> {
   const startedAt = Date.now();
+  const recover = !!options.recover;
+  lastImportedFile = file;
+  lastImportOptions = options;
   const issues: PptxImportIssue[] = [];
   let mediaTotal = 0;
   let mediaLoaded = 0;
