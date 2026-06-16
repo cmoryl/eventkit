@@ -47,7 +47,7 @@ import { SaveAsTemplateDialog } from '@/components/templates/SaveAsTemplateDialo
 import { DemoSlidePropertyEditor } from './DemoSlidePropertyEditor';
 import { InlineEditOverlay } from './InlineEditOverlay';
 import { useSlidesHistory } from '@/hooks/useSlidesHistory';
-import { Undo2, Redo2, Wand2 } from 'lucide-react';
+import { Undo2, Redo2, Wand2, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { DeckBulkActionsMenu } from './DeckBulkActionsMenu';
 import { applyDeckBulkAction, DECK_BULK_ACTIONS, type DeckBulkActionId } from './deckBulkActions';
