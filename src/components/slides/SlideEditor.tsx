@@ -606,6 +606,43 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     return { slide, layout, layoutName };
   }, [corporateStyleRef, buildMasterChromeForLayoutName, resolveLayoutForSlide]);
 
+  /**
+   * Live preview of how the current editor slide would look once the active
+   * corporate brand (e.g. TransPerfect) master chrome is applied — without
+   * mutating the underlying slide. Drives the "Brand preview" popover on the
+   * toolbar so the user can A/B before committing the look.
+   */
+  const brandPreviewSlide = useMemo<SlideData | null>(() => {
+    if (!corporateStyleRef) return null;
+    const current = slides[activeIndex];
+    if (!current) return null;
+    // Prefer a layout name the slide already carries, otherwise fall back to
+    // the first layout in the parsed catalog (the master's "default" page).
+    const existing = (current as any).layoutName as string | undefined;
+    const catalogFirst = corporateStyleRef.layoutCatalog?.layouts?.[0]?.name || null;
+    const layoutName = existing || catalogFirst;
+    const chrome = buildMasterChromeForLayoutName(layoutName);
+    if (!chrome) return current;
+    const tk = corporateStyleRef.themeTokens?.colors || {};
+    const themeBg = chrome.bgFill || tk.lt1 || tk.dk2 || tk.bg1;
+    return {
+      ...current,
+      ...(themeBg ? { bgColor: themeBg } : {}),
+      masterChrome: chrome,
+    };
+  }, [corporateStyleRef, slides, activeIndex, buildMasterChromeForLayoutName]);
+
+  const applyBrandStyleToActiveSlide = useCallback(() => {
+    if (!brandPreviewSlide) return;
+    updateSlide(activeIndex, {
+      bgColor: brandPreviewSlide.bgColor,
+      masterChrome: brandPreviewSlide.masterChrome,
+    } as Partial<SlideData>);
+    toast.success(`${corporateStyleRef?.label || 'Brand'} style applied to slide ${activeIndex + 1}`);
+  }, [brandPreviewSlide, updateSlide, activeIndex, corporateStyleRef]);
+
+
+
 
   /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
   const applyMasterAsset = useCallback((dataUrl: string | null) => {
