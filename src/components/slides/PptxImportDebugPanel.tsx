@@ -1,11 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, X } from 'lucide-react';
+import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, Sparkles, X } from 'lucide-react';
 import {
   getLastPptxImportReport,
   type PptxImportIssue,
   type PptxImportReport,
 } from './importPptx';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+interface AiResolution {
+  title: string;
+  action: string;
+  audience: 'user' | 'developer';
+  affectedScopes?: string[];
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface AiResolveResult {
+  summary: string;
+  severity: 'clean' | 'minor' | 'moderate' | 'severe';
+  resolutions: AiResolution[];
+  followUps?: string[];
+}
 
 const scopeBadge: Record<PptxImportIssue['scope'], string> = {
   media: 'bg-amber-500/15 text-amber-600 border-amber-500/30',
@@ -27,6 +44,12 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
   const [report, setReport] = useState<PptxImportReport | null>(() => getLastPptxImportReport());
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<AiResolveResult | null>(null);
+
+  useEffect(() => {
+    setAiResult(null);
+  }, [report?.fileName, report?.startedAt as unknown as number]);
 
   useEffect(() => {
     const onReport = (e: Event) => {
@@ -83,6 +106,45 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
     triggerDownload(`${baseName}.csv`, 'text/csv', `${meta}\n${header.join(',')}\n${rows.join('\n')}\n`);
   };
 
+  const runAiResolve = async () => {
+    if (!report) return;
+    setAiLoading(true);
+    setOpen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resolve-pptx-issues', {
+        body: { report },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'AI resolve failed');
+      setAiResult({
+        summary: data.summary,
+        severity: data.severity,
+        resolutions: data.resolutions || [],
+        followUps: data.followUps || [],
+      });
+      toast.success('AI suggested fixes ready');
+    } catch (e) {
+      console.error('AI resolve error', e);
+      const msg = e instanceof Error ? e.message : 'Failed to resolve issues';
+      toast.error(msg);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const severityClass: Record<NonNullable<AiResolveResult['severity']>, string> = {
+    clean: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
+    minor: 'bg-sky-500/15 text-sky-700 border-sky-500/30',
+    moderate: 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+    severe: 'bg-rose-500/15 text-rose-700 border-rose-500/30',
+  };
+
+  const priorityClass: Record<AiResolution['priority'], string> = {
+    high: 'bg-rose-500/15 text-rose-600 border-rose-500/30',
+    medium: 'bg-amber-500/15 text-amber-600 border-amber-500/30',
+    low: 'bg-muted text-muted-foreground border-border',
+  };
+
   return (
     <div className={cn('fixed bottom-4 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card/95 text-xs shadow-2xl backdrop-blur-xl', className)}>
       <button
@@ -133,11 +195,20 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
       </div>
 
       <div className="flex items-center gap-1.5 border-b border-border/60 px-3 py-1.5">
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Export</span>
+        <button
+          type="button"
+          onClick={runAiResolve}
+          disabled={aiLoading || !hasIssues}
+          className="inline-flex items-center gap-1 rounded-lg bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          title={hasIssues ? 'Use AI to suggest fixes' : 'No issues to resolve'}
+        >
+          <Sparkles className="h-3 w-3" /> {aiLoading ? 'Resolving…' : 'AI Resolve'}
+        </button>
+        <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Export</span>
         <button
           type="button"
           onClick={exportJson}
-          className="ml-auto inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-bold hover:bg-muted"
+          className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-bold hover:bg-muted"
         >
           <Download className="h-3 w-3" /> JSON
         </button>
@@ -151,7 +222,50 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
       </div>
 
       {open && (
-        <div className="max-h-[280px] overflow-auto p-2">
+        <div className="max-h-[360px] overflow-auto p-2 space-y-2">
+          {aiResult && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-2">
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] font-black uppercase tracking-wide text-primary">AI Resolution</span>
+                <span className={cn('ml-auto rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide', severityClass[aiResult.severity])}>
+                  {aiResult.severity}
+                </span>
+              </div>
+              <p className="text-[11px] text-foreground">{aiResult.summary}</p>
+              {aiResult.resolutions.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {aiResult.resolutions.map((r, i) => (
+                    <li key={i} className="rounded-lg border border-border/70 bg-background/80 p-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={cn('rounded-full border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide', priorityClass[r.priority])}>
+                          {r.priority}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{r.audience}</span>
+                        <span className="ml-auto text-[10px] font-bold text-foreground">{r.title}</span>
+                      </div>
+                      <div className="mt-1 text-[11px] text-foreground">{r.action}</div>
+                      {r.affectedScopes && r.affectedScopes.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {r.affectedScopes.map((s, j) => (
+                            <span key={j} className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">{s}</span>
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {aiResult.followUps && aiResult.followUps.length > 0 && (
+                <div className="mt-2">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Verify after fixing</div>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-foreground">
+                    {aiResult.followUps.map((f, i) => <li key={i}>{f}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           {!hasIssues && (
             <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 px-3 py-2 text-emerald-700">
               <CheckCircle2 className="h-4 w-4" /> All embedded images and SVGs imported cleanly.
