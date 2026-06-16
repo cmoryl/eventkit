@@ -97,15 +97,41 @@ export const sanitizeSvg = (svgContent: string): string => {
   
   const svg = doc.querySelector('svg');
   if (!svg) return '';
-  
-  // Remove script elements
-  svg.querySelectorAll('script').forEach(el => el.remove());
-  
-  // Remove event handlers
-  const allElements = svg.querySelectorAll('*');
-  allElements.forEach(el => {
-    Array.from(el.attributes).forEach(attr => {
-      if (attr.name.startsWith('on')) {
+
+  // Remove dangerous elements entirely
+  svg.querySelectorAll('script, foreignObject, foreignobject, iframe, object, embed, link, meta, style').forEach((el) => el.remove());
+
+  // Strip event handlers and unsafe URL attributes
+  const HREF_ATTRS = ['href', 'xlink:href'];
+  const URL_ATTRS = ['src', 'data', 'formaction', 'action'];
+  const isUnsafeUrl = (v: string | null) => {
+    if (!v) return false;
+    const s = v.trim().toLowerCase();
+    return s.startsWith('javascript:') || s.startsWith('data:text/html') || s.startsWith('vbscript:');
+  };
+
+  const allElements = [svg, ...Array.from(svg.querySelectorAll('*'))];
+  allElements.forEach((el) => {
+    Array.from(el.attributes).forEach((attr) => {
+      const name = attr.name.toLowerCase();
+      if (name.startsWith('on')) {
+        el.removeAttribute(attr.name);
+        return;
+      }
+      if (HREF_ATTRS.includes(name)) {
+        const v = attr.value || '';
+        const s = v.trim().toLowerCase();
+        // Allow only same-document fragment refs (#id), data:image/*, http(s), or relative paths
+        const ok =
+          s.startsWith('#') ||
+          s.startsWith('data:image/') ||
+          s.startsWith('http://') ||
+          s.startsWith('https://') ||
+          (!s.includes(':') && !isUnsafeUrl(v));
+        if (!ok) el.removeAttribute(attr.name);
+        return;
+      }
+      if (URL_ATTRS.includes(name) && isUnsafeUrl(attr.value)) {
         el.removeAttribute(attr.name);
       }
     });
