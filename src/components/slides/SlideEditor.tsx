@@ -1949,25 +1949,43 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
                     <InsertDrawerTabs
                       onInsertSection={(payload) => insertSectionAfter(activeIndexRef.current, payload)}
                       onInsertObject={insertSmartObject}
-                      mediaSlot={brand?.brandhub_share_token ? (
-                        <SlideAssetSearchPanel
-                          images={brandFilesByCategory.image}
-                          brandName={brand?.name}
-                          onOpenLibrary={() => setIsAssetsLibraryOpen(true)}
-                          onUseImage={(file) => {
-                            const currentImages = activeSlide.images || [];
-                            updateSlide(activeIndex, {
-                              images: [...currentImages, file.url],
-                              imageUrl: activeSlide.imageUrl || file.url,
-                            });
-                            toast.success(`Added "${file.name}" to slide`);
-                          }}
-                          onUseAsAccent={(file) => {
-                            setAccentImageForSlide(file.url, activeIndex, 'background');
-                            toast.success(`Set "${file.name}" as accent image`);
-                          }}
-                        />
-                      ) : undefined}
+                      mediaSlot={(
+                        <div className="space-y-3">
+                          <UserUploadsPanel
+                            onUseImage={(url, name) => {
+                              const currentImages = activeSlide.images || [];
+                              updateSlide(activeIndex, {
+                                images: [...currentImages, url],
+                                imageUrl: activeSlide.imageUrl || url,
+                              });
+                              toast.success(`Added "${name}" to slide`);
+                            }}
+                            onUseAsAccent={(url, name) => {
+                              setAccentImageForSlide(url, activeIndex, 'background');
+                              toast.success(`Set "${name}" as accent image`);
+                            }}
+                          />
+                          {brand?.brandhub_share_token && (
+                            <SlideAssetSearchPanel
+                              images={brandFilesByCategory.image}
+                              brandName={brand?.name}
+                              onOpenLibrary={() => setIsAssetsLibraryOpen(true)}
+                              onUseImage={(file) => {
+                                const currentImages = activeSlide.images || [];
+                                updateSlide(activeIndex, {
+                                  images: [...currentImages, file.url],
+                                  imageUrl: activeSlide.imageUrl || file.url,
+                                });
+                                toast.success(`Added "${file.name}" to slide`);
+                              }}
+                              onUseAsAccent={(file) => {
+                                setAccentImageForSlide(file.url, activeIndex, 'background');
+                                toast.success(`Set "${file.name}" as accent image`);
+                              }}
+                            />
+                          )}
+                        </div>
+                      )}
                     />
                   ),
                 },
