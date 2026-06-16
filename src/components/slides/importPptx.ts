@@ -376,6 +376,19 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     slides.push(slide);
   }
 
+  emitReport({
+    fileName: file.name,
+    startedAt,
+    durationMs: Date.now() - startedAt,
+    mediaTotal,
+    mediaLoaded,
+    mediaSkipped,
+    slidesParsed: slides.length,
+    picturesResolved,
+    picturesUnresolved,
+    issues,
+  });
+
   return slides;
 }
 
