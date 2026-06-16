@@ -512,6 +512,73 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
     setPlaceholderAssignments(defaults);
   }, [resolveLayoutForSlide]);
 
+  /**
+   * Build the look-and-feel chrome (bgFill + decorative shapes + master
+   * imagery) for a given master-layout name, with theme:<key> color refs
+   * resolved to actual hex via the deck's themeTokens. Returned object is
+   * dropped onto the slide as `masterChrome` so SlideRenderer paints the
+   * Transperfect (or any imported) template's identity behind generated text.
+   */
+  const buildMasterChromeForLayoutName = useCallback((layoutName: string | null): NonNullable<SlideData['masterChrome']> | undefined => {
+    if (!corporateStyleRef || !layoutName) return undefined;
+    const layouts = corporateStyleRef.layoutCatalog?.layouts || [];
+    const matched = layouts.find((l) => l.name.trim().toLowerCase() === layoutName.trim().toLowerCase());
+    if (!matched) return undefined;
+    const tokens = corporateStyleRef.themeTokens?.colors || {};
+    const resolveColor = (c?: string): string | undefined => {
+      if (!c) return undefined;
+      if (c.startsWith('theme:')) {
+        const key = c.slice(6);
+        return tokens[key] || tokens[key.toLowerCase()] || undefined;
+      }
+      return c;
+    };
+
+    const bpForLayout = corporateStyleRef.slideBlueprints?.find(
+      (bp) => bp.layoutFile && bp.layoutFile.toLowerCase() === matched.fileName.toLowerCase(),
+    );
+    const bgFill = resolveColor(matched.bgFill)
+      || resolveColor(bpForLayout?.bgFill)
+      || tokens.lt1 || tokens.bg1 || tokens.bg2 || undefined;
+
+    const layoutShapes = (matched.decorShapes || []).map((sh) => ({
+      geom: sh.geom,
+      xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
+      fill: resolveColor(sh.fill),
+      line: resolveColor(sh.line),
+    }));
+    // Also include decor shapes from a representative slide using this layout
+    // (catches motifs the layout XML didn't bake in but the master deck reuses).
+    const slideShapes = (bpForLayout?.shapes || [])
+      .filter((s) => s.kind === 'shape' && s.fill && s.xPct !== undefined && s.yPct !== undefined && s.wPct !== undefined && s.hPct !== undefined)
+      .slice(0, 12)
+      .map((s) => ({
+        geom: s.geom,
+        xPct: s.xPct!, yPct: s.yPct!, wPct: s.wPct!, hPct: s.hPct!,
+        fill: resolveColor(s.fill),
+        line: resolveColor(s.line),
+      }));
+
+    // Master imagery that has positions — logos, footer marks. Prefer assets
+    // tagged for this specific layout, falling back to slide-master assets.
+    const layoutTag = `layout:${matched.fileName.replace('.xml', '')}`;
+    const layoutAssets = (corporateStyleRef.masterAssets || [])
+      .filter((a) => a.xPct !== undefined && a.yPct !== undefined && a.wPct !== undefined && a.hPct !== undefined)
+      .filter((a) => a.source === layoutTag || a.source === 'master');
+    const assets = layoutAssets.slice(0, 6).map((a) => ({
+      dataUrl: a.dataUrl,
+      xPct: a.xPct!, yPct: a.yPct!, wPct: a.wPct!, hPct: a.hPct!,
+      role: a.role,
+    }));
+
+    return {
+      bgFill,
+      shapes: [...layoutShapes, ...slideShapes],
+      assets,
+      layoutName: matched.name,
+    };
+  }, [corporateStyleRef]);
+
   /** Apply a master decorative asset (logo / watermark) to the pending slide as its imageUrl. */
   const applyMasterAsset = useCallback((dataUrl: string | null) => {
     setPendingStyledSlide((prev) => (prev ? { ...prev, imageUrl: dataUrl ?? undefined } : prev));
