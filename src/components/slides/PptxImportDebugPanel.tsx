@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, Bug, CheckCircle2, ChevronDown, ChevronUp, Download, Sparkles, Wand2, X } from 'lucide-react';
 import {
+  applyPptxImportFixes,
+  getLastPptxImportFile,
   getLastPptxImportReport,
   type PptxImportIssue,
   type PptxImportReport,
@@ -45,6 +47,7 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [aiResult, setAiResult] = useState<AiResolveResult | null>(null);
 
   useEffect(() => {
@@ -132,6 +135,29 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
     }
   };
 
+  const canApplyFixes = !!getLastPptxImportFile();
+
+  const runApplyFixes = async () => {
+    if (!canApplyFixes) {
+      toast.error('No imported PPTX available to re-run.');
+      return;
+    }
+    setApplying(true);
+    try {
+      const result = await applyPptxImportFixes();
+      if (!result) throw new Error('Re-import failed');
+      const recovered = result.report?.issues.filter(i => i.reason.startsWith('Recovered')).length ?? 0;
+      toast.success(
+        `Re-imported ${result.slides.length} slides` + (recovered ? ` · ${recovered} recovered` : '')
+      );
+    } catch (e) {
+      console.error('Apply fixes error', e);
+      toast.error(e instanceof Error ? e.message : 'Failed to apply fixes');
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const severityClass: Record<NonNullable<AiResolveResult['severity']>, string> = {
     clean: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
     minor: 'bg-sky-500/15 text-sky-700 border-sky-500/30',
@@ -203,6 +229,15 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
           title={hasIssues ? 'Use AI to suggest fixes' : 'No issues to resolve'}
         >
           <Sparkles className="h-3 w-3" /> {aiLoading ? 'Resolving…' : 'AI Resolve'}
+        </button>
+        <button
+          type="button"
+          onClick={runApplyFixes}
+          disabled={applying || !canApplyFixes || (!aiResult && !hasIssues)}
+          className="inline-flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-bold text-primary hover:bg-primary/20 disabled:opacity-50"
+          title={aiResult ? 'Re-run import with AI recovery and update slides' : 'Run AI Resolve first'}
+        >
+          <Wand2 className="h-3 w-3" /> {applying ? 'Applying…' : 'Apply Fixes'}
         </button>
         <span className="ml-auto text-[10px] uppercase tracking-wide text-muted-foreground">Export</span>
         <button

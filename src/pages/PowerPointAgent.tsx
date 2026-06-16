@@ -357,6 +357,24 @@ const PowerPointAgent: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // Listen for "Apply Fixes" from the PPTX Import Debug panel — swap the
+  // editor's slides in place with the recovered import output.
+  useEffect(() => {
+    const onApply = (e: Event) => {
+      const detail = (e as CustomEvent<{ slides: SlideData[]; fileName: string }>).detail;
+      if (!detail?.slides?.length) return;
+      setTemplateStarterSlides(detail.slides);
+      setActiveTab('editor');
+      toast({
+        title: 'Applied AI fixes',
+        description: `${detail.slides.length} slides re-imported from ${detail.fileName}.`,
+      });
+    };
+    window.addEventListener('pptx-import-apply-fixes', onApply);
+    return () => window.removeEventListener('pptx-import-apply-fixes', onApply);
+  }, [toast]);
+
+
 
   // PDF source
   const fileInputRef = useRef<HTMLInputElement>(null);

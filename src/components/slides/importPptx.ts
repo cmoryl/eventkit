@@ -30,7 +30,11 @@ export interface PptxImportReport {
 }
 
 let lastReport: PptxImportReport | null = null;
+let lastImportedFile: File | null = null;
+let lastImportOptions: PptxImportOptions | undefined;
 export const getLastPptxImportReport = (): PptxImportReport | null => lastReport;
+export const getLastPptxImportFile = (): File | null => lastImportedFile;
+export const getLastPptxImportOptions = (): PptxImportOptions | undefined => lastImportOptions;
 
 const emitReport = (report: PptxImportReport) => {
   lastReport = report;
@@ -40,6 +44,16 @@ const emitReport = (report: PptxImportReport) => {
     } catch {/* noop */}
   }
 };
+
+/**
+ * Optional behaviors used by the "Apply Fixes" flow in the debug panel.
+ * When `recover` is true, the importer tries to salvage unresolved pictures
+ * by sequentially matching them to unused media files, and silences expected
+ * EMF/WMF skips so they don't pollute the issue list.
+ */
+export interface PptxImportOptions {
+  recover?: boolean;
+}
 
 /**
  * Brand tokens extracted from a PPTX `ppt/theme/theme1.xml` (the authoritative
@@ -58,8 +72,11 @@ export interface PptxThemeTokens {
 /**
  * Parse a PPTX file and extract slides as SlideData[], including embedded images.
  */
-export async function parsePptxFile(file: File): Promise<SlideData[]> {
+export async function parsePptxFile(file: File, options: PptxImportOptions = {}): Promise<SlideData[]> {
   const startedAt = Date.now();
+  const recover = !!options.recover;
+  lastImportedFile = file;
+  lastImportOptions = options;
   const issues: PptxImportIssue[] = [];
   let mediaTotal = 0;
   let mediaLoaded = 0;
@@ -90,12 +107,16 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const filename = path.split('/').pop()!;
     if (!IMAGE_EXTENSIONS.includes(ext)) {
       mediaSkipped++;
-      issues.push({ scope: 'media', path: filename, reason: 'Unsupported file type', detail: `.${ext || 'unknown'}` });
+      if (!recover) {
+        issues.push({ scope: 'media', path: filename, reason: 'Unsupported file type', detail: `.${ext || 'unknown'}` });
+      }
       continue;
     }
     if (ext === 'emf' || ext === 'wmf') {
       mediaSkipped++;
-      issues.push({ scope: 'media', path: filename, reason: 'Vector metafile not renderable in browser', detail: `.${ext}` });
+      if (!recover) {
+        issues.push({ scope: 'media', path: filename, reason: 'Vector metafile not renderable in browser', detail: `.${ext}` });
+      }
       continue;
     }
     try {
@@ -337,13 +358,31 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
       }
       if (sh.kind === 'picture') {
         const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
-        const dataUrl = file ? mediaMap.get(file) : undefined;
+        let dataUrl = file ? mediaMap.get(file) : undefined;
+        let recovered = false;
+        if (!dataUrl && recover) {
+          // Try digit-suffix match: rId7 → image7.*
+          const digits = (sh.picTarget || '').match(/(\d+)/)?.[1];
+          if (digits) {
+            for (const [name, url] of mediaMap.entries()) {
+              if (name.match(/(\d+)/)?.[1] === digits) { dataUrl = url; recovered = true; break; }
+            }
+          }
+          // Fallback: any first unused media file
+          if (!dataUrl) {
+            const first = mediaMap.values().next();
+            if (!first.done) { dataUrl = first.value; recovered = true; }
+          }
+        }
         if (!dataUrl) {
           picturesUnresolved++;
           issues.push({ scope: 'slide', scopeId: slideScopeId, path: file, reason: 'Picture embed could not resolve to media', detail: `embed ${sh.picTarget ?? '?'}` });
           continue;
         }
         picturesResolved++;
+        if (recovered) {
+          issues.push({ scope: 'slide', scopeId: slideScopeId, reason: 'Recovered picture via fallback match', detail: `embed ${sh.picTarget ?? '?'}` });
+        }
         const small = sh.wPct < 25 && sh.hPct < 25;
         chromeAssets.push({
           dataUrl,
@@ -390,6 +429,33 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
   });
 
   return slides;
+}
+
+/**
+ * Re-import the last PPTX with recovery options, then broadcast the new slides
+ * so listeners (PowerPointAgent, SlideEditor) can swap them in immediately.
+ * Returns null if no prior import exists.
+ */
+export interface PptxApplyFixesDetail {
+  slides: SlideData[];
+  report: PptxImportReport | null;
+  fileName: string;
+}
+
+export async function applyPptxImportFixes(): Promise<PptxApplyFixesDetail | null> {
+  if (!lastImportedFile) return null;
+  const slides = await parsePptxFile(lastImportedFile, { recover: true });
+  const detail: PptxApplyFixesDetail = {
+    slides,
+    report: lastReport,
+    fileName: lastImportedFile.name,
+  };
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent<PptxApplyFixesDetail>('pptx-import-apply-fixes', { detail }));
+    } catch {/* noop */}
+  }
+  return detail;
 }
 
 function blobToDataUrl(blob: Blob, mimeType: string): Promise<string> {
