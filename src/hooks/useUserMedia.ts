@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { sanitizeSvg } from '@/utils/svgUtils';
 
 export interface UserMediaItem {
   id: string;
