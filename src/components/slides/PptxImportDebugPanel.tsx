@@ -106,6 +106,45 @@ export const PptxImportDebugPanel: React.FC<PptxImportDebugPanelProps> = ({
     triggerDownload(`${baseName}.csv`, 'text/csv', `${meta}\n${header.join(',')}\n${rows.join('\n')}\n`);
   };
 
+  const runAiResolve = async () => {
+    if (!report) return;
+    setAiLoading(true);
+    setOpen(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('resolve-pptx-issues', {
+        body: { report },
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'AI resolve failed');
+      setAiResult({
+        summary: data.summary,
+        severity: data.severity,
+        resolutions: data.resolutions || [],
+        followUps: data.followUps || [],
+      });
+      toast.success('AI suggested fixes ready');
+    } catch (e) {
+      console.error('AI resolve error', e);
+      const msg = e instanceof Error ? e.message : 'Failed to resolve issues';
+      toast.error(msg);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const severityClass: Record<NonNullable<AiResolveResult['severity']>, string> = {
+    clean: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
+    minor: 'bg-sky-500/15 text-sky-700 border-sky-500/30',
+    moderate: 'bg-amber-500/15 text-amber-700 border-amber-500/30',
+    severe: 'bg-rose-500/15 text-rose-700 border-rose-500/30',
+  };
+
+  const priorityClass: Record<AiResolution['priority'], string> = {
+    high: 'bg-rose-500/15 text-rose-600 border-rose-500/30',
+    medium: 'bg-amber-500/15 text-amber-600 border-amber-500/30',
+    low: 'bg-muted text-muted-foreground border-border',
+  };
+
   return (
     <div className={cn('fixed bottom-4 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card/95 text-xs shadow-2xl backdrop-blur-xl', className)}>
       <button
