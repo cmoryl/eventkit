@@ -4,6 +4,43 @@ import type { SlideData } from './slideTypes';
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'svg', 'emf', 'wmf'];
 
+// =====================================================================
+// PPTX import debug report — tracks skipped/failed embedded images/SVGs
+// so a debug panel can surface what didn't make it into the editor.
+// =====================================================================
+export interface PptxImportIssue {
+  scope: 'slide' | 'layout' | 'master' | 'media';
+  scopeId?: string; // e.g. "slide 4", "slideLayout7.xml"
+  path?: string; // zip path or media filename
+  reason: string;
+  detail?: string;
+}
+
+export interface PptxImportReport {
+  fileName: string;
+  startedAt: number;
+  durationMs: number;
+  mediaTotal: number;
+  mediaLoaded: number;
+  mediaSkipped: number;
+  slidesParsed: number;
+  picturesResolved: number;
+  picturesUnresolved: number;
+  issues: PptxImportIssue[];
+}
+
+let lastReport: PptxImportReport | null = null;
+export const getLastPptxImportReport = (): PptxImportReport | null => lastReport;
+
+const emitReport = (report: PptxImportReport) => {
+  lastReport = report;
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(new CustomEvent<PptxImportReport>('pptx-import-report', { detail: report }));
+    } catch {/* noop */}
+  }
+};
+
 /**
  * Brand tokens extracted from a PPTX `ppt/theme/theme1.xml` (the authoritative
  * color + font palette baked into the master deck). All values are best-effort
@@ -22,6 +59,14 @@ export interface PptxThemeTokens {
  * Parse a PPTX file and extract slides as SlideData[], including embedded images.
  */
 export async function parsePptxFile(file: File): Promise<SlideData[]> {
+  const startedAt = Date.now();
+  const issues: PptxImportIssue[] = [];
+  let mediaTotal = 0;
+  let mediaLoaded = 0;
+  let mediaSkipped = 0;
+  let picturesResolved = 0;
+  let picturesUnresolved = 0;
+
   const zip = await JSZip.loadAsync(file);
 
   // Slide dimensions (EMU) so we can map shape geometry to %.
@@ -40,15 +85,31 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
   const mediaMap = new Map<string, string>();
   for (const [path, zipEntry] of Object.entries(zip.files)) {
     if (!path.startsWith('ppt/media/')) continue;
+    mediaTotal++;
     const ext = path.split('.').pop()?.toLowerCase() || '';
-    if (!IMAGE_EXTENSIONS.includes(ext)) continue;
-    if (ext === 'emf' || ext === 'wmf') continue;
-    const blob = await zipEntry.async('blob');
-    const mimeType = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
-    const dataUrl = await blobToDataUrl(blob, mimeType);
     const filename = path.split('/').pop()!;
-    mediaMap.set(filename, dataUrl);
+    if (!IMAGE_EXTENSIONS.includes(ext)) {
+      mediaSkipped++;
+      issues.push({ scope: 'media', path: filename, reason: 'Unsupported file type', detail: `.${ext || 'unknown'}` });
+      continue;
+    }
+    if (ext === 'emf' || ext === 'wmf') {
+      mediaSkipped++;
+      issues.push({ scope: 'media', path: filename, reason: 'Vector metafile not renderable in browser', detail: `.${ext}` });
+      continue;
+    }
+    try {
+      const blob = await zipEntry.async('blob');
+      const mimeType = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
+      const dataUrl = await blobToDataUrl(blob, mimeType);
+      mediaMap.set(filename, dataUrl);
+      mediaLoaded++;
+    } catch (err) {
+      mediaSkipped++;
+      issues.push({ scope: 'media', path: filename, reason: 'Failed to decode media blob', detail: String((err as Error)?.message || err) });
+    }
   }
+
 
   // 2. Per-slide rels — flat list of media filenames AND Map<embedId, filename>
   //    so <a:blip r:embed="rIdX"/> resolves to its actual file at xfrm coords.
@@ -68,9 +129,16 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
       const rId = relMatch[1];
       const target = relMatch[2];
       const mediaName = target.match(/\/media\/([^"/]+)$/)?.[1];
-      if (mediaName && mediaMap.has(mediaName)) {
-        embeds.set(rId, mediaName);
-        images.push(mediaName);
+      if (mediaName) {
+        if (mediaMap.has(mediaName)) {
+          embeds.set(rId, mediaName);
+          images.push(mediaName);
+        } else {
+          issues.push({
+            scope: 'slide', scopeId: `slide ${slideNum}`, path: mediaName,
+            reason: 'Slide references media not loaded', detail: `rel ${rId} → ${target}`,
+          });
+        }
       }
       const layoutName = target.match(/\/slideLayouts\/(slideLayout\d+\.xml)$/)?.[1];
       if (layoutName) slideLayoutMap.set(slideNum, layoutName);
@@ -95,13 +163,18 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const xml = await entry.async('text');
     const relsPath = xmlPath.replace(/([^/]+)\.xml$/, '_rels/$1.xml.rels');
     const embedMap = new Map<string, string>();
+    const scope: PptxImportIssue['scope'] = xmlPath.includes('slideMasters') ? 'master' : 'layout';
+    const scopeId = xmlPath.split('/').pop();
     if (zip.files[relsPath]) {
       const relsXml = await zip.files[relsPath].async('text');
       const reRel = /<Relationship\b[^>]*\sId="([^"]+)"[^>]*\sTarget="([^"]+)"/g;
       let mr: RegExpExecArray | null;
       while ((mr = reRel.exec(relsXml)) !== null) {
         const mediaName = mr[2].match(/\/media\/([^"/]+)$/)?.[1];
-        if (mediaName && mediaMap.has(mediaName)) embedMap.set(mr[1], mediaName);
+        if (mediaName) {
+          if (mediaMap.has(mediaName)) embedMap.set(mr[1], mediaName);
+          else issues.push({ scope, scopeId, path: mediaName, reason: 'Chrome references media not loaded', detail: `rel ${mr[1]}` });
+        }
       }
     }
     const bgM = xml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
@@ -114,11 +187,22 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const assets: InheritedChrome['assets'] = [];
     const isHex = (v?: string) => !!v && v.startsWith('#');
     for (const sh of parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu)) {
-      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) {
+        if (sh.kind === 'picture') {
+          picturesUnresolved++;
+          issues.push({ scope, scopeId, reason: 'Picture missing geometry', detail: `embed ${sh.picTarget ?? '?'}` });
+        }
+        continue;
+      }
       if (sh.kind === 'picture') {
         const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
         const dataUrl = file ? mediaMap.get(file) : undefined;
-        if (!dataUrl) continue;
+        if (!dataUrl) {
+          picturesUnresolved++;
+          issues.push({ scope, scopeId, path: file, reason: 'Picture embed could not resolve to media', detail: `embed ${sh.picTarget ?? '?'}` });
+          continue;
+        }
+        picturesResolved++;
         const small = sh.wPct < 25 && sh.hPct < 25;
         assets.push({
           dataUrl,
@@ -242,12 +326,24 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const chromeShapes: InheritedChrome['shapes'] = [];
     const chromeAssets: InheritedChrome['assets'] = [];
 
+    const slideScopeId = `slide ${slideNum}`;
     for (const sh of parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu)) {
-      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) {
+        if (sh.kind === 'picture') {
+          picturesUnresolved++;
+          issues.push({ scope: 'slide', scopeId: slideScopeId, reason: 'Picture missing geometry', detail: `embed ${sh.picTarget ?? '?'}` });
+        }
+        continue;
+      }
       if (sh.kind === 'picture') {
         const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
         const dataUrl = file ? mediaMap.get(file) : undefined;
-        if (!dataUrl) continue;
+        if (!dataUrl) {
+          picturesUnresolved++;
+          issues.push({ scope: 'slide', scopeId: slideScopeId, path: file, reason: 'Picture embed could not resolve to media', detail: `embed ${sh.picTarget ?? '?'}` });
+          continue;
+        }
+        picturesResolved++;
         const small = sh.wPct < 25 && sh.hPct < 25;
         chromeAssets.push({
           dataUrl,
@@ -265,6 +361,7 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
       }
     }
 
+
     const layoutFile = slideLayoutMap.get(slideNum);
     let inherited: InheritedChrome = { shapes: [], assets: [] };
     if (layoutFile) inherited = await getLayoutChrome(layoutFile);
@@ -278,6 +375,19 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
 
     slides.push(slide);
   }
+
+  emitReport({
+    fileName: file.name,
+    startedAt,
+    durationMs: Date.now() - startedAt,
+    mediaTotal,
+    mediaLoaded,
+    mediaSkipped,
+    slidesParsed: slides.length,
+    picturesResolved,
+    picturesUnresolved,
+    issues,
+  });
 
   return slides;
 }
