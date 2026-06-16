@@ -673,9 +673,9 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
 
       // Apply the same theme tokens + master chrome across the whole batch so
       // the staged preview looks like one cohesive run that actually matches
-      // the imported template's identity.
-      const tk = corporateStyleRef.themeTokens?.colors || {};
-      const themeBg = tk.lt1 || tk.dk2 || tk.bg1;
+      // the imported template's identity. materializeGeneratedSlide() shares
+      // the chrome cache with single-slide + regenerate flows for consistency.
+
 
       const staged: PendingBatchEntry[] = out.map((g: any) => materializeGeneratedSlide(g));
 
