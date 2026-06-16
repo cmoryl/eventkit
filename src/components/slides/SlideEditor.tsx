@@ -3417,11 +3417,21 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
             {pendingBatch?.length ?? 0} slides will be inserted after slide {activeIndex + 1}.
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setPendingBatch(null)}>Discard</Button>
-            <Button variant="outline" onClick={() => { setPendingBatch(null); setBatchDialogOpen(true); }}>
-              Regenerate…
+            <Button variant="outline" onClick={() => setPendingBatch(null)} disabled={isBatchGenerating || regeneratingBatchIdx !== null}>Discard</Button>
+            <Button
+              variant="outline"
+              onClick={() => { setPendingBatch(null); runBatchGeneration(); }}
+              disabled={isBatchGenerating || regeneratingBatchIdx !== null}
+              className="gap-1.5"
+              title="Regenerate all slides with the same prompt, count, and template chrome"
+            >
+              <Wand2 className={cn('h-3.5 w-3.5', isBatchGenerating && 'animate-pulse')} />
+              {isBatchGenerating ? 'Regenerating…' : 'Regenerate all'}
             </Button>
-            <Button onClick={confirmInsertPendingBatch} className="gap-1.5">
+            <Button variant="ghost" size="sm" onClick={() => setBatchDialogOpen(true)} disabled={isBatchGenerating || regeneratingBatchIdx !== null}>
+              Edit prompt…
+            </Button>
+            <Button onClick={confirmInsertPendingBatch} className="gap-1.5" disabled={isBatchGenerating || regeneratingBatchIdx !== null}>
               <Sparkles className="h-3.5 w-3.5" />
               Insert {pendingBatch?.length ?? 0} slides
             </Button>
