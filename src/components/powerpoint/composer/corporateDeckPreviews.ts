@@ -11,6 +11,11 @@ export interface CorporateDeckRef {
   fileName: string;
   /** Friendly label used in toasts and the editor source pill. */
   label: string;
+  /** File size in bytes — surfaced on template cards so users can confirm
+   *  the correct deck is wired up. */
+  sizeBytes?: number;
+  /** ISO timestamp of when the asset was uploaded to the CDN. */
+  uploadedAt?: string;
 }
 
 export const CORPORATE_DECK_PREVIEWS: Record<string, CorporateDeckRef> = {
@@ -18,10 +23,19 @@ export const CORPORATE_DECK_PREVIEWS: Record<string, CorporateDeckRef> = {
     url: transperfectDeckAsset.url,
     fileName: 'TransPerfect_General_Deck.pptx',
     label: 'TransPerfect Corporate Deck',
+    sizeBytes: transperfectDeckAsset.size,
+    uploadedAt: transperfectDeckAsset.created_at,
   },
 };
 
 export const getCorporateDeckRef = (templateId?: string | null): CorporateDeckRef | undefined => {
   if (!templateId) return undefined;
   return CORPORATE_DECK_PREVIEWS[templateId];
+};
+
+export const formatDeckSize = (bytes?: number): string => {
+  if (!bytes || bytes <= 0) return '';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };

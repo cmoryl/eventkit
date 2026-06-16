@@ -19,8 +19,9 @@ import {
 } from 'lucide-react';
 import type { DeckTemplate } from './TemplateGallery';
 import { cn } from '@/lib/utils';
-import { getCorporateDeckRef } from './corporateDeckPreviews';
-import { CorporateDeckLiveThumb } from './CorporateDeckLiveThumb';
+import { getCorporateDeckRef, formatDeckSize } from './corporateDeckPreviews';
+import { CorporateDeckLiveThumb, useDeckAttachmentStatus } from './CorporateDeckLiveThumb';
+import { Paperclip, AlertTriangle, Loader2 as DeckLoader } from 'lucide-react';
 
 const isLight = (hex: string) => {
   const bg = hex.replace('#', '');
@@ -89,6 +90,54 @@ const hexToRgba = (hex: string, alpha: number) => {
   const g = parseInt(clean.slice(2, 4), 16);
   const b = parseInt(clean.slice(4, 6), 16);
   return `rgba(${r},${g},${b},${alpha})`;
+};
+
+/** Small overlay badge that confirms a real bundled .pptx is wired into the
+ *  template and reflects its fetch/parse status so users can spot mismatches
+ *  (wrong file, broken upload) right from the gallery card. */
+const DeckAttachmentBadge: React.FC<{
+  deck: ReturnType<typeof getCorporateDeckRef> & object;
+  template: DeckTemplate;
+}> = ({ deck, template }) => {
+  const { status, slideCount } = useDeckAttachmentStatus(deck);
+  const sizeLabel = formatDeckSize(deck.sizeBytes);
+  const baseStyle = {
+    background: hexToRgba(template.palette.bg, 0.78),
+    color: template.palette.text,
+    border: `1px solid ${hexToRgba(template.palette.text, 0.22)}`,
+  } as React.CSSProperties;
+
+  let Icon: React.ComponentType<{ className?: string }> = Paperclip;
+  let iconClass = '';
+  let label = `PPTX attached${sizeLabel ? ` · ${sizeLabel}` : ''}`;
+  let title = `${deck.fileName}${sizeLabel ? ` (${sizeLabel})` : ''}`;
+
+  if (status === 'loading') {
+    Icon = DeckLoader;
+    iconClass = 'animate-spin';
+    label = 'Verifying deck…';
+    title = `Loading ${deck.fileName}`;
+  } else if (status === 'failed') {
+    Icon = AlertTriangle;
+    label = 'Deck failed to load';
+    title = `Could not fetch or parse ${deck.fileName}`;
+    baseStyle.background = 'rgba(190, 30, 30, 0.85)';
+    baseStyle.color = '#fff';
+    baseStyle.border = '1px solid rgba(255,255,255,0.3)';
+  } else if (status === 'ready') {
+    label = `PPTX attached · ${slideCount} slide${slideCount === 1 ? '' : 's'}${sizeLabel ? ` · ${sizeLabel}` : ''}`;
+  }
+
+  return (
+    <span
+      className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md"
+      style={baseStyle}
+      title={title}
+    >
+      <Icon className={cn('h-3 w-3', iconClass)} />
+      {label}
+    </span>
+  );
 };
 
 const hashFor = (value: string) => {
@@ -1647,6 +1696,13 @@ export const TemplatePosterPreview: React.FC<TemplatePosterPreviewProps> = ({ te
             <Check className="h-3.5 w-3.5" />
           </span>
         )}
+
+        {/* Deck attachment status — confirms the right .pptx is wired up. */}
+        {(() => {
+          const corp = getCorporateDeckRef(template.id);
+          if (!corp) return null;
+          return <DeckAttachmentBadge deck={corp} template={template} />;
+        })()}
       </div>
 
       {/* Info zone — uses the template's own colors so each card carries its own look & feel */}

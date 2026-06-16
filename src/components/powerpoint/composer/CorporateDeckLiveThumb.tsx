@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react';
  */
 const deckCache = new Map<string, Promise<SlideData[]>>();
 
-const loadDeck = (ref: CorporateDeckRef): Promise<SlideData[]> => {
+export const loadDeck = (ref: CorporateDeckRef): Promise<SlideData[]> => {
   const cached = deckCache.get(ref.url);
   if (cached) return cached;
   const p = (async () => {
@@ -28,6 +28,28 @@ const loadDeck = (ref: CorporateDeckRef): Promise<SlideData[]> => {
   // Drop cache entry if the parse failed so a later mount can retry.
   p.catch(() => deckCache.delete(ref.url));
   return p;
+};
+
+export type DeckAttachmentStatus = 'loading' | 'ready' | 'failed';
+
+/** Lightweight hook so template cards can show a "deck attached" badge that
+ *  reflects whether the bundled .pptx actually fetched + parsed correctly.
+ *  Shares the module-level deckCache so it doesn't double-fetch. */
+export const useDeckAttachmentStatus = (
+  ref?: CorporateDeckRef,
+): { status: DeckAttachmentStatus; slideCount: number } => {
+  const [status, setStatus] = useState<DeckAttachmentStatus>('loading');
+  const [slideCount, setSlideCount] = useState(0);
+  useEffect(() => {
+    if (!ref) return;
+    let alive = true;
+    setStatus('loading');
+    loadDeck(ref)
+      .then((s) => { if (alive) { setSlideCount(s.length); setStatus('ready'); } })
+      .catch(() => { if (alive) setStatus('failed'); });
+    return () => { alive = false; };
+  }, [ref?.url]);
+  return { status, slideCount };
 };
 
 interface Props {
