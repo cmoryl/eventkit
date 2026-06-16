@@ -24,43 +24,140 @@ export interface PptxThemeTokens {
 export async function parsePptxFile(file: File): Promise<SlideData[]> {
   const zip = await JSZip.loadAsync(file);
 
+  // Slide dimensions (EMU) so we can map shape geometry to %.
+  let slideWidthEmu = 9144000;
+  let slideHeightEmu = 6858000;
+  if (zip.files['ppt/presentation.xml']) {
+    const presXml = await zip.files['ppt/presentation.xml'].async('text');
+    const sz = presXml.match(/<p:sldSz\b[^/>]*\scx="(\d+)"[^/>]*\scy="(\d+)"/);
+    if (sz) {
+      slideWidthEmu = parseInt(sz[1], 10) || slideWidthEmu;
+      slideHeightEmu = parseInt(sz[2], 10) || slideHeightEmu;
+    }
+  }
+
   // 1. Build a map of all media files → base64 data URLs
   const mediaMap = new Map<string, string>();
   for (const [path, zipEntry] of Object.entries(zip.files)) {
     if (!path.startsWith('ppt/media/')) continue;
     const ext = path.split('.').pop()?.toLowerCase() || '';
     if (!IMAGE_EXTENSIONS.includes(ext)) continue;
-    // Skip unsupported vector formats for display
     if (ext === 'emf' || ext === 'wmf') continue;
     const blob = await zipEntry.async('blob');
     const mimeType = ext === 'svg' ? 'image/svg+xml' : ext === 'png' ? 'image/png' : 'image/jpeg';
     const dataUrl = await blobToDataUrl(blob, mimeType);
-    // Store with just the filename (e.g. "image1.png")
     const filename = path.split('/').pop()!;
     mediaMap.set(filename, dataUrl);
   }
 
-  // 2. Build a map of relationship files: slideN → list of image filenames
+  // 2. Per-slide rels — flat list of media filenames AND Map<embedId, filename>
+  //    so <a:blip r:embed="rIdX"/> resolves to its actual file at xfrm coords.
   const slideImageMap = new Map<number, string[]>();
+  const slideEmbedMap = new Map<number, Map<string, string>>();
+  const slideLayoutMap = new Map<number, string>();
   for (const [path, zipEntry] of Object.entries(zip.files)) {
     const match = path.match(/^ppt\/slides\/_rels\/slide(\d+)\.xml\.rels$/);
     if (!match) continue;
     const slideNum = parseInt(match[1]);
     const relsXml = await zipEntry.async('text');
     const images: string[] = [];
-    // Find relationships pointing to ../media/imageX.ext
-    const relRegex = /Target="\.\.\/media\/([^"]+)"/g;
-    let relMatch;
+    const embeds = new Map<string, string>();
+    const relRegex = /<Relationship\b[^>]*\sId="([^"]+)"[^>]*\sTarget="([^"]+)"/g;
+    let relMatch: RegExpExecArray | null;
     while ((relMatch = relRegex.exec(relsXml)) !== null) {
-      const mediaFilename = relMatch[1];
-      if (mediaMap.has(mediaFilename)) {
-        images.push(mediaFilename);
+      const rId = relMatch[1];
+      const target = relMatch[2];
+      const mediaName = target.match(/\/media\/([^"/]+)$/)?.[1];
+      if (mediaName && mediaMap.has(mediaName)) {
+        embeds.set(rId, mediaName);
+        images.push(mediaName);
+      }
+      const layoutName = target.match(/\/slideLayouts\/(slideLayout\d+\.xml)$/)?.[1];
+      if (layoutName) slideLayoutMap.set(slideNum, layoutName);
+    }
+    if (images.length > 0) slideImageMap.set(slideNum, images);
+    if (embeds.size > 0) slideEmbedMap.set(slideNum, embeds);
+  }
+
+  // 2b. Resolve layout → master chrome (bg + decorative shapes + master pictures)
+  //     so inherited graphics render on every slide.
+  type InheritedChrome = {
+    bgFill?: string;
+    shapes: NonNullable<NonNullable<SlideData['masterChrome']>['shapes']>;
+    assets: NonNullable<NonNullable<SlideData['masterChrome']>['assets']>;
+    layoutName?: string;
+  };
+  const layoutChromeCache = new Map<string, InheritedChrome>();
+
+  const buildXmlChrome = async (xmlPath: string): Promise<InheritedChrome> => {
+    const entry = zip.files[xmlPath];
+    if (!entry) return { shapes: [], assets: [] };
+    const xml = await entry.async('text');
+    const relsPath = xmlPath.replace(/([^/]+)\.xml$/, '_rels/$1.xml.rels');
+    const embedMap = new Map<string, string>();
+    if (zip.files[relsPath]) {
+      const relsXml = await zip.files[relsPath].async('text');
+      const reRel = /<Relationship\b[^>]*\sId="([^"]+)"[^>]*\sTarget="([^"]+)"/g;
+      let mr: RegExpExecArray | null;
+      while ((mr = reRel.exec(relsXml)) !== null) {
+        const mediaName = mr[2].match(/\/media\/([^"/]+)$/)?.[1];
+        if (mediaName && mediaMap.has(mediaName)) embedMap.set(mr[1], mediaName);
       }
     }
-    if (images.length > 0) {
-      slideImageMap.set(slideNum, images);
+    const bgM = xml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
+    let bgFill: string | undefined;
+    if (bgM) {
+      const srgb = bgM[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      if (srgb) bgFill = `#${srgb[1].toUpperCase()}`;
     }
-  }
+    const shapes: InheritedChrome['shapes'] = [];
+    const assets: InheritedChrome['assets'] = [];
+    const isHex = (v?: string) => !!v && v.startsWith('#');
+    for (const sh of parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu)) {
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (sh.kind === 'picture') {
+        const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
+        const dataUrl = file ? mediaMap.get(file) : undefined;
+        if (!dataUrl) continue;
+        const small = sh.wPct < 25 && sh.hPct < 25;
+        assets.push({
+          dataUrl,
+          xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
+          role: small ? 'logo' : sh.wPct > 60 ? 'watermark' : 'decoration',
+        });
+      } else if (sh.kind === 'shape' && (sh.fill || sh.line)) {
+        if (!isHex(sh.fill) && !isHex(sh.line)) continue;
+        shapes.push({
+          geom: sh.geom,
+          xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
+          fill: isHex(sh.fill) ? sh.fill : undefined,
+          line: isHex(sh.line) ? sh.line : undefined,
+        });
+      }
+    }
+    return { bgFill, shapes, assets };
+  };
+
+  const getLayoutChrome = async (layoutFile: string): Promise<InheritedChrome> => {
+    if (layoutChromeCache.has(layoutFile)) return layoutChromeCache.get(layoutFile)!;
+    const layoutPath = `ppt/slideLayouts/${layoutFile}`;
+    const layoutChrome = await buildXmlChrome(layoutPath);
+    const layoutRels = layoutPath.replace(/([^/]+)\.xml$/, '_rels/$1.xml.rels');
+    let masterChrome: InheritedChrome = { shapes: [], assets: [] };
+    if (zip.files[layoutRels]) {
+      const relsXml = await zip.files[layoutRels].async('text');
+      const masterName = relsXml.match(/Target="\.\.\/slideMasters\/(slideMaster\d+\.xml)"/)?.[1];
+      if (masterName) masterChrome = await buildXmlChrome(`ppt/slideMasters/${masterName}`);
+    }
+    const merged: InheritedChrome = {
+      bgFill: layoutChrome.bgFill || masterChrome.bgFill,
+      shapes: [...masterChrome.shapes, ...layoutChrome.shapes],
+      assets: [...masterChrome.assets, ...layoutChrome.assets],
+      layoutName: layoutFile,
+    };
+    layoutChromeCache.set(layoutFile, merged);
+    return merged;
+  };
 
   // 3. Find all slide XML files and sort numerically
   const slideFiles = Object.keys(zip.files)
@@ -89,6 +186,7 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
 
   // 5. Build SlideData[]
   const slides: SlideData[] = [];
+  const isHex = (v?: string) => !!v && v.startsWith('#');
 
   for (let i = 0; i < slideFiles.length; i++) {
     const xml = await zip.files[slideFiles[i]].async('text');
@@ -100,7 +198,6 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     const layout = inferLayout(textBlocks, i, slideFiles.length, hasImages);
     const variant = inferVariant(xml, i, slideFiles.length);
 
-    // Resolve image data URLs
     const imageDataUrls = slideImages
       .map(filename => mediaMap.get(filename))
       .filter((url): url is string => !!url);
@@ -112,13 +209,11 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
       variant,
     };
 
-    // Assign images
     if (imageDataUrls.length > 0) {
-      slide.imageUrl = imageDataUrls[0]; // Primary image for image-left/right layouts
+      slide.imageUrl = imageDataUrls[0];
       slide.images = imageDataUrls;
     }
 
-    // Text content
     if (textBlocks.length > 1) {
       if (layout === 'title' || layout === 'section') {
         slide.subtitle = textBlocks[1].text;
@@ -133,6 +228,53 @@ export async function parsePptxFile(file: File): Promise<SlideData[]> {
     if (notesMap.has(slideNum)) {
       slide.notes = notesMap.get(slideNum);
     }
+
+    // === Build masterChrome so all graphics (decorative shapes + pictures
+    // + inherited layout/master chrome) render at their real positions. ===
+    const embedMap = slideEmbedMap.get(slideNum) || new Map<string, string>();
+    const slideBgM = xml.match(/<p:bg\b[\s\S]*?<a:solidFill>([\s\S]*?)<\/a:solidFill>/);
+    let slideBg: string | undefined;
+    if (slideBgM) {
+      const srgb = slideBgM[1].match(/<a:srgbClr\s+val="([0-9A-Fa-f]{6})"/);
+      if (srgb) slideBg = `#${srgb[1].toUpperCase()}`;
+    }
+
+    const chromeShapes: InheritedChrome['shapes'] = [];
+    const chromeAssets: InheritedChrome['assets'] = [];
+
+    for (const sh of parseShapesFromXml(xml, slideWidthEmu, slideHeightEmu)) {
+      if (sh.xPct === undefined || sh.yPct === undefined || sh.wPct === undefined || sh.hPct === undefined) continue;
+      if (sh.kind === 'picture') {
+        const file = sh.picTarget ? embedMap.get(sh.picTarget) : undefined;
+        const dataUrl = file ? mediaMap.get(file) : undefined;
+        if (!dataUrl) continue;
+        const small = sh.wPct < 25 && sh.hPct < 25;
+        chromeAssets.push({
+          dataUrl,
+          xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
+          role: small ? 'logo' : sh.wPct > 60 ? 'watermark' : 'decoration',
+        });
+      } else if (sh.kind === 'shape' && (sh.fill || sh.line)) {
+        if (!isHex(sh.fill) && !isHex(sh.line)) continue;
+        chromeShapes.push({
+          geom: sh.geom,
+          xPct: sh.xPct, yPct: sh.yPct, wPct: sh.wPct, hPct: sh.hPct,
+          fill: isHex(sh.fill) ? sh.fill : undefined,
+          line: isHex(sh.line) ? sh.line : undefined,
+        });
+      }
+    }
+
+    const layoutFile = slideLayoutMap.get(slideNum);
+    let inherited: InheritedChrome = { shapes: [], assets: [] };
+    if (layoutFile) inherited = await getLayoutChrome(layoutFile);
+
+    slide.masterChrome = {
+      bgFill: slideBg || inherited.bgFill,
+      shapes: [...inherited.shapes, ...chromeShapes],
+      assets: [...inherited.assets, ...chromeAssets],
+      layoutName: inherited.layoutName,
+    };
 
     slides.push(slide);
   }
