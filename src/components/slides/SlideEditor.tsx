@@ -3337,11 +3337,22 @@ export function SlideEditor({ isOpen, onClose, assetType, assetName, brand, init
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingBatch?.map((entry, idx) => (
               <div key={entry.slide.id} className="bg-background/60 border border-border/60 rounded-md overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 text-xs">
-                  <span className="font-semibold">Slide {idx + 1}</span>
-                  <span className="text-muted-foreground truncate ml-2">
+                <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-border/60 text-xs">
+                  <span className="font-semibold shrink-0">Slide {idx + 1}</span>
+                  <span className="text-muted-foreground truncate flex-1 ml-2">
                     {entry.layout ? `"${entry.layout.name}"` : entry.layoutName || 'auto layout'}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 gap-1 text-[10px] shrink-0"
+                    onClick={() => regenerateOneInBatch(idx)}
+                    disabled={regeneratingBatchIdx !== null}
+                    title="Regenerate this slide — re-uses the same template chrome cache"
+                  >
+                    <Wand2 className={cn('h-3 w-3', regeneratingBatchIdx === idx && 'animate-pulse')} />
+                    {regeneratingBatchIdx === idx ? 'Regenerating…' : 'Regenerate'}
+                  </Button>
                 </div>
                 <div className="relative w-full" style={{ aspectRatio: '16 / 9' }}>
                   <CenteredScaledSlide>
