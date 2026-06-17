@@ -726,13 +726,16 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     payload: { svg?: string; imageUrl?: string },
     scope: 'this' | 'all',
   ) => {
+    // Pre-sanitize SVG once before fanning out to N shapes.
+    const safePayload: { svg?: string; imageUrl?: string } =
+      typeof payload.svg === 'string' ? { ...payload, svg: safeSvgMarkup(payload.svg) } : payload;
     if (scope === 'this') {
-      updateShape(activeId, payload);
+      updateShape(activeId, safePayload);
       return;
     }
     const root = wrapperRef.current;
     if (!root) {
-      updateShape(activeId, payload);
+      updateShape(activeId, safePayload);
       return;
     }
     const next = { ...(slideRef.current.demoOverrides || {}) };
@@ -746,7 +749,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       const r = el.getBoundingClientRect();
       const tooBig = r.width / wrapRect.width > 0.7 || r.height / wrapRect.height > 0.7;
       if (tooBig) return;
-      next[id] = { ...next[id], ...payload };
+      next[id] = { ...next[id], ...safePayload };
     });
     onUpdate({ demoOverrides: next });
   };
