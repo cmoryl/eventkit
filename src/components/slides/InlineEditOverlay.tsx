@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SlideData } from './slideTypes';
 import { GraphicSwapPopover } from './GraphicSwapPopover';
+import { safeSvgMarkup, escapeHtmlAttr } from '@/utils/svgUtils';
 
 interface Props {
   slide: SlideData;
