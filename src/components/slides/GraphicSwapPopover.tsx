@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CURATED_GRAPHICS } from './graphicLibrary';
 import { supabase } from '@/integrations/supabase/client';
+import { safeSvgMarkup } from '@/utils/svgUtils';
 
 interface Props {
   /** Bounds of the toolbar in wrapper-local coords — popover anchors below it */
@@ -37,6 +38,16 @@ export function GraphicSwapPopover({
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<string | null>(null);
+
+  // Pre-sanitize every curated SVG once. Anything that fails sanitization
+  // is dropped from the picker so we never mount unsafe markup.
+  const safeGraphics = useMemo(
+    () =>
+      CURATED_GRAPHICS
+        .map((g) => ({ ...g, svg: safeSvgMarkup(g.svg) }))
+        .filter((g) => g.svg.length > 0),
+    [],
+  );
 
   const generate = async () => {
     if (!aiPrompt.trim()) return;
@@ -125,7 +136,7 @@ export function GraphicSwapPopover({
       {tab === 'library' && (
         <div className="p-2 max-h-[280px] overflow-y-auto">
           <div className="grid grid-cols-3 gap-2">
-            {CURATED_GRAPHICS.map((g) => (
+            {safeGraphics.map((g) => (
               <button
                 key={g.id}
                 type="button"
@@ -136,6 +147,7 @@ export function GraphicSwapPopover({
                 <div
                   className="w-full aspect-square rounded bg-background/40 flex items-center justify-center overflow-hidden"
                   style={{ color: accent || 'hsl(var(--primary))' }}
+                  // g.svg has been sanitized via safeSvgMarkup above.
                   // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: g.svg }}
                 />

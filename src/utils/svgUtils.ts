@@ -143,6 +143,30 @@ export const sanitizeSvg = (svgContent: string): string => {
 };
 
 /**
+ * Return a sanitized SVG markup string safe to inject via innerHTML /
+ * dangerouslySetInnerHTML. Returns '' if the input is empty, not an SVG,
+ * or fails sanitization. ALWAYS use this before mounting raw SVG into
+ * the DOM — never pass user/AI/curated SVG markup straight through.
+ */
+export const safeSvgMarkup = (svgContent: string | null | undefined): string => {
+  if (!svgContent || typeof svgContent !== 'string') return '';
+  const cleaned = sanitizeSvg(svgContent);
+  if (!cleaned || !cleaned.toLowerCase().includes('<svg')) return '';
+  return cleaned;
+};
+
+/**
+ * Escape a string for safe inclusion inside an HTML attribute value
+ * (double-quoted). Use when building innerHTML strings with dynamic URLs.
+ */
+export const escapeHtmlAttr = (value: string): string =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+/**
  * Get dimensions from SVG content
  */
 export const getSvgDimensions = (svgContent: string): { width: number; height: number } | null => {

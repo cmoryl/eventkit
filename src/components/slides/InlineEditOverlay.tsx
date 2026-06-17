@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SlideData } from './slideTypes';
 import { GraphicSwapPopover } from './GraphicSwapPopover';
+import { safeSvgMarkup, escapeHtmlAttr } from '@/utils/svgUtils';
 
 interface Props {
   slide: SlideData;
@@ -249,9 +250,12 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
 
       // SVG / image swap — replace the shape's visible content with the
       // chosen library SVG or AI-generated image. Cached via data-* sentinel
-      // so we don't re-inject DOM on every render.
+      // so we don't re-inject DOM on every render. SVG markup is ALWAYS
+      // run through safeSvgMarkup() before mount; image URLs are escaped
+      // into the attribute so they can't break out of the src attribute.
+      const safeOvSvg = ov?.svg ? safeSvgMarkup(ov.svg) : '';
       const swapSig =
-        (ov?.svg ? `svg:${ov.svg.length}:${ov.svg.slice(0, 40)}` : '') +
+        (safeOvSvg ? `svg:${safeOvSvg.length}:${safeOvSvg.slice(0, 40)}` : '') +
         (ov?.imageUrl ? `img:${ov.imageUrl.slice(0, 80)}` : '');
       if (swapSig && el.getAttribute('data-shape-swap') !== swapSig) {
         // Stash the original ONCE so reset can restore it
@@ -264,10 +268,10 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         el.style.justifyContent = 'center';
         el.style.overflow = 'hidden';
         if (ov?.imageUrl) {
-          el.innerHTML = `<img src="${ov.imageUrl}" alt="" style="width:100%;height:100%;object-fit:contain;display:block" />`;
-        } else if (ov?.svg) {
-          // SVG already styles itself to fill 100% via the wrap() helper.
-          el.innerHTML = ov.svg;
+          el.innerHTML = `<img src="${escapeHtmlAttr(ov.imageUrl)}" alt="" style="width:100%;height:100%;object-fit:contain;display:block" />`;
+        } else if (safeOvSvg) {
+          // Sanitized markup only — never raw ov.svg.
+          el.innerHTML = safeOvSvg;
         }
         el.setAttribute('data-shape-swap', swapSig);
       } else if (!swapSig && el.hasAttribute('data-shape-swap')) {
@@ -705,7 +709,11 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     patch: { color?: string; hidden?: boolean; svg?: string; imageUrl?: string },
   ) => {
     const next = { ...(slideRef.current.demoOverrides || {}) };
-    next[id] = { ...next[id], ...patch };
+    // Sanitize any incoming SVG markup at write-time so nothing unsafe ever
+    // lands in slide state (and therefore can never reach the renderer).
+    const safePatch =
+      typeof patch.svg === 'string' ? { ...patch, svg: safeSvgMarkup(patch.svg) } : patch;
+    next[id] = { ...next[id], ...safePatch };
     onUpdate({ demoOverrides: next });
   };
 
@@ -718,13 +726,16 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     payload: { svg?: string; imageUrl?: string },
     scope: 'this' | 'all',
   ) => {
+    // Pre-sanitize SVG once before fanning out to N shapes.
+    const safePayload: { svg?: string; imageUrl?: string } =
+      typeof payload.svg === 'string' ? { ...payload, svg: safeSvgMarkup(payload.svg) } : payload;
     if (scope === 'this') {
-      updateShape(activeId, payload);
+      updateShape(activeId, safePayload);
       return;
     }
     const root = wrapperRef.current;
     if (!root) {
-      updateShape(activeId, payload);
+      updateShape(activeId, safePayload);
       return;
     }
     const next = { ...(slideRef.current.demoOverrides || {}) };
@@ -738,7 +749,7 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
       const r = el.getBoundingClientRect();
       const tooBig = r.width / wrapRect.width > 0.7 || r.height / wrapRect.height > 0.7;
       if (tooBig) return;
-      next[id] = { ...next[id], ...payload };
+      next[id] = { ...next[id], ...safePayload };
     });
     onUpdate({ demoOverrides: next });
   };
