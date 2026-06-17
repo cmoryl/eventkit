@@ -39,6 +39,16 @@ export function GraphicSwapPopover({
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiResult, setAiResult] = useState<string | null>(null);
 
+  // Pre-sanitize every curated SVG once. Anything that fails sanitization
+  // is dropped from the picker so we never mount unsafe markup.
+  const safeGraphics = useMemo(
+    () =>
+      CURATED_GRAPHICS
+        .map((g) => ({ ...g, svg: safeSvgMarkup(g.svg) }))
+        .filter((g) => g.svg.length > 0),
+    [],
+  );
+
   const generate = async () => {
     if (!aiPrompt.trim()) return;
     setAiBusy(true);
