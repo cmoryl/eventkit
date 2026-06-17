@@ -86,18 +86,23 @@ export const THEME_PACKS: Record<DemoThemeId, ThemePack> = {
   transperfect: {
     id: 'transperfect',
     name: 'TransPerfect 2026',
-    tagline: 'Deep navy + glowing orbs. Global, premium, technical.',
+    tagline: 'Light-led system with deep teal emphasis. Global, premium, brand-locked.',
     palette: {
-      heroBg: '#03002C',
-      contentBg: '#0A0A3D',
-      primary: '#A1F9F9',
-      secondary: '#C2A3FF',
-      accent: '#A1F9F9',
-      muted: 'rgba(255,255,255,0.6)',
-      fg: '#FFFFFF',
+      // Dark emphasis slides (section dividers, keynote moments) use Deep Teal Blue.
+      heroBg: '#002F49',
+      // Light content slides — the majority of the deck per brand rules.
+      contentBg: '#FFFFFF',
+      // Primary brand mark + accents on light slides.
+      primary: '#139DD8',
+      // Deep Teal Blue — headings on light, surfaces on dark.
+      secondary: '#002F49',
+      // 10% usage Teal — CTAs, highlights, accent only.
+      accent: '#3BBDB5',
+      muted: 'rgba(0,47,73,0.6)',
+      fg: '#002F49',
     },
-    chartColors: ['#A1F9F9', '#C2A3FF', '#6EE7E7', '#8B5CF6', '#3DD9D9'],
-    fonts: { heading: 'Inter', body: 'Inter', numeric: 'Inter' },
+    chartColors: ['#139DD8', '#002F49', '#3BBDB5', '#5FB7E0', '#3B5A75'],
+    fonts: { heading: 'Poppins', body: 'Poppins', numeric: 'Poppins' },
     variants: {
       title: 'hero-image',
       stats: 'brandhub-tiles',
