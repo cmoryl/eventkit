@@ -136,7 +136,7 @@ export function GraphicSwapPopover({
       {tab === 'library' && (
         <div className="p-2 max-h-[280px] overflow-y-auto">
           <div className="grid grid-cols-3 gap-2">
-            {CURATED_GRAPHICS.map((g) => (
+            {safeGraphics.map((g) => (
               <button
                 key={g.id}
                 type="button"
@@ -147,6 +147,7 @@ export function GraphicSwapPopover({
                 <div
                   className="w-full aspect-square rounded bg-background/40 flex items-center justify-center overflow-hidden"
                   style={{ color: accent || 'hsl(var(--primary))' }}
+                  // g.svg has been sanitized via safeSvgMarkup above.
                   // eslint-disable-next-line react/no-danger
                   dangerouslySetInnerHTML={{ __html: g.svg }}
                 />
