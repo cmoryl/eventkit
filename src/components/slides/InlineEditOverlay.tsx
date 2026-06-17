@@ -250,9 +250,12 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
 
       // SVG / image swap — replace the shape's visible content with the
       // chosen library SVG or AI-generated image. Cached via data-* sentinel
-      // so we don't re-inject DOM on every render.
+      // so we don't re-inject DOM on every render. SVG markup is ALWAYS
+      // run through safeSvgMarkup() before mount; image URLs are escaped
+      // into the attribute so they can't break out of the src attribute.
+      const safeOvSvg = ov?.svg ? safeSvgMarkup(ov.svg) : '';
       const swapSig =
-        (ov?.svg ? `svg:${ov.svg.length}:${ov.svg.slice(0, 40)}` : '') +
+        (safeOvSvg ? `svg:${safeOvSvg.length}:${safeOvSvg.slice(0, 40)}` : '') +
         (ov?.imageUrl ? `img:${ov.imageUrl.slice(0, 80)}` : '');
       if (swapSig && el.getAttribute('data-shape-swap') !== swapSig) {
         // Stash the original ONCE so reset can restore it
@@ -265,10 +268,10 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
         el.style.justifyContent = 'center';
         el.style.overflow = 'hidden';
         if (ov?.imageUrl) {
-          el.innerHTML = `<img src="${ov.imageUrl}" alt="" style="width:100%;height:100%;object-fit:contain;display:block" />`;
-        } else if (ov?.svg) {
-          // SVG already styles itself to fill 100% via the wrap() helper.
-          el.innerHTML = ov.svg;
+          el.innerHTML = `<img src="${escapeHtmlAttr(ov.imageUrl)}" alt="" style="width:100%;height:100%;object-fit:contain;display:block" />`;
+        } else if (safeOvSvg) {
+          // Sanitized markup only — never raw ov.svg.
+          el.innerHTML = safeOvSvg;
         }
         el.setAttribute('data-shape-swap', swapSig);
       } else if (!swapSig && el.hasAttribute('data-shape-swap')) {
