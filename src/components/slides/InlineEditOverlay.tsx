@@ -709,7 +709,11 @@ export function InlineEditOverlay({ slide, onUpdate: rawOnUpdate, enabled = true
     patch: { color?: string; hidden?: boolean; svg?: string; imageUrl?: string },
   ) => {
     const next = { ...(slideRef.current.demoOverrides || {}) };
-    next[id] = { ...next[id], ...patch };
+    // Sanitize any incoming SVG markup at write-time so nothing unsafe ever
+    // lands in slide state (and therefore can never reach the renderer).
+    const safePatch =
+      typeof patch.svg === 'string' ? { ...patch, svg: safeSvgMarkup(patch.svg) } : patch;
+    next[id] = { ...next[id], ...safePatch };
     onUpdate({ demoOverrides: next });
   };
 
