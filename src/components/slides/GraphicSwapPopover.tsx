@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { CURATED_GRAPHICS } from './graphicLibrary';
 import { supabase } from '@/integrations/supabase/client';
+import { safeSvgMarkup } from '@/utils/svgUtils';
 
 interface Props {
   /** Bounds of the toolbar in wrapper-local coords — popover anchors below it */
